@@ -1,0 +1,150 @@
+<project name="envelope" basedir="." default="dist">
+
+  <property environment="env"/>
+  <tstamp>
+    <format property="timestamp" pattern="EEE, d MMM yyyy HH:mm:ss Z (z)"/>
+  </tstamp>
+  <!-- if env.USER isn't defined, we must be on windows, set it to ${env.USERNAME} -->
+  <!-- same goes for other properties -->
+  <property name="env.USER" value="${env.USERNAME}"/>
+  <!-- set env.HOSTNAME from env.HOST if env.HOSTNAME isn't already defined. -->
+  <!-- some linux boxes have HOST defined, but not HOSTNAME.  this makes sure we get it. -->
+  <property name="env.HOSTNAME" value="${env.HOST}"/>
+  <!-- set env.COMPUTERNAME from env.HOSTNAME if it isn't already defined. -->
+  <!-- windows already has env.COMPUTERNAME defined, but unix hosts won't have it. -->
+  <!-- we'll use COMPUTERNAME in this build file, as it should be set now -->
+  <property name="env.COMPUTERNAME" value="${env.HOSTNAME}"/>
+  <property name="env.OSTYPE" value="${env.OS}"/>
+
+  <property name="client.classes" value="${basedir}/client-classes"/>
+  <property name="server.classes" value="${basedir}/server-classes"/>
+  <property name="classes" value="${basedir}/classes"/>
+  <property name="src" value="${basedir}/src"/>
+
+  <property name="lib" value="${basedir}/lib"/>
+  <property name="sql" value="${basedir}/sql"/>
+  <property name="dist" value="${basedir}/"/>
+
+  <property name="one.jar" value="${basedir}/one-jar"/>
+  <property name="one.jar.classes" value="${dist}/build"/>
+  <property name="one.jar.src" value="${one.jar}/src"/>
+
+  <property name="compile.debug" value="true"/>
+  <property name="compile.deprecation" value="false"/>
+  <property name="compile.optimize" value="true"/>
+
+  <property name="jar.compress" value="true"/>
+
+  <path id="compile.classpath">
+    <fileset dir="${lib}" includes="*.jar"/>
+  </path>
+
+  <target name="clean.classes" description="clean the classes">
+    <delete dir="${classes}"/>
+    <delete dir="${client.classes}"/>
+    <delete dir="${server.classes}"/>
+    <delete dir="${one.jar.classes}"/>
+  </target>
+
+  <target name="dist" depends="client.jar, server.dist" description="make the distribution">
+    <echo message="dist done."/>
+  </target>
+
+  <target name="prepare" depends="clean.classes">
+    <mkdir dir="${classes}"/>
+  </target>
+
+  <target name="compile" depends="prepare" description="compile sources">
+    <javac srcdir="${src}"
+           destdir="${classes}"
+           debug="${compile.debug}"
+           deprecation="${compile.deprecation}"
+           optimize="${compile.optimize}">
+      <compilerarg value="-Xlint:unchecked"/>
+      <classpath refid="compile.classpath"/>
+    </javac>
+    <copy todir="${classes}">
+      <fileset dir="${src}" includes="**/*.properties, **/*.xml, **/*.policy"/>
+    </copy>
+  </target>
+
+  <target name="client.dist">
+    <antcall target="client.jar"/>
+  </target>
+  <target name="client.jar" depends="compile" description="build client jar">
+    <delete file="${dist}/${ant.project.name}-client.jar"/>
+    <unzip dest="${client.classes}"><fileset dir="${lib}" includes="log4j*.jar, ui.jar, forms_rt.jar"/></unzip>
+    <unzip dest="${client.classes}"><fileset dir="${client.classes}" includes="*.jar"/></unzip>
+    <delete><fileset dir="${client.classes}" includes="*.jar"/></delete>
+    <copy todir="${client.classes}">
+      <fileset dir="${classes}" includes="us/lump/envelope/client/ui/**/*, Envelope.class, security.policy"/>
+    </copy>
+    <jar jarfile="${dist}/${ant.project.name}-client.jar"
+         compress="${jar.compress}"
+         basedir="${client.classes}">
+      <manifest>
+        <attribute name="Main-Class" value="Envelope"/>
+        <attribute name="Built-By" value="${env.USER}"/>
+        <attribute name="Build-Time" value="${timestamp}"/>
+        <attribute name="Built-On-OS" value="${env.OSTYPE}"/>
+        <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="server.jar" depends="compile" description="build server jar">
+    <copy todir="${server.classes}">
+      <fileset dir="${classes}" excludes="us/lump/envelope/client/ui/*, Envelope.class"/>
+    </copy>
+    <delete file="${dist}/${ant.project.name}-rmi.jar"/>
+    <jar jarfile="${dist}/${ant.project.name}-rmi.jar"
+         compress="${jar.compress}"
+         basedir="${server.classes}">
+      <manifest>
+        <attribute name="Main-Class" value="us.lump.envelope.Server"/>
+        <attribute name="Built-By" value="${env.USER}"/>
+        <attribute name="Build-Time" value="${timestamp}"/>
+        <attribute name="Built-On-OS" value="${env.OSTYPE}"/>
+        <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="server.dist" depends="server.jar" description="build server distribution">
+    <mkdir dir="${one.jar.classes}"/>
+
+    <javac srcdir="${one.jar.src}"
+           destdir="${one.jar.classes}"
+           debug="${compile.debug}"
+           deprecation="${compile.deprecation}"
+           optimize="${compile.optimize}">
+      <compilerarg value="-Xlint:unchecked"/>
+    </javac>
+
+    <mkdir dir="${one.jar.classes}/lib"/>
+    <copy todir="${one.jar.classes}/lib">
+      <fileset dir="${lib}" includes="**/*.jar"/>
+    </copy>
+
+    <mkdir dir="${one.jar.classes}/main"/>
+    <copy tofile="${one.jar.classes}/main/main.jar" file="${dist}/${ant.project.name}-rmi.jar"/>
+
+    <delete file="${dist}/${ant.project.name}-server.jar"/>
+
+    <jar jarfile="${dist}/${ant.project.name}-server.jar"
+         basedir="${one.jar.classes}"
+         compress="${jar.compress}">
+      <manifest>
+        <attribute name="Main-Class" value="com.simontuffs.onejar.Boot"/>
+        <!--<attribute name="One-Jar-Expand" value="expand,doc"/>-->
+        <!--<attribute name="Version" value="${deploy.version}"/>-->
+        <attribute name="Boot-Class" value="us.lump.envelope.Server"/>
+        <attribute name="Built-By" value="${env.USER}"/>
+        <attribute name="Build-Time" value="${timestamp}"/>
+        <attribute name="Built-On-OS" value="${env.OSTYPE}"/>
+        <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
+      </manifest>
+    </jar>
+  </target>
+
+</project>
