@@ -69,9 +69,7 @@
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/ehcache-1.2.3.jar!/" />
         </CLASSES>
-        <JAVADOC>
-          <root url="jar://$MODULE_DIR$/lib/doc/ehcache-1.2.3-javadoc.zip!/" />
-        </JAVADOC>
+        <JAVADOC />
         <SOURCES>
           <root url="jar://$MODULE_DIR$/lib/src/ehcache-1.2.3-src.zip!/" />
         </SOURCES>
@@ -100,9 +98,7 @@
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/hibernate-annotations.jar!/" />
         </CLASSES>
-        <JAVADOC>
-          <root url="jar://$MODULE_DIR$/lib/doc/hibernate-annotations-doc.zip!/" />
-        </JAVADOC>
+        <JAVADOC />
         <SOURCES>
           <root url="jar://$MODULE_DIR$/lib/src/hibernate-annotations-src.zip!/" />
         </SOURCES>
@@ -149,9 +145,7 @@
         <CLASSES>
           <root url="jar://$MODULE_DIR$/lib/hibernate3.jar!/" />
         </CLASSES>
-        <JAVADOC>
-          <root url="jar://$MODULE_DIR$/lib/doc/hibernate3-doc.zip!/" />
-        </JAVADOC>
+        <JAVADOC />
         <SOURCES>
           <root url="jar://$MODULE_DIR$/lib/src/hibernate-3.2-src.zip!/" />
         </SOURCES>

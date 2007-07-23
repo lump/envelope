@@ -77,16 +77,23 @@ public class ServerSettings {
     ServerSettings ss = getInstance();
     String message = Strings.get("ok");
     try {
-      URL url = new URL(ss.getCodeBase().toString() + "ping");
-      URLConnection pingConnection = url.openConnection();
+      InetAddress ia = InetAddress.getByName(getHostName());
 
-      pingConnection.connect();
-      byte[] content = new byte[pingConnection.getContentLength()];
-      DataInputStream out = new DataInputStream((PlainTextInputStream)pingConnection.getContent());
-      out.readFully(content);
-      String stringOut = new String(content);
-      if (!stringOut.matches("^pong\\s*$"))
-        message = MessageFormat.format(Strings.get("error.verify_class_server"), ss.getHostName());
+      if (!ia.isReachable(2000))
+        message = MessageFormat.format(Strings.get("error.server_not_reachable"), ss.getHostName());
+      else {
+
+        URL url = new URL(ss.getCodeBase().toString() + "ping");
+        URLConnection pingConnection = url.openConnection();
+
+        pingConnection.connect();
+        byte[] content = new byte[pingConnection.getContentLength()];
+        DataInputStream out = new DataInputStream((PlainTextInputStream)pingConnection.getContent());
+        out.readFully(content);
+        String stringOut = new String(content);
+        if (!stringOut.matches("^pong\\s*$"))
+          message = MessageFormat.format(Strings.get("error.verify_class_server"), ss.getHostName());
+      }
     }
     catch (FileNotFoundException fnfe) {
       message = MessageFormat.format(Strings.get("error.verify_class_server"), ss.getHostName());
