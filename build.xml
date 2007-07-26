@@ -68,17 +68,20 @@
     </copy>
   </target>
 
-  <target name="client.dist">
-    <antcall target="client.jar"/>
-  </target>
-  <target name="client.jar" depends="compile" description="build client jar">
-    <delete file="${dist}/client.jar"/>
+  <target name="client.dist.prepare" depends="compile">
+    <delete dir="${client.classes}"/>
+    <mkdir dir="${client.classes}"/>
     <unzip dest="${client.classes}"><fileset dir="${lib}" includes="log4j*.jar, ui.jar, forms_rt.jar"/></unzip>
-    <!--<unzip dest="${client.classes}"><fileset dir="${client.classes}" includes="*.jar"/></unzip>-->
-    <!--<delete><fileset dir="${client.classes}" includes="*.jar"/></delete>-->
     <copy todir="${client.classes}">
       <fileset dir="${classes}" includes="us/lump/envelope/client/ui/**/*, Envelope.class, security.policy"/>
     </copy>
+  </target>
+
+  <target name="client.dist">
+    <antcall target="client.jar"/>
+  </target>
+  <target name="client.jar" depends="client.dist.prepare" description="build client jar">
+    <delete file="${dist}/client.jar"/>
     <jar jarfile="${dist}/client.jar"
          compress="${jar.compress}"
          basedir="${client.classes}">
