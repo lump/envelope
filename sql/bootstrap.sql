@@ -1,14 +1,14 @@
 --
--- $Id: bootstrap.sql,v 1.1 2007/07/21 20:15:04 troy Exp $
+-- $Id: bootstrap.sql,v 1.2 2007/07/26 00:50:38 troy Exp $
 --
 
-drop table users;
-drop table allocations;
-drop table transactions;
-drop table categories;
-drop table accounts;
-drop table incomes;
-drop table budgets;
+drop table if exists users;
+drop table if exists allocations;
+drop table if exists transactions;
+drop table if exists categories;
+drop table if exists accounts;
+drop table if exists incomes;
+drop table if exists budgets;
 
 create table budgets (
   `id` int not null auto_increment primary key,
@@ -137,3 +137,4 @@ create table `users` (
 insert into users values (null, null,0,'admin','Admin Account','$1$INZEtT3S$D81Kp34n4Oea5Rs97lPOq0',7,NULL);
 insert into users values (null, null,0,'guest','Guest Account','$1$GOyqcoAk$KTE1zfxeTkoXJTcrFKyFi0',3,NULL);
 
+grant all on envelope.* to budget identified by '1qaz2wsx';
