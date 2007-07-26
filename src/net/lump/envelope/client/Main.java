@@ -11,12 +11,15 @@ import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.net.MalformedURLException;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 
 /**
  * .
  *
  * @author troy
- * @version $Id: Main.java,v 1.2 2007/07/26 02:55:23 troy Exp $
+ * @version $Id: Main.java,v 1.3 2007/07/26 06:52:06 troy Exp $
  */
 public class Main implements Runnable {
   private JFrame frame = new JFrame(Strings.get("envelope_budget"));
@@ -140,7 +143,15 @@ public class Main implements Runnable {
     frame.validate();
     frame.setSize(getWindowSize());
     frame.setVisible(true);
-    new Getter().get();
+    try {
+      new Getter().get();
+    } catch (MalformedURLException e) {
+      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+    } catch (NotBoundException e) {
+      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+    } catch (RemoteException e) {
+      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+    }
   }
 
   public void aboutBox() {

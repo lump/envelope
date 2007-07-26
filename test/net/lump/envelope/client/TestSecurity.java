@@ -2,11 +2,11 @@ package us.lump.envelope.client;
 
 import junit.framework.TestCase;
 import us.lump.envelope.TestSuite;
+import us.lump.envelope.Command;
 import us.lump.envelope.entity.Identifiable;
-import us.lump.envelope.server.rmi.Cmd;
-import us.lump.envelope.server.rmi.Command;
+import us.lump.envelope.Command.Name;
 import us.lump.envelope.server.rmi.Controller;
-import us.lump.envelope.server.rmi.Param;
+import us.lump.envelope.Command.Param;
 import us.lump.envelope.server.security.Challenge;
 import us.lump.envelope.server.security.Crypt;
 import us.lump.lib.util.Encryption;
@@ -27,14 +27,14 @@ public class TestSecurity extends TestCase {
     Controller controller = TestSuite.getController();
 
     Challenge challenge = (Challenge)controller
-        .invoke(new Command(Cmd.getChallenge)
+        .invoke(new Command(Name.getChallenge)
             .set(Param.user_name, user)
             .set(Param.public_key, Encryption.encodePublicKey(kp)));
 
 //    String salt = Encryption.decodeAsym(kp.getPrivate(), challenge.getChallenge());
 
     Boolean authed = (Boolean)controller
-        .invoke(new Command(Cmd.authChallengeResponse)
+        .invoke(new Command(Name.authChallengeResponse)
             .set(Param.user_name, user)
             .set(Param.challenge_response,
             Encryption.encodeAsym(
@@ -46,7 +46,7 @@ public class TestSecurity extends TestCase {
 
     try {
       // an entity object retrieval test
-      Command cmd = new Command(Cmd.listTransactions)
+      Command cmd = new Command(Name.listTransactions)
           .set(Param.year, 2007).sign(user, kp.getPrivate());
 
 //ugly old way

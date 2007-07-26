@@ -3,12 +3,11 @@ package us.lump.envelope.server.dao;
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
-import org.apache.log4j.Logger;
 import org.hibernate.criterion.Restrictions;
 import us.lump.envelope.entity.User;
 import us.lump.envelope.server.exception.AuthenticationException;
 import us.lump.envelope.server.exception.SessionException;
-import us.lump.envelope.server.rmi.Command;
+import us.lump.envelope.Command;
 import us.lump.envelope.server.security.Challenge;
 import us.lump.envelope.server.security.Credentials;
 import us.lump.envelope.server.security.Crypt;
@@ -27,7 +26,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Security.java,v 1.2 2007/07/26 06:52:06 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption

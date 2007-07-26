@@ -28,7 +28,7 @@ import java.util.prefs.Preferences;
  * Server Main Code.
  *
  * @author Troy Bowman
- * @version $Id: Server.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Server.java,v 1.2 2007/07/26 06:52:06 troy Exp $
  */
 
 public class Server {
@@ -69,9 +69,6 @@ public class Server {
     logger.info("Remote Controller implementation object created");
 
     Naming.rebind("//" + LOCAL_HOST + ":" + serverConfig.getProperty("server.rmi.port") + "/Controller", controller);
-//    Naming.rebind(
-//        "//" + LOCAL_HOST + ":" + serverConfig.getProperty("server.rmi.port") + "/us/lump/envelope/server/rmi/Controller",
-//        controller);
 
     logger.info("Bindings Finished, waiting for client requests.");
   }

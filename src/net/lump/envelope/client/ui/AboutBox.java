@@ -12,8 +12,6 @@ import java.util.ResourceBundle;
 public class AboutBox extends JFrame implements ActionListener {
   protected JLabel titleLabel, aboutLabel[];
   protected static int labelCount = 8;
-  protected static int aboutWidth = 280;
-  protected static int aboutHeight = 230;
   protected static int aboutTop = 200;
   protected static int aboutLeft = 350;
   protected Font titleFont, bodyFont;
@@ -50,9 +48,6 @@ public class AboutBox extends JFrame implements ActionListener {
     this.getContentPane().add(textPanel2, BorderLayout.CENTER);
     this.pack();
     this.setSize(20 + (int)this.getSize().getWidth(),  20 + (int)this.getSize().getHeight());
-
-//    this.setLocation(aboutLeft, aboutTop);
-//    this.setSize(aboutWidth, aboutHeight);
   }
 
   class SymWindow extends java.awt.event.WindowAdapter {

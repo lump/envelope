@@ -42,6 +42,8 @@ public class Preferences extends JDialog {
     testButton.addMouseListener(new MouseAdapter() {
       public void mousePressed(MouseEvent e) {
         super.mousePressed(e);
+        // reset the cache when we're explicitly checking
+        ServerSettings.getInstance().resetCache();
         areServerSettingsOk();
       }
     });

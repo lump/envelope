@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import us.lump.envelope.server.dao.DAO;
 import us.lump.envelope.server.dao.Security;
 import us.lump.envelope.server.exception.AuthenticationException;
+import us.lump.envelope.Command;
 
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
@@ -14,7 +15,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Control.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Control.java,v 1.2 2007/07/26 06:52:06 troy Exp $
  */
 public class Control extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);

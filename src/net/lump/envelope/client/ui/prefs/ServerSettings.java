@@ -147,6 +147,11 @@ public class ServerSettings {
     return message;
   }
 
+  public void resetCache() {
+    classServerValidated.setValid(false);
+    rmiServerValidated.setValid(false);
+  }
+
   // small object to maintain a cache of server validation
   private static class ValidCache {
     // 10 seconds
