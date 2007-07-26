@@ -1,11 +1,12 @@
 package us.lump.envelope.client.ui.prefs;
 
-import sun.net.www.content.text.PlainTextInputStream;
 import us.lump.envelope.client.ui.defs.Strings;
 import static us.lump.envelope.client.ui.prefs.ServerSettings.fields.*;
 
-import java.io.DataInputStream;
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.*;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -17,6 +18,9 @@ import java.util.prefs.Preferences;
 public class ServerSettings {
   private static ServerSettings singleton;
   Preferences prefs;
+
+  private static ValidCache classServerValidated = new ValidCache();
+  private static ValidCache rmiServerValidated = new ValidCache();
 
   enum fields {
     host_name,
@@ -74,36 +78,46 @@ public class ServerSettings {
   }
 
   public String testClassServer() {
-    ServerSettings ss = getInstance();
     String message = Strings.get("ok");
+    if (classServerValidated.isValid()) return message;
+
     try {
       InetAddress ia = InetAddress.getByName(getHostName());
 
       if (!ia.isReachable(2000))
-        message = MessageFormat.format(Strings.get("error.server_not_reachable"), ss.getHostName());
+        message = MessageFormat.format(Strings.get("error.server_not_reachable"), this.getHostName());
       else {
 
-        URL url = new URL(ss.getCodeBase().toString() + "ping");
-        URLConnection pingConnection = url.openConnection();
+        URL url = new URL(this.getCodeBase().toString() + "ping");
+        Socket socket = new Socket();
+        socket.connect(new InetSocketAddress(url.getHost(), url.getPort()), 1000);
+        BufferedReader r = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        PrintWriter p = new PrintWriter(socket.getOutputStream(), true);
+        p.write("GET ping\r\n\r\n");
+        p.flush();
 
-        pingConnection.connect();
-        byte[] content = new byte[pingConnection.getContentLength()];
-        DataInputStream out = new DataInputStream((PlainTextInputStream)pingConnection.getContent());
-        out.readFully(content);
-        String stringOut = new String(content);
-        if (!stringOut.matches("^pong\\s*$"))
-          message = MessageFormat.format(Strings.get("error.verify_class_server"), ss.getHostName());
+        boolean inHeader = true;
+        boolean verified = false;
+        String line;
+        while ((line = r.readLine()) != null) {
+          if (line.matches("^\\s*$")) { inHeader = false; continue; }
+          if (!inHeader && line.matches("^pong$")) { verified = true; break; }
+        }
+        socket.close();
+
+        if (verified) classServerValidated.setValid(true);
+        else message = MessageFormat.format(Strings.get("error.verify_class_server"), this.getHostName());
       }
     }
     catch (FileNotFoundException fnfe) {
-      message = MessageFormat.format(Strings.get("error.verify_class_server"), ss.getHostName());
+      message = MessageFormat.format(Strings.get("error.verify_class_server"), this.getHostName());
     }
     catch (UnknownHostException uhe) {
-      message = MessageFormat.format(Strings.get("error.unknown_host"), ss.getHostName());
+      message = MessageFormat.format(Strings.get("error.unknown_host"), this.getHostName());
     }
     catch (ConnectException ce) {
       message = MessageFormat.format(Strings.get("error.could_not_connect"),
-          ss.getHostName(), ss.getClassPort(), ce.getMessage());
+          this.getHostName(), this.getClassPort(), ce.getMessage());
     } catch (Exception e) {
       message = e.getClass().getSimpleName() + ": " + e.getMessage();
     }
@@ -112,6 +126,8 @@ public class ServerSettings {
 
   public String testRmiServer() {
     String message = Strings.get("ok");
+    if (rmiServerValidated.isValid()) return message;
+
     String controller = "Controller";
     String url = rmiNode() + controller;
     try {
@@ -126,6 +142,26 @@ public class ServerSettings {
     } catch (Exception e) {
       message = e.getClass().getSimpleName() + ": " + e.getMessage();
     }
+
+    if (message.equals(Strings.get("ok"))) rmiServerValidated.setValid(true);
     return message;
+  }
+
+  // small object to maintain a cache of server validation
+  private static class ValidCache {
+    // 10 seconds
+    private static final int CACHE = 10000;
+    private boolean valid = false;
+    private long stamp = 0;
+
+    public ValidCache setValid(boolean valid) {
+      this.valid = valid;
+      this.stamp = System.currentTimeMillis();
+      return this;
+    }
+
+    public boolean isValid() {
+      return (valid && this.stamp > (System.currentTimeMillis() - CACHE));
+    }
   }
 }
