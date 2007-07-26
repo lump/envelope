@@ -8,6 +8,7 @@
       <customJdkName value="" />
       <maximumHeapSize value="128" />
       <properties />
+      <executeOn event="beforeRun" target="client.dist.prepare" runConfigurationType="Application" runConfigurationName="Client" />
     </buildFile>
   </component>
   <component name="BuildJarProjectSettings">
@@ -302,6 +303,7 @@
   </component>
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/client/client.iml" filepath="$PROJECT_DIR$/client/client.iml" />
       <module fileurl="file://$PROJECT_DIR$/rmi-envelope.iml" filepath="$PROJECT_DIR$/rmi-envelope.iml" />
     </modules>
   </component>

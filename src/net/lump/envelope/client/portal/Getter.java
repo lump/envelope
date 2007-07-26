@@ -14,14 +14,14 @@ import java.net.MalformedURLException;
  * .
  *
  * @author troy
- * @version $Id: Getter.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Getter.java,v 1.2 2007/07/26 02:55:23 troy Exp $
  */
 public class Getter {
   public void get() {
     try {
       Controller controller = (Controller)Naming.lookup(ServerSettings.getInstance().rmiNode() + "Controller");
       String s = (String)controller.invoke(new Command(Cmd.ping));
-      System.out.println(s);
+      System.out.println("got this from ping command:" + s);
     } catch (NotBoundException e) {
       e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
     } catch (MalformedURLException e) {

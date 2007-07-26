@@ -2,32 +2,36 @@ package us.lump.envelope.client;
 
 import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationEvent;
+import us.lump.envelope.client.portal.Getter;
 import us.lump.envelope.client.ui.AboutBox;
-import us.lump.envelope.client.ui.MainContent;
 import us.lump.envelope.client.ui.Preferences;
 import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.client.portal.Getter;
 
 import javax.swing.*;
+import javax.swing.border.EtchedBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
+import java.awt.event.*;
 
 /**
  * .
  *
  * @author troy
- * @version $Id: Main.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Main.java,v 1.2 2007/07/26 02:55:23 troy Exp $
  */
 public class Main implements Runnable {
-  private JFrame frame;
+  private JFrame frame = new JFrame(Strings.get("envelope_budget"));
   private AboutBox aboutBox;
   private Preferences appPrefs;
   private java.util.prefs.Preferences prefs;
-  private MainContent mainContent = new MainContent();
   static final JMenuBar mainMenuBar = new JMenuBar();
+
+  //content
+  private JScrollPane treeScrollPane = new JScrollPane();
+  private JTree heirarchyTree = new JTree();
+  private JScrollPane tableScrollPane = new JScrollPane();
+  private JTable transactionTable = new JTable();
+  private JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeScrollPane, tableScrollPane);
+  private JLabel status = new JLabel(Strings.get("ready"));
 
   {
     prefs = java.util.prefs.Preferences.userNodeForPackage(this.getClass());
@@ -35,12 +39,23 @@ public class Main implements Runnable {
 
   public void run() {
 
-    frame = new JFrame(Strings.get("envelope_budget"));
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.setJMenuBar(mainMenuBar);
-    frame.add(mainContent,BorderLayout.CENTER);
+    splitPane.setResizeWeight(.3);
+    splitPane.getLeftComponent().setMinimumSize(new Dimension(100,0));
+    splitPane.getRightComponent().setMinimumSize(new Dimension(300,0));
+    splitPane.setContinuousLayout(true);
+    splitPane.setOneTouchExpandable(true);
 
-    mainContent.setVisible(true);
+    status.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
+
+    treeScrollPane.add(heirarchyTree);
+    tableScrollPane.add(transactionTable);
+
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);    
+    frame.setLayout(new BorderLayout());
+    frame.setJMenuBar(mainMenuBar);
+    frame.getContentPane().add(BorderLayout.CENTER, splitPane);
+    frame.getContentPane().add(BorderLayout.SOUTH, status);
+
 
     int shortcutKeyMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
     if (System.getProperty("os.name").toLowerCase().matches("^.*?mac os x.*$")) {
@@ -69,7 +84,7 @@ public class Main implements Runnable {
         }
 
         public void handleQuit(ApplicationEvent e) {
-          System.exit(0);
+          exit(0);
         }
       });
     } else {
@@ -88,11 +103,7 @@ public class Main implements Runnable {
           KeyEvent.VK_S, shortcutKeyMask)
       )));
       fileMenu.add(new JSeparator());
-//      fileMenu.add(new JMenuItem(new printActionClass(
-//          Strings.get("print"),
-//          KeyStroke.getKeyStroke(KeyEvent.VK_P, shortcutKeyMask)
-//      )));
-//      fileMenu.add(new JSeparator());
+
       fileMenu.add(new JMenuItem(new exitActionClass(
           Strings.get("exit"),
           KeyStroke.getKeyStroke(KeyEvent.VK_Q, shortcutKeyMask)
@@ -106,87 +117,30 @@ public class Main implements Runnable {
 
       mainMenuBar.add(fileMenu);
       mainMenuBar.add(helpMenu);
-      // the alternate way of doing things here
     }
 
-//        summary = new Summary();
-//        frame.getContentPane().add(summary, BorderLayout.CENTER);
-    frame.pack();
     frame.setMinimumSize(frame.getSize());
-
 
     Rectangle bounds = frame.getBounds();
     bounds.setSize(frame.getSize());
     frame.setBounds(bounds);
-
-/*    final Dimension minSize = frame.getSize();
-    frame.addComponentListener(new java.awt.event.ComponentAdapter() {
-      public void componentResized(ComponentEvent e) {
-
-        JFrame tmp = (JFrame)e.getSource();
-        if (tmp.getWidth()<minSize.width)
-          tmp.setSize(minSize.width,frame.getSize().height);
-        if (tmp.getHeight()<minSize.height)
-          tmp.setSize(frame.getSize().width,minSize.height);
-      }
-    });*/
-
-//    login = new Login();
-//    frame.getContentPane().add(login.getloginPanel(), BorderLayout.CENTER);
-
-    frame.setSize(getWindowSize());
-
-    frame.addWindowListener(new WindowListener() {
-      public void windowOpened(WindowEvent windowEvent) {
-      }
-
-      public void windowClosing(WindowEvent windowEvent) {
-        saveWindowSize(frame.getSize());
-      }
-
-      public void windowClosed(WindowEvent windowEvent) {
-      }
-
-      public void windowIconified(WindowEvent windowEvent) {
-      }
-
-      public void windowDeiconified(WindowEvent windowEvent) {
-      }
-
-      public void windowActivated(WindowEvent windowEvent) {
-      }
-
-      public void windowDeactivated(WindowEvent windowEvent) {
-      }
-    });
 
     System.setProperty("sun.rmi.loader.logLevel", "VERBOSE");
     System.setProperty("java.rmi.server.useCodebaseOnly", "true");
 
     appPrefs = new Preferences();
     appPrefs.setTitle(Strings.get("preferences"));
-//    appPrefs.setLocation(new Point(frame.getLocation().x + 20, frame.getLocation().y + 20));
 
     appPrefs.pack();
-    appPrefs.isClassServerValid();
     if (!appPrefs.areServerSettingsOk())
       appPrefs.setVisible(true);
     appPrefs.setSize(400, 400);
 
     //    frame.pack();
+    frame.validate();
+    frame.setSize(getWindowSize());
     frame.setVisible(true);
-//    try {
-//      Thread.currentThread().setContextClassLoader(RMIClassLoader.getClassLoader(ServerSettings.getInstance().getCodeBase().toString()));
-//      System.out.println(((Controller)Naming.lookup(ServerSettings.getInstance().rmiNode() + "Controller")).invoke(new Command(Cmd.ping)));
-
-      new Getter().get();
-//    } catch (MalformedURLException e) {
-//      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//    } catch (NotBoundException e) {
-//      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//    } catch (RemoteException e) {
-//      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-//    }
+    new Getter().get();
   }
 
   public void aboutBox() {
@@ -236,9 +190,13 @@ public class Main implements Runnable {
     }
 
     public void actionPerformed(ActionEvent e) {
-      saveWindowSize(frame.getSize());
-      System.exit(0);
+      Main.this.exit(0);
     }
+  }
+
+  void exit(int value) {
+    saveWindowSize(frame.getSize());
+    System.exit(value);
   }
 
   private Dimension getWindowSize() {

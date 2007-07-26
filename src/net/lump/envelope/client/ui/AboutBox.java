@@ -21,6 +21,7 @@ public class AboutBox extends JFrame implements ActionListener {
 
   public AboutBox() {
     super("");
+
     this.setResizable(false);
     SymWindow aSymWindow = new SymWindow();
     this.addWindowListener(aSymWindow);
@@ -45,12 +46,13 @@ public class AboutBox extends JFrame implements ActionListener {
       aboutLabel[i].setHorizontalAlignment(JLabel.CENTER);
       textPanel2.add(aboutLabel[i]);
     }
+
     this.getContentPane().add(textPanel2, BorderLayout.CENTER);
     this.pack();
+    this.setSize(20 + (int)this.getSize().getWidth(),  20 + (int)this.getSize().getHeight());
 
 //    this.setLocation(aboutLeft, aboutTop);
 //    this.setSize(aboutWidth, aboutHeight);
-    this.pack();
   }
 
   class SymWindow extends java.awt.event.WindowAdapter {

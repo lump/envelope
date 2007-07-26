@@ -12,7 +12,7 @@ import java.awt.*;
  * .
  *
  * @author troy
- * @version $Id: MainContent.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: MainContent.java,v 1.2 2007/07/26 02:55:23 troy Exp $
  */
 public class MainContent extends JPanel {
   private JPanel contentPanel;
