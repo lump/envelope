@@ -17,13 +17,13 @@ import java.util.prefs.Preferences;
  * .
  *
  * @author Troy Bowman
- * @version $Id: LoginSettings.java,v 1.1 2007/07/26 06:52:06 troy Exp $
+ * @version $Id: LoginSettings.java,v 1.2 2007/07/26 06:59:45 troy Exp $
  */
 public class LoginSettings {
 
   // these strings define preference keys.
   private static final String USER = "username";
-  private static final String ENCRYPTED_PASSWORD_SAVED = "saveEncrypedPassword?";
+  private static final String SHOULD_SAVE_ENCRYPTED_PASSWORD = "saveEncrypedPassword?";
   private static final String ENCRYPTED_PASSWORD = "encryptedPassword";
 
   // preferences reference, defined at instantiation of the singleton.
@@ -62,8 +62,8 @@ public class LoginSettings {
     return keyPair;
   }
 
-  public Boolean isPasswordSaved() {
-    return Boolean.valueOf(prefs.get(ENCRYPTED_PASSWORD_SAVED, Boolean.FALSE.toString()));
+  public Boolean shouldPasswordBeSaved() {
+    return Boolean.valueOf(prefs.get(SHOULD_SAVE_ENCRYPTED_PASSWORD, Boolean.FALSE.toString()));
   }
 
   public LoginSettings setPassword(String password)
@@ -74,8 +74,8 @@ public class LoginSettings {
     return this;
   }
 
-  public LoginSettings setPasswordSaved(Boolean flag) {
-    prefs.put(ENCRYPTED_PASSWORD_SAVED, flag.toString());
+  public LoginSettings setPasswordShouldBeSaved(Boolean flag) {
+    prefs.put(SHOULD_SAVE_ENCRYPTED_PASSWORD, flag.toString());
     // reset the password if we're setting it to false
     if (!flag) prefs.put(ENCRYPTED_PASSWORD, "");
     return this;
@@ -86,9 +86,14 @@ public class LoginSettings {
     return this;
   }
 
+  /**
+   * Get the challenge response if it is saved.
+   * @return String the encrypted password to auth with the server.
+   * @throws IllegalStateException if the encrypted password is not saved.
+   */
   public String challengeResponse() {
     String response = prefs.get(ENCRYPTED_PASSWORD, null);
-    if (!isPasswordSaved() || null == response || response.equals(""))
+    if (!shouldPasswordBeSaved() || null == response || "".equals(response))
       throw new IllegalStateException("Password is not saved.");
     else
       return response;
@@ -116,7 +121,7 @@ public class LoginSettings {
                     Encryption.decodeAsym(keyPair.getPrivate(), this.password)));
 
     // save the encrypted password to prefs if the user prefers to save it
-    if (isPasswordSaved()) prefs.put(ENCRYPTED_PASSWORD, response);
+    if (shouldPasswordBeSaved()) prefs.put(ENCRYPTED_PASSWORD, response);
     else prefs.put(ENCRYPTED_PASSWORD, null);
 
     return response;
