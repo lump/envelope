@@ -2,6 +2,7 @@ import org.apache.log4j.BasicConfigurator;
 import us.lump.envelope.client.ui.Preferences;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
+import us.lump.lib.util.EmacsKeyBindings;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -12,7 +13,7 @@ import java.rmi.server.RMIClassLoader;
  * The class that starts the client by bootstrapping from RMI.
  *
  * @author Troy Bowman
- * @version $Id: Envelope.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Envelope.java,v 1.2 2007/07/28 07:28:10 troy Exp $
  */
 
 public class Envelope {
@@ -22,6 +23,8 @@ public class Envelope {
       ClassNotFoundException,
       InstantiationException,
       IllegalAccessException {
+
+    EmacsKeyBindings.loadEmacsKeyBindings();
 
     Preferences prefs = new Preferences();
     prefs.setTitle(Strings.get("preferences"));
