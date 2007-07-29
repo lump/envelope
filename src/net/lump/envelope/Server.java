@@ -28,7 +28,7 @@ import java.util.prefs.Preferences;
  * Server Main Code.
  *
  * @author Troy Bowman
- * @version $Id: Server.java,v 1.2 2007/07/26 06:52:06 troy Exp $
+ * @version $Id: Server.java,v 1.3 2007/07/29 06:47:34 troy Exp $
  */
 
 public class Server {
@@ -36,6 +36,12 @@ public class Server {
   private static Properties serverConfig = null;
   private static String LOCAL_HOST = "localhost";
   private static final long START_TIME = System.currentTimeMillis();
+
+  public static final long DAY = 86400000L;
+  public static final long HOUR = 3600000L;
+  public static final long MINUTE = 60000L;
+  public static final long SECOND = 1000L;
+
 
   static {
     final java.net.InetAddress localMachine;
@@ -155,18 +161,22 @@ public class Server {
       // if we're in the foreground, listen for commands on the console
       if (fg) {
         Scanner s = new Scanner(System.in);
-        while (true) {
-          String line = s.nextLine();
-          // quit command
-          if (line.matches("^q(?:uit)?$")) {
-            System.err.println("Exiting...");
-            System.exit(0);
-          } else {
-            // an empty command will print uptime
-            System.out.println(MessageFormat.format("uptime: {0} since: {1,date,full} {1,time,full}",
-                interval(START_TIME, System.currentTimeMillis()), START_TIME));
+// Java 6 console
+//        Console console = System.console();
+//        if (console != null)
+          while (true) {
+            String line = s.nextLine();
+//            String line = console.readLine();
+            // quit command
+            if (line.matches("^q(?:uit)?$")) {
+              System.err.println("Exiting...");
+              System.exit(0);
+            } else {
+              // default will print uptime
+              System.out.println(MessageFormat.format("uptime: {0} since: {1,date,full} {1,time,full}",
+                      interval(START_TIME, System.currentTimeMillis()), START_TIME));
+            }
           }
-        }
       }
     }
     catch (java.rmi.UnknownHostException uhe) {
@@ -196,10 +206,10 @@ public class Server {
     long interval = (end - start);
 
     for (Span s : new Span[]{
-        new Span("d", 86400000L), // day
-        new Span("h", 3600000L),  // hour
-        new Span("m", 60000L),    // minute
-        new Span("s", 1000L),     // second
+            new Span("d", DAY),
+            new Span("h", HOUR),
+            new Span("m", MINUTE),
+            new Span("s", SECOND)
     }) {
       long unit = (interval - (interval % s.millis)) / s.millis;
       interval -= unit * s.millis;
