@@ -1,5 +1,5 @@
 --
--- $Id: bootstrap.sql,v 1.2 2007/07/26 00:50:38 troy Exp $
+-- $Id: bootstrap.sql,v 1.3 2007/07/30 04:25:06 troy Exp $
 --
 
 drop table if exists users;
@@ -18,6 +18,7 @@ create table budgets (
 )ENGINE=INNODB;
 insert into budgets values(0,null,'Test Budget');
 update budgets set id = 0;
+alter table budgets auto_increment = 0;
 
 create table incomes (
   `id` int not null auto_increment primary key,
@@ -31,13 +32,14 @@ create table incomes (
 )ENGINE=INNODB;
 insert into incomes values(null,null,0,'Guest''s Main Job','Semimonthly Payday',now());
 update incomes set id=0;
+alter table incomes auto_increment = 0;
 
 create table accounts (
   `id` int NOT NULL auto_increment primary key,
   `stamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
   `budget` int not null,
   `name` varchar(64) not null,
-  `type` enum('Debit','Credit') not null default 'Debit',
+  `type` enum('Debit','Credit','Loan') not null default 'Debit',
   `rate` double not null default 0.0,
   `limit` double not null default 0.0,
   unique index name_type (`name`,`type`),
@@ -45,6 +47,7 @@ create table accounts (
 )ENGINE=INNODB;
 insert into accounts values (0, null, 0, 'Guest''s Checking','Debit', '0.0', '0.0');
 update accounts set id = 0;
+alter table accounts auto_increment = 0;
 
 create table categories (
   `id` int NOT NULL auto_increment primary key,
@@ -59,6 +62,7 @@ create table categories (
 )ENGINE=INNODB;
 insert into categories values(null, null, 0, 'Tithing' , '.1', 'ppp', 0);
 update categories set id = 0;
+alter table categories auto_increment = 0;
 insert into categories values(null, null, 0, 'Water',22.5,'fpm',0);
 insert into categories values(null, null, 0, 'Travel',0,'ppp',0);
 insert into categories values(null, null, 0, 'Subscriptions',2,'fpp',0);
@@ -104,6 +108,7 @@ create table transactions (
 )ENGINE=INNODB;
 insert into transactions values (null, null, now(), 'Beginning Balance', 'Adjustment','Starting Balance', 0);
 update transactions set id = 0;
+alter table transactions auto_increment = 0;
 insert into transactions values (1, null, now(), 'Beginning Balance', 'Adjustment','Starting Balance', 0);
 
 
@@ -135,6 +140,8 @@ create table `users` (
   constraint users_budget foreign key (budget) references budgets(id) on update cascade on delete restrict
 )ENGINE=INNODB;
 insert into users values (null, null,0,'admin','Admin Account','$1$INZEtT3S$D81Kp34n4Oea5Rs97lPOq0',7,NULL);
+update users set id = 0;
+alter table users auto_increment = 0;
 insert into users values (null, null,0,'guest','Guest Account','$1$GOyqcoAk$KTE1zfxeTkoXJTcrFKyFi0',3,NULL);
 
 grant all on envelope.* to budget identified by '1qaz2wsx';
