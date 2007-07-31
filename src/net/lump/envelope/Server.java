@@ -28,7 +28,7 @@ import java.util.prefs.Preferences;
  * Server Main Code.
  *
  * @author Troy Bowman
- * @version $Id: Server.java,v 1.3 2007/07/29 06:47:34 troy Exp $
+ * @version $Id: Server.java,v 1.4 2007/07/31 03:24:38 troy Exp $
  */
 
 public class Server {
@@ -36,12 +36,6 @@ public class Server {
   private static Properties serverConfig = null;
   private static String LOCAL_HOST = "localhost";
   private static final long START_TIME = System.currentTimeMillis();
-
-  public static final long DAY = 86400000L;
-  public static final long HOUR = 3600000L;
-  public static final long MINUTE = 60000L;
-  public static final long SECOND = 1000L;
-
 
   static {
     final java.net.InetAddress localMachine;
@@ -57,18 +51,18 @@ public class Server {
 
   // Constructor
   private Server()
-      throws RemoteException,
-      MalformedURLException,
-      NotBoundException {
+          throws RemoteException,
+          MalformedURLException,
+          NotBoundException {
 
     System.getProperties().put(
-        "java.rmi.server.codebase", "http://" + LOCAL_HOST + ":" + serverConfig.getProperty("server.rmi.port") + "/");
+            "java.rmi.server.codebase", "http://" + LOCAL_HOST + ":" + serverConfig.getProperty("server.rmi.port") + "/");
 
     LocateRegistry.createRegistry(Integer.parseInt(serverConfig.getProperty("server.rmi.port")));
 
     logger.info(MessageFormat.format("Registry created on host computer {0} on port {1}",
-        LOCAL_HOST,
-        serverConfig.getProperty("server.rmi.port"))
+            LOCAL_HOST,
+            serverConfig.getProperty("server.rmi.port"))
     );
 
     Controller controller = new Control();
@@ -81,6 +75,7 @@ public class Server {
 
   /**
    * The main method.
+   *
    * @param args command line arguments.
    */
   public static void main(String[] args) {
@@ -95,9 +90,9 @@ public class Server {
         System.out.println("--reset: reset everything to defaults.");
         for (Class c : confClasses) {
           System.out.format("--%s-conf: reconfigure %s.%s",
-              c.getSimpleName().toLowerCase(), c.getSimpleName(), System.getProperty("line.separator"));
+                  c.getSimpleName().toLowerCase(), c.getSimpleName(), System.getProperty("line.separator"));
           System.out.format("--%s-reset: reset %s to defaults, forcing reconfigure%s",
-              c.getSimpleName().toLowerCase(), c.getSimpleName(), System.getProperty("line.separator"));
+                  c.getSimpleName().toLowerCase(), c.getSimpleName(), System.getProperty("line.separator"));
         }
         System.exit(0);
       }
@@ -119,10 +114,10 @@ public class Server {
     if (null != rootlogger) {
       if (fg && !rootlogger.matches("^.*?console.*$"))
         Preferences.userNodeForPackage(Logging.class).put("log4j.rootLogger",
-            rootlogger + ", console");
+                rootlogger + ", console");
       else if (!fg && rootlogger.matches("^.*?console.*$"))
         Preferences.userNodeForPackage(Logging.class).put("log4j.rootLogger",
-            rootlogger.replaceAll("^(.*?),?\\s+console(.*)$", "$1$2"));
+                rootlogger.replaceAll("^(.*?),?\\s+console(.*)$", "$1$2"));
     }
 
     // initialize the server config
@@ -147,7 +142,7 @@ public class Server {
     try {
       new ClassServer(Integer.parseInt(serverConfig.getProperty("server.http.classloader.port")));
       logger.info(MessageFormat.format("ClassServer started on port {0}",
-          serverConfig.getProperty("server.http.classloader.port")));
+              serverConfig.getProperty("server.http.classloader.port")));
     }
     catch (IOException e) {
       logger.error("Unable to start ClassServer: " + e.getMessage());
@@ -164,26 +159,26 @@ public class Server {
 // Java 6 console
 //        Console console = System.console();
 //        if (console != null)
-          while (true) {
-            String line = s.nextLine();
+        while (true) {
+          String line = s.nextLine();
 //            String line = console.readLine();
-            // quit command
-            if (line.matches("^q(?:uit)?$")) {
-              System.err.println("Exiting...");
-              System.exit(0);
-            } else {
-              // default will print uptime
-              System.out.println(MessageFormat.format("uptime: {0} since: {1,date,full} {1,time,full}",
-                      interval(START_TIME, System.currentTimeMillis()), START_TIME));
-            }
+          // quit command
+          if (line.matches("^q(?:uit)?$")) {
+            System.err.println("Exiting...");
+            System.exit(0);
+          } else {
+            // default will print uptime
+            System.out.println(MessageFormat.format("uptime: {0} since: {1,date,full} {1,time,full}",
+                    interval(START_TIME, System.currentTimeMillis()), START_TIME));
           }
+        }
       }
     }
     catch (java.rmi.UnknownHostException uhe) {
       logger.error(
-          MessageFormat.format(
-              "The host computer name you have specified, {0} does not match your real computer name.",
-              LOCAL_HOST)
+              MessageFormat.format(
+                      "The host computer name you have specified, {0} does not match your real computer name.",
+                      LOCAL_HOST)
       );
     }
     catch (RemoteException re) {
@@ -205,12 +200,7 @@ public class Server {
     String out = "";
     long interval = (end - start);
 
-    for (Span s : new Span[]{
-            new Span("d", DAY),
-            new Span("h", HOUR),
-            new Span("m", MINUTE),
-            new Span("s", SECOND)
-    }) {
+    for (Span s : Span.DHMS) {
       long unit = (interval - (interval % s.millis)) / s.millis;
       interval -= unit * s.millis;
       if (unit > 0L) {
@@ -223,6 +213,12 @@ public class Server {
   }
 
   static class Span {
+    public static final Span DAY = new Span("d", 86400000L);
+    public static final Span HOUR = new Span("h", 3600000L);
+    public static final Span MINUTE = new Span("m", 60000L);
+    public static final Span SECOND = new Span("s", 1000L);
+    public static final Span[] DHMS = new Span[]{Span.DAY, Span.HOUR, Span.MINUTE, Span.SECOND};
+
     public String abbr;
     public long millis;
 
