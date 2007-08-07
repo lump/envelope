@@ -11,13 +11,14 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.prefs.Preferences;
 
 /**
- * .
+ * Singleton for keeping track of login information.
  *
  * @author Troy Bowman
- * @version $Id: LoginSettings.java,v 1.2 2007/07/26 06:59:45 troy Exp $
+ * @version $Id: LoginSettings.java,v 1.3 2007/08/07 01:08:03 troy Exp $
  */
 public class LoginSettings {
 
@@ -49,7 +50,7 @@ public class LoginSettings {
     }
   }
 
-  public LoginSettings getInstance() {
+  public static LoginSettings getInstance() {
     if (singleton == null) singleton = new LoginSettings();
     return singleton;
   }
@@ -101,7 +102,7 @@ public class LoginSettings {
 
   public String challengeResponse(Challenge challenge, String password)
           throws NoSuchAlgorithmException, BadPaddingException, IOException, IllegalBlockSizeException,
-          InvalidKeyException, NoSuchPaddingException {
+          InvalidKeyException, NoSuchPaddingException, InvalidKeySpecException {
     setPassword(password);
     return challengeResponse(challenge);
   }

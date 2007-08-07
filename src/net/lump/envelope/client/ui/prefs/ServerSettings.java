@@ -22,6 +22,11 @@ public class ServerSettings {
   private static ValidCache classServerValidated = new ValidCache();
   private static ValidCache rmiServerValidated = new ValidCache();
 
+  public static final String DEFAULT_RMI_PORT = "7041";
+  public static final String DEFAULT_CLASS_PORT = "7042";
+  public static final String CODEBASE = "java.rmi.server.codebase";
+  public static final String RMINODE = "java.rmi.server.rminode";
+
   enum fields {
     host_name,
     rmi_port,
@@ -46,7 +51,7 @@ public class ServerSettings {
   }
 
   public String getRmiPort() {
-    return prefs.get(rmi_port.name(), "7041");
+    return prefs.get(rmi_port.name(), DEFAULT_RMI_PORT);
   }
 
   public void setRmiPort(final String rmiPort) {
@@ -54,7 +59,7 @@ public class ServerSettings {
   }
 
   public String getClassPort() {
-    return prefs.get(class_port.name(), "7042");
+    return prefs.get(class_port.name(), DEFAULT_CLASS_PORT);
   }
 
   public void setClassPort(final String classPort) {
@@ -63,17 +68,17 @@ public class ServerSettings {
 
   public URL getCodeBase() throws MalformedURLException {
     URL url = new URL("http://" + getHostName() + ":" + getClassPort() + "/");
-    if (System.getProperties().get("java.rmi.server.codebase") == null
-        || !System.getProperties().get("java.rmi.server.codebase").equals(url.toString()))
-      System.getProperties().put("java.rmi.server.codebase", url.toString());
+    if (System.getProperties().get(CODEBASE) == null
+        || !System.getProperties().get(CODEBASE).equals(url.toString()))
+      System.getProperties().put(CODEBASE, url.toString());
     return url;
   }
 
   public String rmiNode() {
     String url = "rmi://" + getHostName() + ":" + getRmiPort() + "/";
-    if (System.getProperties().get("java.rmi.server.rminode") == null
-        || !System.getProperties().get("java.rmi.server.rminode").equals(url))
-      System.getProperties().put("java.rmi.server.rminode", url);
+    if (System.getProperties().get(RMINODE) == null
+        || !System.getProperties().get(RMINODE).equals(url))
+      System.getProperties().put(RMINODE, url);
     return url;
   }
 
@@ -116,7 +121,7 @@ public class ServerSettings {
       message = MessageFormat.format(Strings.get("error.unknown_host"), this.getHostName());
     }
     catch (ConnectException ce) {
-      message = MessageFormat.format(Strings.get("error.could_not_connect"),
+      message = MessageFormat.format(Strings.get("error.could_not_connect_on_port"),
           this.getHostName(), this.getClassPort(), ce.getMessage());
     } catch (Exception e) {
       message = e.getClass().getSimpleName() + ": " + e.getMessage();
@@ -155,7 +160,7 @@ public class ServerSettings {
   // small object to maintain a cache of server validation
   private static class ValidCache {
     // 10 seconds
-    private static final int CACHE = 10000;
+    private static final int CACHE = 3000;
     private boolean valid = false;
     private long stamp = 0;
 

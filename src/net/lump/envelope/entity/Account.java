@@ -16,13 +16,13 @@ import java.util.List;
  * An account object.
  *
  * @author Troy Bowman
- * @version $Id: Account.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Account.java,v 1.2 2007/08/07 01:08:03 troy Exp $
  */
 @Entity
 @Table(name = "accounts")
 public class Account implements Identifiable {
 
-//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.1 $".replaceAll("\\D", ""));
+//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.2 $".replaceAll("\\D", ""));
 
   /** The type of an Account. */
   public static enum AccountType {
@@ -96,7 +96,7 @@ public class Account implements Identifiable {
   }
 
   @OneToMany(mappedBy = "account", fetch = javax.persistence.FetchType.EAGER)
-  @Fetch(value = FetchMode.SELECT)
+  @Fetch(value = FetchMode.SUBSELECT)
   public List<Category> getCategories() {
     return this.categories;
   }

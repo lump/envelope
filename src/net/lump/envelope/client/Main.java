@@ -2,7 +2,7 @@ package us.lump.envelope.client;
 
 import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationEvent;
-import us.lump.envelope.client.portal.Getter;
+import us.lump.envelope.client.portal.SecurityPortal;
 import us.lump.envelope.client.ui.AboutBox;
 import us.lump.envelope.client.ui.Preferences;
 import us.lump.envelope.client.ui.defs.Strings;
@@ -14,12 +14,15 @@ import java.awt.event.*;
 import java.net.MalformedURLException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.security.InvalidKeyException;
 
 /**
  * .
  *
  * @author troy
- * @version $Id: Main.java,v 1.3 2007/07/26 06:52:06 troy Exp $
+ * @version $Id: Main.java,v 1.4 2007/08/07 01:08:03 troy Exp $
  */
 public class Main implements Runnable {
   private JFrame frame = new JFrame(Strings.get("envelope_budget"));
@@ -36,7 +39,14 @@ public class Main implements Runnable {
   private JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeScrollPane, tableScrollPane);
   private JLabel status = new JLabel(Strings.get("ready"));
 
-  {
+  private static Main singleton;
+
+  public static Main getInstance() {
+    if (singleton == null) singleton = new Main();
+    return singleton;
+  }
+
+  private Main() {
     prefs = java.util.prefs.Preferences.userNodeForPackage(this.getClass());
   }
 
@@ -139,20 +149,22 @@ public class Main implements Runnable {
       appPrefs.setVisible(true);
     appPrefs.setSize(400, 400);
 
+    // test login settings, trigger log in
+    new SecurityPortal().authedPing();
+
+
     //    frame.pack();
     frame.validate();
     frame.setSize(getWindowSize());
     frame.setVisible(true);
-    try {
-      new Getter().get();
-    } catch (MalformedURLException e) {
-      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-    } catch (NotBoundException e) {
-      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-    } catch (RemoteException e) {
-      e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-    }
+    new SecurityPortal().rawPing();
+    new SecurityPortal().authedPing();
   }
+
+  public Preferences getPreferences() {
+    return appPrefs;
+  }
+
 
   public void aboutBox() {
     if (aboutBox == null) aboutBox = new AboutBox();

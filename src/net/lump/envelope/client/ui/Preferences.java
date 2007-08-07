@@ -80,6 +80,20 @@ public class Preferences extends JDialog {
     });
   }
 
+  public void selectTab(String title) {
+    for (int x = 0; x < prefsTabs.getTabCount(); x++) {
+      if (prefsTabs.getTitleAt(x).equals(title)) {
+        selectTab(x);
+        break;
+      }
+    }
+  }
+
+  public void selectTab(int index) {
+    if (prefsTabs.getSelectedIndex() != index)
+      prefsTabs.setSelectedIndex(index);
+  }
+
   public boolean areServerSettingsOk() {
     if (isClassServerValid() && isRmiServerValid()) {
       cancelButton.setEnabled(false);

@@ -19,16 +19,16 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class Command implements Serializable {
   /**
    * An application facet.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.1 $
+   * @version $Revision: 1.2 $
    */
-  public enum Facet {
+  public enum Dao {
     Security,
     Action,
     Report
@@ -38,7 +38,7 @@ public class Command implements Serializable {
    * A parameter.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.1 $
+   * @version $Revision: 1.2 $
    */
   public enum Param {
     public_key(String.class),
@@ -73,41 +73,42 @@ public class Command implements Serializable {
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.1 $
+   * @version $Revision: 1.2 $
    */
   public enum Name {
 
     // diag
-    ping(false, Facet.Action),
+    ping(false, Dao.Action),
+    authedPing(Dao.Action),
 
     // security
-    getChallenge(false, Facet.Security, Param.user_name, Param.public_key),
-    authChallengeResponse(false, Facet.Security, Param.user_name, Param.challenge_response),
+    getChallenge(false, Dao.Security, Param.user_name, Param.public_key),
+    authChallengeResponse(false, Dao.Security, Param.user_name, Param.challenge_response),
 
     // transaction
-    listTransactions(Facet.Action, Param.year),
+    listTransactions(Dao.Action, Param.year),
 
     // report
-    getCategoryBalance(Facet.Report, Param.category, Param.year, Param.reconciled),
-    getCategoryBalances(Facet.Report, Param.year, Param.reconciled),
-    getAccountBalance(Facet.Report, Param.account, Param.year, Param.reconciled),
-    getAccountBalances(Facet.Report, Param.year, Param.reconciled),
+    getCategoryBalance(Dao.Report, Param.category, Param.year, Param.reconciled),
+    getCategoryBalances(Dao.Report, Param.year, Param.reconciled),
+    getAccountBalance(Dao.Report, Param.account, Param.year, Param.reconciled),
+    getAccountBalances(Dao.Report, Param.year, Param.reconciled),
 
     // end list
     ;
 
-    private final Facet facet;
+    private final Dao dao;
     private final ArrayList<Param> params = new ArrayList<Param>();
     private final Boolean sessionRequired;
 
-    Name(boolean sessionRequired, Facet facet, Param... params) {
+    Name(boolean sessionRequired, Dao dao, Param... params) {
       for (Param p : params) this.params.add(p);
-      this.facet = facet;
+      this.dao = dao;
       this.sessionRequired = sessionRequired;
     }
 
-    Name(Facet facet, Param... params) {
-      this(true, facet, params);
+    Name(Dao dao, Param... params) {
+      this(true, dao, params);
     }
 
     /**
@@ -115,8 +116,8 @@ public class Command implements Serializable {
      *
      * @return Facet
      */
-    public Facet getFacet() {
-      return facet;
+    public Dao getFacet() {
+      return dao;
     }
 
     /**

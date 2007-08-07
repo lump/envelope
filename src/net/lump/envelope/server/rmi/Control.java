@@ -15,7 +15,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Control.java,v 1.2 2007/07/26 06:52:06 troy Exp $
+ * @version $Id: Control.java,v 1.3 2007/08/07 01:08:03 troy Exp $
  */
 public class Control extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -58,7 +58,7 @@ public class Control extends UnicastRemoteObject implements Controller {
           throw new RemoteException("error in session validation", e);
         }
 
-        // we can actually dispatc
+        // session management should be done now, so we can now dispatch
         returnList.add(dispatch(command));
       }
 
@@ -73,9 +73,10 @@ public class Control extends UnicastRemoteObject implements Controller {
   }
 
   private Object dispatch(Command command) throws RemoteException {
-
     // the dao object
     DAO dao = null;
+    // start time
+    long start = System.currentTimeMillis();
 
     try {
       // parameter names
@@ -119,6 +120,9 @@ public class Control extends UnicastRemoteObject implements Controller {
     finally {
       // close the session
       dao.close();
+      logger.debug(command.getCmd().name() + " "
+              + (command.getCredentials() != null ? command.getCredentials().getUsername() + " " : "")
+              + ((System.currentTimeMillis() - start)/1000D) + "s");
     }
   }
 }

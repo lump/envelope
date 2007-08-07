@@ -61,6 +61,7 @@ public class TestSecurity extends TestCase {
 
       List<Identifiable> list = (List<Identifiable>)controller.invoke(cmd);
       System.out.println(list.size());
+      System.out.println(controller.invoke(new Command(Command.Name.authedPing).sign(user, kp.getPrivate())));
     } catch (Exception e) {
       //success
       Throwable t = e;

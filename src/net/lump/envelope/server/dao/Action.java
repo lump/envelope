@@ -10,13 +10,12 @@ import java.util.List;
  * A DAO for Transactions.
  *
  * @author Troy Bowman
- * @version $Id: Action.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Action.java,v 1.2 2007/08/07 01:08:03 troy Exp $
  */
 public class Action extends DAO {
 
-  public String ping() {
-    return "pong";
-  }
+  public Boolean authedPing() { return ping(); }
+  public Boolean ping() { return true; }
 
   /**
    * Lists all transactions for a given year.
