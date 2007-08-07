@@ -22,6 +22,7 @@ public class ServerSettings {
   private static ValidCache classServerValidated = new ValidCache();
   private static ValidCache rmiServerValidated = new ValidCache();
 
+  public static final String CONTROLLER = "Controller";
   public static final String DEFAULT_RMI_PORT = "7041";
   public static final String DEFAULT_CLASS_PORT = "7042";
   public static final String CODEBASE = "java.rmi.server.codebase";
@@ -82,6 +83,10 @@ public class ServerSettings {
     return url;
   }
 
+  public String rmiController() {
+    return rmiNode() + CONTROLLER;
+  }
+
   public String testClassServer() {
     String message = Strings.get("ok");
     if (classServerValidated.isValid()) return message;
@@ -133,15 +138,14 @@ public class ServerSettings {
     String message = Strings.get("ok");
     if (rmiServerValidated.isValid()) return message;
 
-    String controller = "Controller";
-    String url = rmiNode() + controller;
+    String url = rmiController();
     try {
       Thread.currentThread().setContextClassLoader(RMIClassLoader.getClassLoader(getCodeBase().toString()));
       Naming.lookup(url);
     } catch (MalformedURLException e) {
       message = MessageFormat.format(Strings.get("error.bad_url"), url);
     } catch (NotBoundException e) {
-      message = MessageFormat.format(Strings.get("error.bad_rmi_name"), controller);
+      message = MessageFormat.format(Strings.get("error.bad_rmi_name"), CONTROLLER);
     } catch (RemoteException e) {
       message = MessageFormat.format(Strings.get("error.remote_exception"), e.getMessage());
     } catch (Exception e) {
