@@ -24,7 +24,7 @@ import org.apache.log4j.Logger;
  * All portals should subclass this class, as this provides a single point of exit/entry to the server.
  *
  * @author Troy Bowman
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 
 abstract class Portal {
@@ -32,10 +32,13 @@ abstract class Portal {
   Logger logger;
   JFrame frame;
 
-  Portal() {
+  {
     this.logger = Logger.getLogger(this.getClass());
+  }
+
+  Portal() {
     try {
-      this.controller = (Controller) Naming.lookup(ServerSettings.getInstance().rmiNode() + "Controller");
+      this.controller = (Controller) Naming.lookup(ServerSettings.getInstance().rmiController());
     } catch (Exception e) {
       logger.error(e);
       Preferences p = Main.getInstance().getPreferences();
