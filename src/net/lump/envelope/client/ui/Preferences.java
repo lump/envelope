@@ -29,6 +29,16 @@ public class Preferences extends JDialog {
   private JTextPane classStatusMessage;
   private JTextPane rmiStatusMessage;
   private JButton cancelButton;
+  private JPanel serverTab;
+  private JPanel serverFormPanel;
+  private JPanel classServerStatusPanel;
+  private JPanel rmiServerStatusPanel;
+  private JPanel testButtonPanel;
+  private JPanel loginTab;
+  private JTextField textField1;
+  private JPasswordField passwordField1;
+  private JCheckBox rememberPasswordCheckBox;
+  private JButton logInButton;
   private ServerSettings ssData = ServerSettings.getInstance();
   private Boolean classServerValid = null;
   private Boolean rmiServerValid = null;
