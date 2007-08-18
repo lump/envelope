@@ -26,7 +26,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.4 2007/08/18 04:49:44 troy Exp $
+ * @version $Id: Security.java,v 1.5 2007/08/18 08:56:20 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption
@@ -39,7 +39,8 @@ public class Security extends DAO {
     // cache the username in memory for a few seconds or so for those fast
     // queries.
     cache = new Cache("users", 32, false, false, 5, 10);
-    CacheManager.getInstance().addCache(cache);
+    CacheManager.create(Security.class.getResource("ehcache.xml"))
+        .addCache(cache);
   }
 
   public Security() {
@@ -76,15 +77,15 @@ public class Security extends DAO {
 
   public Boolean authChallengeResponse(String username,
                                        byte[] challengeResponse)
-          throws BadPaddingException, NoSuchAlgorithmException, IOException,
-          IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException {
+      throws BadPaddingException, NoSuchAlgorithmException, IOException,
+      IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException {
     Boolean authed;
 
     User user = getUser(username);
 
     String hash = new String(Encryption.decodeAsym(
-            serverKeyPair.getPrivate(),
-            challengeResponse), Encryption.ENCODING);
+        serverKeyPair.getPrivate(),
+        challengeResponse), Encryption.ENCODING);
 
     if (hash.equals(user.getCryptPassword())) {
       // update the caceh
@@ -93,34 +94,34 @@ public class Security extends DAO {
       // we're authed.
       authed = true;
       logger.info("password auth for \""
-              + username
-              + "\" successfully verfied");
+                  + username
+                  + "\" successfully verfied");
     } else {
       logger.warn("password auth for \""
-              + username
-              + "\" FAILED");
+                  + username
+                  + "\" FAILED");
       throw new RuntimeException(
-              new AuthenticationException("Authentication Failed."));
+          new AuthenticationException("Authentication Failed."));
     }
 
     return authed;
   }
 
   public Boolean validateSession(Command c)
-          throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
-          SignatureException, InvalidKeyException {
+      throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
+      SignatureException, InvalidKeyException {
     Credentials credentials = c.getCredentials();
 
     boolean authed =
-            c.verify(getUser(credentials.getUsername()).getPublicKey());
+        c.verify(getUser(credentials.getUsername()).getPublicKey());
     if (authed) {
       logger.debug("signature for \""
-              + credentials.getUsername()
-              + "\" successfully verfied");
+                   + credentials.getUsername()
+                   + "\" successfully verfied");
     } else {
       logger.warn("signature for \""
-              + credentials.getUsername()
-              + "\" FAILED");
+                  + credentials.getUsername()
+                  + "\" FAILED");
       throw new RuntimeException(new SessionException("Invalid Session"));
     }
 
@@ -128,9 +129,9 @@ public class Security extends DAO {
   }
 
   public Challenge getChallenge(String username, PublicKey publicKey)
-          throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
-          BadPaddingException, IllegalBlockSizeException, InvalidKeyException,
-          NoSuchPaddingException {
+      throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
+      BadPaddingException, IllegalBlockSizeException, InvalidKeyException,
+      NoSuchPaddingException {
     logger.debug("challenge asked for \"" + username + "\"");
     User user = getUser(username);
     // set the new public key
@@ -142,9 +143,9 @@ public class Security extends DAO {
     commit();
 
     return new Challenge(
-            serverKeyPair.getPublic(),
-            publicKey,
-            Crypt.yankSalt(user.getCryptPassword())
+        serverKeyPair.getPublic(),
+        publicKey,
+        Crypt.yankSalt(user.getCryptPassword())
     );
   }
 
@@ -159,7 +160,7 @@ public class Security extends DAO {
       List<User> users = list(User.class, Restrictions.eq("name", username));
 
       if (users.isEmpty()) throw
-              new RuntimeException("User " + username + " is invalid.");
+          new RuntimeException("User " + username + " is invalid.");
       user = users.get(0);
       cache.put(new Element(username, users.get(0)));
     }
