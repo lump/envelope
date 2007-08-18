@@ -17,7 +17,7 @@ public class Base64 {
    * @param a to be decoded
    * @return String
    */
-  private static String byteArrayToBase64(byte[] a) {
+  public static String byteArrayToBase64(byte[] a) {
     int aLen = a.length;
     int numFullGroups = aLen / 3;
     int numBytesInPartialGroup = aLen - 3 * numFullGroups;
