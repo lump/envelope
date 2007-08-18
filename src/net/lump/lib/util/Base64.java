@@ -4,7 +4,7 @@ package us.lump.lib.util;
  * Static methods for translating Base64 encoded strings to byte arrays
  * and vice-versa.
  *
- * @author Josh Bloch
+ * @author Josh Bloch, cleaned up by Troy Bowman
  * @version 1.5, 12/19/03
  * @see java.util.prefs.Base64
  * @since 1.4
@@ -13,6 +13,9 @@ public class Base64 {
   /**
    * Translates the specified byte array into a Base64 string as per
    * Preferences.put(byte[]).
+   *
+   * @param a to be decoded
+   * @return String
    */
   private static String byteArrayToBase64(byte[] a) {
     int aLen = a.length;
@@ -43,7 +46,7 @@ public class Base64 {
         result.append("==");
       } else {
         // assert numBytesInPartialGroup == 2;
-        int byte1 = a[inCursor++] & 0xff;
+        int byte1 = a[inCursor] & 0xff;
         result.append(intToAlpha[(byte0 << 4) & 0x3f | (byte1 >> 4)]);
         result.append(intToAlpha[(byte1 << 2) & 0x3f]);
         result.append('=');
@@ -71,8 +74,10 @@ public class Base64 {
    * Translates the specified Base64 string (as per Preferences.get(byte[]))
    * into a byte array.
    *
-   * @throw IllegalArgumentException if <tt>s</tt> is not a valid Base64
-   * string.
+   * @param s to be encoded
+   * @return byte[]
+   * @throws IllegalArgumentException if <tt>s</tt> is not a valid Base64
+   *                                  string.
    */
   public static byte[] base64ToByteArray(String s) {
     byte[] alphaToInt = base64ToInt;
@@ -112,8 +117,8 @@ public class Base64 {
       result[outCursor++] = (byte) ((ch0 << 2) | (ch1 >> 4));
 
       if (missingBytesInLastGroup == 1) {
-        int ch2 = base64toInt(s.charAt(inCursor++), alphaToInt);
-        result[outCursor++] = (byte) ((ch1 << 4) | (ch2 >> 2));
+        int ch2 = base64toInt(s.charAt(inCursor), alphaToInt);
+        result[outCursor] = (byte) ((ch1 << 4) | (ch2 >> 2));
       }
     }
     // assert inCursor == s.length()-missingBytesInLastGroup;
@@ -125,8 +130,11 @@ public class Base64 {
    * Translates the specified character, which is assumed to be in the
    * "Base 64 Alphabet" into its equivalent 6-bit positive integer.
    *
-   * @throw IllegalArgumentException or ArrayOutOfBoundsException if
-   * c is not in the Base64 Alphabet.
+   * @param c          char
+   * @param alphaToInt array
+   * @return int
+   * @throws IllegalArgumentException or ArrayOutOfBoundsException if
+   *                                  c is not in the Base64 Alphabet.
    */
   private static int base64toInt(char c, byte[] alphaToInt) {
     int result = alphaToInt[c];
@@ -152,6 +160,7 @@ public class Base64 {
           35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51
   };
 
+  @SuppressWarnings({"JavaDoc"})
   public static void main(String args[]) {
     int numRuns = Integer.parseInt(args[0]);
     int numBytes = Integer.parseInt(args[1]);
