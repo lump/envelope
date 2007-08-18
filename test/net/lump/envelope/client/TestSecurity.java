@@ -7,12 +7,10 @@ import us.lump.envelope.Command.Param;
 import us.lump.envelope.TestSuite;
 import us.lump.envelope.client.portal.SecurityPortal;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
-import us.lump.envelope.entity.Identifiable;
 import us.lump.envelope.server.rmi.Controller;
 import us.lump.lib.util.Encryption;
 
 import java.security.KeyPair;
-import java.util.List;
 
 public class TestSecurity extends TestCase {
   @SuppressWarnings("unchecked")
@@ -21,52 +19,35 @@ public class TestSecurity extends TestCase {
    * tests a login. 
    */
   public void testLogin() throws Exception {
-    KeyPair kp = Encryption.generateKeyPair();
-
     String user = "guest";
     Controller controller = TestSuite.getController();
 
     LoginSettings ls = LoginSettings.getInstance();
     ls.setUsername("guest");
     ls.setPassword("guest");
+    KeyPair kp = ls.getKeyPair();
 
     SecurityPortal sp = new SecurityPortal();
     Boolean authed = sp.auth(ls.challengeResponse(sp.getChallenge()));
     assertTrue("User does not auth", authed);
 
-    try {
-      // an entity object retrieval test
-      Command cmd = new Command(Name.listTransactions)
-              .set(Param.year, 2007).sign(user, kp.getPrivate());
+    // an entity object retrieval test
+    Command cmd = new Command(Name.listTransactions)
+            .set(Param.year, 2007).sign(user, kp.getPrivate());
 
-//ugly old way
-//      Authorized cmd = new Authorized(DataDispatch.Name.list_transactions)
-//          .putParameter(SecurityDispatch.Param.user_name, user)
-//          .putParameter(DataDispatch.Param.year, "2007")
-//          .setCredentials(new Credentials(user))
-//          .sign(kp.getPrivate());
+    System.out.println("Encryption.decodePrivateKey(\""
+            + Encryption.encodeKey(kp.getPrivate()) + "\");");
 
-//      assertTrue("verification falied", Encryption.verify(kp.getPublic(),String.valueOf(cmd.valueHashCode()),
-//          cmd.getCredentials().getSignature()));
+    System.out.println("Encryption.decodePublicKey(\""
+            + Encryption.encodeKey(kp.getPublic()) + "\");");
 
+    System.out.println("((Command)Encryption.thaw(us.lump.lib.util.Base64.base64ToByteArray(\"" +
+            us.lump.lib.util.Base64.byteArrayToBase64(Encryption.freeze(cmd)) +
+            "\"))).verify(kp.getPublic());");
 
-      List<Identifiable> list = (List<Identifiable>) controller.invoke(cmd);
-      System.out.println(list.size());
-      System.out.println(controller.invoke(new Command(Command.Name.authedPing).sign(user, kp.getPrivate())));
-    } catch (Exception e) {
-      //success
-      Throwable t = e;
-      boolean found = false;
-      while (t != null)
-        if (t.getCause() instanceof IllegalArgumentException) {
-          found = true;
-          break;
-        } else {
-          t = t.getCause();
-        }
-
-      assertTrue("Exception not IllegalArgumentException", found);
-    }
+//    List<Identifiable> list = (List<Identifiable>) controller.invoke(cmd);
+//    System.out.println(list.size());
+    System.out.println(controller.invoke(new Command(Command.Name.authedPing).sign(user, kp.getPrivate())));
   }
 
   protected void setUp() throws Exception {
