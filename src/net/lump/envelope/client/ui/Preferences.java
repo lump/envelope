@@ -65,10 +65,10 @@ public class Preferences extends JDialog {
           setVisible(false);
         else {
           JOptionPane.showMessageDialog(
-              (Component)e.getSource(),
-              Strings.get("error.settings_are_not_valid"),
-              Strings.get("error"),
-              JOptionPane.ERROR_MESSAGE);
+                  (Component) e.getSource(),
+                  Strings.get("error.settings_are_not_valid"),
+                  Strings.get("error"),
+                  JOptionPane.ERROR_MESSAGE);
         }
       }
     });
@@ -308,5 +308,7 @@ public class Preferences extends JDialog {
   /**
    * @noinspection ALL
    */
-  public JComponent $$$getRootComponent$$$() { return prefsPane; }
+  public JComponent $$$getRootComponent$$$() {
+    return prefsPane;
+  }
 }

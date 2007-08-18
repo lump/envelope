@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project version="4" relativePaths="false">
+<project version="4" relativePaths="true">
   <component name="AntConfiguration">
     <defaultAnt bundledAnt="true" />
     <buildFile url="file://$PROJECT_DIR$/build.xml">
@@ -9,6 +9,8 @@
       <maximumHeapSize value="128" />
       <properties />
       <executeOn event="beforeRun" target="client.dist.prepare" runConfigurationType="Application" runConfigurationName="Client" />
+      <executeOn event="beforeRun" target="compile.tests" runConfigurationType="JUnit" runConfigurationName="TestSecurity.testLogin" />
+      <executeOn event="beforeRun" target="compile.tests" runConfigurationType="JUnit" runConfigurationName="TestEncryption.TestEncryption" />
     </buildFile>
   </component>
   <component name="BuildJarProjectSettings">
@@ -32,6 +34,7 @@
             <option name="LABEL_INDENT_ABSOLUTE" value="false" />
           </value>
         </option>
+        <option name="RIGHT_MARGIN" value="80" />
       </value>
     </option>
     <option name="USE_PER_PROJECT_SETTINGS" value="true" />
@@ -303,7 +306,6 @@
   </component>
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/client/client.iml" filepath="$PROJECT_DIR$/client/client.iml" />
       <module fileurl="file://$PROJECT_DIR$/rmi-envelope.iml" filepath="$PROJECT_DIR$/rmi-envelope.iml" />
     </modules>
   </component>

@@ -5,6 +5,7 @@ import junit.framework.TestCase;
 import us.lump.envelope.client.TestSecurity;
 import us.lump.envelope.server.rmi.Controller;
 import us.lump.lib.TestMoney;
+import us.lump.lib.util.TestEncryption;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -18,7 +19,7 @@ import java.util.Properties;
  * A JUnit class which runs all tests.
  *
  * @author Troy Bowman
- * @version $Id: TestSuite.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: TestSuite.java,v 1.2 2007/08/18 04:49:44 troy Exp $
  */
 public class TestSuite extends TestCase {
   public static final int SERVER_RMI_PORT = 7041;
@@ -47,14 +48,13 @@ public class TestSuite extends TestCase {
    * Gets the Controller for testing.
    *
    * @return Controller.
-   *
    * @throws MalformedURLException
    * @throws NotBoundException
    * @throws RemoteException
    */
   public static Controller getController() throws MalformedURLException, NotBoundException, RemoteException {
-    String rmiName = (String)System.getProperties().get("java.rmi.server.rminode");
-    return (Controller)Naming.lookup(rmiName + "Controller");
+    String rmiName = (String) System.getProperties().get("java.rmi.server.rminode");
+    return (Controller) Naming.lookup(rmiName + "Controller");
   }
 
   /**
@@ -65,6 +65,7 @@ public class TestSuite extends TestCase {
   public static Test suite() {
     junit.framework.TestSuite suite = new junit.framework.TestSuite();
     suite.addTestSuite(TestMoney.class);
+    suite.addTestSuite(TestEncryption.class);
     suite.addTestSuite(TestSecurity.class);
     return suite;
   }
@@ -73,7 +74,6 @@ public class TestSuite extends TestCase {
    * Figure out local hosts's name.
    *
    * @return String
-   *
    * @throws UnknownHostException
    */
   private static String localHost() throws UnknownHostException {

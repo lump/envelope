@@ -1,27 +1,32 @@
 package us.lump.envelope.server.security;
 
 import us.lump.lib.util.Encryption;
+import static us.lump.lib.util.Encryption.ENCODING;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 
 /**
  * A authorization challenge.
  *
  * @author Troy Bowman
- * @version $Id: Challenge.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Challenge.java,v 1.2 2007/08/18 04:49:44 troy Exp $
  */
 public class Challenge implements Serializable {
   private PublicKey serverKey;
-  private String challenge;
+  private byte[] challenge;
 
   /**
    * Instantiates a new challenge with the provided inforomation.
+   *
    * @param serverKey the server public key to provide to the client
    * @param clientKey the public client key for encryption of the challenge
    * @param challenge the challeng string itself
@@ -32,22 +37,28 @@ public class Challenge implements Serializable {
    * @throws NoSuchPaddingException
    */
   public Challenge(PublicKey serverKey, PublicKey clientKey, String challenge)
-      throws NoSuchAlgorithmException, BadPaddingException, IllegalBlockSizeException,
-      InvalidKeyException, NoSuchPaddingException {
+          throws NoSuchAlgorithmException, BadPaddingException,
+          IllegalBlockSizeException, InvalidKeyException,
+          NoSuchPaddingException, UnsupportedEncodingException {
     this.serverKey = serverKey;
     this.setChallenge(clientKey, challenge);
   }
 
   /**
-   * Returns the challenge string.
-   * @return String
+   * Returns the the challenge, decrypted with the supplied private key.
+   *
+   * @param key the private key
+   * @return String challenge
    */
-  public String getChallenge() {
-    return challenge;
+  public String getChallenge(PrivateKey key) throws NoSuchAlgorithmException,
+          BadPaddingException, IllegalBlockSizeException, InvalidKeyException,
+          NoSuchPaddingException, IOException {
+    return new String(Encryption.decodeAsym(key, challenge), ENCODING);
   }
 
   /**
    * Returns the public server key.
+   *
    * @return PublicKey
    */
   public PublicKey getServerKey() {
@@ -56,6 +67,7 @@ public class Challenge implements Serializable {
 
   /**
    * Sets the public server key.
+   *
    * @param serverKey the key
    */
   public void setServerKey(PublicKey serverKey) {
@@ -65,7 +77,7 @@ public class Challenge implements Serializable {
   /**
    * Takes the client public key and encrypts the challenge for the client.
    *
-   * @param key the public key of the client
+   * @param key       the public key of the client
    * @param challenge the challenge itself
    * @throws BadPaddingException
    * @throws NoSuchAlgorithmException
@@ -74,8 +86,9 @@ public class Challenge implements Serializable {
    * @throws NoSuchPaddingException
    */
   public void setChallenge(PublicKey key, String challenge) throws
-      BadPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException,
-      InvalidKeyException, NoSuchPaddingException {
-    this.challenge = Encryption.encodeAsym(key, challenge);
+          BadPaddingException, NoSuchAlgorithmException,
+          IllegalBlockSizeException, InvalidKeyException,
+          NoSuchPaddingException, UnsupportedEncodingException {
+    this.challenge = Encryption.encodeAsym(key, challenge.getBytes());
   }
 }

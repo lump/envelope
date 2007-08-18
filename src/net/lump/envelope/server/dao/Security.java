@@ -4,10 +4,10 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 import org.hibernate.criterion.Restrictions;
+import us.lump.envelope.Command;
 import us.lump.envelope.entity.User;
 import us.lump.envelope.server.exception.AuthenticationException;
 import us.lump.envelope.server.exception.SessionException;
-import us.lump.envelope.Command;
 import us.lump.envelope.server.security.Challenge;
 import us.lump.envelope.server.security.Credentials;
 import us.lump.envelope.server.security.Crypt;
@@ -16,7 +16,7 @@ import us.lump.lib.util.Encryption;
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
-import java.io.*;
+import java.io.IOException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.List;
@@ -26,7 +26,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.3 2007/08/17 18:16:04 troy Exp $
+ * @version $Id: Security.java,v 1.4 2007/08/18 04:49:44 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption
@@ -49,16 +49,11 @@ public class Security extends DAO {
 
       // first check to see if we've cached a key in prefs
       Preferences pref = Preferences.userNodeForPackage(Security.class);
-      byte[] keyPair =  pref.getByteArray("keyPair", null);
+      byte[] keyPair = pref.getByteArray("keyPair", null);
       if (keyPair != null) {
         try {
-          serverKeyPair = (KeyPair)(
-                  new ObjectInputStream(
-                          new ByteArrayInputStream(keyPair))).readObject();
+          serverKeyPair = (KeyPair) Encryption.thaw(keyPair);
           logger.info("yanked keypair from prefs");
-        } catch (IOException e) {
-          logger.error("IO Exception on reading of serverKeyPair", e);
-          // I don't think we'll have an IO exception with this, ever.
         } catch (ClassNotFoundException e) {
           logger.warn("couldn't deserialize server keys from prefs", e);
         }
@@ -74,29 +69,23 @@ public class Security extends DAO {
           System.exit(1);
         }
 
-        try {
-          final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-          (new ObjectOutputStream(baos)).writeObject(serverKeyPair);
-          pref.putByteArray("keyPair", baos.toByteArray());
-        } catch (IOException e) {
-          logger.error("IO Exception on saving of serverKeyPair", e);
-          // I don't think we'll have an IO exception with this, ever.
-        }
+        pref.putByteArray("keyPair", Encryption.freeze(serverKeyPair));
       }
     }
   }
 
   public Boolean authChallengeResponse(String username,
-                                       String challengeResponse)
-      throws BadPaddingException, NoSuchAlgorithmException, IOException,
-      IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException {
+                                       byte[] challengeResponse)
+          throws BadPaddingException, NoSuchAlgorithmException, IOException,
+          IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException {
     Boolean authed;
 
     User user = getUser(username);
 
-    String hash = Encryption.decodeAsym(
+    String hash = new String(Encryption.decodeAsym(
             serverKeyPair.getPrivate(),
-            challengeResponse);
+            challengeResponse), Encryption.ENCODING);
+
     if (hash.equals(user.getCryptPassword())) {
       // update the caceh
       cache.put(new Element(username, user));
@@ -118,14 +107,12 @@ public class Security extends DAO {
   }
 
   public Boolean validateSession(Command c)
-      throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
+          throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
           SignatureException, InvalidKeyException {
     Credentials credentials = c.getCredentials();
 
-    User user = getUser(credentials.getUsername());
-    PublicKey pk = Encryption.decodePublicKey(user.getPublicKey());
-    boolean authed = Encryption.verify(pk, String.valueOf(c.hashCode()),
-            credentials.getSignature());
+    boolean authed =
+            c.verify(getUser(credentials.getUsername()).getPublicKey());
     if (authed) {
       logger.debug("signature for \""
               + credentials.getUsername()
@@ -140,8 +127,8 @@ public class Security extends DAO {
     return authed;
   }
 
-  public Challenge getChallenge(String username, String publicKey)
-      throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
+  public Challenge getChallenge(String username, PublicKey publicKey)
+          throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
           BadPaddingException, IllegalBlockSizeException, InvalidKeyException,
           NoSuchPaddingException {
     logger.debug("challenge asked for \"" + username + "\"");
@@ -155,23 +142,20 @@ public class Security extends DAO {
     commit();
 
     return new Challenge(
-        serverKeyPair.getPublic(),
-        Encryption.decodePublicKey(publicKey),
-        Crypt.yankSalt(user.getCryptPassword())
+            serverKeyPair.getPublic(),
+            publicKey,
+            Crypt.yankSalt(user.getCryptPassword())
     );
-  }
-
-  public String getUserPK(String username) {
-    return getUser(username).getPublicKey();
   }
 
   private User getUser(String username) {
     Element ue = cache.get(username);
     User user;
     if (ue != null) {
-      user = (User)ue.getValue();
+      user = (User) ue.getValue();
       logger.debug("yanked \"" + username + "\" from ehcache");
     } else {
+
       List<User> users = list(User.class, Restrictions.eq("name", username));
 
       if (users.isEmpty()) throw

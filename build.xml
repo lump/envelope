@@ -20,6 +20,8 @@
   <property name="server.classes" value="${basedir}/server-classes"/>
   <property name="classes" value="${basedir}/classes"/>
   <property name="src" value="${basedir}/src"/>
+  <property name="test.classes" value="${basedir}/test-classes"/>
+  <property name="test.src" value="${basedir}/test"/>
 
   <property name="lib" value="${basedir}/lib"/>
   <property name="sql" value="${basedir}/sql"/>
@@ -37,21 +39,26 @@
 
   <path id="compile.classpath">
     <fileset dir="${lib}" includes="*.jar"/>
+    <dirset dir="${classes}"/>
+    <dirset dir="${test.classes}"/>
   </path>
 
   <target name="clean.classes" description="clean the classes">
     <delete dir="${classes}"/>
     <delete dir="${client.classes}"/>
     <delete dir="${server.classes}"/>
+    <delete dir="${test.classes}"/>
     <delete dir="${one.jar.classes}"/>
   </target>
 
-  <target name="dist" depends="client.jar, server.dist" description="make the distribution">
+  <target name="dist" depends="client.jar, server.dist"
+          description="make the distribution">
     <echo message="dist done."/>
   </target>
 
   <target name="prepare" depends="clean.classes">
     <mkdir dir="${classes}"/>
+    <mkdir dir="${test.classes}"/>
   </target>
 
   <target name="compile" depends="prepare" description="compile sources">
@@ -68,10 +75,23 @@
     </copy>
   </target>
 
+  <target name="compile.tests" depends="compile" description="compile tests">
+    <javac srcdir="${test.src}"
+           destdir="${test.classes}"
+           debug="${compile.debug}"
+           deprecation="${compile.deprecation}"
+           optimize="${compile.optimize}">
+      <compilerarg value="-Xlint:unchecked"/>
+      <classpath refid="compile.classpath"/>
+    </javac>
+  </target>
+
   <target name="client.dist.prepare" depends="compile">
     <delete dir="${client.classes}"/>
     <mkdir dir="${client.classes}"/>
-    <unzip dest="${client.classes}"><fileset dir="${lib}" includes="log4j*.jar, ui.jar, forms_rt.jar"/></unzip>
+    <unzip dest="${client.classes}">
+      <fileset dir="${lib}" includes="log4j*.jar, ui.jar, forms_rt.jar"/>
+    </unzip>
     <copy todir="${client.classes}">
       <fileset dir="${classes}"
                includes="
@@ -85,7 +105,8 @@
   <target name="client.dist">
     <antcall target="client.jar"/>
   </target>
-  <target name="client.jar" depends="client.dist.prepare" description="build client jar">
+  <target name="client.jar" depends="client.dist.prepare"
+          description="build client jar">
     <delete file="${dist}/client.jar"/>
     <jar jarfile="${dist}/client.jar"
          compress="${jar.compress}"
@@ -102,7 +123,8 @@
 
   <target name="server.jar" depends="compile" description="build server jar">
     <copy todir="${server.classes}">
-      <fileset dir="${classes}" excludes="us/lump/envelope/client/ui/*, Envelope.class"/>
+      <fileset dir="${classes}"
+               excludes="us/lump/envelope/client/ui/*, Envelope.class"/>
     </copy>
     <delete file="${dist}/${ant.project.name}-rmi.jar"/>
     <jar jarfile="${dist}/${ant.project.name}-rmi.jar"
@@ -118,7 +140,8 @@
     </jar>
   </target>
 
-  <target name="server.dist" depends="server.jar" description="build server distribution">
+  <target name="server.dist" depends="server.jar"
+          description="build server distribution">
     <mkdir dir="${one.jar.classes}"/>
 
     <javac srcdir="${one.jar.src}"
@@ -135,7 +158,8 @@
     </copy>
 
     <mkdir dir="${one.jar.classes}/main"/>
-    <copy tofile="${one.jar.classes}/main/main.jar" file="${dist}/${ant.project.name}-rmi.jar"/>
+    <copy tofile="${one.jar.classes}/main/main.jar"
+          file="${dist}/${ant.project.name}-rmi.jar"/>
 
     <delete file="${dist}/server.jar"/>
 

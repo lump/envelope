@@ -6,10 +6,8 @@ import us.lump.envelope.server.security.Credentials;
 import us.lump.lib.util.Encryption;
 
 import java.io.Serializable;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.SignatureException;
+import java.io.UnsupportedEncodingException;
+import java.security.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,14 +17,14 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class Command implements Serializable {
   /**
    * An application facet.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.2 $
+   * @version $Revision: 1.3 $
    */
   public enum Dao {
     Security,
@@ -38,12 +36,12 @@ public class Command implements Serializable {
    * A parameter.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.2 $
+   * @version $Revision: 1.3 $
    */
   public enum Param {
-    public_key(String.class),
+    public_key(PublicKey.class),
     user_name(String.class),
-    challenge_response(String.class),
+    challenge_response(byte[].class),
 
     year(Integer.class),
 
@@ -73,7 +71,7 @@ public class Command implements Serializable {
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.2 $
+   * @version $Revision: 1.3 $
    */
   public enum Name {
 
@@ -228,18 +226,39 @@ public class Command implements Serializable {
    * @throws InvalidKeyException      InvalidKeyException
    */
   public Command sign(String username, PrivateKey key)
-          throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+          throws NoSuchAlgorithmException, SignatureException,
+          InvalidKeyException, UnsupportedEncodingException {
     this.credentials = new Credentials(username);
     credentials.setSignature(Encryption.sign(key, String.valueOf(hashCode())));
     return this;
   }
 
   /**
-   * Enum's hashcode does not compute the hashcode on the ordinal, and it is marked as final, so it can't be overridden.
-   * Ugh, that's just yucky.
+   * Verifies the signature of the command with a public key.
+   *
+   * @param key the public key
+   * @return boolean whether the signature verifies.
+   * @throws NoSuchAlgorithmException
+   * @throws SignatureException
+   * @throws UnsupportedEncodingException
+   * @throws InvalidKeyException
+   */
+  public boolean verify(PublicKey key) throws NoSuchAlgorithmException,
+          SignatureException, UnsupportedEncodingException,
+          InvalidKeyException {
+    return Encryption.verify(
+            key,
+            String.valueOf(hashCode()),
+            credentials.getSignature()
+    );
+  }
+
+  /**
+   * Enum's hashcode does not compute the hashcode on the ordinal, and it is
+   * marked as final, so it can't be overridden.  Ugh, that's just yucky.
    * <p/>
-   * So, here's a hashcode that uses the ordinal, a well as doing a hash on all of the attributes of this Command enum,
-   * too.
+   * So, here's a hashcode that uses the ordinal, a well as doing a hash on
+   * all of the attributes of this Command enum, too.
    *
    * @return int
    */
@@ -259,6 +278,4 @@ public class Command implements Serializable {
     }
     return result;
   }
-
-
 }

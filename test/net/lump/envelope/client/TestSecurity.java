@@ -1,14 +1,14 @@
 package us.lump.envelope.client;
 
 import junit.framework.TestCase;
-import us.lump.envelope.TestSuite;
 import us.lump.envelope.Command;
-import us.lump.envelope.entity.Identifiable;
 import us.lump.envelope.Command.Name;
-import us.lump.envelope.server.rmi.Controller;
 import us.lump.envelope.Command.Param;
-import us.lump.envelope.server.security.Challenge;
-import us.lump.envelope.server.security.Crypt;
+import us.lump.envelope.TestSuite;
+import us.lump.envelope.client.portal.SecurityPortal;
+import us.lump.envelope.client.ui.prefs.LoginSettings;
+import us.lump.envelope.entity.Identifiable;
+import us.lump.envelope.server.rmi.Controller;
 import us.lump.lib.util.Encryption;
 
 import java.security.KeyPair;
@@ -26,28 +26,18 @@ public class TestSecurity extends TestCase {
     String user = "guest";
     Controller controller = TestSuite.getController();
 
-    Challenge challenge = (Challenge)controller
-        .invoke(new Command(Name.getChallenge)
-            .set(Param.user_name, user)
-            .set(Param.public_key, Encryption.encodePublicKey(kp)));
+    LoginSettings ls = LoginSettings.getInstance();
+    ls.setUsername("guest");
+    ls.setPassword("guest");
 
-//    String salt = Encryption.decodeAsym(kp.getPrivate(), challenge.getChallenge());
-
-    Boolean authed = (Boolean)controller
-        .invoke(new Command(Name.authChallengeResponse)
-            .set(Param.user_name, user)
-            .set(Param.challenge_response,
-            Encryption.encodeAsym(
-                challenge.getServerKey(),
-                Crypt.crypt(Encryption.decodeAsym(kp.getPrivate(), challenge.getChallenge()), user)))
-        );
-
+    SecurityPortal sp = new SecurityPortal();
+    Boolean authed = sp.auth(ls.challengeResponse(sp.getChallenge()));
     assertTrue("User does not auth", authed);
 
     try {
       // an entity object retrieval test
       Command cmd = new Command(Name.listTransactions)
-          .set(Param.year, 2007).sign(user, kp.getPrivate());
+              .set(Param.year, 2007).sign(user, kp.getPrivate());
 
 //ugly old way
 //      Authorized cmd = new Authorized(DataDispatch.Name.list_transactions)
@@ -59,7 +49,8 @@ public class TestSecurity extends TestCase {
 //      assertTrue("verification falied", Encryption.verify(kp.getPublic(),String.valueOf(cmd.valueHashCode()),
 //          cmd.getCredentials().getSignature()));
 
-      List<Identifiable> list = (List<Identifiable>)controller.invoke(cmd);
+
+      List<Identifiable> list = (List<Identifiable>) controller.invoke(cmd);
       System.out.println(list.size());
       System.out.println(controller.invoke(new Command(Command.Name.authedPing).sign(user, kp.getPrivate())));
     } catch (Exception e) {

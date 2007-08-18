@@ -1,30 +1,23 @@
 package us.lump.envelope.client.portal;
 
+import org.apache.log4j.Logger;
 import us.lump.envelope.Command;
-import us.lump.envelope.client.ui.prefs.ServerSettings;
-import us.lump.envelope.client.ui.prefs.LoginSettings;
-import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.client.ui.Preferences;
 import us.lump.envelope.client.Main;
+import us.lump.envelope.client.ui.Preferences;
+import us.lump.envelope.client.ui.defs.Strings;
+import us.lump.envelope.client.ui.prefs.LoginSettings;
+import us.lump.envelope.client.ui.prefs.ServerSettings;
 import us.lump.envelope.server.rmi.Controller;
 
 import javax.swing.*;
-import java.net.MalformedURLException;
 import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.security.InvalidKeyException;
-import java.security.GeneralSecurityException;
-
-import org.apache.log4j.Logger;
 
 /**
  * All portals should subclass this class, as this provides a single point of exit/entry to the server.
  *
  * @author Troy Bowman
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 
 abstract class Portal {
@@ -58,7 +51,7 @@ abstract class Portal {
     // sign the command
     try {
       command.sign(ls.getUsername(), ls.getKeyPair().getPrivate());
-    } catch (GeneralSecurityException e) {
+    } catch (Exception e) {
       // if we can't sign for any reason, this is fatal.
       logger.error(e);
       JOptionPane.showMessageDialog(

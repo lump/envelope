@@ -1,5 +1,5 @@
 --
--- $Id: bootstrap.sql,v 1.3 2007/07/30 04:25:06 troy Exp $
+-- $Id: bootstrap.sql,v 1.4 2007/08/18 04:49:44 troy Exp $
 --
 
 drop table if exists users;
@@ -135,7 +135,7 @@ create table `users` (
   `real_name` varchar(64) default NULL,
   `crypt_password` varchar(34) default NULL,
   `permissions` int(11) default NULL,
-  `public_key` text,
+  `public_key` blob,
   UNIQUE index `name` (`name`),
   constraint users_budget foreign key (budget) references budgets(id) on update cascade on delete restrict
 )ENGINE=INNODB;

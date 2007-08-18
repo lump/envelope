@@ -7,7 +7,7 @@ import java.io.Serializable;
  * a session with a client to simplify authentication for each request.
  *
  * @author Troy Bowman
- * @version $Id: Credentials.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Credentials.java,v 1.2 2007/08/18 04:49:44 troy Exp $
  */
 public class Credentials implements Serializable {
   private String username;
@@ -15,6 +15,7 @@ public class Credentials implements Serializable {
 
   /**
    * A new credentials object.
+   *
    * @param username obviously, the username
    */
   public Credentials(String username) {
@@ -23,6 +24,7 @@ public class Credentials implements Serializable {
 
   /**
    * Get the signature.
+   *
    * @return String
    */
   public String getSignature() {
@@ -31,6 +33,7 @@ public class Credentials implements Serializable {
 
   /**
    * Set the singature
+   *
    * @param signature should usually be a signature of the command
    */
   public void setSignature(String signature) {
@@ -39,6 +42,7 @@ public class Credentials implements Serializable {
 
   /**
    * Returns the username.
+   *
    * @return String
    */
   public String getUsername() {
@@ -47,6 +51,7 @@ public class Credentials implements Serializable {
 
   /**
    * Sets the username.
+   *
    * @param username the username.
    */
   public void setUsername(String username) {
@@ -56,6 +61,7 @@ public class Credentials implements Serializable {
   /**
    * Generate a hashcode of this object, without including the singature, since in many cases
    * the signature will include this object.
+   *
    * @return int
    */
   public int noSignatureHashCode() {
@@ -71,10 +77,11 @@ public class Credentials implements Serializable {
 
     Credentials that = (Credentials) o;
 
-    if (signature != null ? !signature.equals(that.signature) : that.signature != null) return false;
+    if (signature != null ? !signature.equals(that.signature) : that.signature != null)
+      return false;
     return !(username != null ? !username.equals(that.username) : that.username != null);
 
-    }
+  }
 
   public int hashCode() {
     int result;

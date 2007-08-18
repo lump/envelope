@@ -4,6 +4,7 @@ import us.lump.envelope.server.security.Permission;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.security.PublicKey;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 
@@ -12,7 +13,7 @@ import java.text.MessageFormat;
  * User.
  *
  * @author Troy Bowman
- * @version $Id: User.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: User.java,v 1.2 2007/08/18 04:49:44 troy Exp $
  */
 @Entity
 @Table(name = "users")
@@ -24,7 +25,7 @@ public class User implements Identifiable {
   private String realName;
   private String cryptPassword;
   private Permission permissions;
-  private String publicKey;
+  private PublicKey publicKey;
 
   public String toString() {
     return MessageFormat.format("{0} ({1})", name, realName);
@@ -38,7 +39,7 @@ public class User implements Identifiable {
   }
 
   public void setId(Serializable id) {
-    this.id = (Integer)id;
+    this.id = (Integer) id;
   }
 
   @Version
@@ -80,11 +81,12 @@ public class User implements Identifiable {
   }
 
   @Column(name = "public_key")
-  public String getPublicKey() {
+  @Lob
+  public PublicKey getPublicKey() {
     return publicKey;
   }
 
-  public void setPublicKey(String publicKey) {
+  public void setPublicKey(PublicKey publicKey) {
     this.publicKey = publicKey;
   }
 
@@ -120,16 +122,23 @@ public class User implements Identifiable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    User user = (User)o;
+    User user = (User) o;
 
-    if (budget != null ? !budget.equals(user.budget) : user.budget != null) return false;
-    if (cryptPassword != null ? !cryptPassword.equals(user.cryptPassword) : user.cryptPassword != null) return false;
+    if (budget != null ? !budget.equals(user.budget) : user.budget != null)
+      return false;
+    if (cryptPassword != null ? !cryptPassword.equals(user.cryptPassword) : user.cryptPassword != null)
+      return false;
     if (id != null ? !id.equals(user.id) : user.id != null) return false;
-    if (name != null ? !name.equals(user.name) : user.name != null) return false;
-    if (permissions != null ? !permissions.equals(user.permissions) : user.permissions != null) return false;
-    if (publicKey != null ? !publicKey.equals(user.publicKey) : user.publicKey != null) return false;
-    if (realName != null ? !realName.equals(user.realName) : user.realName != null) return false;
-    if (stamp != null ? !stamp.equals(user.stamp) : user.stamp != null) return false;
+    if (name != null ? !name.equals(user.name) : user.name != null)
+      return false;
+    if (permissions != null ? !permissions.equals(user.permissions) : user.permissions != null)
+      return false;
+    if (publicKey != null ? !publicKey.equals(user.publicKey) : user.publicKey != null)
+      return false;
+    if (realName != null ? !realName.equals(user.realName) : user.realName != null)
+      return false;
+    if (stamp != null ? !stamp.equals(user.stamp) : user.stamp != null)
+      return false;
 
     return true;
   }
