@@ -1,24 +1,22 @@
 package us.lump.lib;
 
 import junit.framework.TestCase;
+import org.junit.Test;
 
 /**
  * Tests MoneyType.
  *
  * @author Troy Bowman
- * @version $Id: TestMoney.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: TestMoney.java,v 1.2 2007/08/18 08:15:20 troy Exp $
  */
 public class TestMoney extends TestCase {
-
-  TestMoney() {
-    super();
-  }
 
   /**
    * Tests the rounding of the Money object.
    *
    * @throws Exception
    */
+  @Test
   public void testPrint() throws Exception {
 
 // ROUND_HALF_EVEN rounds up only when the number in the
@@ -66,4 +64,13 @@ public class TestMoney extends TestCase {
     }
     return out;
   }
+
+  protected void setUp() throws Exception {
+    super.setUp();
+  }
+
+  protected void tearDown() throws Exception {
+    super.tearDown();
+  }
+
 }

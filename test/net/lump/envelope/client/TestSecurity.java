@@ -1,31 +1,28 @@
 package us.lump.envelope.client;
 
 import junit.framework.TestCase;
+import org.junit.Test;
 import us.lump.envelope.Command;
 import us.lump.envelope.TestSuite;
 import us.lump.envelope.client.portal.SecurityPortal;
-import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.server.rmi.Controller;
 
-import java.security.KeyPair;
-
 public class TestSecurity extends TestCase {
-  @SuppressWarnings("unchecked")
 
   /**
-   * tests a login. 
+   * tests a login.
+   *
+   * @throws Exception
    */
+  @SuppressWarnings("unchecked")
+  @Test
   public void testLogin() throws Exception {
-    String user = "guest";
     Controller controller = TestSuite.getController();
 
-    LoginSettings ls = LoginSettings.getInstance();
-    ls.setUsername("guest");
-    ls.setPassword("guest");
-    KeyPair kp = ls.getKeyPair();
-
     SecurityPortal sp = new SecurityPortal();
-    Boolean authed = sp.auth(ls.challengeResponse(sp.getChallenge()));
+    Boolean authed = sp.auth(
+        TestSuite.loginSettings.challengeResponse(sp.getChallenge()));
+
     assertTrue("User does not auth", authed);
 
     // an entity object retrieval test
@@ -48,10 +45,11 @@ public class TestSecurity extends TestCase {
 //    System.out.println(list.size());
 
     try {
-      System.out.println(controller
-              .invoke(new Command(Command.Name.authedPing)
-              .sign(user, kp.getPrivate())));
-    } catch(Exception e) {
+      System.out.println(
+          controller.invoke(new Command(Command.Name.authedPing)
+              .sign(TestSuite.USER,
+                    TestSuite.loginSettings.getKeyPair().getPrivate())));
+    } catch (Exception e) {
       fail("Exception thrown");
     }
   }

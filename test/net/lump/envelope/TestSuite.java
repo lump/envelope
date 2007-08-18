@@ -3,6 +3,7 @@ package us.lump.envelope;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import us.lump.envelope.client.TestSecurity;
+import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.server.rmi.Controller;
 import us.lump.lib.TestMoney;
 import us.lump.lib.util.TestEncryption;
@@ -19,13 +20,16 @@ import java.util.Properties;
  * A JUnit class which runs all tests.
  *
  * @author Troy Bowman
- * @version $Id: TestSuite.java,v 1.2 2007/08/18 04:49:44 troy Exp $
+ * @version $Id: TestSuite.java,v 1.3 2007/08/18 08:15:20 troy Exp $
  */
 public class TestSuite extends TestCase {
   public static final int SERVER_RMI_PORT = 7041;
   public static final int SERVER_HTTP_PORT = 7042;
   public static final String SERVER_PROPERTY = "server";
   public static String SERVER_HOST_NAME = "localhost";
+
+  public static final String USER = "guest";
+  public static final LoginSettings loginSettings = LoginSettings.getInstance();
 
   static {
     Properties p = System.getProperties();
@@ -36,6 +40,10 @@ public class TestSuite extends TestCase {
       else SERVER_HOST_NAME = localHost();
       URL url = new URL("http://" + SERVER_HOST_NAME + ":" + SERVER_HTTP_PORT + "/");
       p.put("java.rmi.server.codebase", url);
+
+      loginSettings.setUsername(USER);
+      loginSettings.setPassword(USER);
+
     } catch (Exception e) {
       e.printStackTrace();
       System.exit(1);
