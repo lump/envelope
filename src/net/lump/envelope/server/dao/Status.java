@@ -11,28 +11,32 @@ import java.util.List;
  * A DAO which deals with reporting information.
  *
  * @author Troy Bowman
- * @version $Id: Report.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Status.java,v 1.1 2007/08/18 23:20:11 troy Exp $
  */
-public class Report extends DAO {
+public class Status extends DAO {
 
   /**
-   * Returns a balance for a specific category and year, depending or reconciliation.
+   * Returns a balance for a specific category and year, depending or
+   * reconciliation.
    *
-   * @param category for the query
-   * @param year for the query
+   * @param category   for the query
+   * @param year       for the query
    * @param reconciled whether this has been reconciled or not
+   *
    * @return the balance
    */
   @SuppressWarnings({"unchecked"})
-  public Money getCategoryBalance(Category category, Integer year, Boolean reconciled) {
+  public Money getCategoryBalance(Category category,
+                                  Integer year,
+                                  Boolean reconciled) {
 
     Query query = getCurrentSession().createQuery(
         "select sum(a.amount)" +
-            "from Allocation a, Transaction t " +
-            "where a.category = :id " +
-            "and a.transaction = t.id " +
-            "and year(t.date) = :year " +
-            "and t.reconciled = :reconciled")
+        "from Allocation a, Transaction t " +
+        "where a.category = :id " +
+        "and a.transaction = t.id " +
+        "and year(t.date) = :year " +
+        "and t.reconciled = :reconciled")
         .setInteger("id", category.getId())
         .setInteger("year", year)
         .setBoolean("reconciled", reconciled);
@@ -43,11 +47,12 @@ public class Report extends DAO {
   }
 
   /**
-   * Get a list of balances for all of the categories for a specific year, depending on
-   * whether they're reconciled or not.
+   * Get a list of balances for all of the categories for a specific year,
+   * depending on whether they're reconciled or not.
    *
-   * @param year for the query
+   * @param year       for the query
    * @param reconciled whether this has been reconciled or not
+   *
    * @return a list containing a small array of a category and balance
    */
   @SuppressWarnings({"unchecked"})
@@ -55,12 +60,12 @@ public class Report extends DAO {
 
     Query query = getCurrentSession().createQuery(
         "select c, sum(a.amount) " +
-            "from Allocation a, Transaction t, Category c " +
-            "where a.transaction = t.id " +
-            "and year(t.date) = :year " +
-            "and t.reconciled = :reconciled " +
-            "and c.id = a.category " +
-            "group by c.id")
+        "from Allocation a, Transaction t, Category c " +
+        "where a.transaction = t.id " +
+        "and year(t.date) = :year " +
+        "and t.reconciled = :reconciled " +
+        "and c.id = a.category " +
+        "group by c.id")
         .setInteger("year", year)
         .setBoolean("reconciled", reconciled);
 
@@ -71,23 +76,26 @@ public class Report extends DAO {
    * Returns the account balance for a specific account and year, depending on
    * whether the transactions have been reconciled or not.
    *
-   * @param account for the query
-   * @param year for the query
+   * @param account    for the query
+   * @param year       for the query
    * @param reconciled whether this has been reconciled or not
+   *
    * @return an amount of the balance
    */
   @SuppressWarnings({"unchecked"})
-  public Money getAccountBalance(Account account, Integer year, Boolean reconciled) {
+  public Money getAccountBalance(Account account,
+                                 Integer year,
+                                 Boolean reconciled) {
 
     Query query = getCurrentSession().createQuery(
         "select sum(al.amount) " +
-            "from Allocation al, Transaction tr, Account ac, Category ca " +
-            "where al.transaction = tr.id " +
-            "and al.category = ca.id " +
-            "and ca.account = ac.id " +
-            "and year(tr.date) = :year " +
-            "and tr.reconciled = :reconciled " +
-            "and ac.id = :account")
+        "from Allocation al, Transaction tr, Account ac, Category ca " +
+        "where al.transaction = tr.id " +
+        "and al.category = ca.id " +
+        "and ca.account = ac.id " +
+        "and year(tr.date) = :year " +
+        "and tr.reconciled = :reconciled " +
+        "and ac.id = :account")
         .setInteger("year", year)
         .setBoolean("reconciled", reconciled)
         .setInteger("account", account.getId());
@@ -97,10 +105,12 @@ public class Report extends DAO {
   }
 
   /**
-   * Retrieve a list of balances for all accounts for a specific year, and depending on whether
-   * the transactions have been reconciled.
-   * @param year for the query
+   * Retrieve a list of balances for all accounts for a specific year, and
+   * depending on whether the transactions have been reconciled.
+   *
+   * @param year       for the query
    * @param reconciled whether this has been reconciled or not *
+   *
    * @return an array
    */
   @SuppressWarnings({"unchecked"})
@@ -108,13 +118,13 @@ public class Report extends DAO {
 
     Query query = getCurrentSession().createQuery(
         "select ac, sum(al.amount) " +
-            "from Allocation al, Transaction tr, Account ac, Category ca " +
-            "where al.transaction = tr.id " +
-            "and al.category = ca.id " +
-            "and ca.account = ac.id " +
-            "and year(tr.date) = :year " +
-            "and tr.reconciled = :reconciled " +
-            "group by ac.id")
+        "from Allocation al, Transaction tr, Account ac, Category ca " +
+        "where al.transaction = tr.id " +
+        "and al.category = ca.id " +
+        "and ca.account = ac.id " +
+        "and year(tr.date) = :year " +
+        "and tr.reconciled = :reconciled " +
+        "group by ac.id")
         .setInteger("year", year)
         .setBoolean("reconciled", reconciled);
 

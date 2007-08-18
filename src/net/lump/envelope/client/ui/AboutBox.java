@@ -1,7 +1,7 @@
 package us.lump.envelope.client.ui;
 
-import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.defs.Fonts;
+import us.lump.envelope.client.ui.defs.Strings;
 
 import javax.swing.*;
 import java.awt.*;
@@ -47,7 +47,8 @@ public class AboutBox extends JFrame implements ActionListener {
 
     this.getContentPane().add(textPanel2, BorderLayout.CENTER);
     this.pack();
-    this.setSize(20 + (int)this.getSize().getWidth(),  20 + (int)this.getSize().getHeight());
+    this.setSize(20 + (int)this.getSize().getWidth(),
+                 20 + (int)this.getSize().getHeight());
   }
 
   class SymWindow extends java.awt.event.WindowAdapter {

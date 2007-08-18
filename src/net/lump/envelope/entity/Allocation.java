@@ -14,12 +14,14 @@ import java.text.MessageFormat;
  * A many-to-one list of Categories for a transaction.
  *
  * @author Troy Bowman
- * @version $Id: Allocation.java,v 1.2 2007/08/07 01:08:03 troy Exp $
+ * @version $Id: Allocation.java,v 1.3 2007/08/18 23:20:11 troy Exp $
  */
 @Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
 @Table(name = "allocations")
-@org.hibernate.annotations.Table(appliesTo = "allocations", fetch = org.hibernate.annotations.FetchMode.SELECT)
+@org.hibernate.annotations.Table(
+    appliesTo = "allocations",
+    fetch = org.hibernate.annotations.FetchMode.SELECT)
 public class Allocation implements Identifiable {
   private Integer id;
   private Timestamp stamp;
@@ -28,7 +30,9 @@ public class Allocation implements Identifiable {
   private Money amount;
 
   public String toString() {
-    return MessageFormat.format("{0}@{1}", amount.toFormattedString(), category.toString());
+    return MessageFormat.format("{0}@{1}",
+                                amount.toFormattedString(),
+                                category.toString());
   }
 
   @Id
@@ -135,11 +139,21 @@ public class Allocation implements Identifiable {
 
     Allocation that = (Allocation)o;
 
-    if (amount != null ? !amount.equals(that.amount) : that.amount != null) return false;
-    if (category != null ? !category.equals(that.category) : that.category != null) return false;
-    if (id != null ? !id.equals(that.id) : that.id != null) return false;
-    if (stamp != null ? !stamp.equals(that.stamp) : that.stamp != null) return false;
-    if (transaction != null ? !transaction.equals(that.transaction) : that.transaction != null) return false;
+    if (amount != null
+        ? !amount.equals(that.amount)
+        : that.amount != null) return false;
+    if (category != null
+        ? !category.equals(that.category)
+        : that.category != null) return false;
+    if (id != null
+        ? !id.equals(that.id)
+        : that.id != null) return false;
+    if (stamp != null
+        ? !stamp.equals(that.stamp)
+        : that.stamp != null) return false;
+    if (transaction != null
+        ? !transaction.equals(that.transaction)
+        : that.transaction != null) return false;
 
     return true;
   }

@@ -26,7 +26,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.5 2007/08/18 08:56:20 troy Exp $
+ * @version $Id: Security.java,v 1.6 2007/08/18 23:20:11 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption
@@ -53,7 +53,7 @@ public class Security extends DAO {
       byte[] keyPair = pref.getByteArray("keyPair", null);
       if (keyPair != null) {
         try {
-          serverKeyPair = (KeyPair) Encryption.thaw(keyPair);
+          serverKeyPair = (KeyPair)Encryption.thaw(keyPair);
           logger.info("yanked keypair from prefs");
         } catch (ClassNotFoundException e) {
           logger.warn("couldn't deserialize server keys from prefs", e);
@@ -153,7 +153,7 @@ public class Security extends DAO {
     Element ue = cache.get(username);
     User user;
     if (ue != null) {
-      user = (User) ue.getValue();
+      user = (User)ue.getValue();
       logger.debug("yanked \"" + username + "\" from ehcache");
     } else {
 

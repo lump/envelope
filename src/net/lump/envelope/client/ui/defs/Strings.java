@@ -10,7 +10,7 @@ import java.util.ResourceBundle;
  * Strings interface, for i18n.
  *
  * @author Troy Bowman
- * @version $Id: Strings.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Strings.java,v 1.2 2007/08/18 23:20:11 troy Test $
  */
 public class Strings {
   private ResourceBundle stringProperties;
@@ -19,7 +19,8 @@ public class Strings {
 
   private Strings() {
     stringProperties =
-        ResourceBundle.getBundle(this.getClass().getName(), Locale.getDefault());
+        ResourceBundle.getBundle(this.getClass().getName(),
+                                 Locale.getDefault());
     logger = Logger.getLogger(this.getClass());
   }
 
@@ -40,8 +41,9 @@ public class Strings {
       value = s.stringProperties.getString(key);
 //      s.logger.debug(key + "=\"" + value + "\"");
     }
-    catch(MissingResourceException e) {
-      s.logger.error("could not find string property \"" + key + "\" from resource bundle");
+    catch (MissingResourceException e) {
+      s.logger.error("could not find string property \""
+                     + key + "\" from resource bundle");
     }
 
     return value;

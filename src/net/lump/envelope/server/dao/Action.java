@@ -2,6 +2,7 @@ package us.lump.envelope.server.dao;
 
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
+import us.lump.envelope.entity.Transaction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,20 +11,22 @@ import java.util.List;
  * A DAO for Transactions.
  *
  * @author Troy Bowman
- * @version $Id: Action.java,v 1.2 2007/08/07 01:08:03 troy Exp $
+ * @version $Id: Action.java,v 1.3 2007/08/18 23:20:11 troy Exp $
  */
 public class Action extends DAO {
 
   public Boolean authedPing() { return ping(); }
+
   public Boolean ping() { return true; }
 
   /**
    * Lists all transactions for a given year.
    *
    * @param year of the transactions
+   *
    * @return the transaction list
    */
-  public List<us.lump.envelope.entity.Transaction> listTransactions(Integer year) {
+  public List<Transaction> listTransactions(Integer year) {
     List<Order> order = new ArrayList<Order>();
     order.add(Order.asc("date"));
     order.add(Order.asc("stamp"));
@@ -31,7 +34,9 @@ public class Action extends DAO {
         us.lump.envelope.entity.Transaction.class,
         order,
         Restrictions.conjunction()
-            .add(Restrictions.sqlRestriction("year({alias}.date) = ?", year, org.hibernate.Hibernate.INTEGER)
+            .add(Restrictions.sqlRestriction("year({alias}.date) = ?",
+                                             year,
+                                             org.hibernate.Hibernate.INTEGER)
         )
     );
 

@@ -15,17 +15,18 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.prefs.Preferences;
 
 /**
- * Singleton for keeping track of login information.  (Basically the
- * username and password.
+ * Singleton for keeping track of login information.  (Basically the username
+ * and password.
  *
  * @author Troy Bowman
- * @version $Id: LoginSettings.java,v 1.4 2007/08/18 04:49:44 troy Exp $
+ * @version $Id: LoginSettings.java,v 1.5 2007/08/18 23:20:11 troy Exp $
  */
 public class LoginSettings {
 
   // these strings define preference keys.
   private static final String USER = "username";
-  private static final String SHOULD_SAVE_ENCRYPTED_PASSWORD = "saveEncrypedPassword?";
+  private static final String SHOULD_SAVE_ENCRYPTED_PASSWORD
+      = "saveEncrypedPassword?";
   private static final String ENCRYPTED_PASSWORD = "encryptedPassword";
 
   // preferences reference, defined at instantiation of the singleton.
@@ -69,13 +70,13 @@ public class LoginSettings {
   }
 
   public LoginSettings setPassword(String password)
-          throws BadPaddingException, NoSuchAlgorithmException,
-          IllegalBlockSizeException, InvalidKeyException,
-          NoSuchPaddingException {
+      throws BadPaddingException, NoSuchAlgorithmException,
+      IllegalBlockSizeException, InvalidKeyException,
+      NoSuchPaddingException {
     // keep the password from being plain text in memory...
     this.password = Encryption.encodeAsym(
-            keyPair.getPublic(),
-            password.getBytes());
+        keyPair.getPublic(),
+        password.getBytes());
     return this;
   }
 
@@ -95,6 +96,7 @@ public class LoginSettings {
    * Get the challenge response if it is saved.
    *
    * @return String the encrypted password to auth with the server.
+   *
    * @throws IllegalStateException if the encrypted password is not saved.
    */
   public byte[] challengeResponse() {
@@ -110,7 +112,9 @@ public class LoginSettings {
    *
    * @param challenge the challenge object
    * @param password  a string which is the password
+   *
    * @return a byte array which comprises the encrypted response.
+   *
    * @throws NoSuchAlgorithmException
    * @throws BadPaddingException
    * @throws IOException
@@ -120,9 +124,9 @@ public class LoginSettings {
    * @throws InvalidKeySpecException
    */
   public byte[] challengeResponse(Challenge challenge, String password)
-          throws NoSuchAlgorithmException, BadPaddingException, IOException,
-          IllegalBlockSizeException, InvalidKeyException,
-          NoSuchPaddingException, InvalidKeySpecException {
+      throws NoSuchAlgorithmException, BadPaddingException, IOException,
+      IllegalBlockSizeException, InvalidKeyException,
+      NoSuchPaddingException, InvalidKeySpecException {
     setPassword(password);
     return challengeResponse(challenge);
   }
@@ -132,7 +136,9 @@ public class LoginSettings {
    * password.
    *
    * @param challenge the Challenge object from the server.
+   *
    * @return a byte array which comprises the encrypted response.
+   *
    * @throws BadPaddingException
    * @throws NoSuchAlgorithmException
    * @throws IllegalBlockSizeException
@@ -141,25 +147,25 @@ public class LoginSettings {
    * @throws IOException
    */
   public byte[] challengeResponse(Challenge challenge)
-          throws BadPaddingException, NoSuchAlgorithmException,
-          IllegalBlockSizeException, InvalidKeyException,
-          NoSuchPaddingException, IOException {
+      throws BadPaddingException, NoSuchAlgorithmException,
+      IllegalBlockSizeException, InvalidKeyException,
+      NoSuchPaddingException, IOException {
 
     if (this.password == null)
       throw new IllegalStateException("Password cannot be null or empty");
 
     // encrypt the response with the server's public key
     byte[] response = Encryption.encodeAsym(
-            challenge.getServerKey(),
-            Crypt.crypt(
-                    challenge.getChallenge(keyPair.getPrivate()),
-                    new String(
-                            Encryption.decodeAsym(
-                                    keyPair.getPrivate(),
-                                    this.password
-                            )
-                    )
-            ).getBytes()
+        challenge.getServerKey(),
+        Crypt.crypt(
+            challenge.getChallenge(keyPair.getPrivate()),
+            new String(
+                Encryption.decodeAsym(
+                    keyPair.getPrivate(),
+                    this.password
+                )
+            )
+        ).getBytes()
     );
 
     // save the encrypted password to prefs if the user prefers to save it

@@ -7,15 +7,17 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 
 /**
- * Extends BigDecimal to be able to have currency number format string parsing and formatting.
+ * Extends BigDecimal to be able to have currency number format string parsing
+ * and formatting.
  *
  * @author Troy Bowman
- * @version $Id: Money.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Money.java,v 1.2 2007/08/18 23:20:11 troy Exp $
  */
 public class Money extends BigDecimal implements Serializable {
   /**
-   * Attempts to parse the string with the current locale's Currency NumberFormat parser.  If that fails, it falls back
-   * to the BigDecimal parser.
+   * Attempts to parse the string with the current locale's Currency
+   * NumberFormat parser.  If that fails, it falls back to the BigDecimal
+   * parser.
    *
    * @param val the value
    */
@@ -78,16 +80,18 @@ public class Money extends BigDecimal implements Serializable {
   }
 
   /**
-   * Formats the value of this object with the current locale's currency number format.  Rounding used is the most
-   * often-used rounding in financial calculations, which is "Half-Even".  Half-Even rounds half fractions to the even
-   * number (e.g., 2.5 rounds to 2, while 3.5 rounds to 4), and fractions greater or less than half to the closest
-   * integer.
+   * Formats the value of this object with the current locale's currency number
+   * format.  Rounding used is the most often-used rounding in financial
+   * calculations, which is "Half-Even".  Half-Even rounds half fractions to the
+   * even number (e.g., 2.5 rounds to 2, while 3.5 rounds to 4), and fractions
+   * greater or less than half to the closest integer.
    *
    * @return String
    */
   public String toFormattedString() {
     NumberFormat f = java.text.NumberFormat.getCurrencyInstance();
-    return f.format((this.setScale(f.getMaximumFractionDigits(), BigDecimal.ROUND_HALF_EVEN)).doubleValue());
+    return f.format((this.setScale(f.getMaximumFractionDigits(),
+                                   BigDecimal.ROUND_HALF_EVEN)).doubleValue());
   }
 
   private static String parseString(String val) {
@@ -97,7 +101,9 @@ public class Money extends BigDecimal implements Serializable {
 
     try {
       // try to use the current locale's currency to parse the string
-      return (java.text.NumberFormat.getCurrencyInstance().parse(val)).toString();
+      return (java.text
+          .NumberFormat
+          .getCurrencyInstance().parse(val)).toString();
     }
     catch (ParseException pe) {
       // fail over to plain BigDecimal parsing

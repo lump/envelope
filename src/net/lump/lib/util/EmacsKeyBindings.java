@@ -27,8 +27,6 @@ import java.util.LinkedList;
 /**
  * Generic class which activates Emacs keybindings for java input fields.
  * <p/>
- *
- * @todo Some actions don't work at the end of line, that's because they depend on built-in actions.
  */
 public class EmacsKeyBindings {
   //--- Constant(s) ---
@@ -39,7 +37,8 @@ public class EmacsKeyBindings {
 
   public static final String killRegionAction = "emacs-kill-region";
 
-  public static final String backwardKillWordAction = "emacs-backward-kill-word";
+  public static final String backwardKillWordAction =
+      "emacs-backward-kill-word";
 
   public static final String capitalizeWordAction = "emacs-capitalize-word";
 
@@ -52,54 +51,55 @@ public class EmacsKeyBindings {
   public static final String upcaseWordAction = "emacs-upcase-word";
 
   public static final JTextComponent.KeyBinding[] EMACS_KEY_BINDINGS = {
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK),
-                  DefaultEditorKit.pasteAction),
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.ALT_MASK),
-                  DefaultEditorKit.copyAction),
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.CTRL_MASK),
-                  DefaultEditorKit.cutAction),
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_MASK),
-                  DefaultEditorKit.endLineAction),
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.CTRL_MASK),
-                  DefaultEditorKit.beginLineAction),
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_MASK),
-                  DefaultEditorKit.deleteNextCharAction),
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_MASK),
-                  DefaultEditorKit.downAction),
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_MASK),
-                  DefaultEditorKit.upAction),
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.ALT_MASK),
-                  DefaultEditorKit.previousWordAction),
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_LESS, InputEvent.ALT_MASK),
-                  DefaultEditorKit.beginAction),
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_LESS, InputEvent.ALT_MASK + InputEvent.SHIFT_MASK),
-                  DefaultEditorKit.endAction),
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.ALT_MASK),
-                  DefaultEditorKit.nextWordAction),
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_MASK),
-                  DefaultEditorKit.forwardAction),
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.CTRL_MASK),
-                  DefaultEditorKit.backwardAction),
-          new JTextComponent.KeyBinding(KeyStroke.getKeyStroke(
-                  KeyEvent.VK_V, InputEvent.CTRL_MASK),
-                  DefaultEditorKit.pageDownAction),
-          new JTextComponent.KeyBinding(
-                  KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.ALT_MASK),
-                  DefaultEditorKit.pageUpAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK),
+          DefaultEditorKit.pasteAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.ALT_MASK),
+          DefaultEditorKit.copyAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.CTRL_MASK),
+          DefaultEditorKit.cutAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_MASK),
+          DefaultEditorKit.endLineAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.CTRL_MASK),
+          DefaultEditorKit.beginLineAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_MASK),
+          DefaultEditorKit.deleteNextCharAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_MASK),
+          DefaultEditorKit.downAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_MASK),
+          DefaultEditorKit.upAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.ALT_MASK),
+          DefaultEditorKit.previousWordAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_LESS, InputEvent.ALT_MASK),
+          DefaultEditorKit.beginAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_LESS,
+                                 InputEvent.ALT_MASK + InputEvent.SHIFT_MASK),
+          DefaultEditorKit.endAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.ALT_MASK),
+          DefaultEditorKit.nextWordAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_MASK),
+          DefaultEditorKit.forwardAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.CTRL_MASK),
+          DefaultEditorKit.backwardAction),
+      new JTextComponent.KeyBinding(KeyStroke.getKeyStroke(
+          KeyEvent.VK_V, InputEvent.CTRL_MASK),
+                                    DefaultEditorKit.pageDownAction),
+      new JTextComponent.KeyBinding(
+          KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.ALT_MASK),
+          DefaultEditorKit.pageUpAction),
   };
 
   /**
@@ -108,35 +108,47 @@ public class EmacsKeyBindings {
    * <code>JEditorPane</code>.
    */
   public static void loadEmacsKeyBindings() {
-    JTextComponent[] jtcs = {new JTextArea(), new JTextPane(), new JTextField(), new JEditorPane()};
+    JTextComponent[] jtcs =
+        {new JTextArea(), new JTextPane(), new JTextField(), new JEditorPane()};
 
     for (JTextComponent jtc : jtcs) {
       Keymap k = jtc.getKeymap();
 
       JTextComponent.loadKeymap(k, EMACS_KEY_BINDINGS, jtc.getActions());
 
-      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.ALT_MASK),
-              new KillWordAction(killWordAction));
-      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, InputEvent.ALT_MASK),
-              new BackwardKillWordAction(backwardKillWordAction));
-      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.CTRL_MASK),
-              new SetMarkCommandAction(setMarkCommandAction));
-      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.ALT_MASK),
-              new KillRingSaveAction(killRingSaveAction));
-      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.CTRL_MASK),
-              new KillRegionAction(killRegionAction));
-      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_K, InputEvent.CTRL_MASK),
-              new KillLineAction(killLineAction));
-      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK),
-              new YankAction("emacs-yank"));
-      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.ALT_MASK),
-              new YankPopAction("emacs-yank-pop"));
-      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.ALT_MASK),
-              new CapitalizeWordAction(capitalizeWordAction));
-      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_L, InputEvent.ALT_MASK),
-              new DowncaseWordAction(downcaseWordAction));
-      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_U, InputEvent.ALT_MASK),
-              new UpcaseWordAction(upcaseWordAction));
+      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_D,
+                                                     InputEvent.ALT_MASK),
+                              new KillWordAction(killWordAction));
+      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE,
+                                                     InputEvent.ALT_MASK),
+                              new BackwardKillWordAction(backwardKillWordAction));
+      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE,
+                                                     InputEvent.CTRL_MASK),
+                              new SetMarkCommandAction(setMarkCommandAction));
+      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_W,
+                                                     InputEvent.ALT_MASK),
+                              new KillRingSaveAction(killRingSaveAction));
+      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_W,
+                                                     InputEvent.CTRL_MASK),
+                              new KillRegionAction(killRegionAction));
+      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_K,
+                                                     InputEvent.CTRL_MASK),
+                              new KillLineAction(killLineAction));
+      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_Y,
+                                                     InputEvent.CTRL_MASK),
+                              new YankAction("emacs-yank"));
+      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_Y,
+                                                     InputEvent.ALT_MASK),
+                              new YankPopAction("emacs-yank-pop"));
+      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_C,
+                                                     InputEvent.ALT_MASK),
+                              new CapitalizeWordAction(capitalizeWordAction));
+      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_L,
+                                                     InputEvent.ALT_MASK),
+                              new DowncaseWordAction(downcaseWordAction));
+      k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_U,
+                                                     InputEvent.ALT_MASK),
+                              new UpcaseWordAction(upcaseWordAction));
     }
   }
 
@@ -306,9 +318,9 @@ public class EmacsKeyBindings {
 
 
     /**
-     * Uniquely adds <code>item</code> to killring, i.e. if
-     * <code>item</code> is already in killring, it's moved to the front,
-     * otherwise it's added as first element.
+     * Uniquely adds <code>item</code> to killring, i.e. if <code>item</code> is
+     * already in killring, it's moved to the front, otherwise it's added as
+     * first element.
      */
     public static void add(String item) {
       for (Iterator i = killring.iterator(); i.hasNext();) {
@@ -325,6 +337,7 @@ public class EmacsKeyBindings {
      * <code>item</code> to killring.
      *
      * @param predecessor
+     *
      * @return Returns first item if <code>item == null</code>.
      */
     public static String getNext(String predecessor) {
@@ -340,7 +353,7 @@ public class EmacsKeyBindings {
         if (predecessor.equals(i.next())) {
           i.remove();
           if (i.hasNext()) {
-            String result = (String) i.next();
+            String result = (String)i.next();
             killring.addFirst(predecessor);
             return result;
           } else {
@@ -387,9 +400,8 @@ public class EmacsKeyBindings {
     }
 
     /**
-     * At first the same code as in {@link DowncaseWordAction} is
-     * performed, to ensure the word is in lower case, then the first
-     * letter is capialized.
+     * At first the same code as in {@link DowncaseWordAction} is performed, to
+     * ensure the word is in lower case, then the first letter is capialized.
      */
     public void actionPerformed(ActionEvent event) {
       JTextComponent jtc = getTextComponent(event);

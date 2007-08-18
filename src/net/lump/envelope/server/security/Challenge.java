@@ -18,7 +18,7 @@ import java.security.PublicKey;
  * A authorization challenge.
  *
  * @author Troy Bowman
- * @version $Id: Challenge.java,v 1.2 2007/08/18 04:49:44 troy Exp $
+ * @version $Id: Challenge.java,v 1.3 2007/08/18 23:20:11 troy Exp $
  */
 public class Challenge implements Serializable {
   private PublicKey serverKey;
@@ -30,6 +30,7 @@ public class Challenge implements Serializable {
    * @param serverKey the server public key to provide to the client
    * @param clientKey the public client key for encryption of the challenge
    * @param challenge the challeng string itself
+   *
    * @throws NoSuchAlgorithmException
    * @throws BadPaddingException
    * @throws IllegalBlockSizeException
@@ -37,9 +38,9 @@ public class Challenge implements Serializable {
    * @throws NoSuchPaddingException
    */
   public Challenge(PublicKey serverKey, PublicKey clientKey, String challenge)
-          throws NoSuchAlgorithmException, BadPaddingException,
-          IllegalBlockSizeException, InvalidKeyException,
-          NoSuchPaddingException, UnsupportedEncodingException {
+      throws NoSuchAlgorithmException, BadPaddingException,
+      IllegalBlockSizeException, InvalidKeyException,
+      NoSuchPaddingException, UnsupportedEncodingException {
     this.serverKey = serverKey;
     this.setChallenge(clientKey, challenge);
   }
@@ -48,11 +49,12 @@ public class Challenge implements Serializable {
    * Returns the the challenge, decrypted with the supplied private key.
    *
    * @param key the private key
+   *
    * @return String challenge
    */
   public String getChallenge(PrivateKey key) throws NoSuchAlgorithmException,
-          BadPaddingException, IllegalBlockSizeException, InvalidKeyException,
-          NoSuchPaddingException, IOException {
+      BadPaddingException, IllegalBlockSizeException, InvalidKeyException,
+      NoSuchPaddingException, IOException {
     return new String(Encryption.decodeAsym(key, challenge), ENCODING);
   }
 
@@ -79,6 +81,7 @@ public class Challenge implements Serializable {
    *
    * @param key       the public key of the client
    * @param challenge the challenge itself
+   *
    * @throws BadPaddingException
    * @throws NoSuchAlgorithmException
    * @throws IllegalBlockSizeException
@@ -86,9 +89,9 @@ public class Challenge implements Serializable {
    * @throws NoSuchPaddingException
    */
   public void setChallenge(PublicKey key, String challenge) throws
-          BadPaddingException, NoSuchAlgorithmException,
-          IllegalBlockSizeException, InvalidKeyException,
-          NoSuchPaddingException, UnsupportedEncodingException {
+      BadPaddingException, NoSuchAlgorithmException,
+      IllegalBlockSizeException, InvalidKeyException,
+      NoSuchPaddingException, UnsupportedEncodingException {
     this.challenge = Encryption.encodeAsym(key, challenge.getBytes());
   }
 }

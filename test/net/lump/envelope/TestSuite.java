@@ -20,7 +20,7 @@ import java.util.Properties;
  * A JUnit class which runs all tests.
  *
  * @author Troy Bowman
- * @version $Id: TestSuite.java,v 1.3 2007/08/18 08:15:20 troy Exp $
+ * @version $Id: TestSuite.java,v 1.4 2007/08/18 23:20:11 troy Exp $
  */
 public class TestSuite extends TestCase {
   public static final int SERVER_RMI_PORT = 7041;
@@ -38,7 +38,8 @@ public class TestSuite extends TestCase {
       if (p.containsKey(SERVER_PROPERTY))
         SERVER_HOST_NAME = p.getProperty(SERVER_PROPERTY);
       else SERVER_HOST_NAME = localHost();
-      URL url = new URL("http://" + SERVER_HOST_NAME + ":" + SERVER_HTTP_PORT + "/");
+      URL url =
+          new URL("http://" + SERVER_HOST_NAME + ":" + SERVER_HTTP_PORT + "/");
       p.put("java.rmi.server.codebase", url);
 
       loginSettings.setUsername(USER);
@@ -49,20 +50,28 @@ public class TestSuite extends TestCase {
       System.exit(1);
     }
 
-    p.put("java.rmi.server.rminode", "rmi://" + SERVER_HOST_NAME + ":" + Integer.toString(SERVER_RMI_PORT) + "/");
+    p.put("java.rmi.server.rminode",
+          "rmi://"
+          + SERVER_HOST_NAME
+          + ":"
+          + Integer.toString(SERVER_RMI_PORT)
+          + "/");
   }
 
   /**
    * Gets the Controller for testing.
    *
    * @return Controller.
+   *
    * @throws MalformedURLException
    * @throws NotBoundException
    * @throws RemoteException
    */
-  public static Controller getController() throws MalformedURLException, NotBoundException, RemoteException {
-    String rmiName = (String) System.getProperties().get("java.rmi.server.rminode");
-    return (Controller) Naming.lookup(rmiName + "Controller");
+  public static Controller getController()
+      throws MalformedURLException, NotBoundException, RemoteException {
+    String rmiName =
+        (String)System.getProperties().get("java.rmi.server.rminode");
+    return (Controller)Naming.lookup(rmiName + "Controller");
   }
 
   /**
@@ -82,10 +91,12 @@ public class TestSuite extends TestCase {
    * Figure out local hosts's name.
    *
    * @return String
+   *
    * @throws UnknownHostException
    */
   private static String localHost() throws UnknownHostException {
-    final java.net.InetAddress localMachine = java.net.InetAddress.getLocalHost();
+    final java.net.InetAddress localMachine =
+        java.net.InetAddress.getLocalHost();
     return localMachine.getHostName();
   }
 

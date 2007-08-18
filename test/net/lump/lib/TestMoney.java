@@ -7,7 +7,7 @@ import org.junit.Test;
  * Tests MoneyType.
  *
  * @author Troy Bowman
- * @version $Id: TestMoney.java,v 1.2 2007/08/18 08:15:20 troy Exp $
+ * @version $Id: TestMoney.java,v 1.3 2007/08/18 23:20:11 troy Test $
  */
 public class TestMoney extends TestCase {
 
@@ -41,8 +41,10 @@ public class TestMoney extends TestCase {
 //    }
 
 
-    String[] in = {"$1.025", "($1.025)", "1.035", "-1.045", "1.255", "1.265", "1.275"};
-    String[] out = {"$1.02", "($1.02)", "$1.04", "($1.04)", "$1.26", "$1.26", "$1.28"};
+    String[] in =
+        {"$1.025", "($1.025)", "1.035", "-1.045", "1.255", "1.265", "1.275"};
+    String[] out =
+        {"$1.02", "($1.02)", "$1.04", "($1.04)", "$1.26", "$1.26", "$1.28"};
 
     for (int x = 0; x < in.length; x++) {
       Money money = new Money(in[x]);

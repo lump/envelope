@@ -8,7 +8,7 @@ import java.sql.Timestamp;
  * A budget object.
  *
  * @author Troy Bowman
- * @version $Id: Budget.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Budget.java,v 1.2 2007/08/18 23:20:11 troy Exp $
  */
 @Entity
 @Table(name = "budgets")
@@ -68,9 +68,15 @@ public class Budget implements Identifiable {
 
     Budget budget = (Budget)o;
 
-    if (id != null ? !id.equals(budget.id) : budget.id != null) return false;
-    if (name != null ? !name.equals(budget.name) : budget.name != null) return false;
-    if (stamp != null ? !stamp.equals(budget.stamp) : budget.stamp != null) return false;
+    if (id != null
+        ? !id.equals(budget.id)
+        : budget.id != null) return false;
+    if (name != null
+        ? !name.equals(budget.name)
+        : budget.name != null) return false;
+    if (stamp != null
+        ? !stamp.equals(budget.stamp)
+        : budget.stamp != null) return false;
 
     return true;
   }

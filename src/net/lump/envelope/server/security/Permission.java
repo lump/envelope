@@ -9,7 +9,7 @@ import java.util.HashMap;
  * An object which runs bitwise manipulations to determine access levels.
  *
  * @author Troy Bowman
- * @version $Id: Permission.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Permission.java,v 1.2 2007/08/18 23:20:11 troy Exp $
  */
 public class Permission implements Serializable {
   public static final long READ = 1L;
@@ -59,7 +59,8 @@ public class Permission implements Serializable {
   }
 
   /**
-   * Checks to see if the all of the bits in the provided Integer exist in this object.
+   * Checks to see if the all of the bits in the provided Integer exist in this
+   * object.
    *
    * @param permission the Long for testing
    *
@@ -70,9 +71,11 @@ public class Permission implements Serializable {
   }
 
   /**
-   * Removes (turns off) all bits in this object that are turned on in the provided Integer.
+   * Removes (turns off) all bits in this object that are turned on in the
+   * provided Integer.
    *
-   * @param permission the Long which contains the bit(s) which will bet turned off
+   * @param permission the Long which contains the bit(s) which will bet turned
+   *                   off
    */
   public void removePermission(Long permission) {
     long temp = this.permission;
@@ -81,7 +84,8 @@ public class Permission implements Serializable {
   }
 
   /**
-   * Sets the long which describes the permissions obeject to the provided Long.
+   * Sets the long which describes the permissions obeject to the provided
+   * Long.
    *
    * @param permission the provided long
    */
@@ -99,7 +103,8 @@ public class Permission implements Serializable {
   }
 
   /**
-   * Sets all of the permissions in this object to exactly what is contained in the Long that is provided.
+   * Sets all of the permissions in this object to exactly what is contained in
+   * the Long that is provided.
    *
    * @param permission the provided Long.
    */
@@ -117,7 +122,8 @@ public class Permission implements Serializable {
   }
 
   /**
-   * Toggles all bits on/off in this object that are turned on in the provided Long.
+   * Toggles all bits on/off in this object that are turned on in the provided
+   * Long.
    *
    * @param permission the long which contains the bits to be manipulated.
    */

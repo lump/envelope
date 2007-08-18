@@ -10,13 +10,17 @@ import java.text.MessageFormat;
  * An income object.
  *
  * @author Troy Bowman
- * @version $Id: Income.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Income.java,v 1.2 2007/08/18 23:20:11 troy Exp $
  */
 @Entity
 @Table(name = "incomes")
 public class Income implements Identifiable {
   public static enum IncomeType {
-    Reimbursement, Weekly_Payday, Biweekly_Payday, Semimonthly_Payday, Monthly_Payday
+    Reimbursement,
+    Weekly_Payday,
+    Biweekly_Payday,
+    Semimonthly_Payday,
+    Monthly_Payday
   }
 
   private Integer id;
@@ -27,7 +31,10 @@ public class Income implements Identifiable {
   private Date refernceDate;
 
   public String toString() {
-    return MessageFormat.format("{0}:{2}@{3}", name, type.toString(), budget.toString());
+    return MessageFormat.format("{0}:{2}@{3}",
+                                name,
+                                type.toString(),
+                                budget.toString());
   }
 
   @Id
@@ -97,11 +104,21 @@ public class Income implements Identifiable {
 
     Income income = (Income)o;
 
-    if (budget != null ? !budget.equals(income.budget) : income.budget != null) return false;
-    if (id != null ? !id.equals(income.id) : income.id != null) return false;
-    if (name != null ? !name.equals(income.name) : income.name != null) return false;
-    if (refernceDate != null ? !refernceDate.equals(income.refernceDate) : income.refernceDate != null) return false;
-    if (stamp != null ? !stamp.equals(income.stamp) : income.stamp != null) return false;
+    if (budget != null
+        ? !budget.equals(income.budget)
+        : income.budget != null) return false;
+    if (id != null
+        ? !id.equals(income.id)
+        : income.id != null) return false;
+    if (name != null
+        ? !name.equals(income.name)
+        : income.name != null) return false;
+    if (refernceDate != null
+        ? !refernceDate.equals(income.refernceDate)
+        : income.refernceDate != null) return false;
+    if (stamp != null
+        ? !stamp.equals(income.stamp)
+        : income.stamp != null) return false;
     if (type != income.type) return false;
 
     return true;

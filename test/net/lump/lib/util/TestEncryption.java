@@ -10,7 +10,7 @@ import java.security.KeyPair;
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class TestEncryption extends TestCase {
 
@@ -19,10 +19,12 @@ public class TestEncryption extends TestCase {
     KeyPair kp = Encryption.generateKeyPair();
 
     String blah = "blahblah";
-    byte[] encrypted = Encryption.encodeAsym(kp.getPublic(), blah.getBytes("US-ASCII"));
+    byte[] encrypted =
+        Encryption.encodeAsym(kp.getPublic(), blah.getBytes("US-ASCII"));
     assertEquals("Asym Decryption failed",
                  blah,
-                 new String(Encryption.decodeAsym(kp.getPrivate(), encrypted), "US-ASCII"));
+                 new String(Encryption.decodeAsym(kp.getPrivate(), encrypted),
+                            "US-ASCII"));
 
     Challenge c = new Challenge(kp.getPublic(), kp.getPublic(), blah);
     assertEquals("Challenge decription failed",

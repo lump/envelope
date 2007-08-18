@@ -13,7 +13,7 @@ import java.text.MessageFormat;
  * User.
  *
  * @author Troy Bowman
- * @version $Id: User.java,v 1.2 2007/08/18 04:49:44 troy Exp $
+ * @version $Id: User.java,v 1.3 2007/08/18 23:20:11 troy Exp $
  */
 @Entity
 @Table(name = "users")
@@ -39,7 +39,7 @@ public class User implements Identifiable {
   }
 
   public void setId(Serializable id) {
-    this.id = (Integer) id;
+    this.id = (Integer)id;
   }
 
   @Version
@@ -122,23 +122,32 @@ public class User implements Identifiable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    User user = (User) o;
+    User user = (User)o;
 
-    if (budget != null ? !budget.equals(user.budget) : user.budget != null)
-      return false;
-    if (cryptPassword != null ? !cryptPassword.equals(user.cryptPassword) : user.cryptPassword != null)
-      return false;
-    if (id != null ? !id.equals(user.id) : user.id != null) return false;
-    if (name != null ? !name.equals(user.name) : user.name != null)
-      return false;
-    if (permissions != null ? !permissions.equals(user.permissions) : user.permissions != null)
-      return false;
-    if (publicKey != null ? !publicKey.equals(user.publicKey) : user.publicKey != null)
-      return false;
-    if (realName != null ? !realName.equals(user.realName) : user.realName != null)
-      return false;
-    if (stamp != null ? !stamp.equals(user.stamp) : user.stamp != null)
-      return false;
+    if (budget != null
+        ? !budget.equals(user.budget)
+        : user.budget != null) return false;
+    if (cryptPassword != null
+        ? !cryptPassword.equals(user.cryptPassword)
+        : user.cryptPassword != null) return false;
+    if (id != null
+        ? !id.equals(user.id)
+        : user.id != null) return false;
+    if (name != null
+        ? !name.equals(user.name)
+        : user.name != null) return false;
+    if (permissions != null
+        ? !permissions.equals(user.permissions)
+        : user.permissions != null) return false;
+    if (publicKey != null
+        ? !publicKey.equals(user.publicKey)
+        : user.publicKey != null) return false;
+    if (realName != null
+        ? !realName.equals(user.realName)
+        : user.realName != null) return false;
+    if (stamp != null
+        ? !stamp.equals(user.stamp)
+        : user.stamp != null) return false;
 
     return true;
   }
@@ -150,7 +159,9 @@ public class User implements Identifiable {
     result = 31 * result + (budget != null ? budget.hashCode() : 0);
     result = 31 * result + (name != null ? name.hashCode() : 0);
     result = 31 * result + (realName != null ? realName.hashCode() : 0);
-    result = 31 * result + (cryptPassword != null ? cryptPassword.hashCode() : 0);
+    result = 31 * result + (cryptPassword != null
+                            ? cryptPassword.hashCode()
+                            : 0);
     result = 31 * result + (permissions != null ? permissions.hashCode() : 0);
     result = 31 * result + (publicKey != null ? publicKey.hashCode() : 0);
     return result;

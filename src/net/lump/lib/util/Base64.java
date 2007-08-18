@@ -1,8 +1,8 @@
 package us.lump.lib.util;
 
 /**
- * Static methods for translating Base64 encoded strings to byte arrays
- * and vice-versa.
+ * Static methods for translating Base64 encoded strings to byte arrays and
+ * vice-versa.
  *
  * @author Josh Bloch, cleaned up by Troy Bowman
  * @version 1.5, 12/19/03
@@ -15,6 +15,7 @@ public class Base64 {
    * Preferences.put(byte[]).
    *
    * @param a to be decoded
+   *
    * @return String
    */
   public static String byteArrayToBase64(byte[] a) {
@@ -58,16 +59,16 @@ public class Base64 {
   }
 
   /**
-   * This array is a lookup table that translates 6-bit positive integer
-   * index values into their "Base64 Alphabet" equivalents as specified
-   * in Table 1 of RFC 2045.
+   * This array is a lookup table that translates 6-bit positive integer index
+   * values into their "Base64 Alphabet" equivalents as specified in Table 1 of
+   * RFC 2045.
    */
   private static final char intToBase64[] = {
-          'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-          'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-          'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-          'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-          '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
+      'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+      'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+      'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+      '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'
   };
 
   /**
@@ -75,7 +76,9 @@ public class Base64 {
    * into a byte array.
    *
    * @param s to be encoded
+   *
    * @return byte[]
+   *
    * @throws IllegalArgumentException if <tt>s</tt> is not a valid Base64
    *                                  string.
    */
@@ -85,7 +88,7 @@ public class Base64 {
     int numGroups = sLen / 4;
     if (4 * numGroups != sLen)
       throw new IllegalArgumentException(
-              "String length must be a multiple of four.");
+          "String length must be a multiple of four.");
     int missingBytesInLastGroup = 0;
     int numFullGroups = numGroups;
     if (sLen != 0) {
@@ -105,20 +108,20 @@ public class Base64 {
       int ch1 = base64toInt(s.charAt(inCursor++), alphaToInt);
       int ch2 = base64toInt(s.charAt(inCursor++), alphaToInt);
       int ch3 = base64toInt(s.charAt(inCursor++), alphaToInt);
-      result[outCursor++] = (byte) ((ch0 << 2) | (ch1 >> 4));
-      result[outCursor++] = (byte) ((ch1 << 4) | (ch2 >> 2));
-      result[outCursor++] = (byte) ((ch2 << 6) | ch3);
+      result[outCursor++] = (byte)((ch0 << 2) | (ch1 >> 4));
+      result[outCursor++] = (byte)((ch1 << 4) | (ch2 >> 2));
+      result[outCursor++] = (byte)((ch2 << 6) | ch3);
     }
 
     // Translate partial group, if present
     if (missingBytesInLastGroup != 0) {
       int ch0 = base64toInt(s.charAt(inCursor++), alphaToInt);
       int ch1 = base64toInt(s.charAt(inCursor++), alphaToInt);
-      result[outCursor++] = (byte) ((ch0 << 2) | (ch1 >> 4));
+      result[outCursor++] = (byte)((ch0 << 2) | (ch1 >> 4));
 
       if (missingBytesInLastGroup == 1) {
         int ch2 = base64toInt(s.charAt(inCursor), alphaToInt);
-        result[outCursor] = (byte) ((ch1 << 4) | (ch2 >> 2));
+        result[outCursor] = (byte)((ch1 << 4) | (ch2 >> 2));
       }
     }
     // assert inCursor == s.length()-missingBytesInLastGroup;
@@ -127,14 +130,16 @@ public class Base64 {
   }
 
   /**
-   * Translates the specified character, which is assumed to be in the
-   * "Base 64 Alphabet" into its equivalent 6-bit positive integer.
+   * Translates the specified character, which is assumed to be in the "Base 64
+   * Alphabet" into its equivalent 6-bit positive integer.
    *
    * @param c          char
    * @param alphaToInt array
+   *
    * @return int
-   * @throws IllegalArgumentException or ArrayOutOfBoundsException if
-   *                                  c is not in the Base64 Alphabet.
+   *
+   * @throws IllegalArgumentException or ArrayOutOfBoundsException if c is not
+   *                                  in the Base64 Alphabet.
    */
   private static int base64toInt(char c, byte[] alphaToInt) {
     int result = alphaToInt[c];
@@ -144,20 +149,19 @@ public class Base64 {
   }
 
   /**
-   * This array is a lookup table that translates unicode characters
-   * drawn from the "Base64 Alphabet" (as specified in Table 1 of RFC 2045)
-   * into their 6-bit positive integer equivalents.  Characters that
-   * are not in the Base64 alphabet but fall within the bounds of the
-   * array are translated to -1.
+   * This array is a lookup table that translates unicode characters drawn from
+   * the "Base64 Alphabet" (as specified in Table 1 of RFC 2045) into their
+   * 6-bit positive integer equivalents.  Characters that are not in the Base64
+   * alphabet but fall within the bounds of the array are translated to -1.
    */
   private static final byte base64ToInt[] = {
-          -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-          -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-          -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, 52, 53, 54,
-          55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4,
-          5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
-          24, 25, -1, -1, -1, -1, -1, -1, 26, 27, 28, 29, 30, 31, 32, 33, 34,
-          35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+      -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1, -1, 63, 52, 53, 54,
+      55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4,
+      5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23,
+      24, 25, -1, -1, -1, -1, -1, -1, 26, 27, 28, 29, 30, 31, 32, 33, 34,
+      35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51
   };
 
   @SuppressWarnings({"JavaDoc"})
@@ -169,7 +173,7 @@ public class Base64 {
       for (int j = 0; j < numBytes; j++) {
         byte[] arr = new byte[j];
         for (int k = 0; k < j; k++)
-          arr[k] = (byte) rnd.nextInt();
+          arr[k] = (byte)rnd.nextInt();
 
         String s = byteArrayToBase64(arr);
         byte[] b = base64ToByteArray(s);

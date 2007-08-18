@@ -24,7 +24,7 @@ import java.util.Properties;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: DAO.java,v 1.2 2007/08/18 23:20:11 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -37,9 +37,7 @@ public abstract class DAO {
     if (!this.isActive()) begin();
   }
 
-  /**
-   * Initialize the session factory in the DAO.
-   */
+  /** Initialize the session factory in the DAO. */
   public static void initialize() {
     if (sessionFactory == null) {
       Properties config = PrefsConfigurator.configure(DAO.class);
@@ -68,10 +66,10 @@ public abstract class DAO {
    */
   public Session getCurrentSession() {
     // http://www.entity.org/42.html
-    // A Session is opened when getCurrentSession() is called for the first time and
-    // closed when the transaction ends. It is also flushed automatically before the
-    // transaction commits. You can call getCurrentSession() as often and anywhere you
-    // want as long as the transaction runs.
+    // A Session is opened when getCurrentSession() is called for the first time
+    // and closed when the transaction ends. It is also flushed automatically
+    // before the transaction commits. You can call getCurrentSession() as often
+    // and anywhere you want as long as the transaction runs.
     return getSessionFactory().getCurrentSession();
   }
 
@@ -92,8 +90,8 @@ public abstract class DAO {
     for (T i : l) getCurrentSession().evict(i);
   }
 
-  @SuppressWarnings("unchecked")
-      <T extends Identifiable> T get(Class<T> t, Serializable id) {
+  @SuppressWarnings("unchecked") <T extends Identifiable> T get(Class<T> t,
+                                                                Serializable id) {
     return (T)getCurrentSession().get(t, id);
   }
 
@@ -101,14 +99,17 @@ public abstract class DAO {
     return getList(t, listify(ids));
   }
 
-  <T extends Identifiable> List<T> getList(Class<T> t, Iterable<Serializable> ids) {
+  <T extends Identifiable> List<T> getList(Class<T> t,
+                                           Iterable<Serializable> ids) {
     List<T> out = new ArrayList<T>();
     for (Serializable id : ids) out.add(get(t, id));
     return out;
   }
 
   @SuppressWarnings("unchecked")
-      <T extends Identifiable> List<T> list(Class<T> t, List<Order> orderby, Criterion... crits) {
+      <T extends Identifiable> List<T> list(Class<T> t,
+                                            List<Order> orderby,
+                                            Criterion... crits) {
     Criteria criteria = getCurrentSession().createCriteria(t);
     for (Criterion crit : crits) criteria.add(crit);
     if (orderby != null) for (Order o : orderby) criteria.addOrder(o);
@@ -119,8 +120,8 @@ public abstract class DAO {
     return list(t, null, crits);
   }
 
-  @SuppressWarnings("unchecked")
-      <T extends Identifiable> T load(Class<T> t, Serializable id) {
+  @SuppressWarnings("unchecked") <T extends Identifiable> T load(Class<T> t,
+                                                                 Serializable id) {
     return (T)getCurrentSession().load(t, id);
   }
 
@@ -128,14 +129,14 @@ public abstract class DAO {
     return loadList(t, listify(ids));
   }
 
-  <T extends Identifiable> List<T> loadList(Class<T> t, Iterable<Serializable> ids) {
+  <T extends Identifiable> List<T> loadList(Class<T> t,
+                                            Iterable<Serializable> ids) {
     List<T> out = new ArrayList<T>();
     for (Serializable id : ids) out.add(load(t, id));
     return out;
   }
 
-  @SuppressWarnings("unchecked")
-      <T extends Identifiable> T merge(T i) {
+  @SuppressWarnings("unchecked") <T extends Identifiable> T merge(T i) {
     return (T)getCurrentSession().merge(i);
   }
 
@@ -227,6 +228,7 @@ public abstract class DAO {
 
   /**
    * Get the current Transsaction.
+   *
    * @return Transaction
    */
   public org.hibernate.Transaction getTransaction() {
@@ -234,7 +236,8 @@ public abstract class DAO {
   }
 
   Connection getConnection() throws SQLException {
-    Connection c = ((SessionImpl)getCurrentSession()).getJDBCContext().borrowConnection();
+    Connection c =
+        ((SessionImpl)getCurrentSession()).getJDBCContext().borrowConnection();
     if (c.isClosed()) throw new SessionException("Session is closed!");
     return c;
   }
@@ -248,7 +251,10 @@ public abstract class DAO {
 
   protected void finalize() throws Throwable {
     try {
-      if (isActive() && !wasRolledBack()) { flush(); commit(); }
+      if (isActive() && !wasRolledBack()) {
+        flush();
+        commit();
+      }
     } finally {
       super.finalize();
     }

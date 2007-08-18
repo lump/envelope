@@ -15,7 +15,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Control.java,v 1.4 2007/08/18 04:49:44 troy Exp $
+ * @version $Id: Control.java,v 1.5 2007/08/18 23:20:11 troy Exp $
  */
 public class Control extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -34,7 +34,10 @@ public class Control extends UnicastRemoteObject implements Controller {
    * Invoke a command.
    *
    * @param commands one more more commands
-   * @return Object if there are more than one command, the object will be a List of objects.
+   *
+   * @return Object if there are more than one command, the object will be a
+   *         List of objects.
+   *
    * @throws RemoteException
    */
   @SuppressWarnings({"LoopStatementThatDoesntLoop"})
@@ -49,7 +52,7 @@ public class Control extends UnicastRemoteObject implements Controller {
       try {
         // if a session is required, force check authorization first
         if (command.getCmd().isSessionRequired()
-                && !(new Security()).validateSession(command))
+            && !(new Security()).validateSession(command))
           throw new AuthenticationException("Invalid session");
       } catch (Exception e) {
         logger.warn("error in session validation", e);
@@ -62,12 +65,12 @@ public class Control extends UnicastRemoteObject implements Controller {
 
     // return the single return object if the list size is 1.
     return returnList.size() == 1
-            ? returnList.get(0)
-            // return the list if there are more than one
-            : returnList.size() > 1
-            ? returnList
-            // else, return null if it's empty
-            : null;
+           ? returnList.get(0)
+           // return the list if there are more than one
+           : returnList.size() > 1
+             ? returnList
+             // else, return null if it's empty
+             : null;
   }
 
   private Object dispatch(Command command) throws RemoteException {
@@ -88,17 +91,21 @@ public class Control extends UnicastRemoteObject implements Controller {
       }
 
       // deduce the DAO class name from the facet and create an instance.
-      dao = (DAO) Class.forName(DAO_PATH + command.getCmd().getFacet().name()).newInstance();
+      dao = (DAO)Class.forName(
+          DAO_PATH
+          + command.getCmd().getFacet().name()).newInstance();
 
       return
-              // get the method from the command name and parameter names
-              dao.getClass().getDeclaredMethod(command.getCmd().name(), paramNames)
-                      // invoke the method on a new instance of the class with the arguments
-                      .invoke(dao, args);
+          // get the method from the command name and parameter names
+          dao.getClass().getDeclaredMethod(command.getCmd().name(), paramNames)
+              // invoke the method on a new instance of the class with the arguments
+              .invoke(dao, args);
 
     } catch (Exception e) {
       // rollback the transaction if it is active.
-      if (dao != null && dao.getTransaction().isActive() && !dao.getTransaction().wasRolledBack()) {
+      if (dao != null
+          && dao.getTransaction().isActive()
+          && !dao.getTransaction().wasRolledBack()) {
         dao.getTransaction().rollback();
         logger.warn("transaction was rolled back");
       }
@@ -106,21 +113,31 @@ public class Control extends UnicastRemoteObject implements Controller {
       //every exception will be caught, logged, and re-thrown to the client.
       logger.fatal("error on dispatch", e);
       if (e instanceof ClassNotFoundException)
-        throw new IllegalArgumentException("Bad Facet " + command.getCmd().getFacet().name(), e);
-      if (e instanceof IllegalAccessException || e instanceof NoSuchMethodException)
-        throw new IllegalArgumentException("Bad Command " + command.getCmd().name(), e);
+        throw new IllegalArgumentException("Bad Facet " + command.getCmd()
+            .getFacet()
+            .name(), e);
+      if (e instanceof IllegalAccessException
+          || e instanceof NoSuchMethodException)
+        throw new IllegalArgumentException("Bad Command " + command.getCmd()
+            .name(), e);
       if (e instanceof InstantiationException)
-        throw new IllegalArgumentException("Could not instantiate " + command.getCmd().getFacet().name(), e);
+        throw new IllegalArgumentException("Could not instantiate "
+                                           + command.getCmd().getFacet().name(),
+                                           e);
       if (e instanceof InvocationTargetException)
-        throw new IllegalArgumentException("Could not invoke " + command.getCmd().name());
+        throw new IllegalArgumentException("Could not invoke "
+                                           + command.getCmd().name());
       throw new RemoteException(e.getMessage(), e);
     }
     finally {
       // close the session
       dao.close();
-      logger.debug(command.getCmd().name() + " "
-              + (command.getCredentials() != null ? command.getCredentials().getUsername() + " " : "")
-              + ((System.currentTimeMillis() - start) / 1000D) + "s");
+      logger.debug(
+          command.getCmd().name() + " "
+          + (command.getCredentials() != null
+             ? command.getCredentials().getUsername() + " "
+             : "")
+          + ((System.currentTimeMillis() - start) / 1000D) + "s");
     }
   }
 }

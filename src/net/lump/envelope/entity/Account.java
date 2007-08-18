@@ -16,19 +16,22 @@ import java.util.List;
  * An account object.
  *
  * @author Troy Bowman
- * @version $Id: Account.java,v 1.2 2007/08/07 01:08:03 troy Exp $
+ * @version $Id: Account.java,v 1.3 2007/08/18 23:20:11 troy Exp $
  */
 @Entity
 @Table(name = "accounts")
 public class Account implements Identifiable {
 
-//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.2 $".replaceAll("\\D", ""));
+//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.3 $".replaceAll("\\D", ""));
 
   /** The type of an Account. */
   public static enum AccountType {
-    /** A debit account.  This would most likely be your checking account. */
+    /** A debit account. This would most likely be your checking account. */
     Debit,
-    /** A credit account.  This could be a credit card or a home equity line of credit. */
+    /**
+     * A credit account. This could be a credit card or a home equity line of
+     * credit.
+     */
     Credit
   }
 
@@ -42,7 +45,10 @@ public class Account implements Identifiable {
   private Money limit;
 
   public String toString() {
-    return MessageFormat.format("{0}:{1}@{2}", name, type.toString(), budget.toString());
+    return MessageFormat.format("{0}:{1}@{2}",
+                                name,
+                                type.toString(),
+                                budget.toString());
   }
 
   @Id
@@ -153,13 +159,27 @@ public class Account implements Identifiable {
 
     Account account = (Account)o;
 
-    if (budget != null ? !budget.equals(account.budget) : account.budget != null) return false;
-    if (categories != null ? !categories.equals(account.categories) : account.categories != null) return false;
-    if (id != null ? !id.equals(account.id) : account.id != null) return false;
-    if (limit != null ? !limit.equals(account.limit) : account.limit != null) return false;
-    if (name != null ? !name.equals(account.name) : account.name != null) return false;
-    if (rate != null ? !rate.equals(account.rate) : account.rate != null) return false;
-    if (stamp != null ? !stamp.equals(account.stamp) : account.stamp != null) return false;
+    if (budget != null
+        ? !budget.equals(account.budget)
+        : account.budget != null) return false;
+    if (categories != null
+        ? !categories.equals(account.categories)
+        : account.categories != null) return false;
+    if (id != null
+        ? !id.equals(account.id)
+        : account.id != null) return false;
+    if (limit != null
+        ? !limit.equals(account.limit)
+        : account.limit != null) return false;
+    if (name != null
+        ? !name.equals(account.name)
+        : account.name != null) return false;
+    if (rate != null
+        ? !rate.equals(account.rate)
+        : account.rate != null) return false;
+    if (stamp != null
+        ? !stamp.equals(account.stamp)
+        : account.stamp != null) return false;
     if (type != account.type) return false;
 
     return true;

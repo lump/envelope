@@ -13,7 +13,7 @@ import java.rmi.server.RMIClassLoader;
  * The class that starts the client by bootstrapping from RMI.
  *
  * @author Troy Bowman
- * @version $Id: Envelope.java,v 1.2 2007/07/28 07:28:10 troy Exp $
+ * @version $Id: Envelope.java,v 1.3 2007/08/18 23:20:11 troy Exp $
  */
 
 public class Envelope {
@@ -28,7 +28,7 @@ public class Envelope {
 
     Preferences prefs = new Preferences();
     prefs.setTitle(Strings.get("preferences"));
-    prefs.setSize(400,400);
+    prefs.setSize(400, 400);
     if (!prefs.areServerSettingsOk()) prefs.setVisible(true);
     ServerSettings ss = ServerSettings.getInstance();
 
@@ -62,7 +62,9 @@ public class Envelope {
     try {
       new Envelope();
     } catch (MalformedURLException mURLe) {
-      System.err.println("URL not specified correctly for the Client class: " + mURLe);
+      System.err
+          .println("URL not specified correctly for the Client class: "
+                   + mURLe);
       System.exit(1);
     } catch (ClassNotFoundException cnfe) {
       System.err.println("Envelope, Class not found: " + cnfe);

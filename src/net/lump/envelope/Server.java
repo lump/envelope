@@ -28,7 +28,7 @@ import java.util.prefs.Preferences;
  * Server Main Code.
  *
  * @author Troy Bowman
- * @version $Id: Server.java,v 1.4 2007/07/31 03:24:38 troy Exp $
+ * @version $Id: Server.java,v 1.5 2007/08/18 23:20:11 troy Exp $
  */
 
 public class Server {
@@ -51,24 +51,32 @@ public class Server {
 
   // Constructor
   private Server()
-          throws RemoteException,
-          MalformedURLException,
-          NotBoundException {
+      throws RemoteException,
+      MalformedURLException,
+      NotBoundException {
 
     System.getProperties().put(
-            "java.rmi.server.codebase", "http://" + LOCAL_HOST + ":" + serverConfig.getProperty("server.rmi.port") + "/");
+        "java.rmi.server.codebase",
+        "http://" + LOCAL_HOST + ":"
+        + serverConfig.getProperty("server.rmi.port") + "/");
 
-    LocateRegistry.createRegistry(Integer.parseInt(serverConfig.getProperty("server.rmi.port")));
+    LocateRegistry.createRegistry(
+        Integer.parseInt(serverConfig.getProperty("server.rmi.port")));
 
-    logger.info(MessageFormat.format("Registry created on host computer {0} on port {1}",
-            LOCAL_HOST,
-            serverConfig.getProperty("server.rmi.port"))
+    logger.info(MessageFormat.format(
+        "Registry created on host computer {0} on port {1}",
+        LOCAL_HOST,
+        serverConfig.getProperty("server.rmi.port"))
     );
 
     Controller controller = new Control();
     logger.info("Remote Controller implementation object created");
 
-    Naming.rebind("//" + LOCAL_HOST + ":" + serverConfig.getProperty("server.rmi.port") + "/Controller", controller);
+    Naming.rebind("//"
+                  + LOCAL_HOST
+                  + ":"
+                  + serverConfig.getProperty("server.rmi.port")
+                  + "/Controller", controller);
 
     logger.info("Bindings Finished, waiting for client requests.");
   }
@@ -85,22 +93,33 @@ public class Server {
     for (String arg : args) {
       if ("-h".equals(arg) || "--help".equals(arg)) {
         System.out.println("-h --help: this help.");
-        System.out.println("-q --quiet: not interactive, no stdout/stderr logging.");
+        System.out
+            .println("-q --quiet: not interactive, no stdout/stderr logging.");
         System.out.println("--conf: reconfigure everything.");
         System.out.println("--reset: reset everything to defaults.");
         for (Class c : confClasses) {
           System.out.format("--%s-conf: reconfigure %s.%s",
-                  c.getSimpleName().toLowerCase(), c.getSimpleName(), System.getProperty("line.separator"));
-          System.out.format("--%s-reset: reset %s to defaults, forcing reconfigure%s",
-                  c.getSimpleName().toLowerCase(), c.getSimpleName(), System.getProperty("line.separator"));
+                            c.getSimpleName().toLowerCase(),
+                            c.getSimpleName(),
+                            System.getProperty("line.separator"));
+          System.out
+              .format("--%s-reset: reset %s to defaults, forcing reconfigure%s",
+                      c.getSimpleName().toLowerCase(),
+                      c.getSimpleName(),
+                      System.getProperty("line.separator"));
         }
         System.exit(0);
       }
       if (arg.matches("^-q|--quiet$")) fg = false;
       for (Class c : confClasses) {
-        if (arg.matches("^--(?:" + c.getSimpleName().toLowerCase() + "-)?conf$"))
-          Preferences.userNodeForPackage(c).put(c.getSimpleName() + ".ok", "no");
-        if (arg.matches("^--(?:" + c.getSimpleName().toLowerCase() + "-)?reset$"))
+        if (arg.matches("^--(?:"
+                        + c.getSimpleName().toLowerCase()
+                        + "-)?conf$"))
+          Preferences.userNodeForPackage(c)
+              .put(c.getSimpleName() + ".ok", "no");
+        if (arg.matches("^--(?:"
+                        + c.getSimpleName().toLowerCase()
+                        + "-)?reset$"))
           try {
             Preferences.userNodeForPackage(c).clear();
           } catch (BackingStoreException e) {
@@ -110,14 +129,18 @@ public class Server {
       }
     }
 
-    String rootlogger = Preferences.userNodeForPackage(Logging.class).get("log4j.rootLogger", null);
+    String rootlogger = Preferences.userNodeForPackage(Logging.class)
+        .get("log4j.rootLogger", null);
     if (null != rootlogger) {
       if (fg && !rootlogger.matches("^.*?console.*$"))
         Preferences.userNodeForPackage(Logging.class).put("log4j.rootLogger",
-                rootlogger + ", console");
+                                                          rootlogger
+                                                          + ", console");
       else if (!fg && rootlogger.matches("^.*?console.*$"))
         Preferences.userNodeForPackage(Logging.class).put("log4j.rootLogger",
-                rootlogger.replaceAll("^(.*?),?\\s+console(.*)$", "$1$2"));
+                                                          rootlogger.replaceAll(
+                                                              "^(.*?),?\\s+console(.*)$",
+                                                              "$1$2"));
     }
 
     // initialize the server config
@@ -140,9 +163,11 @@ public class Server {
 
     // start the HTTP class server
     try {
-      new ClassServer(Integer.parseInt(serverConfig.getProperty("server.http.classloader.port")));
+      new ClassServer(Integer.parseInt(serverConfig.getProperty(
+          "server.http.classloader.port")));
       logger.info(MessageFormat.format("ClassServer started on port {0}",
-              serverConfig.getProperty("server.http.classloader.port")));
+                                       serverConfig.getProperty(
+                                           "server.http.classloader.port")));
     }
     catch (IOException e) {
       logger.error("Unable to start ClassServer: " + e.getMessage());
@@ -168,17 +193,20 @@ public class Server {
             System.exit(0);
           } else {
             // default will print uptime
-            System.out.println(MessageFormat.format("uptime: {0} since: {1,date,full} {1,time,full}",
-                    interval(START_TIME, System.currentTimeMillis()), START_TIME));
+            System.out
+                .println(MessageFormat.format(
+                    "uptime: {0} since: {1,date,full} {1,time,full}",
+                    interval(START_TIME, System.currentTimeMillis()),
+                    START_TIME));
           }
         }
       }
     }
     catch (java.rmi.UnknownHostException uhe) {
       logger.error(
-              MessageFormat.format(
-                      "The host computer name you have specified, {0} does not match your real computer name.",
-                      LOCAL_HOST)
+          MessageFormat.format(
+              "The host computer name you have specified, {0} does not match your real computer name.",
+              LOCAL_HOST)
       );
     }
     catch (RemoteException re) {
@@ -217,7 +245,8 @@ public class Server {
     public static final Span HOUR = new Span("h", 3600000L);
     public static final Span MINUTE = new Span("m", 60000L);
     public static final Span SECOND = new Span("s", 1000L);
-    public static final Span[] DHMS = new Span[]{Span.DAY, Span.HOUR, Span.MINUTE, Span.SECOND};
+    public static final Span[] DHMS =
+        new Span[]{Span.DAY, Span.HOUR, Span.MINUTE, Span.SECOND};
 
     public String abbr;
     public long millis;

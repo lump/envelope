@@ -9,15 +9,13 @@ import java.sql.Timestamp;
  * A category.
  *
  * @author Troy Bowman
- * @version $Id: Category.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Category.java,v 1.2 2007/08/18 23:20:11 troy Exp $
  */
 @Entity
 @Table(name = "categories")
 public class Category implements Identifiable {
 
-  /**
-   * The allocation types.
-   */
+  /** The allocation types. */
   public static enum AllocationType {
     /** Percent per paycheck */
     ppp,
@@ -108,8 +106,8 @@ public class Category implements Identifiable {
   }
 
   /**
-   * Gets the Allocation ammount.  This could be a monetary amount, or it could be a percentage, depending on the
-   * allocation type.
+   * Gets the Allocation ammount.  This could be a monetary amount, or it could
+   * be a percentage, depending on the allocation type.
    *
    * @return BigDecimal
    */
@@ -119,8 +117,8 @@ public class Category implements Identifiable {
   }
 
   /**
-   * Sets the Allocation ammount.  This could be a monetary amount, or it could be a percentage, depending on the
-   * allocation type.
+   * Sets the Allocation ammount.  This could be a monetary amount, or it could
+   * be a percentage, depending on the allocation type.
    *
    * @param allocation BigDecimal
    */
@@ -153,9 +151,10 @@ public class Category implements Identifiable {
   }
 
   /**
-   * Whether this category, when income is added, should create an opposing auto-deducted transaction. This allows you
-   * to keep a record of transactions of all of the automatically deducted taxes, 401k payments, insurance premiums, and
-   * so on from your gross.
+   * Whether this category, when income is added, should create an opposing
+   * auto-deducted transaction. This allows you to keep a record of transactions
+   * of all of the automatically deducted taxes, 401k payments, insurance
+   * premiums, and so on from your gross.
    *
    * @return Boolean
    */
@@ -209,13 +208,25 @@ public class Category implements Identifiable {
 
     Category category = (Category)o;
 
-    if (account != null ? !account.equals(category.account) : category.account != null) return false;
-    if (allocation != null ? !allocation.equals(category.allocation) : category.allocation != null) return false;
+    if (account != null
+        ? !account.equals(category.account)
+        : category.account != null) return false;
+    if (allocation != null
+        ? !allocation.equals(category.allocation)
+        : category.allocation != null) return false;
     if (allocationType != category.allocationType) return false;
-    if (autoDeduct != null ? !autoDeduct.equals(category.autoDeduct) : category.autoDeduct != null) return false;
-    if (id != null ? !id.equals(category.id) : category.id != null) return false;
-    if (name != null ? !name.equals(category.name) : category.name != null) return false;
-    if (stamp != null ? !stamp.equals(category.stamp) : category.stamp != null) return false;
+    if (autoDeduct != null
+        ? !autoDeduct.equals(category.autoDeduct)
+        : category.autoDeduct != null) return false;
+    if (id != null
+        ? !id.equals(category.id)
+        : category.id != null) return false;
+    if (name != null
+        ? !name.equals(category.name)
+        : category.name != null) return false;
+    if (stamp != null
+        ? !stamp.equals(category.stamp)
+        : category.stamp != null) return false;
 
     return true;
   }
@@ -227,7 +238,8 @@ public class Category implements Identifiable {
     result = 31 * result + (account != null ? account.hashCode() : 0);
     result = 31 * result + (name != null ? name.hashCode() : 0);
     result = 31 * result + (allocation != null ? allocation.hashCode() : 0);
-    result = 31 * result + (allocationType != null ? allocationType.hashCode() : 0);
+    result =
+        31 * result + (allocationType != null ? allocationType.hashCode() : 0);
     result = 31 * result + (autoDeduct != null ? autoDeduct.hashCode() : 0);
     return result;
   }

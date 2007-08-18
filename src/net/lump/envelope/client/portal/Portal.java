@@ -14,10 +14,11 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 
 /**
- * All portals should subclass this class, as this provides a single point of exit/entry to the server.
+ * All portals should subclass this class, as this provides a single point of
+ * exit/entry to the server.
  *
  * @author Troy Bowman
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 
 abstract class Portal {
@@ -31,7 +32,8 @@ abstract class Portal {
 
   Portal() {
     try {
-      this.controller = (Controller) Naming.lookup(ServerSettings.getInstance().rmiController());
+      this.controller = (Controller)Naming.lookup(
+          ServerSettings.getInstance().rmiController());
     } catch (Exception e) {
       logger.error(e);
       Preferences p = Main.getInstance().getPreferences();
@@ -55,10 +57,10 @@ abstract class Portal {
       // if we can't sign for any reason, this is fatal.
       logger.error(e);
       JOptionPane.showMessageDialog(
-              frame,
-              Strings.get(e.getClass().getSimpleName() + ": " + e.getMessage()),
-              Strings.get("error.fatal"),
-              JOptionPane.ERROR_MESSAGE);
+          frame,
+          Strings.get(e.getClass().getSimpleName() + ": " + e.getMessage()),
+          Strings.get("error.fatal"),
+          JOptionPane.ERROR_MESSAGE);
       System.exit(1);
     }
 

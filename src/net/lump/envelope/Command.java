@@ -17,18 +17,19 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 public class Command implements Serializable {
   /**
    * An application facet.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.3 $
+   * @version $Revision: 1.4 $
    */
   public enum Dao {
     Security,
     Action,
+    Status,
     Report
   }
 
@@ -36,7 +37,7 @@ public class Command implements Serializable {
    * A parameter.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.3 $
+   * @version $Revision: 1.4 $
    */
   public enum Param {
     public_key(PublicKey.class),
@@ -71,7 +72,7 @@ public class Command implements Serializable {
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.3 $
+   * @version $Revision: 1.4 $
    */
   public enum Name {
 
@@ -81,16 +82,22 @@ public class Command implements Serializable {
 
     // security
     getChallenge(false, Dao.Security, Param.user_name, Param.public_key),
-    authChallengeResponse(false, Dao.Security, Param.user_name, Param.challenge_response),
+    authChallengeResponse(false,
+                          Dao.Security,
+                          Param.user_name,
+                          Param.challenge_response),
 
     // transaction
     listTransactions(Dao.Action, Param.year),
 
     // report
-    getCategoryBalance(Dao.Report, Param.category, Param.year, Param.reconciled),
-    getCategoryBalances(Dao.Report, Param.year, Param.reconciled),
-    getAccountBalance(Dao.Report, Param.account, Param.year, Param.reconciled),
-    getAccountBalances(Dao.Report, Param.year, Param.reconciled),
+    getCategoryBalance(Dao.Status,
+                       Param.category,
+                       Param.year,
+                       Param.reconciled),
+    getCategoryBalances(Dao.Status, Param.year, Param.reconciled),
+    getAccountBalance(Dao.Status, Param.account, Param.year, Param.reconciled),
+    getAccountBalances(Dao.Status, Param.year, Param.reconciled),
 
     // end list
     ;
@@ -110,7 +117,8 @@ public class Command implements Serializable {
     }
 
     /**
-     * This is the facet of the command.  It refers directly to the class of DAO that will be called.
+     * This is the facet of the command.  It refers directly to the class of DAO
+     * that will be called.
      *
      * @return Facet
      */
@@ -140,7 +148,8 @@ public class Command implements Serializable {
 
   private final Name name;
   // the actual parameters
-  private final HashMap<Param, Serializable> params = new HashMap<Param, Serializable>();
+  private final HashMap<Param, Serializable> params =
+      new HashMap<Param, Serializable>();
   // credentials for the session
   private Credentials credentials = null;
 
@@ -184,6 +193,7 @@ public class Command implements Serializable {
    * Returns the value of the parameter defined by p
    *
    * @param p the Param key
+   *
    * @return Serializable value
    */
   public Serializable getParam(Param p) {
@@ -195,6 +205,7 @@ public class Command implements Serializable {
    *
    * @param param the Param key
    * @param value the Serializable value
+   *
    * @return Command the instance of command (for chained method calls)
    */
   public Command set(Param param, Serializable value) {
@@ -205,11 +216,11 @@ public class Command implements Serializable {
         this.params.put(param, value);
       else
         throw new IllegalArgumentException(
-                param.name()
-                        + " requires type "
-                        + param.getType().getSimpleName()
-                        + " and is not type "
-                        + value.getClass().getSimpleName());
+            param.name()
+            + " requires type "
+            + param.getType().getSimpleName()
+            + " and is not type "
+            + value.getClass().getSimpleName());
     else
       throw new IllegalArgumentException("invalid parameter " + param.name());
     return this;
@@ -220,14 +231,16 @@ public class Command implements Serializable {
    *
    * @param username the username of the signer.
    * @param key      the private key of the signer
+   *
    * @return Command the instance of command (for chained method calls)
+   *
    * @throws NoSuchAlgorithmException NoSuchAlgorithmException
    * @throws SignatureException       SignatureException
    * @throws InvalidKeyException      InvalidKeyException
    */
   public Command sign(String username, PrivateKey key)
-          throws NoSuchAlgorithmException, SignatureException,
-          InvalidKeyException, UnsupportedEncodingException {
+      throws NoSuchAlgorithmException, SignatureException,
+      InvalidKeyException, UnsupportedEncodingException {
     this.credentials = new Credentials(username);
     credentials.setSignature(Encryption.sign(key, String.valueOf(hashCode())));
     return this;
@@ -237,19 +250,21 @@ public class Command implements Serializable {
    * Verifies the signature of the command with a public key.
    *
    * @param key the public key
+   *
    * @return boolean whether the signature verifies.
+   *
    * @throws NoSuchAlgorithmException
    * @throws SignatureException
    * @throws UnsupportedEncodingException
    * @throws InvalidKeyException
    */
   public boolean verify(PublicKey key) throws NoSuchAlgorithmException,
-          SignatureException, UnsupportedEncodingException,
-          InvalidKeyException {
+      SignatureException, UnsupportedEncodingException,
+      InvalidKeyException {
     return Encryption.verify(
-            key,
-            String.valueOf(hashCode()),
-            credentials.getSignature()
+        key,
+        String.valueOf(hashCode()),
+        credentials.getSignature()
     );
   }
 
@@ -257,8 +272,8 @@ public class Command implements Serializable {
    * Enum's hashcode does not compute the hashcode on the ordinal, and it is
    * marked as final, so it can't be overridden.  Ugh, that's just yucky.
    * <p/>
-   * So, here's a hashcode that uses the ordinal, a well as doing a hash on
-   * all of the attributes of this Command enum, too.
+   * So, here's a hashcode that uses the ordinal, a well as doing a hash on all
+   * of the attributes of this Command enum, too.
    *
    * @return int
    */

@@ -10,19 +10,14 @@ import us.lump.envelope.client.ui.defs.Strings;
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import java.awt.*;
-import java.awt.event.*;
-import java.net.MalformedURLException;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.security.InvalidKeyException;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 
 /**
  * .
  *
  * @author troy
- * @version $Id: Main.java,v 1.4 2007/08/07 01:08:03 troy Exp $
+ * @version $Id: Main.java,v 1.5 2007/08/18 23:20:11 troy Exp $
  */
 public class Main implements Runnable {
   private JFrame frame = new JFrame(Strings.get("envelope_budget"));
@@ -36,7 +31,9 @@ public class Main implements Runnable {
   private JTree heirarchyTree = new JTree();
   private JScrollPane tableScrollPane = new JScrollPane();
   private JTable transactionTable = new JTable();
-  private JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeScrollPane, tableScrollPane);
+  private JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+                                                treeScrollPane,
+                                                tableScrollPane);
   private JLabel status = new JLabel(Strings.get("ready"));
 
   private static Main singleton;
@@ -53,8 +50,8 @@ public class Main implements Runnable {
   public void run() {
 
     splitPane.setResizeWeight(.3);
-    splitPane.getLeftComponent().setMinimumSize(new Dimension(100,0));
-    splitPane.getRightComponent().setMinimumSize(new Dimension(300,0));
+    splitPane.getLeftComponent().setMinimumSize(new Dimension(100, 0));
+    splitPane.getRightComponent().setMinimumSize(new Dimension(300, 0));
     splitPane.setContinuousLayout(true);
     splitPane.setOneTouchExpandable(true);
 
@@ -63,7 +60,7 @@ public class Main implements Runnable {
     treeScrollPane.add(heirarchyTree);
     tableScrollPane.add(transactionTable);
 
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);    
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     frame.setLayout(new BorderLayout());
     frame.setJMenuBar(mainMenuBar);
     frame.getContentPane().add(BorderLayout.CENTER, splitPane);
@@ -71,37 +68,41 @@ public class Main implements Runnable {
 
 
     int shortcutKeyMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
-    if (System.getProperty("os.name").toLowerCase().matches("^.*?mac os x.*$")) {
+    if (System.getProperty("os.name").toLowerCase()
+        .matches("^.*?mac os x.*$")) {
       // the Mac specific code here
       System.getProperties().put("apple.laf.useScreenMenuBar", true);
 
       Application fApplication = Application.getApplication();
       fApplication.setEnabledPreferencesMenu(true);
-      fApplication.addApplicationListener(new com.apple.eawt.ApplicationAdapter() {
-        public void handleAbout(ApplicationEvent e) {
-          aboutBox();
-          e.setHandled(true);
-        }
+      fApplication.addApplicationListener(
+          new com.apple.eawt.ApplicationAdapter() {
 
-        public void handleOpenApplication(ApplicationEvent e) {
-        }
+            public void handleAbout(ApplicationEvent e) {
+              aboutBox();
+              e.setHandled(true);
+            }
 
-        public void handleOpenFile(ApplicationEvent e) {
-        }
+            public void handleOpenApplication(ApplicationEvent e) {
+            }
 
-        public void handlePreferences(ApplicationEvent e) {
-          appPrefs.setVisible(true);
-        }
+            public void handleOpenFile(ApplicationEvent e) {
+            }
 
-        public void handlePrintFile(ApplicationEvent e) {
-        }
+            public void handlePreferences(ApplicationEvent e) {
+              appPrefs.setVisible(true);
+            }
 
-        public void handleQuit(ApplicationEvent e) {
-          exit(0);
-        }
-      });
+            public void handlePrintFile(ApplicationEvent e) {
+            }
+
+            public void handleQuit(ApplicationEvent e) {
+              exit(0);
+            }
+          });
     } else {
-      // try for windows look for m$ losers (as they have a cow if things look different...)
+      // try for windows look for m$ losers (as they have a cow if things
+      // look different...)
       if (System.getProperty("os.name").matches("^.*?Windows.*$")) try {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
       } catch (Exception e) { /* bah, nevermind */ }
@@ -152,7 +153,6 @@ public class Main implements Runnable {
     // test login settings, trigger log in
     new SecurityPortal().authedPing();
 
-
     //    frame.pack();
     frame.validate();
     frame.setSize(getWindowSize());
@@ -170,7 +170,8 @@ public class Main implements Runnable {
     if (aboutBox == null) aboutBox = new AboutBox();
     aboutBox.setTitle(Strings.get("about"));
     aboutBox.setResizable(false);
-    aboutBox.setLocation(new Point(frame.getLocation().x + 20, frame.getLocation().y + 20));
+    aboutBox.setLocation(new Point(frame.getLocation().x + 20,
+                                   frame.getLocation().y + 20));
     aboutBox.setVisible(true);
   }
 
@@ -224,8 +225,10 @@ public class Main implements Runnable {
 
   private Dimension getWindowSize() {
     return new Dimension(
-        new Integer(prefs.get("windowSizeX", "640").replaceAll("^(\\d+).*", "$1")),
-        new Integer(prefs.get("windowSizeY", "480").replaceAll("^(\\d+).*", "$1")));
+        new Integer(prefs.get("windowSizeX", "640")
+            .replaceAll("^(\\d+).*", "$1")),
+        new Integer(prefs.get("windowSizeY", "480")
+            .replaceAll("^(\\d+).*", "$1")));
   }
 
   private void saveWindowSize(Dimension xy) {

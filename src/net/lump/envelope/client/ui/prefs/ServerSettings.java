@@ -95,13 +95,16 @@ public class ServerSettings {
       InetAddress ia = InetAddress.getByName(getHostName());
 
       if (!ia.isReachable(2000))
-        message = MessageFormat.format(Strings.get("error.server_not_reachable"), this.getHostName());
+        message = MessageFormat.format(
+            Strings.get("error.server_not_reachable"), this.getHostName());
       else {
 
         URL url = new URL(this.getCodeBase().toString() + "ping");
         Socket socket = new Socket();
-        socket.connect(new InetSocketAddress(url.getHost(), url.getPort()), 1000);
-        BufferedReader r = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        socket.connect(new InetSocketAddress(url.getHost(), url.getPort()),
+                       1000);
+        BufferedReader r = new BufferedReader(
+            new InputStreamReader(socket.getInputStream()));
         PrintWriter p = new PrintWriter(socket.getOutputStream(), true);
         p.write("GET ping\r\n\r\n");
         p.flush();
@@ -110,23 +113,34 @@ public class ServerSettings {
         boolean verified = false;
         String line;
         while ((line = r.readLine()) != null) {
-          if (line.matches("^\\s*$")) { inHeader = false; continue; }
-          if (!inHeader && line.matches("^pong$")) { verified = true; break; }
+          if (line.matches("^\\s*$")) {
+            inHeader = false;
+            continue;
+          }
+          if (!inHeader && line.matches("^pong$")) {
+            verified = true;
+            break;
+          }
         }
         socket.close();
 
         if (verified) classServerValidated.setValid(true);
-        else message = MessageFormat.format(Strings.get("error.verify_class_server"), this.getHostName());
+        else
+          message = MessageFormat.format(
+              Strings.get("error.verify_class_server"), this.getHostName());
       }
     }
     catch (FileNotFoundException fnfe) {
-      message = MessageFormat.format(Strings.get("error.verify_class_server"), this.getHostName());
+      message = MessageFormat.format(
+          Strings.get("error.verify_class_server"), this.getHostName());
     }
     catch (UnknownHostException uhe) {
-      message = MessageFormat.format(Strings.get("error.unknown_host"), this.getHostName());
+      message = MessageFormat.format(
+          Strings.get("error.unknown_host"), this.getHostName());
     }
     catch (ConnectException ce) {
-      message = MessageFormat.format(Strings.get("error.could_not_connect_on_port"),
+      message = MessageFormat.format(
+          Strings.get("error.could_not_connect_on_port"),
           this.getHostName(), this.getClassPort(), ce.getMessage());
     } catch (Exception e) {
       message = e.getClass().getSimpleName() + ": " + e.getMessage();
@@ -140,14 +154,17 @@ public class ServerSettings {
 
     String url = rmiController();
     try {
-      Thread.currentThread().setContextClassLoader(RMIClassLoader.getClassLoader(getCodeBase().toString()));
+      Thread.currentThread().setContextClassLoader(
+          RMIClassLoader.getClassLoader(getCodeBase().toString()));
       Naming.lookup(url);
     } catch (MalformedURLException e) {
       message = MessageFormat.format(Strings.get("error.bad_url"), url);
     } catch (NotBoundException e) {
-      message = MessageFormat.format(Strings.get("error.bad_rmi_name"), CONTROLLER);
+      message = MessageFormat.format(Strings.get("error.bad_rmi_name"),
+                                     CONTROLLER);
     } catch (RemoteException e) {
-      message = MessageFormat.format(Strings.get("error.remote_exception"), e.getMessage());
+      message = MessageFormat.format(Strings.get("error.remote_exception"),
+                                     e.getMessage());
     } catch (Exception e) {
       message = e.getClass().getSimpleName() + ": " + e.getMessage();
     }

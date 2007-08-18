@@ -14,7 +14,7 @@ import java.sql.Types;
  * A MoneyType type for Hibernate.
  *
  * @author Troy Bowman
- * @version $Id: MoneyType.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: MoneyType.java,v 1.2 2007/08/18 23:20:11 troy Test $
  */
 public class MoneyType extends ImmutableType implements Serializable {
   public Object fromStringValue(String xml) {
@@ -39,7 +39,9 @@ public class MoneyType extends ImmutableType implements Serializable {
   }
 
   public boolean isEqual(Object x, Object y) {
-    return x == y || (x != null && y != null && ((us.lump.lib.Money)x).compareTo((us.lump.lib.Money)y) == 0);
+    return x == y
+           || (x != null && y != null && ((us.lump.lib.Money)x)
+        .compareTo((us.lump.lib.Money)y) == 0);
   }
 
   public void set(PreparedStatement st, Object value, int index)

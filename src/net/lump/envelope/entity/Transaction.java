@@ -15,12 +15,14 @@ import java.util.List;
  * A transaction.
  *
  * @author Troy Bowman
- * @version $Id: Transaction.java,v 1.2 2007/08/07 01:08:03 troy Exp $
+ * @version $Id: Transaction.java,v 1.3 2007/08/18 23:20:11 troy Exp $
  */
 @Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
 @Table(name = "transactions")
-@org.hibernate.annotations.Table(appliesTo = "transactions", fetch = org.hibernate.annotations.FetchMode.SELECT)
+@org.hibernate.annotations.Table(
+    appliesTo = "transactions",
+    fetch = org.hibernate.annotations.FetchMode.SELECT)
 public class Transaction implements Identifiable {
   private Integer id;
   private Timestamp stamp;
@@ -32,9 +34,15 @@ public class Transaction implements Identifiable {
   private Boolean reconciled;
 
   public String toString() {
-    String out = MessageFormat.format("{0,date,short} {1} {2}/{3}/{4}" + System.getProperty("line.separator"),
-        date, getAmount().toFormattedString(), subcategory, who, description);
-    for (Allocation a : allocations) out += a.toString() + System.getProperty("line.separator");
+    String out = MessageFormat.format("{0,date,short} {1} {2}/{3}/{4}"
+                                      + System.getProperty("line.separator"),
+                                      date,
+                                      getAmount().toFormattedString(),
+                                      subcategory,
+                                      who,
+                                      description);
+    for (Allocation a : allocations)
+      out += a.toString() + System.getProperty("line.separator");
     return out;
   }
 
@@ -68,7 +76,8 @@ public class Transaction implements Identifiable {
     this.date = date;
   }
 
-  @OneToMany(mappedBy = "transaction", fetch = javax.persistence.FetchType.EAGER)
+  @OneToMany(mappedBy = "transaction",
+             fetch = javax.persistence.FetchType.EAGER)
   @Fetch(value = FetchMode.SUBSELECT)
   public List<Allocation> getAllocations() {
     return allocations;
@@ -134,15 +143,30 @@ public class Transaction implements Identifiable {
     if (this.getAllocations() != null && that.getAllocations() != null) {
       if (this.getAllocations() != that.getAllocations()) return false;
     }
-    if (allocations != null ? !allocations.equals(that.allocations) : that.allocations != null) return false;
-    if (date != null ? !date.equals(that.date) : that.date != null) return false;
-    if (description != null ? !description.equals(that.description) : that.description != null) return false;
-    if (id != null ? !id.equals(that.id) : that.id != null) return false;
-    if (reconciled != null ? !reconciled.equals(that.reconciled) : that.reconciled != null) return false;
-    if (stamp != null ? !stamp.equals(that.stamp) : that.stamp != null) return false;
-    if (subcategory != null ? !subcategory.equals(that.subcategory) : that.subcategory != null) return false;
-    return !(who != null ? !who.equals(that.who) : that.who != null);
-
+    if (allocations != null
+        ? !allocations.equals(that.allocations)
+        : that.allocations != null) return false;
+    if (date != null
+        ? !date.equals(that.date)
+        : that.date != null) return false;
+    if (description != null
+        ? !description.equals(that.description)
+        : that.description != null) return false;
+    if (id != null
+        ? !id.equals(that.id)
+        : that.id != null) return false;
+    if (reconciled != null
+        ? !reconciled.equals(that.reconciled)
+        : that.reconciled != null) return false;
+    if (stamp != null
+        ? !stamp.equals(that.stamp)
+        : that.stamp != null) return false;
+    if (subcategory != null
+        ? !subcategory.equals(that.subcategory)
+        : that.subcategory != null) return false;
+    return !(who != null
+             ? !who.equals(that.who)
+             : that.who != null);
   }
 
   public int hashCode() {

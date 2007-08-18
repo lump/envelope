@@ -8,11 +8,12 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 /**
- * This class has static methods and variables to standardize encryption types for Soar and to
- * ease the use of java's RSA and DES public/private key signing and encryption.
+ * This class has static methods and variables to standardize encryption types
+ * for Soar and to ease the use of java's RSA and DES public/private key signing
+ * and encryption.
  *
  * @author Troy Bowman
- * @version $Id: Encryption.java,v 1.2 2007/08/18 04:49:44 troy Exp $
+ * @version $Id: Encryption.java,v 1.3 2007/08/18 23:20:11 troy Exp $
  */
 
 public final class Encryption {
@@ -37,7 +38,9 @@ public final class Encryption {
    *
    * @param key  to use
    * @param data encrypted bytearray
+   *
    * @return byte[] decrypted bytearray
+   *
    * @throws InvalidKeyException
    * @throws BadPaddingException
    * @throws IllegalBlockSizeException
@@ -45,8 +48,12 @@ public final class Encryption {
    * @throws NoSuchPaddingException
    */
   public static byte[] decode(Key key, byte[] data)
-          throws InvalidKeyException, BadPaddingException, IllegalBlockSizeException,
-          NoSuchAlgorithmException, NoSuchPaddingException {
+      throws
+      InvalidKeyException,
+      BadPaddingException,
+      IllegalBlockSizeException,
+      NoSuchAlgorithmException,
+      NoSuchPaddingException {
     final Cipher c = Cipher.getInstance(symAlg);
     c.init(Cipher.DECRYPT_MODE, key);
     return c.doFinal(data);
@@ -57,7 +64,9 @@ public final class Encryption {
    *
    * @param key  private key
    * @param data array
+   *
    * @return byte[]
+   *
    * @throws InvalidKeyException
    * @throws BadPaddingException
    * @throws IllegalBlockSizeException
@@ -65,27 +74,33 @@ public final class Encryption {
    * @throws NoSuchPaddingException
    */
   public static byte[] decodeAsym(PrivateKey key, byte[] data)
-          throws InvalidKeyException, BadPaddingException, IllegalBlockSizeException,
-          NoSuchAlgorithmException, NoSuchPaddingException {
+      throws
+      InvalidKeyException,
+      BadPaddingException,
+      IllegalBlockSizeException,
+      NoSuchAlgorithmException,
+      NoSuchPaddingException {
     final Cipher c = Cipher.getInstance(keyAlg);
     c.init(Cipher.DECRYPT_MODE, key);
     return c.doFinal(data);
   }
 
-  public static PublicKey decodePublicKey(String key) throws NoSuchAlgorithmException,
-          InvalidKeySpecException,
-          IOException {
+  public static PublicKey decodePublicKey(String key)
+      throws NoSuchAlgorithmException,
+      InvalidKeySpecException,
+      IOException {
     return KeyFactory.getInstance(keyAlg)
-            .generatePublic(
-                    new X509EncodedKeySpec(Base64.base64ToByteArray(key)));
+        .generatePublic(
+            new X509EncodedKeySpec(Base64.base64ToByteArray(key)));
   }
 
-  public static PrivateKey decodePrivateKey(String key) throws NoSuchAlgorithmException,
-          InvalidKeySpecException,
-          IOException {
+  public static PrivateKey decodePrivateKey(String key)
+      throws NoSuchAlgorithmException,
+      InvalidKeySpecException,
+      IOException {
     return KeyFactory.getInstance(keyAlg)
-            .generatePrivate(
-                    new PKCS8EncodedKeySpec(Base64.base64ToByteArray(key)));
+        .generatePrivate(
+            new PKCS8EncodedKeySpec(Base64.base64ToByteArray(key)));
   }
 
   public static String encodeKey(Key key) {
@@ -98,7 +113,9 @@ public final class Encryption {
    *
    * @param key  symmetric key
    * @param data bytarray of data
+   *
    * @return byte[] encrypted data.
+   *
    * @throws NoSuchAlgorithmException
    * @throws NoSuchPaddingException
    * @throws InvalidKeyException
@@ -106,20 +123,26 @@ public final class Encryption {
    * @throws IllegalBlockSizeException
    */
   public static byte[] encode(Key key, byte[] data)
-          throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException,
-          BadPaddingException, IllegalBlockSizeException {
+      throws
+      NoSuchAlgorithmException,
+      NoSuchPaddingException,
+      InvalidKeyException,
+      BadPaddingException,
+      IllegalBlockSizeException {
     final Cipher c = Cipher.getInstance(symAlg);
     c.init(Cipher.ENCRYPT_MODE, key);
     return c.doFinal(data);
   }
 
   /**
-   * Encrypts a bytearray using the Key algorithm.
-   * The length of the message is limited by the key size.
+   * Encrypts a bytearray using the Key algorithm. The length of the message is
+   * limited by the key size.
    *
    * @param key  to use
    * @param data to encode
+   *
    * @return byte[]
+   *
    * @throws InvalidKeyException
    * @throws NoSuchAlgorithmException
    * @throws NoSuchPaddingException
@@ -127,8 +150,12 @@ public final class Encryption {
    * @throws IllegalBlockSizeException
    */
   public static byte[] encodeAsym(PublicKey key, byte[] data)
-          throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException,
-          BadPaddingException, IllegalBlockSizeException {
+      throws
+      InvalidKeyException,
+      NoSuchAlgorithmException,
+      NoSuchPaddingException,
+      BadPaddingException,
+      IllegalBlockSizeException {
     final Cipher c = Cipher.getInstance(keyAlg);
     c.init(Cipher.ENCRYPT_MODE, key);
     return c.doFinal(data);
@@ -138,6 +165,7 @@ public final class Encryption {
    * Generates a KeyPair.
    *
    * @return KeyPair
+   *
    * @throws NoSuchAlgorithmException
    */
   public static KeyPair generateKeyPair() throws NoSuchAlgorithmException {
@@ -150,6 +178,7 @@ public final class Encryption {
    * Generates a symmetric (secret) Key.
    *
    * @return Key
+   *
    * @throws NoSuchAlgorithmException
    */
   public static Key generateSymKey() throws NoSuchAlgorithmException {
@@ -163,13 +192,15 @@ public final class Encryption {
    *
    * @param key     private key
    * @param message to be signed
+   *
    * @return byte[] signature bytearray
+   *
    * @throws NoSuchAlgorithmException
    * @throws InvalidKeyException
    * @throws SignatureException
    */
   public static byte[] sign(PrivateKey key, byte[] message)
-          throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+      throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
     final Signature sig = Signature.getInstance(sigAlg);
     sig.initSign(key);
     sig.update(message);
@@ -181,14 +212,16 @@ public final class Encryption {
    *
    * @param key     private key
    * @param message to be signed
+   *
    * @return String base-64 encoded signature
+   *
    * @throws NoSuchAlgorithmException
    * @throws SignatureException
    * @throws InvalidKeyException
    */
   public static String sign(PrivateKey key, String message)
-          throws NoSuchAlgorithmException, SignatureException,
-          InvalidKeyException, UnsupportedEncodingException {
+      throws NoSuchAlgorithmException, SignatureException,
+      InvalidKeyException, UnsupportedEncodingException {
     return Base64.byteArrayToBase64(sign(key, message.getBytes(ENCODING)));
   }
 
@@ -197,14 +230,20 @@ public final class Encryption {
    *
    * @param encryptedKey byte array
    * @param privateKey   for decryption
+   *
    * @return Key secret
+   *
    * @throws NoSuchAlgorithmException
    * @throws NoSuchPaddingException
    * @throws InvalidKeyException
    * @throws IOException
    */
   public static Key unwrapSessionKey(byte[] encryptedKey, PrivateKey privateKey)
-          throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IOException {
+      throws
+      NoSuchAlgorithmException,
+      NoSuchPaddingException,
+      InvalidKeyException,
+      IOException {
     final Cipher decKeyCipher = Cipher.getInstance(keyAlg);
     decKeyCipher.init(Cipher.UNWRAP_MODE, privateKey);
 
@@ -217,13 +256,15 @@ public final class Encryption {
    * @param key       private
    * @param message   that is signed
    * @param signature to verify
+   *
    * @return boolean verifiable
+   *
    * @throws NoSuchAlgorithmException
    * @throws InvalidKeyException
    * @throws SignatureException
    */
   public static boolean verify(PublicKey key, byte[] message, byte[] signature)
-          throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+      throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
     final Signature sig = Signature.getInstance(sigAlg);
     sig.initVerify(key);
     sig.update(message);
@@ -236,36 +277,44 @@ public final class Encryption {
    * @param key       private
    * @param message   that is signed
    * @param signature to verify
+   *
    * @return boolean verifiable
+   *
    * @throws NoSuchAlgorithmException
    * @throws InvalidKeyException
    * @throws SignatureException
    * @throws UnsupportedEncodingException
    */
   public static boolean verify(PublicKey key, String message, String signature)
-          throws NoSuchAlgorithmException, InvalidKeyException,
-          SignatureException, UnsupportedEncodingException {
+      throws NoSuchAlgorithmException, InvalidKeyException,
+      SignatureException, UnsupportedEncodingException {
     return verify(
-            key,
-            message.getBytes(ENCODING),
-            Base64.base64ToByteArray(signature)
+        key,
+        message.getBytes(ENCODING),
+        Base64.base64ToByteArray(signature)
     );
   }
 
   /**
-   * Encrypt a secret secret key with a public key for the corresponding
-   * private key to decrypt, to allow for encrypted communication.
+   * Encrypt a secret secret key with a public key for the corresponding private
+   * key to decrypt, to allow for encrypted communication.
    *
    * @param sessionKey to encrypt
    * @param publicKey  to use for the cipher
+   *
    * @return byte[] encoded encrypted key
+   *
    * @throws InvalidKeyException
    * @throws NoSuchAlgorithmException
    * @throws NoSuchPaddingException
    * @throws IllegalBlockSizeException
    */
   public static byte[] wrapSecretKey(Key sessionKey, PublicKey publicKey)
-          throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IllegalBlockSizeException {
+      throws
+      InvalidKeyException,
+      NoSuchAlgorithmException,
+      NoSuchPaddingException,
+      IllegalBlockSizeException {
     final Cipher sessionEncKeyCipher = Cipher.getInstance(keyAlg);
     sessionEncKeyCipher.init(Cipher.WRAP_MODE, publicKey);
     return sessionEncKeyCipher.wrap(sessionKey);
@@ -275,6 +324,7 @@ public final class Encryption {
    * "Freeze" (or Serialize) an serializable object into a byte array.
    *
    * @param s object
+   *
    * @return byte[] array
    */
   public static byte[] freeze(Serializable s) {
@@ -289,19 +339,21 @@ public final class Encryption {
   }
 
   /**
-   * "Thaw" (or Deserialize) a serializable object from a byte array.
-   * You'll still have to cast the object at compile time.
+   * "Thaw" (or Deserialize) a serializable object from a byte array. You'll
+   * still have to cast the object at compile time.
    *
    * @param b byte[] array
+   *
    * @return Serializable
-   * @throws ClassNotFoundException The class that we are instantiating
-   *                                isn't found in the classpath.
+   *
+   * @throws ClassNotFoundException The class that we are instantiating isn't
+   *                                found in the classpath.
    */
   public static Serializable thaw(byte[] b)
-          throws ClassNotFoundException {
+      throws ClassNotFoundException {
     try {
       return (Serializable)
-              new ObjectInputStream(new ByteArrayInputStream(b)).readObject();
+          new ObjectInputStream(new ByteArrayInputStream(b)).readObject();
     } catch (IOException e) {
       // this should never happen, all IO is in memory...
       e.printStackTrace();

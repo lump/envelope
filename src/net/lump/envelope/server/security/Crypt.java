@@ -31,7 +31,7 @@ import java.security.MessageDigest;
  * A static DES and MD5 password encryption library.
  *
  * @author Troy Bowman
- * @version $Id: Crypt.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Crypt.java,v 1.2 2007/08/18 23:20:11 troy Exp $
  */
 
 public final class Crypt {
@@ -393,17 +393,24 @@ public final class Crypt {
   }
 
   /**
-   * Depending on the provided salt, encrypts a password with either DES or MD5.
+   * Depending on the provided salt, encrypts a password with either DES or
+   * MD5.
    *
-   * @param inSalt   The DES or MD5 salt. <p>To be sure you get MD5 encryption, encase the salt between "$1$" and "$".
-   *                 Providing the original MD5 hash as a salt accomplishes this.</p> <p>Salts will be treated as DES
-   *                 salts if they are found without the above enclosing strings around them, provided they are the
-   *                 following lengths: <ul><li>2 characters long: the size of a DES salt</li> <li>13 characters long:
-   *                 the size of a DES salt and hash combination</li></ul> </p> <p>If the salt provided is not one of
-   *                 the above lengths: <ul><li>it will be treated as an md5 salt</li> <li>if it is longer than 6
-   *                 characters, it will be truncated to 6.</li> </ul></p><p>&nbsp;</p>
-   * @param password The password. The DES algorithm will only pay attention to the first 64 bits (8 characters). The
-   *                 MD5 algorithm pays attention to the first 2^64 bits.
+   * @param inSalt   The DES or MD5 salt. <p>To be sure you get MD5 encryption,
+   *                 encase the salt between "$1$" and "$". Providing the
+   *                 original MD5 hash as a salt accomplishes this.</p> <p>Salts
+   *                 will be treated as DES salts if they are found without the
+   *                 above enclosing strings around them, provided they are the
+   *                 following lengths: <ul><li>2 characters long: the size of a
+   *                 DES salt</li> <li>13 characters long: the size of a DES
+   *                 salt and hash combination</li></ul> </p> <p>If the salt
+   *                 provided is not one of the above lengths: <ul><li>it will
+   *                 be treated as an md5 salt</li> <li>if it is longer than 6
+   *                 characters, it will be truncated to 6.</li>
+   *                 </ul></p><p>&nbsp;</p>
+   * @param password The password. The DES algorithm will only pay attention to
+   *                 the first 64 bits (8 characters). The MD5 algorithm pays
+   *                 attention to the first 2^64 bits.
    *
    * @return The encrypted password
    *
@@ -622,20 +629,26 @@ public final class Crypt {
 
     /* Reorder the bytes in the digest and convert them to base64 */
     int value;
-    value = ((md5v1Digest[0] & 0xff) << 16) | ((md5v1Digest[6] & 0xff) << 8) | (md5v1Digest[12]
+    value = ((md5v1Digest[0] & 0xff) << 16) | ((md5v1Digest[6] & 0xff) << 8) | (
+        md5v1Digest[12]
         & 0xff);
     output.append(cryptTo64(value, 4));
-    value = ((md5v1Digest[1] & 0xff) << 16) | ((md5v1Digest[7] & 0xff) << 8) | (md5v1Digest[13]
+    value = ((md5v1Digest[1] & 0xff) << 16) | ((md5v1Digest[7] & 0xff) << 8) | (
+        md5v1Digest[13]
         & 0xff);
     output.append(cryptTo64(value, 4));
-    value = ((md5v1Digest[2] & 0xff) << 16) | ((md5v1Digest[8] & 0xff) << 8) | (md5v1Digest[14]
+    value = ((md5v1Digest[2] & 0xff) << 16) | ((md5v1Digest[8] & 0xff) << 8) | (
+        md5v1Digest[14]
         & 0xff);
     output.append(cryptTo64(value, 4));
-    value = ((md5v1Digest[3] & 0xff) << 16) | ((md5v1Digest[9] & 0xff) << 8) | (md5v1Digest[15]
+    value = ((md5v1Digest[3] & 0xff) << 16) | ((md5v1Digest[9] & 0xff) << 8) | (
+        md5v1Digest[15]
         & 0xff);
     output.append(cryptTo64(value, 4));
-    value = ((md5v1Digest[4] & 0xff) << 16) | ((md5v1Digest[10] & 0xff) << 8) | (md5v1Digest[5]
-        & 0xff);
+    value =
+        ((md5v1Digest[4] & 0xff) << 16) | ((md5v1Digest[10] & 0xff) << 8) | (
+            md5v1Digest[5]
+            & 0xff);
     output.append(cryptTo64(value, 4));
     value = md5v1Digest[11] & 0xff;
     output.append(cryptTo64(value, 2));
@@ -771,7 +784,12 @@ public final class Crypt {
   }
 
   @SuppressWarnings({"FinalPrivateMethod", "FinalStaticMethod"})
-  private static final int dEncrypt(int l, int r, int si, int e0, int e1, int[] s) {
+  private static final int dEncrypt(int l,
+                                    int r,
+                                    int si,
+                                    int e0,
+                                    int e1,
+                                    int[] s) {
     int t;
     int u;
     int v;
@@ -784,13 +802,13 @@ public final class Crypt {
     t = (t >>> 4) | (t << 28);
 
     l ^= SP_TRANS[1][t & 0x3f]
-        | SP_TRANS[3][(t >>> 8) & 0x3f]
-        | SP_TRANS[5][(t >>> 16) & 0x3f]
-        | SP_TRANS[7][(t >>> 24) & 0x3f]
-        | SP_TRANS[0][u & 0x3f]
-        | SP_TRANS[2][(u >>> 8) & 0x3f]
-        | SP_TRANS[4][(u >>> 16) & 0x3f]
-        | SP_TRANS[6][(u >>> 24) & 0x3f];
+         | SP_TRANS[3][(t >>> 8) & 0x3f]
+         | SP_TRANS[5][(t >>> 16) & 0x3f]
+         | SP_TRANS[7][(t >>> 24) & 0x3f]
+         | SP_TRANS[0][u & 0x3f]
+         | SP_TRANS[2][(u >>> 8) & 0x3f]
+         | SP_TRANS[4][(u >>> 16) & 0x3f]
+         | SP_TRANS[6][(u >>> 24) & 0x3f];
 
     return l;
   }
@@ -847,7 +865,7 @@ public final class Crypt {
           | SKB[1][((c >>> 6) & 0x03) | ((c >>> 7) & 0x3c)]
           | SKB[2][((c >>> 13) & 0x0f) | ((c >>> 14) & 0x30)]
           | SKB[3][((c >>> 20) & 0x01) | ((c >>> 21) & 0x06)
-          | ((c >>> 22) & 0x38)];
+                   | ((c >>> 22) & 0x38)];
 
       t = SKB[4][d & 0x3f]
           | SKB[5][((d >>> 7) & 0x03) | ((d >>> 8) & 0x3c)]

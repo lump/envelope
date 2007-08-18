@@ -10,7 +10,7 @@ import java.util.Properties;
  * .
  *
  * @author troy
- * @version $Id: Colors.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Colors.java,v 1.2 2007/08/18 23:20:11 troy Exp $
  */
 public class Colors {
   private HashMap<String, Color> colors = new HashMap<String, Color>();
@@ -20,7 +20,8 @@ public class Colors {
 
     try {
       Properties colorProperties = new Properties();
-      colorProperties.load(this.getClass().getResourceAsStream(this.getClass().getSimpleName() + ".properties"));
+      colorProperties.load(this.getClass().getResourceAsStream(
+          this.getClass().getSimpleName() + ".properties"));
 
       Enumeration names = colorProperties.propertyNames();
       while (names.hasMoreElements()) {
@@ -30,10 +31,10 @@ public class Colors {
           colors.put(name, new Color(Integer.parseInt(colordef[0])));
         if (colordef.length == 3 && colordef[0].matches("^\\d+$"))
           colors.put(name,
-              new Color(
-                  Integer.parseInt(colordef[0]),
-                  Integer.parseInt(colordef[1]),
-                  Integer.parseInt(colordef[2])));
+                     new Color(
+                         Integer.parseInt(colordef[0]),
+                         Integer.parseInt(colordef[1]),
+                         Integer.parseInt(colordef[2])));
         if (colordef.length == 3 && colordef[0].matches("^\\d+\\.\\d+$"))
           colors.put(name, new Color(
               Float.parseFloat(colordef[0]),

@@ -3,11 +3,11 @@ package us.lump.envelope.server.security;
 import java.io.Serializable;
 
 /**
- * Represents credentials provided by the client.  This object is used during
- * a session with a client to simplify authentication for each request.
+ * Represents credentials provided by the client.  This object is used during a
+ * session with a client to simplify authentication for each request.
  *
  * @author Troy Bowman
- * @version $Id: Credentials.java,v 1.2 2007/08/18 04:49:44 troy Exp $
+ * @version $Id: Credentials.java,v 1.3 2007/08/18 23:20:11 troy Exp $
  */
 public class Credentials implements Serializable {
   private String username;
@@ -59,8 +59,8 @@ public class Credentials implements Serializable {
   }
 
   /**
-   * Generate a hashcode of this object, without including the singature, since in many cases
-   * the signature will include this object.
+   * Generate a hashcode of this object, without including the singature, since
+   * in many cases the signature will include this object.
    *
    * @return int
    */
@@ -75,11 +75,14 @@ public class Credentials implements Serializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    Credentials that = (Credentials) o;
+    Credentials that = (Credentials)o;
 
-    if (signature != null ? !signature.equals(that.signature) : that.signature != null)
-      return false;
-    return !(username != null ? !username.equals(that.username) : that.username != null);
+    if (signature != null
+        ? !signature.equals(that.signature)
+        : that.signature != null) return false;
+    return !(username != null
+             ? !username.equals(that.username)
+             : that.username != null);
 
   }
 

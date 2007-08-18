@@ -7,10 +7,11 @@ import java.util.Scanner;
 import java.util.prefs.Preferences;
 
 /**
- * Helps configure the server from defined defaults into java's Preferences for the application it is applied.
+ * Helps configure the server from defined defaults into java's Preferences for
+ * the application it is applied.
  *
  * @author Troy Bowman
- * @version $Id: PrefsConfigurator.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: PrefsConfigurator.java,v 1.2 2007/08/18 23:20:11 troy Test $
  */
 public class PrefsConfigurator {
 
@@ -26,7 +27,8 @@ public class PrefsConfigurator {
     // yank the properties file from conventionized properties file
     Properties config = new Properties();
     try {
-      config.load(cless.getResourceAsStream(cless.getSimpleName() + ".properties"));
+      config.load(
+          cless.getResourceAsStream(cless.getSimpleName() + ".properties"));
     } catch (IOException e) {
       e.printStackTrace();
       System.exit(1);
@@ -54,14 +56,20 @@ public class PrefsConfigurator {
       System.out.println();
       for (int x = 0; x < customizableNames.length; x++) {
         System.out.format("%2d. %s=%s%s",
-            x + 1, customizableNames[x], config.getProperty(customizableNames[x]),
-            System.getProperty("line.separator"));
+                          x + 1,
+                          customizableNames[x],
+                          config.getProperty(customizableNames[x]),
+                          System.getProperty("line.separator"));
       }
       boolean invalid = true;
       while (invalid) {
-        System.out.format("Is this the configuration you prefer for %s? (y/n/1-%s/q) > ",
-            cless.getSimpleName(), customizableNames.length);
-        selector = new Scanner(System.in).useDelimiter("\\r\\n|\\r|\\n").nextLine();
+        System.out.format(
+            "Is this the configuration you prefer for %s? (y/n/1-%s/q) > ",
+            cless.getSimpleName(),
+            customizableNames.length);
+        selector = new Scanner(System.in)
+            .useDelimiter("\\r\\n|\\r|\\n")
+            .nextLine();
         if (selector.matches("^[Yy](?:[Ee][Ss])?$")) {
           pref.put(cless.getSimpleName() + ".ok", "ok");
           invalid = false;

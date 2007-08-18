@@ -8,14 +8,15 @@ import java.util.Set;
  * .
  *
  * @author troy
- * @version $Id: Fonts.java,v 1.1 2007/07/21 20:15:04 troy Exp $
+ * @version $Id: Fonts.java,v 1.2 2007/08/18 23:20:11 troy Exp $
  */
 public class Fonts {
 
   private static HashMap<String, Font> fonts = new HashMap<String, Font>();
 
   static {
-    fonts.put("serif-36-bold-italic", new Font("serif", Font.ITALIC + Font.BOLD, 36));
+    fonts.put("serif-36-bold-italic",
+              new Font("serif", Font.ITALIC + Font.BOLD, 36));
 
     Font sans14Bold = new Font("Lucida Grande", Font.BOLD, 14);
     if (sans14Bold == null) sans14Bold = new Font("SansSerif", Font.BOLD, 14);
