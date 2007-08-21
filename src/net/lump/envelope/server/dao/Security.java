@@ -26,7 +26,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.6 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Security.java,v 1.7 2007/08/21 04:08:26 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption
@@ -83,23 +83,19 @@ public class Security extends DAO {
 
     User user = getUser(username);
 
-    String hash = new String(Encryption.decodeAsym(
-        serverKeyPair.getPrivate(),
-        challengeResponse), Encryption.ENCODING);
+    String hash = new String(
+        Encryption.decodeAsym(serverKeyPair.getPrivate(), challengeResponse),
+        Encryption.TRANS_ENCODING);
 
     if (hash.equals(user.getCryptPassword())) {
-      // update the caceh
+      // update the cache
       cache.put(new Element(username, user));
 
       // we're authed.
       authed = true;
-      logger.info("password auth for \""
-                  + username
-                  + "\" successfully verfied");
+      logger.info("password for \"" + username + "\" successfully verfied");
     } else {
-      logger.warn("password auth for \""
-                  + username
-                  + "\" FAILED");
+      logger.warn("password for \"" + username + "\" FAILED");
       throw new RuntimeException(
           new AuthenticationException("Authentication Failed."));
     }
@@ -119,9 +115,9 @@ public class Security extends DAO {
                    + credentials.getUsername()
                    + "\" successfully verfied");
     } else {
-      logger.warn("signature for \""
-                  + credentials.getUsername()
-                  + "\" FAILED");
+      logger.error("signature for \""
+                   + credentials.getUsername()
+                   + "\" FAILED");
       throw new RuntimeException(new SessionException("Invalid Session"));
     }
 
