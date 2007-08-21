@@ -26,7 +26,7 @@ import java.util.zip.GZIPOutputStream;
  * this server in place of an HTTP server. <p>
  *
  * @author Troy Bowman
- * @version $Id: ClassServer.java,v 1.2 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: ClassServer.java,v 1.3 2007/08/21 04:09:10 troy Exp $
  */
 public class ClassServer implements Runnable {
   private static final Logger logger = Logger.getLogger(ClassServer.class);
@@ -38,7 +38,7 @@ public class ClassServer implements Runnable {
       "us/lump/envelope/server/dao",
       "us/lump/envelope/server/http",
       "us/lump/envelope/server/log",
-      "us/lump/envelope/server/rmi/Control.class",
+      "us/lump/envelope/server/rmi/Controlled.class",
       "us/lump/envelope/Server/class"
   };
 

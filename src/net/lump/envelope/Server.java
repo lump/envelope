@@ -6,8 +6,9 @@ import us.lump.envelope.server.PrefsConfigurator;
 import us.lump.envelope.server.dao.DAO;
 import us.lump.envelope.server.http.ClassServer;
 import us.lump.envelope.server.log.Logging;
-import us.lump.envelope.server.rmi.Control;
+import us.lump.envelope.server.rmi.Controlled;
 import us.lump.envelope.server.rmi.Controller;
+import us.lump.lib.util.Span;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -28,7 +29,7 @@ import java.util.prefs.Preferences;
  * Server Main Code.
  *
  * @author Troy Bowman
- * @version $Id: Server.java,v 1.5 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Server.java,v 1.6 2007/08/21 04:09:10 troy Exp $
  */
 
 public class Server {
@@ -69,7 +70,7 @@ public class Server {
         serverConfig.getProperty("server.rmi.port"))
     );
 
-    Controller controller = new Control();
+    Controller controller = new Controlled();
     logger.info("Remote Controller implementation object created");
 
     Naming.rebind("//"
@@ -196,7 +197,7 @@ public class Server {
             System.out
                 .println(MessageFormat.format(
                     "uptime: {0} since: {1,date,full} {1,time,full}",
-                    interval(START_TIME, System.currentTimeMillis()),
+                    Span.interval(START_TIME, System.currentTimeMillis()),
                     START_TIME));
           }
         }
@@ -223,37 +224,4 @@ public class Server {
   }
 
 
-  static String interval(long start, long end) {
-
-    String out = "";
-    long interval = (end - start);
-
-    for (Span s : Span.DHMS) {
-      long unit = (interval - (interval % s.millis)) / s.millis;
-      interval -= unit * s.millis;
-      if (unit > 0L) {
-        out += String.valueOf(unit) + s.abbr;
-      }
-    }
-    if (interval > 0) out += interval + "ms";
-
-    return out;
-  }
-
-  static class Span {
-    public static final Span DAY = new Span("d", 86400000L);
-    public static final Span HOUR = new Span("h", 3600000L);
-    public static final Span MINUTE = new Span("m", 60000L);
-    public static final Span SECOND = new Span("s", 1000L);
-    public static final Span[] DHMS =
-        new Span[]{Span.DAY, Span.HOUR, Span.MINUTE, Span.SECOND};
-
-    public String abbr;
-    public long millis;
-
-    Span(String t, long m) {
-      abbr = t;
-      millis = m;
-    }
-  }
 }
