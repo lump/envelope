@@ -15,7 +15,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controlled.java,v 1.1 2007/08/21 04:09:10 troy Exp $
+ * @version $Id: Controlled.java,v 1.2 2007/08/21 04:35:56 troy Exp $
  */
 public class Controlled extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -135,11 +135,14 @@ public class Controlled extends UnicastRemoteObject implements Controller {
     finally {
       // close the session
       dao.close();
+
       logger.info(
-          command.getName().name() + " "
-          + (command.getCredentials() != null
-             ? command.getCredentials().getUsername() + " "
-             : "")
+          (command.getCredentials() != null
+           ? command.getCredentials().getUsername()
+           : command.getParams().containsKey(Command.Param.user_name)
+             ? command.getParam(Command.Param.user_name)
+             : "anonymous")
+          + " " + command.getName().name() + " "
           + ((System.currentTimeMillis() - start) / 1000D) + "s");
     }
   }
