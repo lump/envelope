@@ -17,14 +17,14 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 public class Command implements Serializable {
   /**
    * An application facet.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.4 $
+   * @version $Revision: 1.5 $
    */
   public enum Dao {
     Security,
@@ -37,7 +37,7 @@ public class Command implements Serializable {
    * A parameter.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.4 $
+   * @version $Revision: 1.5 $
    */
   public enum Param {
     public_key(PublicKey.class),
@@ -48,8 +48,10 @@ public class Command implements Serializable {
 
     account(Account.class),
     category(Category.class),
-    reconciled(Boolean.class);
+    reconciled(Boolean.class),
 
+    //more parameter definitions here...
+    ;
 
     private final Class type;
 
@@ -72,7 +74,7 @@ public class Command implements Serializable {
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.4 $
+   * @version $Revision: 1.5 $
    */
   public enum Name {
 
@@ -99,7 +101,7 @@ public class Command implements Serializable {
     getAccountBalance(Dao.Status, Param.account, Param.year, Param.reconciled),
     getAccountBalances(Dao.Status, Param.year, Param.reconciled),
 
-    // end list
+    //more command definitions here...
     ;
 
     private final Dao dao;
@@ -167,7 +169,7 @@ public class Command implements Serializable {
    *
    * @return the enum.
    */
-  public Name getCmd() {
+  public Name getName() {
     return name;
   }
 
