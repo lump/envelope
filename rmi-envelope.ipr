@@ -10,9 +10,9 @@
       <properties />
       <executeOn event="beforeRun" target="client.dist.prepare" runConfigurationType="Application" runConfigurationName="Client" />
       <executeOn event="beforeRun" target="compile" runConfigurationType="Application" runConfigurationName="Unnamed" />
-      <executeOn event="beforeRun" target="compile.tests" runConfigurationType="JUnit" runConfigurationName="TestSuite" />
       <executeOn event="beforeRun" target="compile.tests" runConfigurationType="JUnit" runConfigurationName="TestEncryption.TestEncryption" />
       <executeOn event="beforeRun" target="compile.tests" runConfigurationType="JUnit" runConfigurationName="TestSecurity.testLogin" />
+      <executeOn event="beforeRun" target="compile.tests" runConfigurationType="JUnit" runConfigurationName="TestSuite" />
     </buildFile>
   </component>
   <component name="BuildJarProjectSettings">
@@ -405,7 +405,13 @@
       <option name="TEST_SEARCH_SCOPE">
         <value defaultName="wholeProject" />
       </option>
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="52259" />
+        <option name="TRANSPORT" value="0" />
+        <option name="LOCAL" value="true" />
+      </RunnerSettings>
       <RunnerSettings RunnerId="Run" />
+      <ConfigurationWrapper RunnerId="Debug" />
       <ConfigurationWrapper RunnerId="Run" />
       <method>
         <option name="Make" value="false" />
