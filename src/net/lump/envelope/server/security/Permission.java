@@ -9,7 +9,7 @@ import java.util.HashMap;
  * An object which runs bitwise manipulations to determine access levels.
  *
  * @author Troy Bowman
- * @version $Id: Permission.java,v 1.2 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Permission.java,v 1.3 2007/08/21 03:08:07 troy Test $
  */
 public class Permission implements Serializable {
   public static final long READ = 1L;
@@ -77,10 +77,11 @@ public class Permission implements Serializable {
    * @param permission the Long which contains the bit(s) which will bet turned
    *                   off
    */
-  public void removePermission(Long permission) {
+  public Permission removePermission(Long permission) {
     long temp = this.permission;
     temp ^= permission;
     this.permission &= temp;
+    return this;
   }
 
   /**
@@ -89,8 +90,9 @@ public class Permission implements Serializable {
    *
    * @param permission the provided long
    */
-  public void setLong(Long permission) {
+  public Permission setLong(Long permission) {
     this.permission = permission;
+    return this;
   }
 
   /**
@@ -98,8 +100,9 @@ public class Permission implements Serializable {
    *
    * @param permission the other permission.
    */
-  public void setPermissions(Permission permission) {
+  public Permission setPermissions(Permission permission) {
     this.permission = permission.permission;
+    return this;
   }
 
   /**
@@ -108,8 +111,9 @@ public class Permission implements Serializable {
    *
    * @param permission the provided Long.
    */
-  public void setPermissions(Long permission) {
+  public Permission setPermissions(Long permission) {
     this.permission = permission;
+    return this;
   }
 
   /**
@@ -127,8 +131,9 @@ public class Permission implements Serializable {
    *
    * @param permission the long which contains the bits to be manipulated.
    */
-  public void togglePermission(Long permission) {
+  public Permission togglePermission(Long permission) {
     this.permission ^= permission;
+    return this;
   }
 
   public String toString() {
