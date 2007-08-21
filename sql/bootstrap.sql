@@ -1,5 +1,5 @@
 --
--- $Id: bootstrap.sql,v 1.4 2007/08/18 04:49:44 troy Exp $
+-- $Id: bootstrap.sql,v 1.5 2007/08/21 05:34:11 troy Exp $
 --
 
 drop table if exists users;
@@ -144,4 +144,4 @@ update users set id = 0;
 alter table users auto_increment = 0;
 insert into users values (null, null,0,'guest','Guest Account','$1$GOyqcoAk$KTE1zfxeTkoXJTcrFKyFi0',3,NULL);
 
-grant all on envelope.* to budget identified by '1qaz2wsx';
+grant all on envelope.* to budget identified by 'tegdub';
