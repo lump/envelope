@@ -29,7 +29,7 @@ import java.util.prefs.Preferences;
  * Server Main Code.
  *
  * @author Troy Bowman
- * @version $Id: Server.java,v 1.6 2007/08/21 04:09:10 troy Exp $
+ * @version $Id: Server.java,v 1.7 2007/08/21 04:34:30 troy Exp $
  */
 
 public class Server {
@@ -92,19 +92,19 @@ public class Server {
     Class[] confClasses = new Class[]{Server.class, DAO.class, Logging.class};
     boolean fg = true;
     for (String arg : args) {
-      if ("-h".equals(arg) || "--help".equals(arg)) {
+      if (arg.matches("^-h|--help$")) {
         System.out.println("-h --help: this help.");
         System.out
             .println("-q --quiet: not interactive, no stdout/stderr logging.");
         System.out.println("--conf: reconfigure everything.");
         System.out.println("--reset: reset everything to defaults.");
         for (Class c : confClasses) {
-          System.out.format("--%s-conf: reconfigure %s.%s",
+          System.out.format("--conf-%s: reconfigure %s.%s",
                             c.getSimpleName().toLowerCase(),
                             c.getSimpleName(),
                             System.getProperty("line.separator"));
           System.out
-              .format("--%s-reset: reset %s to defaults, forcing reconfigure%s",
+              .format("--reset-%s: reset %s to defaults (forces review)%s",
                       c.getSimpleName().toLowerCase(),
                       c.getSimpleName(),
                       System.getProperty("line.separator"));
@@ -113,14 +113,14 @@ public class Server {
       }
       if (arg.matches("^-q|--quiet$")) fg = false;
       for (Class c : confClasses) {
-        if (arg.matches("^--(?:"
+        if (arg.matches("^--conf(?:-"
                         + c.getSimpleName().toLowerCase()
-                        + "-)?conf$"))
+                        + ")?$"))
           Preferences.userNodeForPackage(c)
               .put(c.getSimpleName() + ".ok", "no");
-        if (arg.matches("^--(?:"
+        if (arg.matches("^--reset(?:-"
                         + c.getSimpleName().toLowerCase()
-                        + "-)?reset$"))
+                        + ")?t$"))
           try {
             Preferences.userNodeForPackage(c).clear();
           } catch (BackingStoreException e) {
