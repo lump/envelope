@@ -9,11 +9,11 @@ import java.security.spec.X509EncodedKeySpec;
 
 /**
  * This class has static methods and variables to standardize encryption types
- * for Soar and to ease the use of java's RSA and DES public/private key signing
- * and encryption.
+ * for the app and to ease the use of java's RSA and DES public/private key
+ * signing and encryption.
  *
  * @author Troy Bowman
- * @version $Id: Encryption.java,v 1.4 2007/08/21 03:14:52 troy Exp $
+ * @version $Id: Encryption.java,v 1.5 2007/08/21 05:50:46 troy Exp $
  */
 
 public final class Encryption {
