@@ -4,13 +4,13 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import us.lump.envelope.client.TestSecurity;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
+import us.lump.envelope.client.ui.prefs.ServerSettings;
 import us.lump.envelope.server.PrefsConfigurator;
 import us.lump.envelope.server.rmi.Controller;
 import us.lump.lib.TestMoney;
 import us.lump.lib.util.TestEncryption;
 
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -21,11 +21,11 @@ import java.util.Properties;
  * A JUnit class which runs all tests.
  *
  * @author Troy Bowman
- * @version $Id: TestSuite.java,v 1.5 2007/08/21 05:01:20 troy Exp $
+ * @version $Id: TestSuite.java,v 1.6 2007/08/21 05:29:16 troy Exp $
  */
 public class TestSuite extends TestCase {
-  public static int SERVER_RMI_PORT = 7041;
-  public static int SERVER_HTTP_PORT = 7042;
+  public static int DEFAULT_SERVER_RMI_PORT = 7041;
+  public static int DEFAULT_SERVER_HTTP_PORT = 7042;
   public static final String HOST_NAME_PROPERTY = "server";
   public static final String RMI_PORT_PROPERTY = "server.rmi.port";
   public static final String HTTP_PORT_PROPERTY = "server.http.port";
@@ -38,27 +38,27 @@ public class TestSuite extends TestCase {
     Properties system = System.getProperties();
 
     try {
-      if (system.containsKey(HOST_NAME_PROPERTY)) {
-        SERVER_HOST_NAME = system.getProperty(HOST_NAME_PROPERTY);
-        if (system.containsKey(RMI_PORT_PROPERTY))
-          SERVER_RMI_PORT =
-              Integer.parseInt(system.getProperty(RMI_PORT_PROPERTY));
-        if (system.containsKey(HTTP_PORT_PROPERTY))
-          SERVER_HTTP_PORT =
-              Integer.parseInt(system.getProperty(HTTP_PORT_PROPERTY));
-      } else {
-        SERVER_HOST_NAME = localHost();
+      ServerSettings ss = ServerSettings.getInstance();
 
+      if (system.containsKey(HOST_NAME_PROPERTY)) {
+        ss.setHostName(system.getProperty(HOST_NAME_PROPERTY));
+
+        ss.setRmiPort((system.containsKey(RMI_PORT_PROPERTY)
+                       ? system.getProperty(RMI_PORT_PROPERTY)
+                       : String.valueOf(DEFAULT_SERVER_RMI_PORT)));
+
+        ss.setClassPort(system.containsKey(HTTP_PORT_PROPERTY)
+                        ? system.getProperty(HTTP_PORT_PROPERTY)
+                        : String.valueOf(DEFAULT_SERVER_HTTP_PORT));
+      } else {
         Properties serverConfig = PrefsConfigurator.configure(Server.class);
-        SERVER_RMI_PORT = Integer.parseInt(
-            serverConfig.getProperty("server.rmi.port"));
-        SERVER_HTTP_PORT = Integer.parseInt(
-            serverConfig.getProperty("server.http.classloader.port"));
+        ss.setHostName(localHost());
+        ss.setRmiPort(serverConfig.getProperty("server.rmi.port"));
+        ss.setClassPort(serverConfig.getProperty("server.http.classloader.port"));
       }
 
-      URL url =
-          new URL("http://" + SERVER_HOST_NAME + ":" + SERVER_HTTP_PORT + "/");
-      system.put("java.rmi.server.codebase", url);
+      system.put("java.rmi.server.codebase", ss.getCodeBase());
+      system.put("java.rmi.server.rminode", ss.rmiNode());
 
       loginSettings.setUsername(USER);
       loginSettings.setPassword(USER);
@@ -68,12 +68,6 @@ public class TestSuite extends TestCase {
       System.exit(1);
     }
 
-    system.put("java.rmi.server.rminode",
-               "rmi://"
-               + SERVER_HOST_NAME
-               + ":"
-               + Integer.toString(SERVER_RMI_PORT)
-               + "/");
   }
 
   /**
