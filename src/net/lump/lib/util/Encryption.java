@@ -13,20 +13,22 @@ import java.security.spec.X509EncodedKeySpec;
  * and encryption.
  *
  * @author Troy Bowman
- * @version $Id: Encryption.java,v 1.3 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Encryption.java,v 1.4 2007/08/21 03:14:52 troy Exp $
  */
 
 public final class Encryption {
-  public static final String ENCODING = "US-ASCII";
 
-  // 1024 bit rsa key
+  // encoding for getBytes and new String, to keep things consistent across VMs.
+  public static final String TRANS_ENCODING = "US-ASCII";
+
+  // 1024-bit rsa key
   static final String keyAlg = "RSA";
   static final int keyBits = 1024;
 
-  // signature algorithm
+  // signature algorithm: the reputable SHA
   static final String sigAlg = "SHA1with" + keyAlg;
 
-  // 168 bit 3des symmetric encryption
+  // 168 bit triple-des for symmetric encryption
   static final String symAlg = "DESede";
   static final int symBits = 168;  //112;
 
@@ -222,7 +224,8 @@ public final class Encryption {
   public static String sign(PrivateKey key, String message)
       throws NoSuchAlgorithmException, SignatureException,
       InvalidKeyException, UnsupportedEncodingException {
-    return Base64.byteArrayToBase64(sign(key, message.getBytes(ENCODING)));
+    return Base64.byteArrayToBase64(sign(key,
+                                         message.getBytes(TRANS_ENCODING)));
   }
 
   /**
@@ -290,7 +293,7 @@ public final class Encryption {
       SignatureException, UnsupportedEncodingException {
     return verify(
         key,
-        message.getBytes(ENCODING),
+        message.getBytes(TRANS_ENCODING),
         Base64.base64ToByteArray(signature)
     );
   }

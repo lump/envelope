@@ -1,7 +1,7 @@
 package us.lump.envelope.server.security;
 
 import us.lump.lib.util.Encryption;
-import static us.lump.lib.util.Encryption.ENCODING;
+import static us.lump.lib.util.Encryption.TRANS_ENCODING;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -15,10 +15,10 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 
 /**
- * A authorization challenge.
+ * An authorization challenge.
  *
  * @author Troy Bowman
- * @version $Id: Challenge.java,v 1.3 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Challenge.java,v 1.4 2007/08/21 03:14:52 troy Test $
  */
 public class Challenge implements Serializable {
   private PublicKey serverKey;
@@ -55,7 +55,7 @@ public class Challenge implements Serializable {
   public String getChallenge(PrivateKey key) throws NoSuchAlgorithmException,
       BadPaddingException, IllegalBlockSizeException, InvalidKeyException,
       NoSuchPaddingException, IOException {
-    return new String(Encryption.decodeAsym(key, challenge), ENCODING);
+    return new String(Encryption.decodeAsym(key, challenge), TRANS_ENCODING);
   }
 
   /**
