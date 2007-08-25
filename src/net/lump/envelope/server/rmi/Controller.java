@@ -2,6 +2,7 @@ package us.lump.envelope.server.rmi;
 
 import us.lump.envelope.Command;
 
+import java.io.Serializable;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
@@ -21,5 +22,5 @@ public interface Controller extends Remote {
    *
    * @throws RemoteException
    */
-  public Object invoke(Command... commands) throws RemoteException;
+  public Serializable invoke(Command... commands) throws RemoteException;
 }

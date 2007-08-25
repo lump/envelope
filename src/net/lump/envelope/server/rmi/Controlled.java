@@ -5,7 +5,9 @@ import us.lump.envelope.Command;
 import us.lump.envelope.server.dao.DAO;
 import us.lump.envelope.server.dao.Security;
 import us.lump.envelope.server.exception.AuthenticationException;
+import us.lump.lib.util.Span;
 
+import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
@@ -15,11 +17,13 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controlled.java,v 1.2 2007/08/21 04:35:56 troy Exp $
+ * @version $Id: Controlled.java,v 1.3 2007/08/25 06:32:28 troy Exp $
  */
 public class Controlled extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
   private static final String DAO_PATH = "us.lump.envelope.server.dao.";
+
+  private static final String SPACE = " ";
 
   /**
    * This is usally called by the remote registry.
@@ -31,7 +35,10 @@ public class Controlled extends UnicastRemoteObject implements Controller {
   }
 
   /**
-   * Invoke a command.
+   * Invoke a command. This is the central method where every command must pass.
+   * Since this causes centralization, we can check for security as defined by
+   * the command, and validate sessions if necessary.  We can also catch errors
+   * and handle graceful closing or rollbacks of transactions.
    *
    * @param commands one more more commands
    *
@@ -41,10 +48,10 @@ public class Controlled extends UnicastRemoteObject implements Controller {
    * @throws RemoteException
    */
   @SuppressWarnings({"LoopStatementThatDoesntLoop"})
-  public Object invoke(Command... commands) throws RemoteException {
+  public Serializable invoke(Command... commands) throws RemoteException {
 
 
-    ArrayList<Object> returnList = new ArrayList<Object>();
+    ArrayList<Serializable> returnList = new ArrayList<Serializable>();
 
     for (Command command : commands) {
       logger.debug("Received command " + command.getName().name());
@@ -73,7 +80,10 @@ public class Controlled extends UnicastRemoteObject implements Controller {
              : null;
   }
 
-  private Object dispatch(Command command) throws RemoteException {
+  /*
+   * This method handles the reflection needed to dispatch the Command.
+   */
+  private Serializable dispatch(Command command) throws RemoteException {
     // start time
     long start = System.currentTimeMillis();
 
@@ -93,14 +103,20 @@ public class Controlled extends UnicastRemoteObject implements Controller {
 
       // deduce the DAO class name from the facet and create an instance.
       dao = (DAO)Class.forName(
-          DAO_PATH
-          + command.getName().getFacet().name()).newInstance();
+          DAO_PATH + command.getName().getFacet().name()).newInstance();
 
-      return
+      // invoke the method and reap the return value.
+      Object returnValue =
           // get the method from the command name and parameter names
           dao.getClass().getDeclaredMethod(command.getName().name(), paramNames)
               // invoke the method on a new instance of the class with the arguments
               .invoke(dao, args);
+
+      // make sure the return value is Serializable.
+      if (returnValue instanceof Serializable)
+        return (Serializable)returnValue;
+      else
+        throw new RemoteException("return value is not serializable");
 
     } catch (Exception e) {
       // rollback the transaction if it is active.
@@ -112,29 +128,33 @@ public class Controlled extends UnicastRemoteObject implements Controller {
       }
 
       //every exception will be caught, logged, and re-thrown to the client.
-      logger.fatal("error on dispatch", e);
+      logger.fatal("caught exception leaving controller", e);
       if (e instanceof ClassNotFoundException)
-        throw new IllegalArgumentException("Bad Facet " + command.getName()
-            .getFacet()
-            .name(), e);
+        throw new IllegalArgumentException(
+            "Bad Facet " + command.getName().getFacet().name(), e);
       if (e instanceof IllegalAccessException
           || e instanceof NoSuchMethodException)
-        throw new IllegalArgumentException("Bad Command " + command.getName()
-            .name(), e);
+        throw new IllegalArgumentException(
+            "Bad Command " + command.getName().name(), e);
       if (e instanceof InstantiationException)
-        throw new IllegalArgumentException("Could not instantiate "
-                                           + command.getName()
-            .getFacet()
-            .name(),
-                                           e);
+        throw new IllegalArgumentException(
+            "Could not instantiate " + command.getName().getFacet().name(), e);
       if (e instanceof InvocationTargetException)
-        throw new IllegalArgumentException("Could not invoke "
-                                           + command.getName().name());
-      throw new RemoteException(e.getMessage(), e);
+        throw new IllegalArgumentException(
+            "Could not invoke " + command.getName().name());
+
+      throw (RemoteException)e;
     }
     finally {
-      // close the session
-      dao.close();
+      if (dao != null) {
+        if (dao.isActive() && !dao.wasRolledBack()) {
+          dao.flush();
+          dao.commit();
+        }
+        // close the session
+        dao.close();
+        dao.disconnect();
+      }
 
       logger.info(
           (command.getCredentials() != null
@@ -142,8 +162,9 @@ public class Controlled extends UnicastRemoteObject implements Controller {
            : command.getParams().containsKey(Command.Param.user_name)
              ? command.getParam(Command.Param.user_name)
              : "anonymous")
-          + " " + command.getName().name() + " "
-          + ((System.currentTimeMillis() - start) / 1000D) + "s");
+          + SPACE + command.getName().name() + SPACE
+          + ((System.currentTimeMillis() - start)
+             / (double)Span.SECOND.millis) + "s");
     }
   }
 }
