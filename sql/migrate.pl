@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.1 2007/07/30 04:25:06 troy Exp $
+# $Id: migrate.pl,v 1.2 2007/08/26 06:28:57 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -22,7 +22,7 @@ $dbs = {
     host => "lump.us",
     port => 3306,
     user => "budget",
-    password => "1qaz2wsx",
+    password => "tegdub",
   },
 };
 
@@ -70,6 +70,24 @@ for my $account (qw(Checking Savings MMSavings Odyssey Civic)) {
   print "$account id: $entry->{id}\n";
 }
 
+my %tag_ids = ();
+$dsth = $dbs->{dest}->{connection}->prepare("insert into tags (budget, name) values (?, ?)");
+
+$sth = $dbs->{source}->{connection}->prepare("select distinct subcategory from transactions where subcategory is not null order by subcategory")
+  or die $dbs->{source}->{connection}->errstr;;
+$sth->execute or die $sth->errstr;
+while (my $row = $sth->fetchrow_hashref()) {
+  next if ($row->{subcategory} =~ /^.*? and .*?$/
+           and $row->{subcategory} !~ /^Yard/);
+
+  $dsth->execute($budget_id, $row->{subcategory});
+  my ($last_id) = $dbs->{dest}->{connection}->selectrow_array("select id from tags where id is null");
+  $tag_ids{$row->{subcategory}} = $last_id;
+  print "Inserted tag $budget_id, $row->{subcategory} as $last_id\n";
+}
+$sth->finish;
+$dsth->finish;
+
 $dsth = $dbs->{dest}->{connection}->prepare("
 insert into users (budget,name,real_name,crypt_password,permissions)
 values (?, ?, ?, ?, ?)")
@@ -81,7 +99,7 @@ $sth->execute or die $sth->errstr;
 while (my $row = $sth->fetchrow_hashref()) {
   $dsth->execute($budget_id, $row->{username}, $row->{real_name}, $row->{crypt_password}, $row->{int_permissions})
     or die $dsth->errstr;
-  print "Inserted $budget_id, $row->{username}, $row->{real_name}, $row->{crypt_password}, $row->{int_permissions}\n";
+  print "Inserted user $budget_id, $row->{username}, $row->{real_name}, $row->{crypt_password}, $row->{int_permissions}\n";
 }
 $sth->finish;
 $dsth->finish;
@@ -106,7 +124,7 @@ while (my $row = $sth->fetchrow_hashref()) {
   elsif ($row->{category} eq "Tithing") { $account_id = $accounts->{MMSavings}->{id}; $row->{deducted} = 0 }
   $dsth->execute($account_id, $row->{category}, $allocation_amount, $row->{which}, $row->{deducted})
     or die $dsth->errstr;
-  print "inserted $account_id, $row->{category}, $allocation_amount, $row->{which}, $row->{deducted}\n";
+  print "inserted account $account_id, $row->{category}, $allocation_amount, $row->{which}, $row->{deducted}\n";
 }
 $sth->finish;
 $dsth->finish;
@@ -127,26 +145,32 @@ values (?, ?, ?, ?)")
   or die $dbs->{source}->{connection}->errstr;;
 $dsth->execute($budget_id, "SOS", 'Biweekly_Payday', '2006-11-30');
 $dsth->finish;
-print "inserted $budget_id, SOS, Biweekly_Payday, 2006-11-30\n";
-
+print "inserted income $budget_id, SOS, Biweekly_Payday, 2006-11-30\n";
 
 $dtrans = $dbs->{dest}->{connection}->prepare("
-insert into transactions (date, subcategory, who, description, reconciled)
-values (?, ?, ?, ?, ?)")
+insert into transactions (stamp, date, entity, description, reconciled, transfer)
+values (?, ?, ?, ?, ?, ?)")
   or die $dbs->{source}->{connection}->errstr;;
 
 $dalloc = $dbs->{dest}->{connection}->prepare("
-insert into allocations (category, transaction, amount)
-values (?, ?, ?)")
+insert into allocations (stamp, category, transaction, amount)
+values (?, ?, ?, ?)")
   or die $dbs->{source}->{connection}->errstr;;
 
-#DBI->trace(2);
+$dtag = $dbs->{dest}->{connection}->prepare("
+insert into allocation_tag (allocation, tag)
+values (?, ?)")
+  or die $dbs->{source}->{connection}->errstr;;
+
+
 $sth = $dbs->{source}->{connection}->prepare("select * from transactions where budgetname = 'bowman' order by date, to_from, subcategory") or die $dbs->{source}->{connection}->errstr;;
 $sth->execute or die $sth->errstr;
 my $last = {};
 my $last_id = undef;
 print "Inserting transactions(-) and allocations(+)";
 while (my $row = $sth->fetchrow_hashref()) {
+
+  # transactions
   if ($row->{to_from} eq undef) { $row->{to_from} = "" }
   if ($row->{description} eq undef) { $row->{description} = "" }
   unless ("Payday" eq $row->{subcategory}
@@ -154,7 +178,8 @@ while (my $row = $sth->fetchrow_hashref()) {
       && ($row->{to_from} =~ /^SOS|ArosNet$/ && ($row->{to_from} eq $last->{to_from}))
       && ($row->{date} eq $last->{date})
       && $last_id ne undef) {
-    my @params = ($row->{date}, $row->{subcategory}, $row->{to_from}, $row->{description}, $row->{reconciled});
+    my @params = ($row->{stamp}, $row->{date}, $row->{to_from}, $row->{description}, $row->{reconciled},
+                  exists $categories->{$row->{to_from}} ? 1 : 0);
     unless ($dtrans->execute(@params)) {
       print "transaction: " . (join ",", @params) . "\n";
       die $dtrans->errstr;
@@ -163,12 +188,34 @@ while (my $row = $sth->fetchrow_hashref()) {
     ($last_id) = $dbs->{dest}->{connection}->selectrow_array("select id from transactions where id is null");
   }
 
-  my @params = ($categories->{$row->{category}}->{id}, $last_id, $row->{amount});
+  # allocations
+  my @params = ($row->{stamp}, $categories->{$row->{category}}->{id}, $last_id, $row->{amount});
   unless ($dalloc->execute(@params)) {
     print "allocation: " . (join ",", @params) . "\n";
     die $dalloc->errstr;
   }
+  my ($allocation_id) = $dbs->{dest}->{connection}->selectrow_array("select id from allocations where id is null");
   print "+";
+
+
+  # tags
+  my @tags = ();
+  if ($row->{subcategory} =~ /^.*? and .*?$/ and $row->{subcategory} !~ /^Yard/) {
+    for my $subcategory (split / and /, $row->{subcategory}) {
+      if (exists $tag_ids{$subcategory}) {
+        push @tags, $tag_ids{$subcategory}
+      }
+    }
+  }
+  else {
+    @tags = ($tag_ids{$row->{subcategory}}) if exists $tag_ids{$row->{subcategory}};
+  }
+
+  for my $tag_id (@tags) {
+    $dtag->execute($allocation_id, $tag_id);
+    print "!"
+  }
+
   $last = $row;
 }
 print "\n";

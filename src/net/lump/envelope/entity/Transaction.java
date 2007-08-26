@@ -15,34 +15,33 @@ import java.util.List;
  * A transaction.
  *
  * @author Troy Bowman
- * @version $Id: Transaction.java,v 1.3 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Transaction.java,v 1.4 2007/08/26 06:28:57 troy Exp $
  */
-@Entity
+@javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
 @Table(name = "transactions")
 @org.hibernate.annotations.Table(
     appliesTo = "transactions",
     fetch = org.hibernate.annotations.FetchMode.SELECT)
 public class Transaction implements Identifiable {
+
   private Integer id;
   private Timestamp stamp;
   private Date date;
   private List<Allocation> allocations;
-  private String subcategory;
-  private String who;
+  private String entity;
   private String description;
   private Boolean reconciled;
+  private Boolean transfer;
 
   public String toString() {
-    String out = MessageFormat.format("{0,date,short} {1} {2}/{3}/{4}"
-                                      + System.getProperty("line.separator"),
+    String out = MessageFormat.format("{0,date,short} {1} {2}/{3}",
                                       date,
                                       getAmount().toFormattedString(),
-                                      subcategory,
-                                      who,
+                                      entity,
                                       description);
     for (Allocation a : allocations)
-      out += a.toString() + System.getProperty("line.separator");
+      out += System.getProperty("line.separator") + a.toString();
     return out;
   }
 
@@ -87,22 +86,13 @@ public class Transaction implements Identifiable {
     this.allocations = allocations;
   }
 
-  @Column(name = "subcategory", nullable = false, length = 64)
-  public String getSubcategory() {
-    return subcategory;
+  @Column(name = "entity", nullable = false, length = 128)
+  public String getEntity() {
+    return entity;
   }
 
-  public void setSubcategory(String subcategory) {
-    this.subcategory = subcategory;
-  }
-
-  @Column(name = "who", nullable = false, length = 128)
-  public String getWho() {
-    return who;
-  }
-
-  public void setWho(String who) {
-    this.who = who;
+  public void setEntity(String entity) {
+    this.entity = entity;
   }
 
   @Column(name = "description", nullable = false, length = 255)
@@ -123,6 +113,16 @@ public class Transaction implements Identifiable {
     this.reconciled = reconciled;
   }
 
+
+  @Column(name = "transfer", nullable = false)
+  public Boolean getTransfer() {
+    return transfer;
+  }
+
+  public void setTransfer(Boolean transfer) {
+    this.transfer = transfer;
+  }
+
   @Transient
   public Money getAmount() {
     Money total = new Money(0);
@@ -140,9 +140,6 @@ public class Transaction implements Identifiable {
 
     Transaction that = (Transaction)o;
 
-    if (this.getAllocations() != null && that.getAllocations() != null) {
-      if (this.getAllocations() != that.getAllocations()) return false;
-    }
     if (allocations != null
         ? !allocations.equals(that.allocations)
         : that.allocations != null) return false;
@@ -158,15 +155,15 @@ public class Transaction implements Identifiable {
     if (reconciled != null
         ? !reconciled.equals(that.reconciled)
         : that.reconciled != null) return false;
+    if (transfer != null
+        ? !transfer.equals(that.transfer)
+        : that.transfer != null) return false;
     if (stamp != null
         ? !stamp.equals(that.stamp)
         : that.stamp != null) return false;
-    if (subcategory != null
-        ? !subcategory.equals(that.subcategory)
-        : that.subcategory != null) return false;
-    return !(who != null
-             ? !who.equals(that.who)
-             : that.who != null);
+    return !(entity != null
+             ? !entity.equals(that.entity)
+             : that.entity != null);
   }
 
   public int hashCode() {
@@ -179,10 +176,10 @@ public class Transaction implements Identifiable {
       for (Allocation a : this.getAllocations())
         result = 31 * result + (a != null ? a.hashCode() : 0);
 
-    result = 31 * result + (subcategory != null ? subcategory.hashCode() : 0);
-    result = 31 * result + (who != null ? who.hashCode() : 0);
+    result = 31 * result + (entity != null ? entity.hashCode() : 0);
     result = 31 * result + (description != null ? description.hashCode() : 0);
     result = 31 * result + (reconciled != null ? reconciled.hashCode() : 0);
+    result = 31 * result + (transfer != null ? transfer.hashCode() : 0);
     return result;
   }
 }

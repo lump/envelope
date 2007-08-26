@@ -6,12 +6,16 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 /**
- * A category.
+ * A Category.
+ * <p/>
+ * A Budget Category contains allocations for expenses and income, and the sum
+ * of all reconciled balances for allocations in all categories for an account
+ * should match the account balance.
  *
  * @author Troy Bowman
- * @version $Id: Category.java,v 1.2 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Category.java,v 1.3 2007/08/26 06:28:57 troy Exp $
  */
-@Entity
+@javax.persistence.Entity
 @Table(name = "categories")
 public class Category implements Identifiable {
 

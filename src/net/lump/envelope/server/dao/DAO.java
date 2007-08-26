@@ -22,7 +22,7 @@ import java.util.Properties;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.3 2007/08/25 06:32:28 troy Exp $
+ * @version $Id: DAO.java,v 1.4 2007/08/26 06:28:57 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -47,6 +47,7 @@ public abstract class DAO {
           .addAnnotatedClass(Income.class)
           .addAnnotatedClass(Transaction.class)
           .addAnnotatedClass(Allocation.class)
+          .addAnnotatedClass(Tag.class)
           .addAnnotatedClass(User.class)
           .addProperties(config).buildSessionFactory();
     }
@@ -342,7 +343,7 @@ public abstract class DAO {
   /**
    * Get the current Transsaction.
    *
-   * @return Transaction
+   * @return org.hibernate.Transaction
    */
   public org.hibernate.Transaction getTransaction() {
     return getCurrentSession().getTransaction();

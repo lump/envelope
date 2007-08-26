@@ -9,14 +9,16 @@ import javax.persistence.*;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
+import java.util.Collection;
 
 /**
- * A many-to-one list of Categories for a transaction.
+ * A many-to-one list of Allocations for a Transaction.  Allocations are tied to
+ * Categories, which are tied to Accounts.
  *
  * @author Troy Bowman
- * @version $Id: Allocation.java,v 1.3 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Allocation.java,v 1.4 2007/08/26 06:28:57 troy Exp $
  */
-@Entity
+@javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
 @Table(name = "allocations")
 @org.hibernate.annotations.Table(
@@ -26,13 +28,17 @@ public class Allocation implements Identifiable {
   private Integer id;
   private Timestamp stamp;
   private Category category;
+  private Collection<Tag> tags;
   private Transaction transaction;
   private Money amount;
 
   public String toString() {
-    return MessageFormat.format("{0}@{1}",
-                                amount.toFormattedString(),
-                                category.toString());
+    String out = MessageFormat.format("{0}@{1}",
+                                      amount.toFormattedString(),
+                                      category.toString());
+    for (Tag t : tags)
+      out += System.getProperty("line.separator") + "\t" + t.toString();
+    return out;
   }
 
   @Id
@@ -88,6 +94,36 @@ public class Allocation implements Identifiable {
   public void setCategory(Category category) {
     this.category = category;
   }
+
+  /**
+   * The tags associated with this allocation.
+   *
+   * @return
+   */
+  @ManyToMany(
+      targetEntity = Tag.class,
+      cascade = {CascadeType.PERSIST, CascadeType.MERGE},
+      fetch = javax.persistence.FetchType.EAGER
+  )
+  @JoinTable(
+      name = "allocation_tag",
+      joinColumns = {@JoinColumn(name = "allocation")},
+      inverseJoinColumns = {@JoinColumn(name = "tag")}
+  )
+  @Fetch(value = FetchMode.SUBSELECT)
+  public Collection<Tag> getTags() {
+    return tags;
+  }
+
+  /**
+   * Set the tags associated with this Allocation.
+   *
+   * @param tag Collection
+   */
+  public void setTags(Collection<Tag> tag) {
+    this.tags = tag;
+  }
+
 
   /**
    * Get the Transaction associated with this Allocation.
@@ -154,6 +190,9 @@ public class Allocation implements Identifiable {
     if (transaction != null
         ? !transaction.equals(that.transaction)
         : that.transaction != null) return false;
+    if (tags != null
+        ? !tags.equals(that.tags)
+        : that.tags != null) return false;
 
     return true;
   }
@@ -165,6 +204,11 @@ public class Allocation implements Identifiable {
     result = 31 * result + (category != null ? category.hashCode() : 0);
     result = 31 * result + (transaction != null ? transaction.hashCode() : 0);
     result = 31 * result + (amount != null ? amount.hashCode() : 0);
+
+    if (this.getTags() != null)
+      for (Tag a : this.getTags())
+        result = 31 * result + (a != null ? a.hashCode() : 0);
+
     return result;
   }
 }

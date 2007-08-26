@@ -2,6 +2,7 @@ package us.lump.envelope;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
+import org.apache.log4j.BasicConfigurator;
 import us.lump.envelope.client.TestSecurity;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
@@ -21,7 +22,7 @@ import java.util.Properties;
  * A JUnit class which runs all tests.
  *
  * @author Troy Bowman
- * @version $Id: TestSuite.java,v 1.6 2007/08/21 05:29:16 troy Exp $
+ * @version $Id: TestSuite.java,v 1.7 2007/08/26 06:28:57 troy Exp $
  */
 public class TestSuite extends TestCase {
   public static int DEFAULT_SERVER_RMI_PORT = 7041;
@@ -35,6 +36,8 @@ public class TestSuite extends TestCase {
   public static final LoginSettings loginSettings = LoginSettings.getInstance();
 
   static {
+    BasicConfigurator.configure();
+
     Properties system = System.getProperties();
 
     try {

@@ -17,7 +17,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controlled.java,v 1.3 2007/08/25 06:32:28 troy Exp $
+ * @version $Id: Controlled.java,v 1.4 2007/08/26 06:28:57 troy Exp $
  */
 public class Controlled extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -148,7 +148,7 @@ public class Controlled extends UnicastRemoteObject implements Controller {
     finally {
       if (dao != null) {
         if (dao.isActive() && !dao.wasRolledBack()) {
-          dao.flush();
+          if (dao.isDirty()) dao.flush();
           dao.commit();
         }
         // close the session

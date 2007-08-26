@@ -5,7 +5,11 @@ import org.junit.Test;
 import us.lump.envelope.Command;
 import us.lump.envelope.TestSuite;
 import us.lump.envelope.client.portal.SecurityPortal;
+import us.lump.envelope.client.portal.TransactionPortal;
+import us.lump.envelope.entity.Transaction;
 import us.lump.envelope.server.rmi.Controller;
+
+import java.util.List;
 
 public class TestSecurity extends TestCase {
 
@@ -25,10 +29,6 @@ public class TestSecurity extends TestCase {
 
     assertTrue("User does not auth", authed);
 
-    // an entity object retrieval test
-//    Command cmd = new Command(Command.Name.listTransactions)
-//            .set(Command.Param.year, 2007).sign(user, kp.getPrivate());
-
 //    System.out.println("Encryption.decodePrivateKey(\""
 //            + Encryption.encodeKey(kp.getPrivate()) + "\");");
 
@@ -41,8 +41,10 @@ public class TestSecurity extends TestCase {
 //            .byteArrayToBase64(Encryption.freeze(cmd))
 //            + "\"))).verify(kp.getPublic());");
 
-//    List<Identifiable> list = (List<Identifiable>) controller.invoke(cmd);
-//    System.out.println(list.size());
+    // an entity object retrieval test
+    List<Transaction> list = new TransactionPortal().listTransactions(2007);
+
+    System.out.println(list.size());
 
     try {
       System.out.println(

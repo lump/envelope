@@ -10,6 +10,7 @@ import us.lump.envelope.client.ui.prefs.ServerSettings;
 import us.lump.envelope.server.rmi.Controller;
 
 import javax.swing.*;
+import java.io.Serializable;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
 
@@ -18,7 +19,7 @@ import java.rmi.RemoteException;
  * exit/entry to the server.
  *
  * @author Troy Bowman
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 
 abstract class Portal {
@@ -43,11 +44,11 @@ abstract class Portal {
     }
   }
 
-  public Object invoke(Command command) {
+  public Serializable invoke(Command command) {
     return invoke(null, command);
   }
 
-  public Object invoke(JFrame frame, Command command) {
+  public Serializable invoke(JFrame frame, Command command) {
     LoginSettings ls = LoginSettings.getInstance();
 
     // sign the command
@@ -68,11 +69,11 @@ abstract class Portal {
   }
 
 
-  public Object rawInvoke(Command command) {
+  public Serializable rawInvoke(Command command) {
     return rawInvoke(null, command);
   }
 
-  public Object rawInvoke(JFrame jframe, Command command) {
+  public Serializable rawInvoke(JFrame jframe, Command command) {
 
     try {
       return controller.invoke(command);

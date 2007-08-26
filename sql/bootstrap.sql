@@ -1,5 +1,5 @@
 --
--- $Id: bootstrap.sql,v 1.5 2007/08/21 05:34:11 troy Exp $
+-- $Id: bootstrap.sql,v 1.6 2007/08/26 06:28:57 troy Exp $
 --
 
 drop table if exists users;
@@ -8,6 +8,8 @@ drop table if exists transactions;
 drop table if exists categories;
 drop table if exists accounts;
 drop table if exists incomes;
+drop table if exists allocation_tag;
+drop table if exists tags;
 drop table if exists budgets;
 
 create table budgets (
@@ -97,20 +99,37 @@ insert into categories values(null, null, 0, 'Car Maintenance',12,'fpm',0);
 insert into categories values(null, null, 0, 'Car Insurance',266.68,'fpm',0);
 insert into categories values(null, null, 0, 'Electricity',70,'fpm',0);
 
+create table tags (
+  `id` int(11) NOT NULL auto_increment primary key,
+  `stamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  `budget` int not null,
+  `name` varchar(64) not null,
+  constraint tags_budget foreign key (budget) references budgets(id) ON UPDATE CASCADE ON DELETE RESTRICT
+)ENGINE=INNODB;
+insert into tags values (null, null, 0, 'Adjustment');
+update tags set id = 0;
+alter table tags auto_increment = 0;
+
 create table transactions (
   `id` int(11) NOT NULL auto_increment primary key,
   `stamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
   `date` date not null,
-  `subcategory` varchar(64) not null,
-  `who` varchar(128) not null,
+  `entity` varchar(128) not null,
   `description` varchar(255) not null,
-  `reconciled` tinyint(4) not null default '0'
+  `reconciled` tinyint(4) not null default '0',
+  `transfer` tinyint(4) not null default '0'
 )ENGINE=INNODB;
-insert into transactions values (null, null, now(), 'Beginning Balance', 'Adjustment','Starting Balance', 0);
+insert into transactions values (null, null, now(), 'Beginning Balance', 'Starting Balance', 0, 0);
 update transactions set id = 0;
 alter table transactions auto_increment = 0;
-insert into transactions values (1, null, now(), 'Beginning Balance', 'Adjustment','Starting Balance', 0);
+insert into transactions values (1, null, now(), 'Beginning Balance', 'Starting Balance', 0, 0);
 
+create table allocation_tag (
+  `allocation` int(11) NOT NULL,
+  `tag` int(11) NOT NULL
+)ENGINE=INNODB;
+insert into allocation_tag values (0, 0);
+insert into allocation_tag values (1, 0);
 
 create table allocations (
   `id` int(11) NOT NULL auto_increment primary key,
