@@ -26,7 +26,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.7 2007/08/21 04:08:26 troy Exp $
+ * @version $Id: Security.java,v 1.8 2007/09/09 07:17:10 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption
@@ -146,19 +146,28 @@ public class Security extends DAO {
   }
 
   private User getUser(String username) {
-    Element ue = cache.get(username);
     User user;
+
+    // if we've already retrieved the user for this thread, just use that.
+    user = ThreadInfo.getUser();
+    if (user != null) return user;
+
+    // if it exists in the cache, retrieve it.
+    Element ue = cache.get(username);
     if (ue != null) {
       user = (User)ue.getValue();
+      ThreadInfo.setUser(user);
       logger.debug("yanked \"" + username + "\" from ehcache");
     } else {
-
+      // if we're here, we didn't have it in the threadlocal nor cache.
+      // we'll have to ask hibernate.
       List<User> users = list(User.class, Restrictions.eq("name", username));
 
       if (users.isEmpty()) throw
           new RuntimeException("User " + username + " is invalid.");
       user = users.get(0);
-      cache.put(new Element(username, users.get(0)));
+      cache.put(new Element(username, user));
+      ThreadInfo.setUser(user);
     }
     return (user);
   }

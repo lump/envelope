@@ -8,8 +8,8 @@ import us.lump.lib.util.Encryption;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.security.*;
+import java.sql.Date;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 
@@ -17,14 +17,13 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 public class Command implements Serializable {
   /**
    * An application facet.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.5 $
    */
   public enum Dao {
     Security,
@@ -34,47 +33,10 @@ public class Command implements Serializable {
   }
 
   /**
-   * A parameter.
-   *
-   * @author Troy Bowman
-   * @version $Revision: 1.5 $
-   */
-  public enum Param {
-    public_key(PublicKey.class),
-    user_name(String.class),
-    challenge_response(byte[].class),
-
-    year(Integer.class),
-
-    account(Account.class),
-    category(Category.class),
-    reconciled(Boolean.class),
-
-    //more parameter definitions here...
-    ;
-
-    private final Class type;
-
-    Param(Class<? extends Serializable> type) {
-      this.type = type;
-    }
-
-    /**
-     * Get the class type of the Param.
-     *
-     * @return Class
-     */
-    public Class getType() {
-      return this.type;
-    }
-  }
-
-
-  /**
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.5 $
+   * @version $Revision: 1.6 $
    */
   public enum Name {
 
@@ -83,38 +45,40 @@ public class Command implements Serializable {
     authedPing(Dao.Action),
 
     // security
-    getChallenge(false, Dao.Security, Param.user_name, Param.public_key),
+    getChallenge(false, Dao.Security, String.class, PublicKey.class),
+
     authChallengeResponse(false,
                           Dao.Security,
-                          Param.user_name,
-                          Param.challenge_response),
+                          String.class,
+                          byte[].class),
 
     // transaction
-    listTransactions(Dao.Action, Param.year),
+    listTransactionsInYear(Dao.Action, Integer.class),
+    listTransactionsBetweenDates(Dao.Action, Date.class, Date.class),
 
     // report
     getCategoryBalance(Dao.Status,
-                       Param.category,
-                       Param.year,
-                       Param.reconciled),
-    getCategoryBalances(Dao.Status, Param.year, Param.reconciled),
-    getAccountBalance(Dao.Status, Param.account, Param.year, Param.reconciled),
-    getAccountBalances(Dao.Status, Param.year, Param.reconciled),
+                       Category.class,
+                       Integer.class,
+                       Boolean.class),
+    getCategoryBalances(Dao.Status, Integer.class, Boolean.class),
+    getAccountBalance(Dao.Status, Account.class, Integer.class, Boolean.class),
+    getAccountBalances(Dao.Status, Integer.class, Boolean.class),
 
     //more command definitions here...
     ;
 
     private final Dao dao;
-    private final ArrayList<Param> params = new ArrayList<Param>();
+    private final ArrayList<Class> params = new ArrayList<Class>();
     private final Boolean sessionRequired;
 
-    Name(boolean sessionRequired, Dao dao, Param... params) {
-      for (Param p : params) this.params.add(p);
+    Name(boolean sessionRequired, Dao dao, Class... params) {
+      for (Class p : params) this.params.add(p);
       this.dao = dao;
       this.sessionRequired = sessionRequired;
     }
 
-    Name(Dao dao, Param... params) {
+    Name(Dao dao, Class... params) {
       this(true, dao, params);
     }
 
@@ -129,12 +93,23 @@ public class Command implements Serializable {
     }
 
     /**
-     * Get the list of params defined for this Name;
+     * Get the list of params defined for this Name.
      *
      * @return the list of parameters
      */
-    public List<Param> getParams() {
+    public List<Class> getParamTypes() {
       return params;
+    }
+
+    /**
+     * Get the class of the parameter for the provided index
+     *
+     * @param i the index
+     *
+     * @return Class
+     */
+    public Class getParamType(int i) {
+      return params.get(i);
     }
 
     /**
@@ -149,9 +124,10 @@ public class Command implements Serializable {
   }
 
   private final Name name;
+
   // the actual parameters
-  private final HashMap<Param, Serializable> params =
-      new HashMap<Param, Serializable>();
+  private final ArrayList<Serializable> params = new ArrayList<Serializable>();
+
   // credentials for the session
   private Credentials credentials = null;
 
@@ -162,6 +138,11 @@ public class Command implements Serializable {
    */
   public Command(Name name) {
     this.name = name;
+  }
+
+  public Command(Name name, Serializable... params) {
+    this(name);
+    for (Serializable s : params) set(s);
   }
 
   /**
@@ -187,44 +168,60 @@ public class Command implements Serializable {
    *
    * @return HashMap
    */
-  public HashMap<Param, Serializable> getParams() {
+  public List<Serializable> getParams() {
     return params;
   }
 
   /**
    * Returns the value of the parameter defined by p
    *
-   * @param p the Param key
+   * @param i the Param id
    *
    * @return Serializable value
    */
-  public Serializable getParam(Param p) {
-    return params.get(p);
+  public Serializable getParam(int i) {
+    return params.get(i);
+  }
+
+  /**
+   * Set the next unset parameter with provided value.
+   *
+   * @param value the value
+   *
+   * @return Command
+   */
+  public Command set(Serializable value) {
+    return set(this.params.size(), value);
   }
 
   /**
    * Sets a parameter's value.
    *
-   * @param param the Param key
+   * @param id    the Param id
    * @param value the Serializable value
    *
    * @return Command the instance of command (for chained method calls)
    */
-  public Command set(Param param, Serializable value) {
-    // if this command contains the parameter
-    if (this.name.getParams().contains(param))
+  public Command set(int id, Serializable value) {
+    // if this command will fit in the list...
+    if (this.name.getParamTypes().size() > id) {
       // and the provided parameter is an instance of the parameter's type
-      if (param.getType().isInstance(value))
-        this.params.put(param, value);
+      if (this.name.getParamType(id).isInstance(value))
+        if (this.params.size() == id) this.params.add(value);
+        else if (this.params.size() > id) this.params.set(id, value);
+        else
+          throw new IllegalStateException("arguments must be added in order");
       else
         throw new IllegalArgumentException(
-            param.name()
+            this.name.name()
+            + " parameter number "
+            + id
             + " requires type "
-            + param.getType().getSimpleName()
+            + this.name.getParamType(id).getSimpleName()
             + " and is not type "
             + value.getClass().getSimpleName());
-    else
-      throw new IllegalArgumentException("invalid parameter " + param.name());
+    } else
+      throw new IllegalArgumentException("invalid parameter " + id);
     return this;
   }
 
@@ -240,11 +237,15 @@ public class Command implements Serializable {
    * @throws SignatureException       SignatureException
    * @throws InvalidKeyException      InvalidKeyException
    */
-  public Command sign(String username, PrivateKey key)
+  public Command sign
+      (String
+          username, PrivateKey
+          key)
       throws NoSuchAlgorithmException, SignatureException,
       InvalidKeyException, UnsupportedEncodingException {
     this.credentials = new Credentials(username);
-    credentials.setSignature(Encryption.sign(key, String.valueOf(hashCode())));
+    credentials.setSignature(Encryption.sign(key,
+                                             String.valueOf(hashCode())));
     return this;
   }
 
@@ -260,7 +261,9 @@ public class Command implements Serializable {
    * @throws UnsupportedEncodingException
    * @throws InvalidKeyException
    */
-  public boolean verify(PublicKey key) throws NoSuchAlgorithmException,
+  public boolean verify
+      (PublicKey
+          key) throws NoSuchAlgorithmException,
       SignatureException, UnsupportedEncodingException,
       InvalidKeyException {
     return Encryption.verify(
@@ -285,13 +288,11 @@ public class Command implements Serializable {
     // the hash of whether session is required
     result += 13 * name.isSessionRequired().hashCode();
 
-    // step through each parameter
-    for (Param param : params.keySet()) {
-      // the hash of the ordinal value
-      result += 13 * param.ordinal() + 113;
-      // Class.class's hash code means something else
-      // we'll use a hash on the simple name instead
-      result += param.getType().getSimpleName().hashCode();
+    // step through each param type, hash the class name
+    // and hash the corresponding value
+    for (int x = 0; x < name.getParamTypes().size(); x++) {
+      result += name.getParamType(x).getName().hashCode();
+      result += params.get(x) != null ? params.get(x).hashCode() : 0;
     }
     return result;
   }

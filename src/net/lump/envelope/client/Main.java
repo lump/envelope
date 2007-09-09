@@ -17,13 +17,14 @@ import java.awt.event.KeyEvent;
  * .
  *
  * @author troy
- * @version $Id: Main.java,v 1.5 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Main.java,v 1.6 2007/09/09 07:17:10 troy Exp $
  */
 public class Main implements Runnable {
   private JFrame frame = new JFrame(Strings.get("envelope_budget"));
   private AboutBox aboutBox;
   private Preferences appPrefs;
-  private java.util.prefs.Preferences prefs;
+  private java.util.prefs.Preferences prefs
+      = java.util.prefs.Preferences.userNodeForPackage(this.getClass());
   static final JMenuBar mainMenuBar = new JMenuBar();
 
   //content
@@ -43,9 +44,7 @@ public class Main implements Runnable {
     return singleton;
   }
 
-  private Main() {
-    prefs = java.util.prefs.Preferences.userNodeForPackage(this.getClass());
-  }
+  private Main() { }
 
   public void run() {
 

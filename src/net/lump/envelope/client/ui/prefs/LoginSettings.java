@@ -19,7 +19,7 @@ import java.util.prefs.Preferences;
  * and password.
  *
  * @author Troy Bowman
- * @version $Id: LoginSettings.java,v 1.5 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: LoginSettings.java,v 1.6 2007/09/09 07:17:10 troy Exp $
  */
 public class LoginSettings {
 
@@ -30,7 +30,7 @@ public class LoginSettings {
   private static final String ENCRYPTED_PASSWORD = "encryptedPassword";
 
   // preferences reference, defined at instantiation of the singleton.
-  private Preferences prefs;
+  private Preferences prefs = Preferences.userNodeForPackage(this.getClass());
 
   // the key-pair, generated once at instantiation of the singleton.
   private KeyPair keyPair;
@@ -42,8 +42,7 @@ public class LoginSettings {
   // the singleton
   private static LoginSettings singleton;
 
-  private LoginSettings() {
-    prefs = Preferences.userNodeForPackage(this.getClass());
+  {
     try {
       keyPair = Encryption.generateKeyPair();
     } catch (NoSuchAlgorithmException e) {
@@ -51,6 +50,8 @@ public class LoginSettings {
       System.exit(1);
     }
   }
+
+  private LoginSettings() { }
 
   public static LoginSettings getInstance() {
     if (singleton == null) singleton = new LoginSettings();

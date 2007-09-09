@@ -17,7 +17,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controlled.java,v 1.4 2007/08/26 06:28:57 troy Exp $
+ * @version $Id: Controlled.java,v 1.5 2007/09/09 07:17:10 troy Exp $
  */
 public class Controlled extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -92,13 +92,13 @@ public class Controlled extends UnicastRemoteObject implements Controller {
 
     try {
       // parameter names
-      Class[] paramNames = new Class[command.getName().getParams().size()];
+      Class[] paramNames = new Class[command.getName().getParamTypes().size()];
       // parameter arguments
-      Object[] args = new Object[command.getName().getParams().size()];
+      Object[] args = new Object[command.getName().getParamTypes().size()];
       // populate the arrays for reflection
-      for (int x = 0; x < command.getName().getParams().size(); x++) {
-        paramNames[x] = command.getName().getParams().get(x).getType();
-        args[x] = command.getParam(command.getName().getParams().get(x));
+      for (int x = 0; x < command.getName().getParamTypes().size(); x++) {
+        paramNames[x] = command.getName().getParamType(x);
+        args[x] = command.getParam(x);
       }
 
       // deduce the DAO class name from the facet and create an instance.
@@ -159,9 +159,7 @@ public class Controlled extends UnicastRemoteObject implements Controller {
       logger.info(
           (command.getCredentials() != null
            ? command.getCredentials().getUsername()
-           : command.getParams().containsKey(Command.Param.user_name)
-             ? command.getParam(Command.Param.user_name)
-             : "anonymous")
+           : "no-session")
           + SPACE + command.getName().name() + SPACE
           + ((System.currentTimeMillis() - start)
              / (double)Span.SECOND.millis) + "s");

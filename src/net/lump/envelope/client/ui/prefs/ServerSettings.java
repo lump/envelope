@@ -17,7 +17,7 @@ import java.util.prefs.Preferences;
 
 public class ServerSettings {
   private static ServerSettings singleton;
-  Preferences prefs;
+  Preferences prefs = Preferences.userNodeForPackage(this.getClass());
 
   private static ValidCache classServerValidated = new ValidCache();
   private static ValidCache rmiServerValidated = new ValidCache();
@@ -34,9 +34,7 @@ public class ServerSettings {
     class_port
   }
 
-  private ServerSettings() {
-    prefs = Preferences.userNodeForPackage(this.getClass());
-  }
+  private ServerSettings() { }
 
   public static ServerSettings getInstance() {
     if (singleton == null) singleton = new ServerSettings();

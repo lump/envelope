@@ -10,10 +10,11 @@
       <properties />
       <executeOn event="beforeRun" target="client.dist.prepare" runConfigurationType="Application" runConfigurationName="Client" />
       <executeOn event="beforeRun" target="compile" runConfigurationType="Application" runConfigurationName="Unnamed" />
-      <executeOn event="beforeRun" target="compile.tests" runConfigurationType="JUnit" runConfigurationName="TestSecurity" />
       <executeOn event="beforeRun" target="compile.tests" runConfigurationType="JUnit" runConfigurationName="TestSecurity.testLogin" />
-      <executeOn event="beforeRun" target="compile.tests" runConfigurationType="JUnit" runConfigurationName="TestEncryption.TestEncryption" />
       <executeOn event="beforeRun" target="compile.tests" runConfigurationType="JUnit" runConfigurationName="TestSuite" />
+      <executeOn event="beforeRun" target="compile.tests" runConfigurationType="JUnit" runConfigurationName="TestSecurity.testListTransactions" />
+      <executeOn event="beforeRun" target="compile.tests" runConfigurationType="JUnit" runConfigurationName="TestSecurity" />
+      <executeOn event="beforeRun" target="compile.tests" runConfigurationType="JUnit" runConfigurationName="TestEncryption.TestEncryption" />
     </buildFile>
   </component>
   <component name="BuildJarProjectSettings">

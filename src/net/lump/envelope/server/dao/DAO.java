@@ -22,7 +22,7 @@ import java.util.Properties;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.4 2007/08/26 06:28:57 troy Exp $
+ * @version $Id: DAO.java,v 1.5 2007/09/09 07:17:10 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -118,6 +118,7 @@ public abstract class DAO {
     Criteria criteria = getCurrentSession().createCriteria(t);
     for (Criterion crit : crits) criteria.add(crit);
     if (orderby != null) for (Order o : orderby) criteria.addOrder(o);
+    criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
     return (List<T>)criteria.list();
   }
 

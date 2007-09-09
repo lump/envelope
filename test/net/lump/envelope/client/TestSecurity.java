@@ -9,6 +9,7 @@ import us.lump.envelope.client.portal.TransactionPortal;
 import us.lump.envelope.entity.Transaction;
 import us.lump.envelope.server.rmi.Controller;
 
+import java.sql.Date;
 import java.util.List;
 
 public class TestSecurity extends TestCase {
@@ -42,9 +43,12 @@ public class TestSecurity extends TestCase {
 //            + "\"))).verify(kp.getPublic());");
 
     // an entity object retrieval test
-    List<Transaction> list = new TransactionPortal().listTransactions(2007);
+//    List<Transaction> list = new TransactionPortal().listTransactions(2007);
 
-    System.out.println(list.size());
+    List<Transaction> list = new TransactionPortal().listTransactions(
+        new Date(System.currentTimeMillis()),
+        new Date(System.currentTimeMillis() - (86400000L * 30L)));
+    assertTrue("list size is not > 0", list.size() > 0);
 
     try {
       System.out.println(
