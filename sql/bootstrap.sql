@@ -1,5 +1,5 @@
 --
--- $Id: bootstrap.sql,v 1.6 2007/08/26 06:28:57 troy Exp $
+-- $Id: bootstrap.sql,v 1.7 2008/01/15 03:55:27 troy Exp $
 --
 
 drop table if exists users;
@@ -58,46 +58,47 @@ create table categories (
   `name` varchar(64) NOT NULL default '',
   `allocation` double not null default '0.0',
   `allocation_type` enum('ppp','fpp','fpm') not null default 'ppp',
-  `auto_deduct` tinyint(1) not null default '0',
+  `allocation_deduct` tinyint(1) not null default '0',
+  `allocation_reconcile` tinyint(1) not null default '1',
   unique index budget_name (`account`,`name`),
   constraint categories_accounts foreign key (account) references accounts(id) ON UPDATE CASCADE ON DELETE RESTRICT
 )ENGINE=INNODB;
-insert into categories values(null, null, 0, 'Tithing' , '.1', 'ppp', 0);
+insert into categories values(null, null, 0, 'Tithing' , '.1', 'ppp', 0,1);
 update categories set id = 0;
 alter table categories auto_increment = 0;
-insert into categories values(null, null, 0, 'Water',22.5,'fpm',0);
-insert into categories values(null, null, 0, 'Travel',0,'ppp',0);
-insert into categories values(null, null, 0, 'Subscriptions',2,'fpp',0);
-insert into categories values(null, null, 0, 'State Tax',3.76,'ppp',1);
-insert into categories values(null, null, 0, 'Social Security',90,'fpp',1);
-insert into categories values(null, null, 0, 'Sewer',2.5,'fpm',0);
-insert into categories values(null, null, 0, 'Restaurants',10,'fpp',0);
-insert into categories values(null, null, 0, 'Recreation',5,'fpp',0);
-insert into categories values(null, null, 0, 'Phone',30,'fpm',0);
-insert into categories values(null, null, 0, 'Other Taxes and Fees',0,'ppp',0);
-insert into categories values(null, null, 0, 'Mortgage',600,'fpm',0);
-insert into categories values(null, null, 0, 'Memberships',0,'ppp',0);
-insert into categories values(null, null, 0, 'Medicare',30,'fpp',1);
-insert into categories values(null, null, 0, 'Medical Insurance',100,'fpp',1);
-insert into categories values(null, null, 0, 'Medical',46,'fpm',0);
-insert into categories values(null, null, 0, 'Media',0,'fpp',0);
-insert into categories values(null, null, 0, 'Home',40,'fpm',0);
-insert into categories values(null, null, 0, 'Hobbies',0,'ppp',0);
-insert into categories values(null, null, 0, 'Haircuts',4,'fpm',0);
-insert into categories values(null, null, 0, 'Groceries',200,'fpp',0);
-insert into categories values(null, null, 0, 'Gifts',20,'fpp',0);
-insert into categories values(null, null, 0, 'Gasoline',30,'fpp',0);
-insert into categories values(null, null, 0, 'Gas',50,'fpm',0);
-insert into categories values(null, null, 0, 'Furniture',7,'ppp',0);
-insert into categories values(null, null, 0, 'Federal Tax',0,'ppp',1);
-insert into categories values(null, null, 0, 'Fast Offering',0,'ppp',0);
-insert into categories values(null, null, 0, 'Electronics',0,'ppp',0);
-insert into categories values(null, null, 0, 'Computer',15,'fpm',0);
-insert into categories values(null, null, 0, 'Clothes',15,'fpp',0);
-insert into categories values(null, null, 0, 'Car Payment',6.25,'ppp',0);
-insert into categories values(null, null, 0, 'Car Maintenance',12,'fpm',0);
-insert into categories values(null, null, 0, 'Car Insurance',266.68,'fpm',0);
-insert into categories values(null, null, 0, 'Electricity',70,'fpm',0);
+insert into categories values(null, null, 0, 'Water',22.5,'fpm',0,1);
+insert into categories values(null, null, 0, 'Travel',0,'ppp',0,1);
+insert into categories values(null, null, 0, 'Subscriptions',2,'fpp',0,1);
+insert into categories values(null, null, 0, 'State Tax',3.76,'ppp',1,1);
+insert into categories values(null, null, 0, 'Social Security',90,'fpp',1,1);
+insert into categories values(null, null, 0, 'Sewer',2.5,'fpm',0,1);
+insert into categories values(null, null, 0, 'Restaurants',10,'fpp',0,1);
+insert into categories values(null, null, 0, 'Recreation',5,'fpp',0,1);
+insert into categories values(null, null, 0, 'Phone',30,'fpm',0,1);
+insert into categories values(null, null, 0, 'Other Taxes and Fees',0,'ppp',0,1);
+insert into categories values(null, null, 0, 'Mortgage',600,'fpm',0,1);
+insert into categories values(null, null, 0, 'Memberships',0,'ppp',0,1);
+insert into categories values(null, null, 0, 'Medicare',30,'fpp',1,1);
+insert into categories values(null, null, 0, 'Medical Insurance',100,'fpp',1,1);
+insert into categories values(null, null, 0, 'Medical',46,'fpm',0,1);
+insert into categories values(null, null, 0, 'Media',0,'fpp',0,1);
+insert into categories values(null, null, 0, 'Home',40,'fpm',0,1);
+insert into categories values(null, null, 0, 'Hobbies',0,'ppp',0,1);
+insert into categories values(null, null, 0, 'Haircuts',4,'fpm',0,1);
+insert into categories values(null, null, 0, 'Groceries',200,'fpp',0,1);
+insert into categories values(null, null, 0, 'Gifts',20,'fpp',0,1);
+insert into categories values(null, null, 0, 'Gasoline',30,'fpp',0,1);
+insert into categories values(null, null, 0, 'Gas',50,'fpm',0,1);
+insert into categories values(null, null, 0, 'Furniture',7,'ppp',0,1);
+insert into categories values(null, null, 0, 'Federal Tax',0,'ppp',1,1);
+insert into categories values(null, null, 0, 'Fast Offering',0,'ppp',0,1);
+insert into categories values(null, null, 0, 'Electronics',0,'ppp',0,1);
+insert into categories values(null, null, 0, 'Computer',15,'fpm',0,1);
+insert into categories values(null, null, 0, 'Clothes',15,'fpp',0,1);
+insert into categories values(null, null, 0, 'Car Payment',6.25,'ppp',0,1);
+insert into categories values(null, null, 0, 'Car Maintenance',12,'fpm',0,1);
+insert into categories values(null, null, 0, 'Car Insurance',266.68,'fpm',0,1);
+insert into categories values(null, null, 0, 'Electricity',70,'fpm',0,1);
 
 create table tags (
   `id` int(11) NOT NULL auto_increment primary key,

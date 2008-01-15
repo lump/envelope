@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.2 2007/08/26 06:28:57 troy Exp $
+# $Id: migrate.pl,v 1.3 2008/01/15 03:55:27 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -15,7 +15,7 @@ $dbs = {
     host => "dublan.net",
     port => 3306,
     user => "budget",
-    password => "DeADFeeDBeeF",
+    password => "DeADFeeDBeeF",DeADFeeDBeeF
   },
   dest => {
     database => "envelope",
@@ -106,8 +106,8 @@ $dsth->finish;
 
 
 $dsth = $dbs->{dest}->{connection}->prepare("
-insert into categories (account, name, allocation, allocation_type, auto_deduct)
-values (?, ?, ?, ?, ?)")
+insert into categories (account, name, allocation, allocation_type, allocation_deduct, allocation_reconcile)
+values (?, ?, ?, ?, ?, 1)")
   or die $dbs->{source}->{connection}->errstr;;
 
 $sth = $dbs->{source}->{connection}->prepare("select * from categories where budgetname = 'bowman'") or die $dbs->{source}->{connection}->errstr;;
@@ -169,6 +169,13 @@ my $last = {};
 my $last_id = undef;
 print "Inserting transactions(-) and allocations(+)";
 while (my $row = $sth->fetchrow_hashref()) {
+  if ($row->{stamp} =~ /^200[45678]-01-01 00:00:00$/ and $row->{subcategory} eq "Beginning Balance") {
+    print "#";
+#    for my $key (keys %$row) {
+#      print "$row->{$key}\n";
+#    }
+    next;
+  }
 
   # transactions
   if ($row->{to_from} eq undef) { $row->{to_from} = "" }
