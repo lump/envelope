@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.3 2008/01/15 03:55:27 troy Exp $
+# $Id: migrate.pl,v 1.4 2008/01/15 04:10:02 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -15,7 +15,7 @@ $dbs = {
     host => "dublan.net",
     port => 3306,
     user => "budget",
-    password => "DeADFeeDBeeF",DeADFeeDBeeF
+    password => "DeADFeeDBeeF",
   },
   dest => {
     database => "envelope",
@@ -106,8 +106,8 @@ $dsth->finish;
 
 
 $dsth = $dbs->{dest}->{connection}->prepare("
-insert into categories (account, name, allocation, allocation_type, allocation_deduct, allocation_reconcile)
-values (?, ?, ?, ?, ?, 1)")
+insert into categories (account, name, allocation, allocation_type, auto_deduct)
+values (?, ?, ?, ?, ?)")
   or die $dbs->{source}->{connection}->errstr;;
 
 $sth = $dbs->{source}->{connection}->prepare("select * from categories where budgetname = 'bowman'") or die $dbs->{source}->{connection}->errstr;;
