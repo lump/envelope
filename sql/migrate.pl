@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.5 2008/01/19 20:19:39 troy Exp $
+# $Id: migrate.pl,v 1.6 2008/01/20 05:15:41 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -101,6 +101,9 @@ while (my $row = $sth->fetchrow_hashref()) {
     or die $dsth->errstr;
   print "Inserted user $budget_id, $row->{username}, $row->{real_name}, $row->{crypt_password}, $row->{int_permissions}\n";
 }
+
+# add a test user for this budget
+$dsth->execute($budget_id, 'bowmantest', 'Bowman Test Account','$1$GOyqcoAk$KTE1zfxeTkoXJTcrFKyFi0',7);
 $sth->finish;
 $dsth->finish;
 
@@ -229,4 +232,6 @@ print "\n";
 $sth->finish;
 $dtrans->finish;
 $dalloc->finish;
+
+
 

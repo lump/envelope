@@ -17,7 +17,7 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Revision: 1.6 $
+ * @version $Revision: 1.7 $
  */
 public class Command implements Serializable {
   /**
@@ -36,37 +36,32 @@ public class Command implements Serializable {
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.6 $
+   * @version $Revision: 1.7 $
    */
   public enum Name {
 
-    // diag
-    ping(false, Dao.Action),
-    authedPing(Dao.Action),
-
     // security
+    ping(false, Dao.Security),
+    authedPing(Dao.Security),
     getChallenge(false, Dao.Security, String.class, PublicKey.class),
-
-    authChallengeResponse(false,
-                          Dao.Security,
-                          String.class,
-                          byte[].class),
+    authChallengeResponse(false, Dao.Security, String.class, byte[].class),
 
     // transaction
     listTransactionsInYear(Dao.Action, Integer.class),
     listTransactionsBetweenDates(Dao.Action, Date.class, Date.class),
 
     // report
-    getCategoryBalance(Dao.Status,
-                       Category.class,
-                       Integer.class,
-                       Boolean.class),
-    getCategoryBalances(Dao.Status, Integer.class, Boolean.class),
-    getAccountBalance(Dao.Status, Account.class, Integer.class, Boolean.class),
-    getAccountBalances(Dao.Status, Integer.class, Boolean.class),
+
+    getCategory(Dao.Status, String.class),
+    getCategoryBalance(Dao.Status, Category.class, Boolean.class),
+    getCategoryBalances(Dao.Status, Boolean.class),
+    getAccount(Dao.Status, String.class),
+    getAccountBalance(Dao.Status, Account.class, Boolean.class),
+    getAccountBalances(Dao.Status, Boolean.class),
 
     //more command definitions here...
     ;
+
 
     private final Dao dao;
     private final ArrayList<Class> params = new ArrayList<Class>();
@@ -206,7 +201,8 @@ public class Command implements Serializable {
     // if this command will fit in the list...
     if (this.name.getParamTypes().size() > id) {
       // and the provided parameter is an instance of the parameter's type
-      if (this.name.getParamType(id).isInstance(value))
+      if (value == null
+          || this.name.getParamType(id).isInstance(value))
         if (this.params.size() == id) this.params.add(value);
         else if (this.params.size() > id) this.params.set(id, value);
         else

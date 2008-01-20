@@ -1,9 +1,6 @@
 package us.lump.envelope.server.dao;
 
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
-import org.hibernate.criterion.Restrictions;
 import us.lump.envelope.Command;
 import us.lump.envelope.entity.User;
 import us.lump.envelope.server.exception.AuthenticationException;
@@ -19,29 +16,17 @@ import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
-import java.util.List;
 import java.util.prefs.Preferences;
 
 /**
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.8 2007/09/09 07:17:10 troy Exp $
+ * @version $Id: Security.java,v 1.9 2008/01/20 05:15:41 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption
   private static KeyPair serverKeyPair = null;
-
-  // a cache to ask the database for a User less.
-  private static final Cache cache;
-
-  static {
-    // cache the username in memory for a few seconds or so for those fast
-    // queries.
-    cache = new Cache("users", 32, false, false, 5, 10);
-    CacheManager.create(Security.class.getResource("ehcache.xml"))
-        .addCache(cache);
-  }
 
   public Security() {
 
@@ -75,6 +60,10 @@ public class Security extends DAO {
     }
   }
 
+  public Boolean authedPing() { return ping(); }
+
+  public Boolean ping() { return true; }
+
   public Boolean authChallengeResponse(String username,
                                        byte[] challengeResponse)
       throws BadPaddingException, NoSuchAlgorithmException, IOException,
@@ -88,8 +77,8 @@ public class Security extends DAO {
         Encryption.TRANS_ENCODING);
 
     if (hash.equals(user.getCryptPassword())) {
-      // update the cache
-      cache.put(new Element(username, user));
+      // update the userCache
+      cache.get(USER).put(new Element(username, user));
 
       // we're authed.
       authed = true;
@@ -145,32 +134,6 @@ public class Security extends DAO {
     );
   }
 
-  private User getUser(String username) {
-    User user;
-
-    // if we've already retrieved the user for this thread, just use that.
-    user = ThreadInfo.getUser();
-    if (user != null) return user;
-
-    // if it exists in the cache, retrieve it.
-    Element ue = cache.get(username);
-    if (ue != null) {
-      user = (User)ue.getValue();
-      ThreadInfo.setUser(user);
-      logger.debug("yanked \"" + username + "\" from ehcache");
-    } else {
-      // if we're here, we didn't have it in the threadlocal nor cache.
-      // we'll have to ask hibernate.
-      List<User> users = list(User.class, Restrictions.eq("name", username));
-
-      if (users.isEmpty()) throw
-          new RuntimeException("User " + username + " is invalid.");
-      user = users.get(0);
-      cache.put(new Element(username, user));
-      ThreadInfo.setUser(user);
-    }
-    return (user);
-  }
 
 }
 

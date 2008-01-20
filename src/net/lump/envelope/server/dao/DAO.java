@@ -1,10 +1,14 @@
 package us.lump.envelope.server.dao;
 
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Element;
 import org.apache.log4j.Logger;
 import org.hibernate.*;
 import org.hibernate.cfg.AnnotationConfiguration;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
+import org.hibernate.criterion.Restrictions;
 import org.hibernate.impl.SessionImpl;
 import us.lump.envelope.entity.*;
 import us.lump.envelope.entity.Transaction;
@@ -13,21 +17,39 @@ import us.lump.envelope.server.PrefsConfigurator;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.5 2007/09/09 07:17:10 troy Exp $
+ * @version $Id: DAO.java,v 1.6 2008/01/20 05:15:41 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
 
   private static SessionFactory sessionFactory = null;
+
+  private static final int cacheSize = 32;
+  private static final int cacheTtl = 5;
+  private static final int cacheTti = 10;
+
+  // a userCache to ask the database for a User less.
+  static final HashMap<String, Cache> cache = new HashMap<String, Cache>();
+  static final String USER = "user";
+//  static final String BUDGET = "budget";
+//  static final String ACCOUNT = "account";
+
+  static {
+    // userCache the username in memory for a few seconds or so for those fast
+    // queries.
+    for (String s : new String[]{USER}) { //, BUDGET, ACCOUNT}) {
+      cache.put
+          (s, new Cache(s, cacheSize, false, false, cacheTtl, cacheTti));
+      CacheManager.create(Security.class.getResource("ehcache.xml"))
+          .addCache(cache.get(s));
+    }
+  }
 
   {
     logger = Logger.getLogger(this.getClass());
@@ -204,6 +226,41 @@ public abstract class DAO {
   protected <T extends Identifiable> void update(Iterable<T> os) {
     for (T o : os) getCurrentSession().update(o);
   }
+
+  User getUser(String username) {
+    User user;
+
+    // if we've already retrieved the user for this thread, just use that.
+    user = ThreadInfo.getUser();
+    if (user != null) return user;
+
+    // if it exists in the userCache, retrieve it.
+    Element ue = cache.get(USER).get(username);
+    if (ue != null) {
+      user = (User)ue.getValue();
+      ThreadInfo.setUser(user);
+      logger.debug("yanked \"" + username + "\" from ehcache");
+    } else {
+      // if we're here, we didn't have it in the threadlocal nor userCache.
+      // we'll have to ask hibernate.
+      List<User> users = list(User.class, Restrictions.eq("name", username));
+
+      if (users.isEmpty()) throw
+          new RuntimeException("User " + username + " is invalid.");
+      user = users.get(0);
+      cache.get(USER).put(new Element(username, user));
+      ThreadInfo.setUser(user);
+    }
+    return (user);
+  }
+
+  User getUser() throws IllegalStateException {
+    User user = ThreadInfo.getUser();
+    if (user == null)
+      throw new IllegalStateException("user hasn't been set for this thread");
+    return user;
+  }
+
 
   /** Begin a new transaction. */
   void begin() {

@@ -16,13 +16,13 @@ import java.util.List;
  * An account object.
  *
  * @author Troy Bowman
- * @version $Id: Account.java,v 1.4 2007/08/26 06:28:57 troy Exp $
+ * @version $Id: Account.java,v 1.5 2008/01/20 05:15:41 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "accounts")
 public class Account implements Identifiable {
 
-//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.4 $".replaceAll("\\D", ""));
+//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.5 $".replaceAll("\\D", ""));
 
   /** The type of an Account. */
   public static enum AccountType {
@@ -180,7 +180,7 @@ public class Account implements Identifiable {
     if (stamp != null
         ? !stamp.equals(account.stamp)
         : account.stamp != null) return false;
-    if (type != account.type) return false;
+    if (type.ordinal() != account.type.ordinal()) return false;
 
     return true;
   }
@@ -191,7 +191,7 @@ public class Account implements Identifiable {
     result = 31 * result + (stamp != null ? stamp.hashCode() : 0);
     result = 31 * result + (budget != null ? budget.hashCode() : 0);
     result = 31 * result + (name != null ? name.hashCode() : 0);
-    result = 31 * result + (type != null ? type.hashCode() : 0);
+    result = 31 * result + (type != null ? type.toString().hashCode() : 0);
     result = 31 * result + (rate != null ? rate.hashCode() : 0);
     result = 31 * result + (limit != null ? limit.hashCode() : 0);
     return result;

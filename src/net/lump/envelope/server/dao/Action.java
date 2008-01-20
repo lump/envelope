@@ -13,13 +13,9 @@ import java.util.List;
  * A DAO for Transactions.
  *
  * @author Troy Bowman
- * @version $Id: Action.java,v 1.4 2007/09/09 07:17:10 troy Exp $
+ * @version $Id: Action.java,v 1.5 2008/01/20 05:15:41 troy Exp $
  */
 public class Action extends DAO {
-
-  public Boolean authedPing() { return ping(); }
-
-  public Boolean ping() { return true; }
 
   /**
    * Lists all transactions for a given year.
@@ -56,6 +52,7 @@ public class Action extends DAO {
    *
    * @return List<Transaction>
    */
+  @SuppressWarnings({"unchecked"})
   public List<Transaction> listTransactionsBetweenDates(Date date1,
                                                         Date date2) {
 
@@ -71,7 +68,6 @@ public class Action extends DAO {
         .add(Restrictions.eq("budget", ThreadInfo.getUser().getBudget()))
         .setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
 
-    //noinspection unchecked
     List<Transaction> list = criteria.list();
     evict(list);
     logger.info("retrieved " + list.size() + " transactions for dates between "

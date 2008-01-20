@@ -17,7 +17,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controlled.java,v 1.5 2007/09/09 07:17:10 troy Exp $
+ * @version $Id: Controlled.java,v 1.6 2008/01/20 05:15:41 troy Exp $
  */
 public class Controlled extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);

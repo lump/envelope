@@ -13,7 +13,7 @@ import java.sql.Timestamp;
  * should match the account balance.
  *
  * @author Troy Bowman
- * @version $Id: Category.java,v 1.4 2007/09/09 07:17:10 troy Exp $
+ * @version $Id: Category.java,v 1.5 2008/01/20 05:15:41 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "categories")
@@ -218,7 +218,8 @@ public class Category implements Identifiable {
     if (allocation != null
         ? !allocation.equals(category.allocation)
         : category.allocation != null) return false;
-    if (allocationType != category.allocationType) return false;
+    if (allocationType.ordinal()
+        != category.allocationType.ordinal()) return false;
     if (autoDeduct != null
         ? !autoDeduct.equals(category.autoDeduct)
         : category.autoDeduct != null) return false;
@@ -242,8 +243,8 @@ public class Category implements Identifiable {
     result = 31 * result + (account != null ? account.hashCode() : 0);
     result = 31 * result + (name != null ? name.hashCode() : 0);
     result = 31 * result + (allocation != null ? allocation.hashCode() : 0);
-    result =
-        31 * result + (allocationType != null ? allocationType.hashCode() : 0);
+    result = 31 * result + (allocationType != null
+                            ? allocationType.toString().hashCode() : 0);
     result = 31 * result + (autoDeduct != null ? autoDeduct.hashCode() : 0);
     return result;
   }

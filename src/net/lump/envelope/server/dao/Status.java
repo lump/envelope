@@ -1,6 +1,8 @@
 package us.lump.envelope.server.dao;
 
+import org.hibernate.Criteria;
 import org.hibernate.Query;
+import org.hibernate.criterion.Restrictions;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Category;
 import us.lump.lib.Money;
@@ -11,7 +13,7 @@ import java.util.List;
  * A DAO which deals with reporting information.
  *
  * @author Troy Bowman
- * @version $Id: Status.java,v 1.1 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Status.java,v 1.2 2008/01/20 05:15:41 troy Exp $
  */
 public class Status extends DAO {
 
@@ -20,55 +22,56 @@ public class Status extends DAO {
    * reconciliation.
    *
    * @param category   for the query
-   * @param year       for the query
-   * @param reconciled whether this has been reconciled or not
+   * @param reconciled whether this has been reconciled or not.  a null Boolean
+   *                   will query both reconiled and not reconciled.
    *
    * @return the balance
    */
   @SuppressWarnings({"unchecked"})
   public Money getCategoryBalance(Category category,
-                                  Integer year,
                                   Boolean reconciled) {
-
-    Query query = getCurrentSession().createQuery(
-        "select sum(a.amount)" +
-        "from Allocation a, Transaction t " +
+    String q =
+        "select sum(a.amount) " +
+        "from Allocation a, Transaction t, Category c, Account n " +
         "where a.category = :id " +
         "and a.transaction = t.id " +
-        "and year(t.date) = :year " +
-        "and t.reconciled = :reconciled")
+        "and c.account = n.id " +
+        "and n.budget = :budget ";
+    if (reconciled != null) q += "and t.reconciled = :reconciled";
+
+    Query query = getCurrentSession().createQuery(q)
         .setInteger("id", category.getId())
-        .setInteger("year", year)
-        .setBoolean("reconciled", reconciled);
+        .setInteger("budget", getUser().getBudget().getId().intValue());
+    if (reconciled != null) query.setBoolean("reconciled", reconciled);
 
-    Object o = query.iterate().next();
 
-    return o == null ? new Money(0) : (Money)o;
+    return (Money)query.uniqueResult();
   }
 
   /**
    * Get a list of balances for all of the categories for a specific year,
    * depending on whether they're reconciled or not.
    *
-   * @param year       for the query
-   * @param reconciled whether this has been reconciled or not
+   * @param reconciled whether this has been reconciled or not. a null Boolean
+   *                   will query regardless of reconciled.
    *
    * @return a list containing a small array of a category and balance
    */
   @SuppressWarnings({"unchecked"})
-  public List<Object> getCategoryBalances(Integer year, Boolean reconciled) {
+  public List<Object> getCategoryBalances(Boolean reconciled) {
+    String q =
+        "select c.name, sum(a.amount) "
+        + "from Allocation a, Transaction t, Category c, Account n "
+        + "where a.transaction = t.id "
+        + "and a.category = c.id "
+        + "and c.account = n.id "
+        + "and n.budget = :budget ";
+    if (reconciled != null) q += "and t.reconciled = :reconciled ";
+    q += "group by c.id";
 
-    Query query = getCurrentSession().createQuery(
-        "select c, sum(a.amount) " +
-        "from Allocation a, Transaction t, Category c " +
-        "where a.transaction = t.id " +
-        "and year(t.date) = :year " +
-        "and t.reconciled = :reconciled " +
-        "and c.id = a.category " +
-        "group by c.id")
-        .setInteger("year", year)
-        .setBoolean("reconciled", reconciled);
-
+    Query query = getCurrentSession().createQuery(q)
+        .setInteger("budget", getUser().getBudget().getId().intValue());
+    if (reconciled != null) query.setBoolean("reconciled", reconciled);
     return (List<Object>)query.list();
   }
 
@@ -77,58 +80,81 @@ public class Status extends DAO {
    * whether the transactions have been reconciled or not.
    *
    * @param account    for the query
-   * @param year       for the query
    * @param reconciled whether this has been reconciled or not
    *
    * @return an amount of the balance
    */
   @SuppressWarnings({"unchecked"})
   public Money getAccountBalance(Account account,
-                                 Integer year,
                                  Boolean reconciled) {
 
-    Query query = getCurrentSession().createQuery(
-        "select sum(al.amount) " +
-        "from Allocation al, Transaction tr, Account ac, Category ca " +
-        "where al.transaction = tr.id " +
-        "and al.category = ca.id " +
-        "and ca.account = ac.id " +
-        "and year(tr.date) = :year " +
-        "and tr.reconciled = :reconciled " +
-        "and ac.id = :account")
-        .setInteger("year", year)
-        .setBoolean("reconciled", reconciled)
-        .setInteger("account", account.getId());
+    String q =
+        "select sum(a.amount) "
+        + "from Allocation a, Transaction t, Category c, Account n "
+        + "where a.transaction = t.id "
+        + "and a.category = c.id "
+        + "and c.account = n.id "
+        + "and n.id = :account "
+        + "and n.budget = :budget ";
+    if (reconciled != null) q += "and t.reconciled = :reconciled ";
 
-    Object o = query.iterate().next();
-    return o == null ? new Money(0) : (Money)o;
+    Query query = getCurrentSession().createQuery(q)
+        .setInteger("account", account.getId())
+        .setInteger("budget", getUser().getBudget().getId().intValue());
+    if (null != reconciled) query.setBoolean("reconciled", reconciled);
+
+    return (Money)query.uniqueResult();
   }
 
   /**
    * Retrieve a list of balances for all accounts for a specific year, and
    * depending on whether the transactions have been reconciled.
    *
-   * @param year       for the query
    * @param reconciled whether this has been reconciled or not *
    *
    * @return an array
    */
   @SuppressWarnings({"unchecked"})
-  public List<Object[]> getAccountBalances(Integer year, Boolean reconciled) {
+  public List<Object[]> getAccountBalances(Boolean reconciled) {
+    String q =
+        "select n.id, n.name, sum(a.amount) "
+        + "from Allocation a, Transaction t, Category c, Account n "
+        + "where a.transaction = t.id and "
+        + "a.category = c.id "
+        + "and c.account = n.id "
+        + "and n.budget = :budget ";
+    if (reconciled != null) q += "and t.reconciled = :reconciled ";
+    q += "group by n.id";
 
-    Query query = getCurrentSession().createQuery(
-        "select ac, sum(al.amount) " +
-        "from Allocation al, Transaction tr, Account ac, Category ca " +
-        "where al.transaction = tr.id " +
-        "and al.category = ca.id " +
-        "and ca.account = ac.id " +
-        "and year(tr.date) = :year " +
-        "and tr.reconciled = :reconciled " +
-        "group by ac.id")
-        .setInteger("year", year)
-        .setBoolean("reconciled", reconciled);
+    Query query = getCurrentSession().createQuery(q)
+        .setInteger("budget", getUser().getBudget().getId().intValue());
+    if (reconciled != null) query.setBoolean("reconciled", reconciled);
 
     return (List<Object[]>)query.list();
+  }
+
+  @SuppressWarnings({"unchecked"})
+  public Category getCategory(String categoryName) {
+
+    Query query = getCurrentSession().createQuery(
+        "select c "
+        + "from Category c, Account a, Budget b "
+        + "where c.account = a.id "
+        + "and a.budget = :budget "
+        + "and c.name = :name")
+        .setInteger("budget", getUser().getBudget().getId().intValue())
+        .setString("name", categoryName);
+
+    return (Category)query.uniqueResult();
+  }
+
+  @SuppressWarnings({"unchecked"})
+  public Account getAccount(String accountName) {
+
+    Criteria criteria = getCurrentSession().createCriteria(Account.class);
+    criteria.add(Restrictions.eq("budget", getUser().getBudget()));
+    criteria.add(Restrictions.eq("name", accountName));
+    return (Account)criteria.uniqueResult();
   }
 
 }

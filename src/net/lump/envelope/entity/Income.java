@@ -10,7 +10,7 @@ import java.text.MessageFormat;
  * An income object.
  *
  * @author Troy Bowman
- * @version $Id: Income.java,v 1.3 2007/08/26 06:28:57 troy Exp $
+ * @version $Id: Income.java,v 1.4 2008/01/20 05:15:41 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "incomes")
@@ -119,7 +119,7 @@ public class Income implements Identifiable {
     if (stamp != null
         ? !stamp.equals(income.stamp)
         : income.stamp != null) return false;
-    if (type != income.type) return false;
+    if (type.ordinal() != income.type.ordinal()) return false;
 
     return true;
   }
@@ -131,7 +131,8 @@ public class Income implements Identifiable {
     result = 31 * result + (budget != null ? budget.hashCode() : 0);
     result = 31 * result + (name != null ? name.hashCode() : 0);
     result = 31 * result + (type != null ? type.hashCode() : 0);
-    result = 31 * result + (refernceDate != null ? refernceDate.hashCode() : 0);
+    result = 31 * result + (refernceDate != null
+                            ? refernceDate.toString().hashCode() : 0);
     return result;
   }
 }

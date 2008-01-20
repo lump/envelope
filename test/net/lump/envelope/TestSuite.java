@@ -3,7 +3,9 @@ package us.lump.envelope;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import org.apache.log4j.BasicConfigurator;
+import us.lump.envelope.client.TestQuery;
 import us.lump.envelope.client.TestSecurity;
+import us.lump.envelope.client.portal.SecurityPortal;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
 import us.lump.envelope.server.PrefsConfigurator;
@@ -11,18 +13,24 @@ import us.lump.envelope.server.rmi.Controller;
 import us.lump.lib.TestMoney;
 import us.lump.lib.util.TestEncryption;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Properties;
 
 /**
  * A JUnit class which runs all tests.
  *
  * @author Troy Bowman
- * @version $Id: TestSuite.java,v 1.7 2007/08/26 06:28:57 troy Exp $
+ * @version $Id: TestSuite.java,v 1.8 2008/01/20 05:15:41 troy Exp $
  */
 public class TestSuite extends TestCase {
   public static int DEFAULT_SERVER_RMI_PORT = 7041;
@@ -32,8 +40,10 @@ public class TestSuite extends TestCase {
   public static final String HTTP_PORT_PROPERTY = "server.http.port";
   public static String SERVER_HOST_NAME = "localhost";
 
-  public static final String USER = "guest";
+  public static final String USER = "bowmantest";
+  public static final String PASSWORD = "guest";
   public static final LoginSettings loginSettings = LoginSettings.getInstance();
+  private static Boolean authed = null;
 
   static {
     BasicConfigurator.configure();
@@ -64,13 +74,29 @@ public class TestSuite extends TestCase {
       system.put("java.rmi.server.rminode", ss.rmiNode());
 
       loginSettings.setUsername(USER);
-      loginSettings.setPassword(USER);
+      loginSettings.setPassword(PASSWORD);
+
+      assertTrue("not authed", authed());
 
     } catch (Exception e) {
       e.printStackTrace();
       System.exit(1);
     }
 
+  }
+
+  public static boolean authed() throws
+      NoSuchAlgorithmException,
+      BadPaddingException,
+      IOException,
+      IllegalBlockSizeException,
+      InvalidKeyException,
+      NoSuchPaddingException {
+    if (authed == null) {
+      SecurityPortal sp = new SecurityPortal();
+      authed = sp.auth(loginSettings.challengeResponse(sp.getChallenge()));
+    }
+    return authed;
   }
 
   /**
@@ -99,6 +125,7 @@ public class TestSuite extends TestCase {
     suite.addTestSuite(TestMoney.class);
     suite.addTestSuite(TestEncryption.class);
     suite.addTestSuite(TestSecurity.class);
+    suite.addTestSuite(TestQuery.class);
     return suite;
   }
 
