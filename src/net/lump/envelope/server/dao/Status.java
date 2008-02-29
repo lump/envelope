@@ -13,7 +13,7 @@ import java.util.List;
  * A DAO which deals with reporting information.
  *
  * @author Troy Bowman
- * @version $Id: Status.java,v 1.3 2008/02/29 04:18:23 troy Exp $
+ * @version $Id: Status.java,v 1.4 2008/02/29 05:32:48 troy Exp $
  */
 public class Status extends DAO {
 
@@ -30,17 +30,18 @@ public class Status extends DAO {
   @SuppressWarnings({"unchecked"})
   public Money getCategoryBalance(Category category,
                                   Boolean reconciled) {
-    String q =
-        "select sum(a.amount) " +
-        "from Allocation a, Transaction t, Category c, Account n " +
-        "where a.category = :id " +
-        "and a.transaction = t.id " +
-        "and c.account = n.id " +
-        "and n.budget = :budget ";
-    if (reconciled != null) q += "and t.reconciled = :reconciled";
+    String select =
+        "select sum(a.amount) from Allocation a, Category c, Account n";
+    String where =
+        " where a.category = c and c.account = n " +
+        "and n.budget = :budget and c = :category ";
+    if (reconciled != null) {
+      select += ", Transaction t";
+      where += "and a.transaction = t and t.reconciled = :reconciled";
+    }
 
-    Query query = getCurrentSession().createQuery(q)
-        .setEntity("id", category)
+    Query query = getCurrentSession().createQuery(select + where)
+        .setEntity("category", category)
         .setEntity("budget", getUser().getBudget());
     if (reconciled != null) query.setBoolean("reconciled", reconciled);
 
@@ -59,18 +60,18 @@ public class Status extends DAO {
    */
   @SuppressWarnings({"unchecked"})
   public List<Object> getCategoryBalances(Boolean reconciled) {
-    String q =
-        "select c.name, sum(a.amount) "
-        + "from Allocation a, Transaction t, Category c, Account n "
-        + "where a.transaction = t.id "
-        + "and a.category = c.id "
-        + "and c.account = n.id "
-        + "and n.budget = :budget ";
-    if (reconciled != null) q += "and t.reconciled = :reconciled ";
-    q += "group by c.id";
+    String select =
+        "select c.name, sum(a.amount) from Allocation a, Category c, Account n";
+    String where =
+        " where a.category = c and c.account = n and n.budget = :budget ";
+    if (reconciled != null) {
+      select += ", Transaction t";
+      where += "and a.transaction = t and t.reconciled = :reconciled ";
+    }
 
-    Query query = getCurrentSession().createQuery(q)
-        .setInteger("budget", getUser().getBudget().getId().intValue());
+    Query query =
+        getCurrentSession().createQuery(select + where + " group by c")
+            .setEntity("budget", getUser().getBudget());
     if (reconciled != null) query.setBoolean("reconciled", reconciled);
     return (List<Object>)query.list();
   }
@@ -88,19 +89,21 @@ public class Status extends DAO {
   public Money getAccountBalance(Account account,
                                  Boolean reconciled) {
 
-    String q =
-        "select sum(a.amount) "
-        + "from Allocation a, Transaction t, Category c, Account n "
-        + "where a.transaction = t.id "
-        + "and a.category = c.id "
-        + "and c.account = n.id "
-        + "and n.id = :account "
+    String select =
+        "select sum(a.amount) from Allocation a, Category c, Account n";
+    String where =
+        " where a.category = c "
+        + "and c.account = n "
+        + "and n = :account "
         + "and n.budget = :budget ";
-    if (reconciled != null) q += "and t.reconciled = :reconciled ";
+    if (reconciled != null) {
+      select += ", Transaction t";
+      where += "and a.transaction = t.id and t.reconciled = :reconciled";
+    }
 
-    Query query = getCurrentSession().createQuery(q)
-        .setInteger("account", account.getId())
-        .setInteger("budget", getUser().getBudget().getId().intValue());
+    Query query = getCurrentSession().createQuery(select + where)
+        .setEntity("account", account)
+        .setEntity("budget", getUser().getBudget());
     if (null != reconciled) query.setBoolean("reconciled", reconciled);
 
     return (Money)query.uniqueResult();
@@ -116,18 +119,22 @@ public class Status extends DAO {
    */
   @SuppressWarnings({"unchecked"})
   public List<Object[]> getAccountBalances(Boolean reconciled) {
-    String q =
+    String select =
         "select n.id, n.name, sum(a.amount) "
-        + "from Allocation a, Transaction t, Category c, Account n "
-        + "where a.transaction = t.id and "
-        + "a.category = c.id "
-        + "and c.account = n.id "
-        + "and n.budget = :budget ";
-    if (reconciled != null) q += "and t.reconciled = :reconciled ";
-    q += "group by n.id";
+        + "from Allocation a, Category c, Account n";
 
-    Query query = getCurrentSession().createQuery(q)
-        .setInteger("budget", getUser().getBudget().getId().intValue());
+    String where =
+        " where a.category = c "
+        + "and c.account = n "
+        + "and n.budget = :budget ";
+    if (reconciled != null) {
+      select += ", Transaction t";
+      where += "and a.transaction = t and t.reconciled = :reconciled ";
+    }
+
+    Query query =
+        getCurrentSession().createQuery(select + where + " group by n")
+            .setEntity("budget", getUser().getBudget());
     if (reconciled != null) query.setBoolean("reconciled", reconciled);
 
     return (List<Object[]>)query.list();
@@ -139,10 +146,10 @@ public class Status extends DAO {
     Query query = getCurrentSession().createQuery(
         "select c "
         + "from Category c, Account a, Budget b "
-        + "where c.account = a.id "
+        + "where c.account = a "
         + "and a.budget = :budget "
         + "and c.name = :name")
-        .setInteger("budget", getUser().getBudget().getId().intValue())
+        .setEntity("budget", getUser().getBudget())
         .setString("name", categoryName);
 
     return (Category)query.uniqueResult();
