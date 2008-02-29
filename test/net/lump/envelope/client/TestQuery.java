@@ -19,7 +19,7 @@ import java.util.List;
  * Test queries.
  *
  * @author troy
- * @version $Id: TestQuery.java,v 1.1 2008/01/20 05:15:41 troy Exp $
+ * @version $Id: TestQuery.java,v 1.2 2008/02/29 05:33:31 troy Exp $
  */
 public class TestQuery extends TestCase {
 
@@ -56,11 +56,11 @@ public class TestQuery extends TestCase {
     Money unRecBalance = tp.getCategoryBalance(c, Boolean.FALSE);
 
     assertTrue("Total balance is not > 0", allBalance.doubleValue() > 0.0D);
-    assertTrue("Reconciled balance is larger than total balance",
-               recBalance.doubleValue() <= allBalance.doubleValue());
-    assertTrue("Unreconciled balance is larger than total balance",
-               unRecBalance == null ||
-               unRecBalance.doubleValue() <= allBalance.doubleValue());
+    assertFalse("Reconciled balance is less than balance",
+                recBalance.doubleValue() < allBalance.doubleValue());
+    assertFalse("Unreconciled balance is larger than total balance",
+                unRecBalance == null ||
+                unRecBalance.doubleValue() > allBalance.doubleValue());
   }
 
   @Test public void testCategoryGetBalances() {
