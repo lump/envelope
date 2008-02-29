@@ -123,6 +123,7 @@ public class Boot {
    *
    * @throws Exception
    */
+  @SuppressWarnings({"unchecked"})
   public static void run(String args[]) throws Exception {
 
     // What are the system properties.
