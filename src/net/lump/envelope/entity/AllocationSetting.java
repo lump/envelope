@@ -7,15 +7,15 @@ import java.sql.Timestamp;
 import java.text.MessageFormat;
 
 /**
- * An income object.
+ * An Allocation Setting object.
  *
  * @author Troy Bowman
- * @version $Id: Income.java,v 1.4 2008/01/20 05:15:41 troy Exp $
+ * @version $Id: AllocationSetting.java,v 1.1 2008/02/29 04:18:23 troy Exp $
  */
 @javax.persistence.Entity
-@Table(name = "incomes")
-public class Income implements Identifiable {
-  public static enum IncomeType {
+@Table(name = "allocation_settings")
+public class AllocationSetting implements Identifiable {
+  public static enum AllocationSettingType {
     Reimbursement,
     Weekly_Payday,
     Biweekly_Payday,
@@ -27,7 +27,7 @@ public class Income implements Identifiable {
   private Timestamp stamp;
   private Budget budget;
   private String name;
-  private IncomeType type;
+  private AllocationSettingType type;
   private Date refernceDate;
 
   public String toString() {
@@ -79,11 +79,11 @@ public class Income implements Identifiable {
 
   @Column(name = "type", nullable = false)
   @Enumerated(value = javax.persistence.EnumType.STRING)
-  public IncomeType getType() {
+  public AllocationSettingType getType() {
     return type;
   }
 
-  public void setType(IncomeType type) {
+  public void setType(AllocationSettingType type) {
     this.type = type;
   }
 
@@ -102,24 +102,24 @@ public class Income implements Identifiable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
 
-    Income income = (Income)o;
+    AllocationSetting allocationSetting = (AllocationSetting)o;
 
     if (budget != null
-        ? !budget.equals(income.budget)
-        : income.budget != null) return false;
+        ? !budget.equals(allocationSetting.budget)
+        : allocationSetting.budget != null) return false;
     if (id != null
-        ? !id.equals(income.id)
-        : income.id != null) return false;
+        ? !id.equals(allocationSetting.id)
+        : allocationSetting.id != null) return false;
     if (name != null
-        ? !name.equals(income.name)
-        : income.name != null) return false;
+        ? !name.equals(allocationSetting.name)
+        : allocationSetting.name != null) return false;
     if (refernceDate != null
-        ? !refernceDate.equals(income.refernceDate)
-        : income.refernceDate != null) return false;
+        ? !refernceDate.equals(allocationSetting.refernceDate)
+        : allocationSetting.refernceDate != null) return false;
     if (stamp != null
-        ? !stamp.equals(income.stamp)
-        : income.stamp != null) return false;
-    if (type.ordinal() != income.type.ordinal()) return false;
+        ? !stamp.equals(allocationSetting.stamp)
+        : allocationSetting.stamp != null) return false;
+    if (type.ordinal() != allocationSetting.type.ordinal()) return false;
 
     return true;
   }
@@ -130,7 +130,7 @@ public class Income implements Identifiable {
     result = 31 * result + (stamp != null ? stamp.hashCode() : 0);
     result = 31 * result + (budget != null ? budget.hashCode() : 0);
     result = 31 * result + (name != null ? name.hashCode() : 0);
-    result = 31 * result + (type != null ? type.hashCode() : 0);
+    result = 31 * result + (type != null ? type.ordinal() : 0);
     result = 31 * result + (refernceDate != null
                             ? refernceDate.toString().hashCode() : 0);
     return result;

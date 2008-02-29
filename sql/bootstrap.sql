@@ -1,13 +1,14 @@
 --
--- $Id: bootstrap.sql,v 1.8 2008/01/15 04:10:02 troy Exp $
+-- $Id: bootstrap.sql,v 1.9 2008/02/29 04:15:14 troy Exp $
 --
 
 drop table if exists users;
 drop table if exists allocations;
 drop table if exists transactions;
+drop table if exists category_allocation_settings;
+drop table if exists allocation_settings;
 drop table if exists categories;
 drop table if exists accounts;
-drop table if exists incomes;
 drop table if exists allocation_tag;
 drop table if exists tags;
 drop table if exists budgets;
@@ -22,19 +23,6 @@ insert into budgets values(0,null,'Test Budget');
 update budgets set id = 0;
 alter table budgets auto_increment = 0;
 
-create table incomes (
-  `id` int not null auto_increment primary key,
-  `stamp` timestamp not null default current_timestamp,
-  `budget` int not null,
-  `name` varchar(64) not null,
-  `type` enum('Reimbursement','Weekly_Payday','Biweekly_Payday','Semimonthly_Payday','Monthly_Payday') not null,
-  `reference_date` date,
-  unique index budget_name(`budget`,`name`),
-  constraint incomes_budget foreign key (budget) references budgets(id) ON UPDATE CASCADE ON DELETE RESTRICT
-)ENGINE=INNODB;
-insert into incomes values(null,null,0,'Guest''s Main Job','Semimonthly Payday',now());
-update incomes set id=0;
-alter table incomes auto_increment = 0;
 
 create table accounts (
   `id` int NOT NULL auto_increment primary key,
@@ -51,53 +39,112 @@ insert into accounts values (0, null, 0, 'Guest''s Checking','Debit', '0.0', '0.
 update accounts set id = 0;
 alter table accounts auto_increment = 0;
 
+create table allocation_settings (
+  `id` int not null auto_increment primary key,
+  `stamp` timestamp not null default current_timestamp,
+  `budget` int not null,
+  `name` varchar(64) not null,
+  `type` enum('Reimbursement','Weekly_Payday','Biweekly_Payday','Semimonthly_Payday','Monthly_Payday') not null,
+  `reference_date` date,
+  unique index budget_name(`budget`,`name`),
+  constraint allocation_settings_budget foreign key (budget) references budgets(id) ON UPDATE CASCADE ON DELETE RESTRICT
+)ENGINE=INNODB;
+insert into allocation_settings values(null,null,0,'Guest''s Main Job','Semimonthly Payday',now());
+update allocation_settings set id=0;
+alter table allocation_settings auto_increment = 0;
+
 create table categories (
   `id` int NOT NULL auto_increment primary key,
   `stamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
   `account` int not null,
   `name` varchar(64) NOT NULL default '',
-  `allocation` double not null default '0.0',
-  `allocation_type` enum('ppp','fpp','fpm') not null default 'ppp',
-  `auto_deduct` tinyint(1) not null default '0',
   unique index budget_name (`account`,`name`),
   constraint categories_accounts foreign key (account) references accounts(id) ON UPDATE CASCADE ON DELETE RESTRICT
 )ENGINE=INNODB;
-insert into categories values(null, null, 0, 'Tithing' , '.1', 'ppp', 0);
+
+create table category_allocation_settings (
+  `id` int not null auto_increment primary key,
+  `stamp` timestamp not null default current_timestamp,
+  `allocation_setting` int not null,
+  `category` int not null,
+  `allocation` double not null default '0.0',
+  `allocation_type` enum('ppp','fpp','fpm') not null default 'ppp',
+  `auto_deduct` tinyint(1) not null default '0',
+  constraint cat_alloc_settings_categories foreign key (category) references categories(id) on update cascade on delete restrict,
+  constraint cat_alloc_settings_alloc_settings foreign key (allocation_setting) references allocation_settings(id) on update cascade on delete restrict
+)ENGINE=INNODB;
+
+
+insert into categories values(null, null, 0, 'Tithing');
 update categories set id = 0;
 alter table categories auto_increment = 0;
-insert into categories values(null, null, 0, 'Water',22.5,'fpm',0);
-insert into categories values(null, null, 0, 'Travel',0,'ppp',0);
-insert into categories values(null, null, 0, 'Subscriptions',2,'fpp',0);
-insert into categories values(null, null, 0, 'State Tax',3.76,'ppp',1);
-insert into categories values(null, null, 0, 'Social Security',90,'fpp',1);
-insert into categories values(null, null, 0, 'Sewer',2.5,'fpm',0);
-insert into categories values(null, null, 0, 'Restaurants',10,'fpp',0);
-insert into categories values(null, null, 0, 'Recreation',5,'fpp',0);
-insert into categories values(null, null, 0, 'Phone',30,'fpm',0);
-insert into categories values(null, null, 0, 'Other Taxes and Fees',0,'ppp',0);
-insert into categories values(null, null, 0, 'Mortgage',600,'fpm',0);
-insert into categories values(null, null, 0, 'Memberships',0,'ppp',0);
-insert into categories values(null, null, 0, 'Medicare',30,'fpp',1);
-insert into categories values(null, null, 0, 'Medical Insurance',100,'fpp',1);
-insert into categories values(null, null, 0, 'Medical',46,'fpm',0);
-insert into categories values(null, null, 0, 'Media',0,'fpp',0);
-insert into categories values(null, null, 0, 'Home',40,'fpm',0);
-insert into categories values(null, null, 0, 'Hobbies',0,'ppp',0);
-insert into categories values(null, null, 0, 'Haircuts',4,'fpm',0);
-insert into categories values(null, null, 0, 'Groceries',200,'fpp',0);
-insert into categories values(null, null, 0, 'Gifts',20,'fpp',0);
-insert into categories values(null, null, 0, 'Gasoline',30,'fpp',0);
-insert into categories values(null, null, 0, 'Gas',50,'fpm',0);
-insert into categories values(null, null, 0, 'Furniture',7,'ppp',0);
-insert into categories values(null, null, 0, 'Federal Tax',0,'ppp',1);
-insert into categories values(null, null, 0, 'Fast Offering',0,'ppp',0);
-insert into categories values(null, null, 0, 'Electronics',0,'ppp',0);
-insert into categories values(null, null, 0, 'Computer',15,'fpm',0);
-insert into categories values(null, null, 0, 'Clothes',15,'fpp',0);
-insert into categories values(null, null, 0, 'Car Payment',6.25,'ppp',0);
-insert into categories values(null, null, 0, 'Car Maintenance',12,'fpm',0);
-insert into categories values(null, null, 0, 'Car Insurance',266.68,'fpm',0);
-insert into categories values(null, null, 0, 'Electricity',70,'fpm',0);
+insert into category_allocation_settings values (null, null, 0, 0, '.1', 'ppp', 0);
+insert into categories values(null, null, 0, 'Water');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),22.5,'fpm',0);
+insert into categories values(null, null, 0, 'Subscriptions');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),2,'fpp',0);
+insert into categories values(null, null, 0, 'Travel');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
+insert into categories values(null, null, 0, 'State Tax');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),3.76,'ppp',1);
+insert into categories values(null, null, 0, 'Social Security');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),90,'fpp',1);
+insert into categories values(null, null, 0, 'Sewer');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),2.5,'fpm',0);
+insert into categories values(null, null, 0, 'Restaurants');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),10,'fpp',0);
+insert into categories values(null, null, 0, 'Recreation');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),5,'fpp',0);
+insert into categories values(null, null, 0, 'Phone');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),30,'fpm',0);
+insert into categories values(null, null, 0, 'Other Taxes and Fees');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
+insert into categories values(null, null, 0, 'Mortgage');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),600,'fpm',0);
+insert into categories values(null, null, 0, 'Memberships');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
+insert into categories values(null, null, 0, 'Medicare');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),30,'fpp',1);
+insert into categories values(null, null, 0, 'Medical Insurance');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),100,'fpp',1);
+insert into categories values(null, null, 0, 'Medical');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),46,'fpm',0);
+insert into categories values(null, null, 0, 'Media');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'fpp',0);
+insert into categories values(null, null, 0, 'Home');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),40,'fpm',0);
+insert into categories values(null, null, 0, 'Hobbies');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
+insert into categories values(null, null, 0, 'Haircuts');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),4,'fpm',0);
+insert into categories values(null, null, 0, 'Groceries');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),200,'fpp',0);
+insert into categories values(null, null, 0, 'Gifts');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),20,'fpp',0);
+insert into categories values(null, null, 0, 'Gasoline');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),30,'fpp',0);
+insert into categories values(null, null, 0, 'Gas');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),50,'fpm',0);
+insert into categories values(null, null, 0, 'Furniture');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),7,'ppp',0);
+insert into categories values(null, null, 0, 'Federal Tax');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',1);
+insert into categories values(null, null, 0, 'Fast Offering');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
+insert into categories values(null, null, 0, 'Electronics');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
+insert into categories values(null, null, 0, 'Computer');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),15,'fpm',0);
+insert into categories values(null, null, 0, 'Clothes');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),15,'fpp',0);
+insert into categories values(null, null, 0, 'Car Payment');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),6.25,'ppp',0);
+insert into categories values(null, null, 0, 'Car Maintenance');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),12,'fpm',0);
+insert into categories values(null, null, 0, 'Car Insurance');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),266.68,'fpm',0);
+insert into categories values(null, null, 0, 'Electricity');
+insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),70,'fpm',0);
 
 create table tags (
   `id` int(11) NOT NULL auto_increment primary key,

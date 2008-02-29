@@ -13,7 +13,7 @@ import java.util.List;
  * A DAO which deals with reporting information.
  *
  * @author Troy Bowman
- * @version $Id: Status.java,v 1.2 2008/01/20 05:15:41 troy Exp $
+ * @version $Id: Status.java,v 1.3 2008/02/29 04:18:23 troy Exp $
  */
 public class Status extends DAO {
 
@@ -40,8 +40,8 @@ public class Status extends DAO {
     if (reconciled != null) q += "and t.reconciled = :reconciled";
 
     Query query = getCurrentSession().createQuery(q)
-        .setInteger("id", category.getId())
-        .setInteger("budget", getUser().getBudget().getId().intValue());
+        .setEntity("id", category)
+        .setEntity("budget", getUser().getBudget());
     if (reconciled != null) query.setBoolean("reconciled", reconciled);
 
 

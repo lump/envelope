@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.6 2008/01/20 05:15:41 troy Exp $
+# $Id: migrate.pl,v 1.7 2008/02/29 04:15:14 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -12,15 +12,16 @@ $|=1;
 $dbs = {
   source => {
     database => "budgets",
-    host => "dublan.net",
     port => 3306,
     user => "budget",
+    host => "dublan.net",
     password => "DeADFeeDBeeF",
   },
   dest => {
     database => "envelope",
-    host => "lump.us",
     port => 3306,
+    host => "lump.us",
+#    host => "gromit.air.lump.us",
     user => "budget",
     password => "tegdub",
   },
@@ -108,10 +109,22 @@ $sth->finish;
 $dsth->finish;
 
 
-$dsth = $dbs->{dest}->{connection}->prepare("
-insert into categories (account, name, allocation, allocation_type, auto_deduct)
-values (?, ?, ?, ?, ?)")
+$dsth = $dbs->{dest}->{connection}->prepare(
+  "insert into allocation_settings (budget,name,type,reference_date) values (?, ?, ?, ?)")
   or die $dbs->{source}->{connection}->errstr;;
+$dsth->execute($budget_id, "SOS", 'Biweekly_Payday', '2006-11-30');
+$dsth->finish;
+print "inserted allocation setting $budget_id, SOS, Biweekly_Payday, 2006-11-30\n";
+($allocation_setting_id) = $dbs->{dest}->{connection}->selectrow_array("select id from allocation_settings where id is null");
+
+$dsth = $dbs->{dest}->{connection}->prepare("insert into categories (account, name) values (?, ?)")
+  or die $dbs->{source}->{connection}->errstr;
+
+$dsth2 = $dbs->{dest}->{connection}->prepare("
+insert into category_allocation_settings
+(allocation_setting, category, allocation, allocation_type, auto_deduct)
+values (?, (select id from categories where id is null), ?, ?, ?)")
+  or die $dbs->{source}->{connection}->errstr;
 
 $sth = $dbs->{source}->{connection}->prepare("select * from categories where budgetname = 'bowman'") or die $dbs->{source}->{connection}->errstr;;
 $sth->execute or die $sth->errstr;
@@ -125,9 +138,13 @@ while (my $row = $sth->fetchrow_hashref()) {
   my $account_id = $accounts->{Checking}->{id};
   if ($row->{category} eq "Savings") { $account_id = $accounts->{Savings}->{id} }
   elsif ($row->{category} eq "Tithing") { $account_id = $accounts->{MMSavings}->{id}; $row->{deducted} = 0 }
-  $dsth->execute($account_id, $row->{category}, $allocation_amount, $row->{which}, $row->{deducted})
+  $dsth->execute($account_id, $row->{category})
     or die $dsth->errstr;
-  print "inserted account $account_id, $row->{category}, $allocation_amount, $row->{which}, $row->{deducted}\n";
+  print "inserted account $account_id, $row->{category}\n";
+
+  $dsth2->execute($allocation_setting_id, $allocation_amount, $row->{which}, $row->{deducted})
+    or die $dsth->errstr;
+  print "inserted $allocation_setting_id, $allocation_amount, $row->{which}, $row->{deducted}\n";
 }
 $sth->finish;
 $dsth->finish;
@@ -141,14 +158,6 @@ for my $account (keys %$accounts) {
   } 
 }
 $sth->finish;
-
-$dsth = $dbs->{dest}->{connection}->prepare("
-insert into incomes (budget,name,type,reference_date)
-values (?, ?, ?, ?)")
-  or die $dbs->{source}->{connection}->errstr;;
-$dsth->execute($budget_id, "SOS", 'Biweekly_Payday', '2006-11-30');
-$dsth->finish;
-print "inserted income $budget_id, SOS, Biweekly_Payday, 2006-11-30\n";
 
 $dtrans = $dbs->{dest}->{connection}->prepare("
 insert into transactions (stamp, date, entity, description, reconciled, transfer)
