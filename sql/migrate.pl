@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.7 2008/02/29 04:15:14 troy Exp $
+# $Id: migrate.pl,v 1.8 2008/03/07 23:10:57 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -20,8 +20,7 @@ $dbs = {
   dest => {
     database => "envelope",
     port => 3306,
-    host => "lump.us",
-#    host => "gromit.air.lump.us",
+    host => "localhost",
     user => "budget",
     password => "tegdub",
   },
