@@ -39,9 +39,16 @@
 
   <path id="compile.classpath">
     <fileset dir="${lib}" includes="*.jar"/>
+    <fileset dir="${lib}/jaxb" includes="*.jar"/>
     <dirset dir="${classes}"/>
     <dirset dir="${test.classes}"/>
   </path>
+
+  <taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
+    <classpath>
+      <fileset dir="${lib}/jaxb" includes="*.jar"/>
+    </classpath>
+  </taskdef>
 
   <target name="clean.classes" description="clean the classes">
     <delete dir="${classes}"/>
@@ -62,6 +69,11 @@
   </target>
 
   <target name="compile" depends="prepare" description="compile sources">
+
+    <xjc package="net.ofx.types" destdir="${src}">
+      <schema dir="lib/ofx/schema" includes="OFX_TypeDefinitions.xsd"/>
+    </xjc>
+
     <javac srcdir="${src}"
            destdir="${classes}"
            debug="${compile.debug}"
@@ -154,7 +166,8 @@
 
     <mkdir dir="${one.jar.classes}/lib"/>
     <copy todir="${one.jar.classes}/lib">
-      <fileset dir="${lib}" includes="**/*.jar"/>
+      <fileset dir="${lib}" includes="*.jar"/>
+      <fileset dir="${lib}/jaxb" includes="*.jar"/>
     </copy>
 
     <mkdir dir="${one.jar.classes}/main"/>
