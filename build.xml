@@ -70,7 +70,8 @@
 
   <target name="generate-ofx" description="generate ofx class files">
     <xjc package="net.ofx.types" destdir="${src}">
-      <schema dir="lib/ofx/schema" includes="OFX_TypeDefinitions.xsd"/>
+      <schema dir="lib/ofx/schema"
+              includes="OFX_TypeDefinitions.xsd, OFX2_Protocol.xsd"/>
     </xjc>
   </target>
 
