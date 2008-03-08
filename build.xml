@@ -68,12 +68,14 @@
     <mkdir dir="${test.classes}"/>
   </target>
 
-  <target name="compile" depends="prepare" description="compile sources">
-
+  <target name="generate-ofx" description="generate ofx class files">
     <xjc package="net.ofx.types" destdir="${src}">
       <schema dir="lib/ofx/schema" includes="OFX_TypeDefinitions.xsd"/>
     </xjc>
+  </target>
 
+  <target name="compile" depends="prepare,generate-ofx"
+          description="compile sources">
     <javac srcdir="${src}"
            destdir="${classes}"
            debug="${compile.debug}"
