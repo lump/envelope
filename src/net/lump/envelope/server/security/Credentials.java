@@ -7,11 +7,12 @@ import java.io.Serializable;
  * session with a client to simplify authentication for each request.
  *
  * @author Troy Bowman
- * @version $Id: Credentials.java,v 1.3 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Credentials.java,v 1.4 2008/05/12 18:36:49 troy Exp $
  */
 public class Credentials implements Serializable {
   private String username;
   private String signature;
+  private Long stamp;
 
   /**
    * A new credentials object.
@@ -20,6 +21,7 @@ public class Credentials implements Serializable {
    */
   public Credentials(String username) {
     this.username = username;
+    this.stamp = System.currentTimeMillis();
   }
 
   /**
@@ -38,6 +40,15 @@ public class Credentials implements Serializable {
    */
   public void setSignature(String signature) {
     this.signature = signature;
+  }
+
+  /**
+   * Returns the timestamp for when this credentials instance was created.
+   *
+   * @return Long
+   */
+  public Long getStamp() {
+    return this.stamp;
   }
 
   /**

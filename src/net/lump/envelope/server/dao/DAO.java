@@ -23,7 +23,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.7 2008/02/29 04:18:23 troy Exp $
+ * @version $Id: DAO.java,v 1.8 2008/05/12 18:36:49 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;

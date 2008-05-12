@@ -1,5 +1,6 @@
 package us.lump.envelope;
 
+import org.hibernate.criterion.DetachedCriteria;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Category;
 import us.lump.envelope.server.security.Credentials;
@@ -17,7 +18,7 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Revision: 1.7 $
+ * @version $Revision: 1.8 $
  */
 public class Command implements Serializable {
   /**
@@ -26,6 +27,7 @@ public class Command implements Serializable {
    * @author Troy Bowman
    */
   public enum Dao {
+    Generic,
     Security,
     Action,
     Status,
@@ -36,7 +38,7 @@ public class Command implements Serializable {
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.7 $
+   * @version $Revision: 1.8 $
    */
   public enum Name {
 
@@ -45,6 +47,9 @@ public class Command implements Serializable {
     authedPing(Dao.Security),
     getChallenge(false, Dao.Security, String.class, PublicKey.class),
     authChallengeResponse(false, Dao.Security, String.class, byte[].class),
+
+    // generic
+    detachedCriteriaQuery(Dao.Generic, DetachedCriteria.class),
 
     // transaction
     listTransactionsInYear(Dao.Action, Integer.class),
@@ -233,15 +238,14 @@ public class Command implements Serializable {
    * @throws SignatureException       SignatureException
    * @throws InvalidKeyException      InvalidKeyException
    */
-  public Command sign
-      (String
-          username, PrivateKey
-          key)
+  public Command sign(String username, PrivateKey key)
       throws NoSuchAlgorithmException, SignatureException,
       InvalidKeyException, UnsupportedEncodingException {
     this.credentials = new Credentials(username);
-    credentials.setSignature(Encryption.sign(key,
-                                             String.valueOf(hashCode())));
+    credentials.setSignature(
+        Encryption.sign(key,
+                        credentials.getUsername() +
+                        String.valueOf(credentials.getStamp())));
     return this;
   }
 
@@ -264,7 +268,7 @@ public class Command implements Serializable {
       InvalidKeyException {
     return Encryption.verify(
         key,
-        String.valueOf(hashCode()),
+        credentials.getUsername() + String.valueOf(credentials.getStamp()),
         credentials.getSignature()
     );
   }
