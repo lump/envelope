@@ -15,7 +15,7 @@ import java.util.List;
  * A transaction.
  *
  * @author Troy Bowman
- * @version $Id: Transaction.java,v 1.5 2007/09/09 07:17:10 troy Exp $
+ * @version $Id: Transaction.java,v 1.6 2008/05/13 01:25:31 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
@@ -23,7 +23,7 @@ import java.util.List;
 @org.hibernate.annotations.Table(
     appliesTo = "transactions",
     fetch = org.hibernate.annotations.FetchMode.SELECT)
-public class Transaction implements Identifiable {
+public class Transaction extends Identifiable {
 
   private Integer id;
   private Timestamp stamp;

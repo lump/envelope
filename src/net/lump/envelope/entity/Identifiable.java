@@ -1,41 +1,47 @@
 package us.lump.envelope.entity;
 
+import us.lump.envelope.server.dao.DAO;
+
 import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
- * ntity objects which contain an identification field.
+ * Entity objects which contain an identification field.
  *
  * @author Troy Bowman
- * @version $Id: Identifiable.java,v 1.2 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Identifiable.java,v 1.3 2008/05/13 01:25:31 troy Exp $
  */
-public interface Identifiable extends Serializable {
+public abstract class Identifiable<T extends Serializable>
+    implements Serializable {
   /**
-   * Gets the object which identifies this object.
+   * Reflectively finds the object which identifies this object.  May be
+   * overidden.
    *
    * @return Serializable
    */
-  public Serializable getId();
+  @SuppressWarnings({"unchecked"})
+  public T getId() {
+    return (T)DAO.getIdentifier(this);
+  }
 
   /**
    * Sets the object which identifies this object.
    *
    * @param id Serializable
    */
-  public void setId(Serializable id);
+  public void setId(Serializable id) {
+    DAO.setIdentifier(this, id);
+  }
 
   /**
    * Get the timestamp of this entity.
    *
    * @return Timestamp
    */
-  public Timestamp getStamp();
+  public Timestamp getStamp() {
+    return (Timestamp)DAO.getVersion(this);
+  }
 
-  /**
-   * Set the Timestamp of this entity.
-   *
-   * @param stamp Timestamp
-   */
-  public void setStamp(Timestamp stamp);
+  ;
 
 }

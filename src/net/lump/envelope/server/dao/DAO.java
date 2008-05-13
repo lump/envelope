@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 import org.hibernate.*;
 import org.hibernate.cfg.AnnotationConfiguration;
 import org.hibernate.criterion.Criterion;
+import org.hibernate.criterion.DetachedCriteria;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.impl.SessionImpl;
@@ -23,7 +24,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.8 2008/05/12 18:36:49 troy Exp $
+ * @version $Id: DAO.java,v 1.9 2008/05/13 01:25:31 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -95,12 +96,41 @@ public abstract class DAO {
     return getSessionFactory().getCurrentSession();
   }
 
+  /**
+   * This takes a detached criteria query, probably provided by the client, and
+   * returns the list of results.
+   *
+   * @param dc The detached criteria
+   *
+   * @return List
+   */
+  @SuppressWarnings({"unchecked"})
+  public List detachedCriteriaQuery(DetachedCriteria dc) {
+    List l = dc.getExecutableCriteria(getCurrentSession()).list();
+    evict(l);
+    return l;
+  }
 
-  protected <T extends Identifiable> void delete(T... is) {
+  public static Serializable getIdentifier(Serializable c) {
+    return getSessionFactory().getClassMetadata(c.getClass())
+        .getIdentifier(c, EntityMode.POJO);
+  }
+
+  public static void setIdentifier(Serializable c, Serializable value) {
+    getSessionFactory().getClassMetadata(c.getClass())
+        .setIdentifier(c, value, EntityMode.POJO);
+  }
+
+  public static Object getVersion(Serializable c) {
+    return getSessionFactory().getClassMetadata(c.getClass())
+        .getVersion(c, EntityMode.POJO);
+  }
+
+  public <T extends Identifiable> void delete(T... is) {
     this.delete(listify(is));
   }
 
-  protected <T extends Identifiable> void delete(Iterable<T> l) {
+  public <T extends Identifiable> void delete(Iterable<T> l) {
     for (T i : l) getCurrentSession().delete(i);
   }
 
@@ -108,24 +138,24 @@ public abstract class DAO {
     this.evict(listify(is));
   }
 
-  protected <T extends Identifiable> void evict(Iterable<T> l) {
+  public <T extends Identifiable> void evict(Iterable<T> l) {
     for (T i : l) getCurrentSession().evict(i);
   }
 
   @SuppressWarnings("unchecked")
-  protected <T extends Identifiable> T get(
+  public <T extends Identifiable> T get(
       Class<T> t,
       Serializable id) {
     return (T)getCurrentSession().get(t, id);
   }
 
-  protected <T extends Identifiable> List<T> getList(
+  public <T extends Identifiable> List<T> getList(
       Class<T> t,
       Serializable... ids) {
     return getList(t, listify(ids));
   }
 
-  protected <T extends Identifiable> List<T> getList(
+  public <T extends Identifiable> List<T> getList(
       Class<T> t,
       Iterable<Serializable> ids) {
     List<T> out = new ArrayList<T>();
@@ -134,7 +164,7 @@ public abstract class DAO {
   }
 
   @SuppressWarnings("unchecked")
-  protected <T extends Identifiable> List<T> list(
+  public <T extends Identifiable> List<T> list(
       Class<T> t,
       List<Order> orderby,
       Criterion... crits) {
@@ -145,26 +175,26 @@ public abstract class DAO {
     return (List<T>)criteria.list();
   }
 
-  protected <T extends Identifiable> List<T> list(
+  public <T extends Identifiable> List<T> list(
       Class<T> t,
       Criterion... crits) {
     return list(t, null, crits);
   }
 
   @SuppressWarnings("unchecked")
-  protected <T extends Identifiable> T load(
+  public <T extends Identifiable> T load(
       Class<T> t,
       Serializable id) {
     return (T)getCurrentSession().load(t, id);
   }
 
-  protected <T extends Identifiable> List<T> loadList(
+  public <T extends Identifiable> List<T> loadList(
       Class<T> t,
       Serializable... ids) {
     return loadList(t, listify(ids));
   }
 
-  protected <T extends Identifiable> List<T> loadList(
+  public <T extends Identifiable> List<T> loadList(
       Class<T> t,
       Iterable<Serializable> ids) {
     List<T> out = new ArrayList<T>();
@@ -173,33 +203,33 @@ public abstract class DAO {
   }
 
   @SuppressWarnings("unchecked")
-  protected <T extends Identifiable> T merge(T i) {
+  public <T extends Identifiable> T merge(T i) {
     return (T)getCurrentSession().merge(i);
   }
 
-  protected <T extends Identifiable> List<T> mergeList(T... is) {
+  public <T extends Identifiable> List<T> mergeList(T... is) {
     return mergeList(listify(is));
   }
 
-  protected <T extends Identifiable> List<T> mergeList(Iterable<T> is) {
+  public <T extends Identifiable> List<T> mergeList(Iterable<T> is) {
     List<T> out = new ArrayList<T>();
     for (T i : is) out.add(merge(i));
     return out;
   }
 
-  protected <T extends Identifiable> void refresh(T... is) {
+  public <T extends Identifiable> void refresh(T... is) {
     refresh(listify(is));
   }
 
-  protected <T extends Identifiable> void refresh(Iterable<T> is) {
+  public <T extends Identifiable> void refresh(Iterable<T> is) {
     for (T i : is) getCurrentSession().refresh(i);
   }
 
-  protected <T extends Identifiable> Serializable save(T os) {
+  public <T extends Identifiable> Serializable save(T os) {
     return getCurrentSession().save(os);
   }
 
-  protected <T extends Identifiable> Serializable saveOrUpdate(T o) {
+  public <T extends Identifiable> Serializable saveOrUpdate(T o) {
     if (o.getId() == null)
       return getCurrentSession().save(o);
     else {
@@ -208,23 +238,23 @@ public abstract class DAO {
     }
   }
 
-  protected <T extends Identifiable> List<Serializable> saveOrUpdateList(
+  public <T extends Identifiable> List<Serializable> saveOrUpdateList(
       T... os) {
     return saveOrUpdateList(listify(os));
   }
 
-  protected <T extends Identifiable> List<Serializable> saveOrUpdateList(
+  public <T extends Identifiable> List<Serializable> saveOrUpdateList(
       Iterable<T> os) {
     List<Serializable> out = new ArrayList<Serializable>();
     for (T o : os) out.add(saveOrUpdate(o));
     return out;
   }
 
-  protected <T extends Identifiable> void update(T... os) {
+  public <T extends Identifiable> void update(T... os) {
     update(listify(os));
   }
 
-  protected <T extends Identifiable> void update(Iterable<T> os) {
+  public <T extends Identifiable> void update(Iterable<T> os) {
     for (T o : os) getCurrentSession().update(o);
   }
 

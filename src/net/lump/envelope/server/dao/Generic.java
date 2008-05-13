@@ -1,12 +1,16 @@
 package us.lump.envelope.server.dao;
 
-import org.hibernate.criterion.DetachedCriteria;
+import us.lump.envelope.entity.Identifiable;
 
-import java.util.List;
+import java.io.Serializable;
 
 /** Generic DAO. */
 public class Generic extends DAO {
-  public List detachedCriteriaQuery(DetachedCriteria dc) {
-    return dc.getExecutableCriteria(getCurrentSession()).list();
+
+  public <T extends Identifiable> T load(Class<T> t, Serializable id) {
+    T entity = super.load(t, id);
+    evict(entity);
+    return entity;
   }
+
 }

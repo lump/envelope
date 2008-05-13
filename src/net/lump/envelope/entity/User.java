@@ -13,11 +13,11 @@ import java.text.MessageFormat;
  * User.
  *
  * @author Troy Bowman
- * @version $Id: User.java,v 1.4 2007/08/26 06:28:57 troy Exp $
+ * @version $Id: User.java,v 1.5 2008/05/13 01:25:31 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "users")
-public class User implements Identifiable {
+public class User extends Identifiable {
   private Integer id;
   private Timestamp stamp;
   private Budget budget;

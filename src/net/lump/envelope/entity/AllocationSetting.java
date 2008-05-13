@@ -10,11 +10,11 @@ import java.text.MessageFormat;
  * An Allocation Setting object.
  *
  * @author Troy Bowman
- * @version $Id: AllocationSetting.java,v 1.1 2008/02/29 04:18:23 troy Exp $
+ * @version $Id: AllocationSetting.java,v 1.2 2008/05/13 01:25:31 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "allocation_settings")
-public class AllocationSetting implements Identifiable {
+public class AllocationSetting extends Identifiable {
   public static enum AllocationSettingType {
     Reimbursement,
     Weekly_Payday,

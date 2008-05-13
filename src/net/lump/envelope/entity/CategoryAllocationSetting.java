@@ -12,11 +12,12 @@ import java.sql.Timestamp;
  * Allocation Setting for each Category.
  *
  * @author troy
- * @version $Id: CategoryAllocationSetting.java,v 1.1 2008/02/29 04:18:23 troy Exp $
+ * @version $Id: CategoryAllocationSetting.java,v 1.1 2008/02/29 04:18:23 troy
+ *          Exp $
  */
 @javax.persistence.Entity
 @Table(name = "categories")
-public class CategoryAllocationSetting implements Identifiable {
+public class CategoryAllocationSetting extends Identifiable {
   public static enum AllocationType {
     /** Percent per paycheck */
     ppp,

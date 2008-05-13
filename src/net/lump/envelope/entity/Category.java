@@ -12,11 +12,11 @@ import java.sql.Timestamp;
  * should match the account balance.
  *
  * @author Troy Bowman
- * @version $Id: Category.java,v 1.6 2008/02/29 04:18:23 troy Exp $
+ * @version $Id: Category.java,v 1.7 2008/05/13 01:25:31 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "categories")
-public class Category implements Identifiable {
+public class Category extends Identifiable {
 
   private Integer id;
   private Timestamp stamp;

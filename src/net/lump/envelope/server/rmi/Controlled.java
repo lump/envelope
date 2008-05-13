@@ -17,7 +17,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controlled.java,v 1.6 2008/01/20 05:15:41 troy Exp $
+ * @version $Id: Controlled.java,v 1.7 2008/05/13 01:25:31 troy Exp $
  */
 public class Controlled extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -108,7 +108,7 @@ public class Controlled extends UnicastRemoteObject implements Controller {
       // invoke the method and reap the return value.
       Object returnValue =
           // get the method from the command name and parameter names
-          dao.getClass().getDeclaredMethod(command.getName().name(), paramNames)
+          dao.getClass().getMethod(command.getName().name(), paramNames)
               // invoke the method on a new instance of the class with the arguments
               .invoke(dao, args);
 

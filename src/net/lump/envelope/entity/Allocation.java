@@ -16,7 +16,7 @@ import java.util.Collection;
  * Categories, which are tied to Accounts.
  *
  * @author Troy Bowman
- * @version $Id: Allocation.java,v 1.5 2007/09/09 07:17:10 troy Exp $
+ * @version $Id: Allocation.java,v 1.6 2008/05/13 01:25:31 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
@@ -24,7 +24,7 @@ import java.util.Collection;
 @org.hibernate.annotations.Table(
     appliesTo = "allocations",
     fetch = org.hibernate.annotations.FetchMode.SELECT)
-public class Allocation implements Identifiable {
+public class Allocation extends Identifiable {
   private Integer id;
   private Timestamp stamp;
   private Category category;

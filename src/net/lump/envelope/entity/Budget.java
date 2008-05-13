@@ -8,11 +8,11 @@ import java.sql.Timestamp;
  * A budget object.
  *
  * @author Troy Bowman
- * @version $Id: Budget.java,v 1.3 2007/08/26 06:28:57 troy Exp $
+ * @version $Id: Budget.java,v 1.4 2008/05/13 01:25:31 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "budgets")
-public class Budget implements Identifiable {
+public class Budget extends Identifiable {
   private Integer id;
   private Timestamp stamp;
   private String name;

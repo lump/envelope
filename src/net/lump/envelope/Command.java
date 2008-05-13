@@ -3,6 +3,7 @@ package us.lump.envelope;
 import org.hibernate.criterion.DetachedCriteria;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Category;
+import us.lump.envelope.entity.Identifiable;
 import us.lump.envelope.server.security.Credentials;
 import us.lump.lib.util.Encryption;
 
@@ -18,7 +19,7 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Revision: 1.8 $
+ * @version $Revision: 1.9 $
  */
 public class Command implements Serializable {
   /**
@@ -38,7 +39,7 @@ public class Command implements Serializable {
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.8 $
+   * @version $Revision: 1.9 $
    */
   public enum Name {
 
@@ -50,6 +51,11 @@ public class Command implements Serializable {
 
     // generic
     detachedCriteriaQuery(Dao.Generic, DetachedCriteria.class),
+    get(Dao.Generic, Class.class, Serializable.class),
+    merge(Dao.Generic, Identifiable.class),
+    refresh(Dao.Generic, Identifiable.class),
+    save(Dao.Generic, Identifiable.class),
+    saveOrUpdate(Dao.Generic, Identifiable.class),
 
     // transaction
     listTransactionsInYear(Dao.Action, Integer.class),

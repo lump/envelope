@@ -58,7 +58,7 @@
     <delete dir="${one.jar.classes}"/>
   </target>
 
-  <target name="dist" depends="client.jar, server.dist"
+  <target name="dist" depends="client.jar, server.dist, compile.tests"
           description="make the distribution">
     <echo message="dist done."/>
   </target>
@@ -75,7 +75,9 @@
     </xjc>
   </target>
 
-  <target name="compile" depends="prepare,generate-ofx"
+  <!--target name="compile" depends="prepare,generate-ofx"
+          description="compile sources"-->
+  <target name="compile" depends="prepare"
           description="compile sources">
     <javac srcdir="${src}"
            destdir="${classes}"

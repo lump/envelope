@@ -16,12 +16,12 @@ import java.sql.Timestamp;
  * car.
  *
  * @author troy
- * @version $Id: Tag.java,v 1.1 2007/08/26 06:28:57 troy Exp $
+ * @version $Id: Tag.java,v 1.2 2008/05/13 01:25:31 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
 @Table(name = "tags")
-public class Tag implements Identifiable {
+public class Tag extends Identifiable {
   private Integer id;
   private Timestamp stamp;
   private String name;

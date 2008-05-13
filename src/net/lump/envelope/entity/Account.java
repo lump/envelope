@@ -16,13 +16,13 @@ import java.util.List;
  * An account object.
  *
  * @author Troy Bowman
- * @version $Id: Account.java,v 1.6 2008/02/29 04:18:23 troy Exp $
+ * @version $Id: Account.java,v 1.7 2008/05/13 01:25:31 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "accounts")
-public class Account implements Identifiable {
+public class Account extends Identifiable {
 
-//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.6 $".replaceAll("\\D", ""));
+//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.7 $".replaceAll("\\D", ""));
 
   /** The type of an Account. */
   public static enum AccountType {
