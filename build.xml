@@ -90,9 +90,7 @@
     <copy todir="${classes}">
       <fileset dir="${src}" includes="**/*.properties, **/*.xml, **/*.policy"/>
     </copy>
-  </target>
 
-  <target name="compile.tests" depends="compile" description="compile tests">
     <javac srcdir="${test.src}"
            destdir="${test.classes}"
            debug="${compile.debug}"
@@ -101,6 +99,7 @@
       <compilerarg value="-Xlint:unchecked"/>
       <classpath refid="compile.classpath"/>
     </javac>
+
   </target>
 
   <target name="client.dist.prepare" depends="compile">
