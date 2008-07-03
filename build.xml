@@ -58,7 +58,7 @@
     <delete dir="${one.jar.classes}"/>
   </target>
 
-  <target name="dist" depends="client.jar, server.dist, compile.tests"
+  <target name="dist" depends="client.jar, server.dist"
           description="make the distribution">
     <echo message="dist done."/>
   </target>
