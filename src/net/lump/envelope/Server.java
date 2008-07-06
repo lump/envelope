@@ -29,7 +29,7 @@ import java.util.prefs.Preferences;
  * Server Main Code.
  *
  * @author Troy Bowman
- * @version $Id: Server.java,v 1.7 2007/08/21 04:34:30 troy Exp $
+ * @version $Id: Server.java,v 1.8 2008/07/06 04:14:24 troy Exp $
  */
 
 public class Server {
@@ -37,6 +37,9 @@ public class Server {
   private static Properties serverConfig = null;
   private static String LOCAL_HOST = "localhost";
   private static final long START_TIME = System.currentTimeMillis();
+
+  public static final String PROPERTY_RMI_PORT = "server.rmi.port";
+  public static final String PROPERTY_CLASSLOADER_PORT = "server.http.classloader.port";
 
   static {
     final java.net.InetAddress localMachine;
@@ -50,6 +53,10 @@ public class Server {
 
   private static final Logger logger = Logger.getLogger(Server.class);
 
+  public static String getConfig(String property) {
+    return serverConfig.getProperty(property);
+  }
+
   // Constructor
   private Server()
       throws RemoteException,
@@ -59,15 +66,15 @@ public class Server {
     System.getProperties().put(
         "java.rmi.server.codebase",
         "http://" + LOCAL_HOST + ":"
-        + serverConfig.getProperty("server.rmi.port") + "/");
+        + serverConfig.getProperty(PROPERTY_RMI_PORT) + "/");
 
     LocateRegistry.createRegistry(
-        Integer.parseInt(serverConfig.getProperty("server.rmi.port")));
+        Integer.parseInt(serverConfig.getProperty(PROPERTY_RMI_PORT)));
 
     logger.info(MessageFormat.format(
         "Registry created on host computer {0} on port {1}",
         LOCAL_HOST,
-        serverConfig.getProperty("server.rmi.port"))
+        serverConfig.getProperty(PROPERTY_RMI_PORT))
     );
 
     Controller controller = new Controlled();
@@ -76,7 +83,7 @@ public class Server {
     Naming.rebind("//"
                   + LOCAL_HOST
                   + ":"
-                  + serverConfig.getProperty("server.rmi.port")
+                  + serverConfig.getProperty(PROPERTY_RMI_PORT)
                   + "/Controller", controller);
 
     logger.info("Bindings Finished, waiting for client requests.");
@@ -165,10 +172,10 @@ public class Server {
     // start the HTTP class server
     try {
       new ClassServer(Integer.parseInt(serverConfig.getProperty(
-          "server.http.classloader.port")));
+          PROPERTY_CLASSLOADER_PORT)));
       logger.info(MessageFormat.format("ClassServer started on port {0}",
                                        serverConfig.getProperty(
-                                           "server.http.classloader.port")));
+                                           PROPERTY_CLASSLOADER_PORT)));
     }
     catch (IOException e) {
       logger.error("Unable to start ClassServer: " + e.getMessage());
@@ -197,8 +204,7 @@ public class Server {
             System.out
                 .println(MessageFormat.format(
                     "uptime: {0} since: {1,date,full} {1,time,full}",
-                    Span.interval(START_TIME, System.currentTimeMillis()),
-                    START_TIME));
+                    uptime(), START_TIME));
           }
         }
       }
@@ -223,5 +229,7 @@ public class Server {
     }
   }
 
-
+  public static String uptime() {
+    return Span.interval(START_TIME, System.currentTimeMillis());
+  }
 }

@@ -13,7 +13,7 @@ import java.rmi.server.RMIClassLoader;
  * The class that starts the client by bootstrapping from RMI.
  *
  * @author Troy Bowman
- * @version $Id: Envelope.java,v 1.3 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Envelope.java,v 1.4 2008/07/06 04:14:24 troy Exp $
  */
 
 public class Envelope {
@@ -26,10 +26,12 @@ public class Envelope {
 
     EmacsKeyBindings.loadEmacsKeyBindings();
 
-    Preferences prefs = new Preferences();
+    Preferences prefs = Preferences.getInstance();
     prefs.setTitle(Strings.get("preferences"));
-    prefs.setSize(400, 400);
-    if (!prefs.areServerSettingsOk()) prefs.setVisible(true);
+    if (!prefs.areServerSettingsOk()) {
+      prefs.selectTab(Strings.get("server"));
+      prefs.setVisible(true);
+    }
     ServerSettings ss = ServerSettings.getInstance();
 
     try {

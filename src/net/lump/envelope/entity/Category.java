@@ -12,11 +12,11 @@ import java.sql.Timestamp;
  * should match the account balance.
  *
  * @author Troy Bowman
- * @version $Id: Category.java,v 1.7 2008/05/13 01:25:31 troy Exp $
+ * @version $Id: Category.java,v 1.8 2008/07/06 04:14:24 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "categories")
-public class Category extends Identifiable {
+public class Category extends Identifiable implements Comparable {
 
   private Integer id;
   private Timestamp stamp;
@@ -152,5 +152,9 @@ public class Category extends Identifiable {
     result = 31 * result + (account != null ? account.hashCode() : 0);
     result = 31 * result + (name != null ? name.hashCode() : 0);
     return result;
+  }
+
+  public int compareTo(Object o) {
+    return this.name.compareTo(((Category)o).name);
   }
 }

@@ -3,8 +3,8 @@ package us.lump.envelope.server.dao;
 import net.sf.ehcache.Element;
 import us.lump.envelope.Command;
 import us.lump.envelope.entity.User;
-import us.lump.envelope.server.exception.AuthenticationException;
 import us.lump.envelope.server.exception.SessionException;
+import us.lump.envelope.server.exception.DataException;
 import us.lump.envelope.server.security.Challenge;
 import us.lump.envelope.server.security.Credentials;
 import us.lump.envelope.server.security.Crypt;
@@ -22,7 +22,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.9 2008/01/20 05:15:41 troy Exp $
+ * @version $Id: Security.java,v 1.10 2008/07/06 04:14:24 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption
@@ -70,7 +70,12 @@ public class Security extends DAO {
       IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException {
     Boolean authed;
 
-    User user = getUser(username);
+    User user = null;
+    try {
+      user = getUser(username);
+    } catch (DataException e) {
+      throw new SessionException(SessionException.Type.Invalid_User, e);
+    }
 
     String hash = new String(
         Encryption.decodeAsym(serverKeyPair.getPrivate(), challengeResponse),
@@ -85,8 +90,7 @@ public class Security extends DAO {
       logger.info("password for \"" + username + "\" successfully verfied");
     } else {
       logger.warn("password for \"" + username + "\" FAILED");
-      throw new RuntimeException(
-          new AuthenticationException("Authentication Failed."));
+      throw new SessionException(SessionException.Type.Invalid_Credentials);
     }
 
     return authed;
@@ -97,8 +101,14 @@ public class Security extends DAO {
       SignatureException, InvalidKeyException {
     Credentials credentials = c.getCredentials();
 
-    boolean authed =
-        c.verify(getUser(credentials.getUsername()).getPublicKey());
+    User user = null;
+    try {
+      user = getUser(credentials.getUsername());
+    } catch (DataException e) {
+      throw new SessionException(SessionException.Type.Invalid_User, e);
+    }
+
+    boolean authed = c.verify(user.getPublicKey());
     if (authed) {
       logger.debug("signature for \""
                    + credentials.getUsername()
@@ -107,7 +117,8 @@ public class Security extends DAO {
       logger.error("signature for \""
                    + credentials.getUsername()
                    + "\" FAILED");
-      throw new RuntimeException(new SessionException("Invalid Session"));
+      throw new RuntimeException(new SessionException(
+          SessionException.Type.Invalid_Session));
     }
 
     return authed;
@@ -118,7 +129,12 @@ public class Security extends DAO {
       BadPaddingException, IllegalBlockSizeException, InvalidKeyException,
       NoSuchPaddingException {
     logger.debug("challenge asked for \"" + username + "\"");
-    User user = getUser(username);
+    User user = null;
+    try {
+      user = getUser(username);
+    } catch (DataException e) {
+      throw new SessionException(SessionException.Type.Invalid_User, e);
+    }
     // set the new public key
     user.setPublicKey(publicKey);
 

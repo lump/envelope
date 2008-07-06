@@ -30,15 +30,15 @@ import java.util.Properties;
  * A JUnit class which runs all tests.
  *
  * @author Troy Bowman
- * @version $Id: TestSuite.java,v 1.8 2008/01/20 05:15:41 troy Exp $
+ * @version $Id: TestSuite.java,v 1.9 2008/07/06 04:14:24 troy Exp $
  */
 public class TestSuite extends TestCase {
-  public static int DEFAULT_SERVER_RMI_PORT = 7041;
-  public static int DEFAULT_SERVER_HTTP_PORT = 7042;
+  public static int DEFAULT_SERVER_HTTP_PORT = 7041;
   public static final String HOST_NAME_PROPERTY = "server";
   public static final String RMI_PORT_PROPERTY = "server.rmi.port";
   public static final String HTTP_PORT_PROPERTY = "server.http.port";
-  public static String SERVER_HOST_NAME = "localhost";
+  public static String SERVER_HOST_NAME = "localhost"
+                                          +DEFAULT_SERVER_HTTP_PORT;
 
   public static final String USER = "bowmantest";
   public static final String PASSWORD = "guest";
@@ -55,19 +55,14 @@ public class TestSuite extends TestCase {
 
       if (system.containsKey(HOST_NAME_PROPERTY)) {
         ss.setHostName(system.getProperty(HOST_NAME_PROPERTY));
-
-        ss.setRmiPort((system.containsKey(RMI_PORT_PROPERTY)
-                       ? system.getProperty(RMI_PORT_PROPERTY)
-                       : String.valueOf(DEFAULT_SERVER_RMI_PORT)));
-
         ss.setClassPort(system.containsKey(HTTP_PORT_PROPERTY)
                         ? system.getProperty(HTTP_PORT_PROPERTY)
                         : String.valueOf(DEFAULT_SERVER_HTTP_PORT));
+        ss.setRmiPort();
       } else {
         Properties serverConfig = PrefsConfigurator.configure(Server.class);
-        ss.setHostName(localHost());
-        ss.setRmiPort(serverConfig.getProperty("server.rmi.port"));
-        ss.setClassPort(serverConfig.getProperty("server.http.classloader.port"));
+        ss.setHostName(localHost() +":" + DEFAULT_SERVER_HTTP_PORT);
+        ss.setRmiPort();
       }
 
       system.put("java.rmi.server.codebase", ss.getCodeBase());

@@ -2,6 +2,7 @@ package us.lump.envelope.client.ui.prefs;
 
 import us.lump.envelope.server.security.Challenge;
 import us.lump.envelope.server.security.Crypt;
+import us.lump.envelope.server.exception.SessionException;
 import us.lump.lib.util.Encryption;
 
 import javax.crypto.BadPaddingException;
@@ -13,13 +14,14 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.prefs.Preferences;
+import java.util.Arrays;
 
 /**
  * Singleton for keeping track of login information.  (Basically the username
  * and password.
  *
  * @author Troy Bowman
- * @version $Id: LoginSettings.java,v 1.6 2007/09/09 07:17:10 troy Exp $
+ * @version $Id: LoginSettings.java,v 1.7 2008/07/06 04:14:24 troy Exp $
  */
 public class LoginSettings {
 
@@ -28,6 +30,7 @@ public class LoginSettings {
   private static final String SHOULD_SAVE_ENCRYPTED_PASSWORD
       = "saveEncrypedPassword?";
   private static final String ENCRYPTED_PASSWORD = "encryptedPassword";
+  public static final String PASSWORD_ALREADY_SET = "-password-already-set-";
 
   // preferences reference, defined at instantiation of the singleton.
   private Preferences prefs = Preferences.userNodeForPackage(this.getClass());
@@ -35,8 +38,6 @@ public class LoginSettings {
   // the key-pair, generated once at instantiation of the singleton.
   private KeyPair keyPair;
 
-  // supress unused because there is no getter for password.
-  @SuppressWarnings({"UnusedDeclaration"})
   transient private byte[] password;
 
   // the singleton
@@ -45,6 +46,7 @@ public class LoginSettings {
   {
     try {
       keyPair = Encryption.generateKeyPair();
+
     } catch (NoSuchAlgorithmException e) {
       e.printStackTrace();
       System.exit(1);
@@ -62,6 +64,11 @@ public class LoginSettings {
     return prefs.get(USER, null);
   }
 
+  public String getPassword() {
+    if (passwordIsSaved()) return PASSWORD_ALREADY_SET;
+    else return "";
+  }
+
   public KeyPair getKeyPair() {
     return keyPair;
   }
@@ -70,14 +77,19 @@ public class LoginSettings {
     return prefs.getBoolean(SHOULD_SAVE_ENCRYPTED_PASSWORD, Boolean.FALSE);
   }
 
+  public Boolean passwordIsSaved() {
+    return (prefs.getByteArray(ENCRYPTED_PASSWORD, null) != null);
+  }
+
   public LoginSettings setPassword(String password)
       throws BadPaddingException, NoSuchAlgorithmException,
       IllegalBlockSizeException, InvalidKeyException,
       NoSuchPaddingException {
     // keep the password from being plain text in memory...
-    this.password = Encryption.encodeAsym(
-        keyPair.getPublic(),
-        password.getBytes());
+    if (!password.equals(PASSWORD_ALREADY_SET))
+      this.password = Encryption.encodeAsym(
+          keyPair.getPublic(),
+          password.getBytes());
     return this;
   }
 
@@ -133,7 +145,7 @@ public class LoginSettings {
   }
 
   /**
-   * Get the generate a challenge response from a Challenge and the current
+   * Generate a challenge response from a Challenge and the current
    * password.
    *
    * @param challenge the Challenge object from the server.
@@ -152,11 +164,20 @@ public class LoginSettings {
       IllegalBlockSizeException, InvalidKeyException,
       NoSuchPaddingException, IOException {
 
+    byte[] response = null;
+
+    if (password == null && shouldPasswordBeSaved() && passwordIsSaved()) {
+      response = prefs.getByteArray(ENCRYPTED_PASSWORD, new byte[]{});
+      if (response.length == 0)
+        throw new SessionException(SessionException.Type.Invalid_Credentials);
+      else return response;
+    }
+
     if (this.password == null)
       throw new IllegalStateException("Password cannot be null or empty");
 
     // encrypt the response with the server's public key
-    byte[] response = Encryption.encodeAsym(
+    response = Encryption.encodeAsym(
         challenge.getServerKey(),
         Crypt.crypt(
             challenge.getChallenge(keyPair.getPrivate()),
@@ -169,7 +190,9 @@ public class LoginSettings {
         ).getBytes()
     );
 
-    // save the encrypted password to prefs if the user prefers to save it
+    // response is encrypted with server's public key, so only that specific
+    // server can use it, we can save it, and the saved challenge response
+    // on disk cannot be decrypted to find the original password.
     if (shouldPasswordBeSaved())
       prefs.putByteArray(ENCRYPTED_PASSWORD, response);
       // else make sure it is null

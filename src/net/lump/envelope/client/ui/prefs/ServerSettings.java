@@ -3,10 +3,7 @@ package us.lump.envelope.client.ui.prefs;
 import us.lump.envelope.client.ui.defs.Strings;
 import static us.lump.envelope.client.ui.prefs.ServerSettings.fields.*;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.*;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -14,6 +11,8 @@ import java.rmi.RemoteException;
 import java.rmi.server.RMIClassLoader;
 import java.text.MessageFormat;
 import java.util.prefs.Preferences;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ServerSettings {
   private static ServerSettings singleton;
@@ -23,10 +22,11 @@ public class ServerSettings {
   private static ValidCache rmiServerValidated = new ValidCache();
 
   public static final String CONTROLLER = "Controller";
-  public static final String DEFAULT_RMI_PORT = "7041";
-  public static final String DEFAULT_CLASS_PORT = "7042";
+  public static final String DEFAULT_CLASS_PORT = "7041";
   public static final String CODEBASE = "java.rmi.server.codebase";
   public static final String RMINODE = "java.rmi.server.rminode";
+  public static final String PING = "/ping";
+  public static final String RMI_PORT = "/port/rmi";
 
   enum fields {
     host_name,
@@ -46,22 +46,59 @@ public class ServerSettings {
   }
 
   public void setHostName(final String hostName) {
-    prefs.put(host_name.name(), hostName);
+    // class server test
+    Matcher hostParser = Pattern.compile("^(.*?)(?:\\:(\\d+))?$")
+        .matcher(hostName);
+    if (hostParser.matches() && hostParser.group(1) != null) {
+      prefs.put(host_name.name(), hostParser.group(1));
+      //setClassPort handles a null group 2 gracefully
+      setClassPort(hostParser.group(2));
+    }
   }
 
-  public String getRmiPort() {
-    return prefs.get(rmi_port.name(), DEFAULT_RMI_PORT);
+  private String infoQuery(String query) throws IOException {
+    URL url = new URL(this.getCodeBase().toString() + "info" + query);
+    Socket socket = new Socket();
+    socket.connect(new InetSocketAddress(url.getHost(), url.getPort()), 1000);
+    BufferedReader r = new BufferedReader(
+        new InputStreamReader(socket.getInputStream()));
+    PrintWriter p = new PrintWriter(socket.getOutputStream(), true);
+    p.write("GET info"+ query +"\r\n\r\n");
+    p.flush();
+
+    boolean inHeader = true;
+    String output = "";
+    String line;
+    while ((line = r.readLine()) != null) {
+      if (line.matches("^\\s*$")) {
+        inHeader = false;
+        continue;
+      }
+      if (!inHeader) output += line;
+    }
+    socket.close();
+    return output;
   }
 
-  public void setRmiPort(final String rmiPort) {
-    prefs.put(rmi_port.name(), rmiPort);
+  public String getRmiPort() throws IOException {
+    String rmiPort = prefs.get(rmi_port.name(), null);
+    if (rmiPort == null) {
+      rmiPort = infoQuery(RMI_PORT);
+      prefs.put(rmi_port.name(), rmiPort);
+    }
+    return rmiPort;
+  }
+
+  public void setRmiPort() throws IOException {
+    prefs.put(rmi_port.name(), infoQuery(RMI_PORT));
   }
 
   public String getClassPort() {
     return prefs.get(class_port.name(), DEFAULT_CLASS_PORT);
   }
 
-  public void setClassPort(final String classPort) {
+  public void setClassPort(String classPort) {
+    if (classPort == null) classPort = DEFAULT_CLASS_PORT;
     prefs.put(class_port.name(), classPort);
   }
 
@@ -73,7 +110,7 @@ public class ServerSettings {
     return url;
   }
 
-  public String rmiNode() {
+  public String rmiNode() throws IOException {
     String url = "rmi://" + getHostName() + ":" + getRmiPort() + "/";
     if (System.getProperties().get(RMINODE) == null
         || !System.getProperties().get(RMINODE).equals(url))
@@ -81,7 +118,7 @@ public class ServerSettings {
     return url;
   }
 
-  public String rmiController() {
+  public String rmiController() throws IOException {
     return rmiNode() + CONTROLLER;
   }
 
@@ -96,33 +133,10 @@ public class ServerSettings {
         message = MessageFormat.format(
             Strings.get("error.server_not_reachable"), this.getHostName());
       else {
-
-        URL url = new URL(this.getCodeBase().toString() + "ping");
-        Socket socket = new Socket();
-        socket.connect(new InetSocketAddress(url.getHost(), url.getPort()),
-                       1000);
-        BufferedReader r = new BufferedReader(
-            new InputStreamReader(socket.getInputStream()));
-        PrintWriter p = new PrintWriter(socket.getOutputStream(), true);
-        p.write("GET ping\r\n\r\n");
-        p.flush();
-
-        boolean inHeader = true;
-        boolean verified = false;
-        String line;
-        while ((line = r.readLine()) != null) {
-          if (line.matches("^\\s*$")) {
-            inHeader = false;
-            continue;
-          }
-          if (!inHeader && line.matches("^pong$")) {
-            verified = true;
-            break;
-          }
+        if (infoQuery(PING).matches("^pong")) {
+          setRmiPort();
+          classServerValidated.setValid(true);
         }
-        socket.close();
-
-        if (verified) classServerValidated.setValid(true);
         else
           message = MessageFormat.format(
               Strings.get("error.verify_class_server"), this.getHostName());
@@ -149,9 +163,9 @@ public class ServerSettings {
   public String testRmiServer() {
     String message = Strings.get("ok");
     if (rmiServerValidated.isValid()) return message;
-
-    String url = rmiController();
+    String url = "";
     try {
+      url = rmiController();
       Thread.currentThread().setContextClassLoader(
           RMIClassLoader.getClassLoader(getCodeBase().toString()));
       Naming.lookup(url);

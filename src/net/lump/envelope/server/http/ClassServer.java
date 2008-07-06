@@ -12,6 +12,8 @@ import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPOutputStream;
 
+import us.lump.envelope.Server;
+
 /**
  * ClassServer is an abstract class that provides the basic functionality of a
  * mini-webserver, specialized to load class files only. A ClassServer must be
@@ -26,7 +28,7 @@ import java.util.zip.GZIPOutputStream;
  * this server in place of an HTTP server. <p>
  *
  * @author Troy Bowman
- * @version $Id: ClassServer.java,v 1.3 2007/08/21 04:09:10 troy Exp $
+ * @version $Id: ClassServer.java,v 1.4 2008/07/06 04:14:24 troy Exp $
  */
 public class ClassServer implements Runnable {
   private static final Logger logger = Logger.getLogger(ClassServer.class);
@@ -158,15 +160,24 @@ public class ClassServer implements Runnable {
           }
         }
 
-        if (path.equals("ping")) {
-          String pong = "pong\n";
+        Matcher infoMatcher = Pattern.compile("^info/(.*)$").matcher(path);
+        if (infoMatcher.matches() && infoMatcher.group(1) != null) {
+          String query = infoMatcher.group(1);
+          String returnValue = "";
+          if (query.matches("^ping$")) returnValue = "pong";
+          else if (query.matches("^port/rmi$"))
+            returnValue = Server.getConfig(Server.PROPERTY_RMI_PORT);
+          else if (query.matches("^uptime$"))
+            returnValue = Server.uptime();
+
           out.writeBytes("HTTP/1.0 200 OK\r\n");
-          out.writeBytes("Content-Length: " + pong.length() + "\r\n");
+          out.writeBytes("Content-Length: " + returnValue.length() + "\r\n");
           out.writeBytes("Content-Type: text/plain\r\n\r\n");
-          out.writeBytes(pong);
-          logger.info("received ping from "
+          out.writeBytes(returnValue);
+          logger.info("returned " + returnValue + " for " + path + " from "
                       + socket.getInetAddress().getCanonicalHostName());
-        } else {
+        }
+        else {
           byte[] bytecode = getBytes(path);
           byte[] compressedBytecode = bytecode;
           encoding = "raw";

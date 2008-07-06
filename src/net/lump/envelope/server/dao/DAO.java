@@ -14,6 +14,8 @@ import org.hibernate.impl.SessionImpl;
 import us.lump.envelope.entity.*;
 import us.lump.envelope.entity.Transaction;
 import us.lump.envelope.server.PrefsConfigurator;
+import us.lump.envelope.server.exception.DataException;
+import us.lump.envelope.server.exception.EnvelopeException;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -24,7 +26,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.9 2008/05/13 01:25:31 troy Exp $
+ * @version $Id: DAO.java,v 1.10 2008/07/06 04:14:24 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -258,7 +260,7 @@ public abstract class DAO {
     for (T o : os) getCurrentSession().update(o);
   }
 
-  User getUser(String username) {
+  User getUser(String username) throws DataException {
     User user;
 
     // if we've already retrieved the user for this thread, just use that.
@@ -276,8 +278,9 @@ public abstract class DAO {
       // we'll have to ask hibernate.
       List<User> users = list(User.class, Restrictions.eq("name", username));
 
-      if (users.isEmpty()) throw
-          new RuntimeException("User " + username + " is invalid.");
+      if (users.isEmpty())
+        throw new DataException(EnvelopeException.Type.Invalid_User,
+                            "User " + username + " is invalid.");
       user = users.get(0);
       cache.get(USER).put(new Element(username, user));
       ThreadInfo.setUser(user);

@@ -19,7 +19,7 @@ import java.util.List;
  * Test queries.
  *
  * @author troy
- * @version $Id: TestQuery.java,v 1.2 2008/02/29 05:33:31 troy Exp $
+ * @version $Id: TestQuery.java,v 1.3 2008/07/06 04:14:24 troy Exp $
  */
 public class TestQuery extends TestCase {
 
@@ -48,7 +48,7 @@ public class TestQuery extends TestCase {
     assertTrue("list size is not > 0", list.size() > 0);
   }
 
-  @Test public void testCategoryGetBalance() {
+  @Test public void testCategoryGetBalance() throws Exception {
     TransactionPortal tp = new TransactionPortal();
     Category c = tp.getCategory("Groceries");
     Money allBalance = tp.getCategoryBalance(c, null);
@@ -63,7 +63,7 @@ public class TestQuery extends TestCase {
                 unRecBalance.doubleValue() > allBalance.doubleValue());
   }
 
-  @Test public void testCategoryGetBalances() {
+  @Test public void testCategoryGetBalances() throws Exception {
     TransactionPortal tp = new TransactionPortal();
     List<Object> allList = tp.getCategoryBalances(null);
     List<Object> recList = tp.getCategoryBalances(true);
@@ -77,7 +77,7 @@ public class TestQuery extends TestCase {
                unRecList.size() <= allList.size());
   }
 
-  @Test public void testAccountGetBalance() {
+  @Test public void testAccountGetBalance() throws Exception {
     TransactionPortal tp = new TransactionPortal();
     Account a = tp.getAccount("Checking");
     Money allBalance = tp.getAccountBalance(a, null);
@@ -88,7 +88,7 @@ public class TestQuery extends TestCase {
                recBalance.doubleValue() > 0.0D);
   }
 
-  @Test public void testAccountGetBalances() {
+  @Test public void testAccountGetBalances() throws Exception {
     TransactionPortal tp = new TransactionPortal();
     List<Object> allList = tp.getAccountBalances(null);
     List<Object> recList = tp.getAccountBalances(true);

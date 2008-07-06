@@ -16,13 +16,12 @@ import java.util.List;
  * An account object.
  *
  * @author Troy Bowman
- * @version $Id: Account.java,v 1.7 2008/05/13 01:25:31 troy Exp $
+ * @version $Id: Account.java,v 1.8 2008/07/06 04:14:24 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "accounts")
-public class Account extends Identifiable {
-
-//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.7 $".replaceAll("\\D", ""));
+public class Account extends Identifiable implements Comparable {
+//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.8 $".replaceAll("\\D", ""));
 
   /** The type of an Account. */
   public static enum AccountType {
@@ -32,7 +31,8 @@ public class Account extends Identifiable {
      * A credit account. This could be a credit card or a home equity line of
      * credit.
      */
-    Credit
+    Credit,
+    Loan
   }
 
   private Integer id;
@@ -195,5 +195,13 @@ public class Account extends Identifiable {
     result = 31 * result + (rate != null ? rate.hashCode() : 0);
     result = 31 * result + (limit != null ? limit.hashCode() : 0);
     return result;
+  }
+
+  public int compareTo(Object o) {
+    // If the names are different, we can sort by that, but if they're the same,
+    // don't return 0 unless the Ids are actually the same.
+    int name = this.getName().compareTo(((Account)o).getName());
+    return name == 0 ? this.getId().compareTo(((Account)o).getId())
+           : name;
   }
 }

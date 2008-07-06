@@ -4,7 +4,9 @@ import org.apache.log4j.Logger;
 import us.lump.envelope.Command;
 import us.lump.envelope.server.dao.DAO;
 import us.lump.envelope.server.dao.Security;
-import us.lump.envelope.server.exception.AuthenticationException;
+import us.lump.envelope.server.exception.SessionException;
+import us.lump.envelope.server.exception.DataException;
+import us.lump.envelope.server.exception.EnvelopeException;
 import us.lump.lib.util.Span;
 
 import java.io.Serializable;
@@ -17,7 +19,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controlled.java,v 1.7 2008/05/13 01:25:31 troy Exp $
+ * @version $Id: Controlled.java,v 1.8 2008/07/06 04:14:24 troy Exp $
  */
 public class Controlled extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -60,10 +62,18 @@ public class Controlled extends UnicastRemoteObject implements Controller {
         // if a session is required, force check authorization first
         if (command.getName().isSessionRequired()
             && !(new Security()).validateSession(command))
-          throw new AuthenticationException("Invalid session");
+          throw new SessionException(SessionException.Type.Invalid_Session);
       } catch (Exception e) {
-        logger.warn("error in session validation", e);
-        throw new RemoteException("error in session validation", e);
+        if (e instanceof DataException &&
+            ((DataException)e).getType() == EnvelopeException.Type.Invalid_User
+            ) {
+          throw new SessionException(SessionException.Type.Invalid_Credentials);
+        }
+        else {
+          logger.warn("error in session validation", e);
+          throw new SessionException(SessionException.Type.Invalid_Session,
+                                     "Session validation broke");
+        }
       }
 
       // session management should be done now, so we can now dispatch
@@ -139,9 +149,12 @@ public class Controlled extends UnicastRemoteObject implements Controller {
       if (e instanceof InstantiationException)
         throw new IllegalArgumentException(
             "Could not instantiate " + command.getName().getFacet().name(), e);
-      if (e instanceof InvocationTargetException)
+      if (e instanceof InvocationTargetException) {
+        if (e.getCause() instanceof EnvelopeException)
+          throw (EnvelopeException)e.getCause();
         throw new IllegalArgumentException(
             "Could not invoke " + command.getName().name());
+      }
 
       throw (RemoteException)e;
     }

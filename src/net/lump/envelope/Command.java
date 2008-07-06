@@ -19,7 +19,7 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Revision: 1.9 $
+ * @version $Revision: 1.10 $
  */
 public class Command implements Serializable {
   /**
@@ -39,7 +39,7 @@ public class Command implements Serializable {
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.9 $
+   * @version $Revision: 1.10 $
    */
   public enum Name {
 
@@ -62,7 +62,6 @@ public class Command implements Serializable {
     listTransactionsBetweenDates(Dao.Action, Date.class, Date.class),
 
     // report
-
     getCategory(Dao.Status, String.class),
     getCategoryBalance(Dao.Status, Category.class, Boolean.class),
     getCategoryBalances(Dao.Status, Boolean.class),

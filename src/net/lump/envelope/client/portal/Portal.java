@@ -8,6 +8,8 @@ import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
 import us.lump.envelope.server.rmi.Controller;
+import us.lump.envelope.server.exception.SessionException;
+import us.lump.envelope.server.exception.EnvelopeException;
 
 import javax.swing.*;
 import java.io.Serializable;
@@ -19,7 +21,7 @@ import java.rmi.RemoteException;
  * exit/entry to the server.
  *
  * @author Troy Bowman
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 
 abstract class Portal {
@@ -37,18 +39,19 @@ abstract class Portal {
           ServerSettings.getInstance().rmiController());
     } catch (Exception e) {
       logger.error(e);
-      Preferences p = Main.getInstance().getPreferences();
+      Preferences p = Preferences.getInstance();
       p.areServerSettingsOk();
       p.selectTab(Strings.get("server"));
       p.setVisible(true);
     }
   }
 
-  public Serializable invoke(Command command) {
+  public Serializable invoke(Command command) throws EnvelopeException {
     return invoke(null, command);
   }
 
-  public Serializable invoke(JFrame frame, Command command) {
+  public Serializable invoke(JFrame frame, Command command)
+    throws EnvelopeException {
     LoginSettings ls = LoginSettings.getInstance();
 
     // sign the command
@@ -69,18 +72,32 @@ abstract class Portal {
   }
 
 
-  public Serializable rawInvoke(Command command) {
+  public Serializable rawInvoke(Command command)
+      throws EnvelopeException {
     return rawInvoke(null, command);
   }
 
-  public Serializable rawInvoke(JFrame jframe, Command command) {
+  public Serializable rawInvoke(JFrame jframe, Command command)
+      throws EnvelopeException {
 
     try {
       return controller.invoke(command);
     } catch (RemoteException e) {
       logger.warn(e);
-      //todo: write stuff to catch not-logged-in stuff to force an auth
-      //todo: catch other generic errors, rethrow non-generic errors
+      Throwable cause = e;
+      boolean found = false;
+      while (cause != null && found == false  ) {
+        if (cause instanceof SessionException) {
+          found = true;
+          Preferences p = Preferences.getInstance();
+          if (p.areLoginSettingsOk() == null) throw new SessionException(
+              ((SessionException)cause).getType(), cause);
+        }
+        cause = cause.getCause();
+      }
+      if (!found) {
+        //todo: catch other generic errors, rethrow non-generic errors
+      }
     }
     return null;
   }
