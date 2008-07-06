@@ -12,14 +12,13 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.*;
 import java.util.List;
 import java.util.Collections;
-import java.util.concurrent.Executors;
 
 
 /**
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.1 2008/07/06 04:14:24 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.2 2008/07/06 07:22:06 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -40,6 +39,16 @@ public class Hierarchy extends JTree {
     addTreeSelectionListener(new TreeSelectionListener() {
       public void valueChanged(TreeSelectionEvent e) {
         System.err.println(e.toString());
+        Object o = ((DefaultMutableTreeNode)e.getPath().getLastPathComponent()).getUserObject();
+
+        if (o instanceof Account) {
+          JScrollPane s = MainFrame.getInstance().getTableScrollPane();
+          s.setViewportView(new JTable(new TransactionTableModel((Account)o)));
+        }
+        if (o instanceof Category) {
+          JScrollPane s = MainFrame.getInstance().getTableScrollPane();
+          s.setViewportView(new JTable(new AllocationTableModel((Category)o)));
+        }
       }
     });
   }
@@ -56,7 +65,7 @@ public class Hierarchy extends JTree {
 
         List<Category> categoryList =
             CriteriaFactory.getInstance()
-                .getCategoriesforBudget(state.getBudget());
+                .getCategoriesForBudget(state.getBudget());
 
         for (Category c : categoryList) {
           state.getAccounts().add(c.getAccount());

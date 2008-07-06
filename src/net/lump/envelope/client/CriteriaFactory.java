@@ -2,10 +2,7 @@ package us.lump.envelope.client;
 
 import org.hibernate.criterion.*;
 import org.apache.log4j.Logger;
-import us.lump.envelope.entity.User;
-import us.lump.envelope.entity.Budget;
-import us.lump.envelope.entity.Account;
-import us.lump.envelope.entity.Category;
+import us.lump.envelope.entity.*;
 import us.lump.envelope.client.portal.HibernatePortal;
 import us.lump.envelope.server.exception.EnvelopeException;
 
@@ -16,7 +13,7 @@ import java.util.ArrayList;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.1 2008/07/06 04:14:24 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.2 2008/07/06 07:22:06 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -59,13 +56,39 @@ public class CriteriaFactory {
     return retval;
   }
 
-  public List<Category> getCategoriesforBudget(Budget budget) {
+  public List<Category> getCategoriesForBudget(Budget budget) {
     List<Category> retval = new ArrayList<Category>();
     try {
       retval = (List<Category>)(new HibernatePortal()).detachedCriteriaQuery(
           DetachedCriteria.forClass(Category.class)
               .createCriteria("account", "a")
               .add(Restrictions.eq("a.budget", budget)));
+    } catch (EnvelopeException e) {
+      logger.error(e);
+    }
+    return retval;
+  }
+
+  public List<Allocation> getAllocationsForCategory(Category category) {
+    List<Allocation> retval = new ArrayList<Allocation>();
+    try {
+      retval = (List<Allocation>)(new HibernatePortal()).detachedCriteriaQuery(
+          DetachedCriteria.forClass(Allocation.class)
+              .add(Restrictions.eq("category", category)));
+    } catch (EnvelopeException e) {
+      logger.error(e);
+    }
+    return retval;
+  }
+
+  public List<Transaction> getTransactionsForAccount(Account account) {
+    List<Transaction> retval = new ArrayList<Transaction>();
+    try {
+      retval = (List<Transaction>)(new HibernatePortal()).detachedCriteriaQuery(
+          DetachedCriteria.forClass(Transaction.class)
+              .createCriteria("allocations", "a")
+              .createCriteria("a.category", "c")
+              .add(Restrictions.eq("c.account", account)));
     } catch (EnvelopeException e) {
       logger.error(e);
     }

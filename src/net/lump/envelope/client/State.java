@@ -5,6 +5,7 @@ import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Category;
 import us.lump.envelope.client.ui.MainFrame;
 import us.lump.envelope.client.ui.Hierarchy;
+import us.lump.envelope.client.ui.prefs.LoginSettings;
 
 import javax.swing.*;
 import java.util.List;
@@ -14,7 +15,7 @@ import java.util.TreeSet;
 /**
  * This is a repository for globally accessed object instances.
  * 
- * @version $Id: State.java,v 1.1 2008/07/06 04:14:24 troy Exp $
+ * @version $Id: State.java,v 1.2 2008/07/06 07:22:06 troy Exp $
  */
 public class State {
 
@@ -34,6 +35,9 @@ public class State {
   }
 
   public Budget getBudget() {
+    if (budget == null)
+      budget = CriteriaFactory.getInstance().getBudgetForUser(
+          LoginSettings.getInstance().getUsername());
     return budget;
   }
 

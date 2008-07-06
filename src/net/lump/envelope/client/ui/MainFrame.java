@@ -9,15 +9,16 @@ import us.lump.envelope.client.State;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 import java.awt.*;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.1 2008/07/06 04:14:24 troy Exp $
+ * @version $Id: MainFrame.java,v 1.2 2008/07/06 07:22:06 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -28,12 +29,17 @@ public class MainFrame extends JFrame {
 
   //content
   private JScrollPane treeScrollPane = new JScrollPane();
-
   private JScrollPane tableScrollPane = new JScrollPane();
   private JTable transactionTable = new JTable();
   private JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
                                                 treeScrollPane,
                                                 tableScrollPane);
+
+  public JScrollPane getTableScrollPane() {
+    return tableScrollPane;
+  }
+
+
   private JLabel status = new JLabel(Strings.get("initializing"));
 
   private static State state = State.getInstance();
@@ -55,7 +61,7 @@ public class MainFrame extends JFrame {
 
     status.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
 
-    tableScrollPane.add(transactionTable);
+    tableScrollPane.setViewportView(transactionTable);
 
     this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     this.setLayout(new BorderLayout());
@@ -153,9 +159,6 @@ public class MainFrame extends JFrame {
     }
 
 
-    state.setBudget(
-        CriteriaFactory.getInstance().getBudgetForUser(
-            LoginSettings.getInstance().getUsername()));
 
     state.setHierarchy(Hierarchy.getInstance());
     state.getHierarchy().setRootNode(state.getBudget());
@@ -163,14 +166,32 @@ public class MainFrame extends JFrame {
     treeScrollPane.setViewportView(state.getHierarchy());
 
 
+
+    addComponentListener(new ComponentListener(){
+
+      public void componentResized(ComponentEvent e) {
+//        System.err.println(e);
+      }
+
+      public void componentMoved(ComponentEvent e) {
+//        System.err.println(e);
+      }
+
+      public void componentShown(ComponentEvent e) {
+//        System.err.println(e);
+      }
+
+      public void componentHidden(ComponentEvent e) {
+//        System.err.println(e);
+      }
+    });
+
     //    frame.pack();
     validate();
     pack();
     setSize(getWindowSize());
     setStatus(Strings.get("ready"));
     setVisible(true);
-    repaint();
-    RepaintManager.currentManager(this).paintDirtyRegions();
   }
 
   public Preferences getPreferences() {
