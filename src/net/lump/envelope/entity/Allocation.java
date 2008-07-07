@@ -16,7 +16,7 @@ import java.util.Collection;
  * Categories, which are tied to Accounts.
  *
  * @author Troy Bowman
- * @version $Id: Allocation.java,v 1.6 2008/05/13 01:25:31 troy Exp $
+ * @version $Id: Allocation.java,v 1.7 2008/07/07 06:04:34 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
@@ -36,8 +36,8 @@ public class Allocation extends Identifiable {
     String out = MessageFormat.format("{0}@{1}",
                                       amount.toFormattedString(),
                                       category.toString());
-    for (Tag t : tags)
-      out += System.getProperty("line.separator") + "\t" + t.toString();
+//    for (Tag t : tags)
+//      out += System.getProperty("line.separator") + "\t" + t.toString();
     return out;
   }
 
@@ -100,20 +100,20 @@ public class Allocation extends Identifiable {
    *
    * @return
    */
-  @ManyToMany(
-      targetEntity = Tag.class,
-      cascade = {CascadeType.PERSIST, CascadeType.MERGE},
-      fetch = javax.persistence.FetchType.EAGER
-  )
-  @JoinTable(
-      name = "allocation_tag",
-      joinColumns = {@JoinColumn(name = "allocation")},
-      inverseJoinColumns = {@JoinColumn(name = "tag")}
-  )
-  @Fetch(value = FetchMode.SUBSELECT)
-  public Collection<Tag> getTags() {
-    return tags;
-  }
+//  @ManyToMany(
+//      targetEntity = Tag.class,
+//      cascade = {CascadeType.PERSIST, CascadeType.MERGE},
+//      fetch = javax.persistence.FetchType.LAZY
+//  )
+//  @JoinTable(
+//      name = "allocation_tag",
+//      joinColumns = {@JoinColumn(name = "allocation")},
+//      inverseJoinColumns = {@JoinColumn(name = "tag")}
+//  )
+//  @Fetch(value = FetchMode.SUBSELECT)
+//  public Collection<Tag> getTags() {
+//    return tags;
+//  }
 
   /**
    * Set the tags associated with this Allocation.
@@ -133,7 +133,7 @@ public class Allocation extends Identifiable {
   @ManyToOne(
       cascade = {CascadeType.PERSIST, CascadeType.MERGE},
       fetch = javax.persistence.FetchType.EAGER)
-  @Fetch(value = FetchMode.SELECT)
+  @Fetch(value = FetchMode.JOIN)
   @JoinColumn(name = "transaction")
   public Transaction getTransaction() {
     return transaction;
@@ -205,9 +205,9 @@ public class Allocation extends Identifiable {
     result = 31 * result + (transaction != null ? transaction.hashCode() : 0);
     result = 31 * result + (amount != null ? amount.hashCode() : 0);
 
-    if (this.getTags() != null)
-      for (Tag a : this.getTags())
-        result = 31 * result + (a != null ? a.hashCode() : 0);
+//    if (this.getTags() != null)
+//      for (Tag a : this.getTags())
+//        result = 31 * result + (a != null ? a.hashCode() : 0);
 
     return result;
   }

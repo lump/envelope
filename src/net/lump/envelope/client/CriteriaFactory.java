@@ -1,6 +1,7 @@
 package us.lump.envelope.client;
 
 import org.hibernate.criterion.*;
+import org.hibernate.FetchMode;
 import org.apache.log4j.Logger;
 import us.lump.envelope.entity.*;
 import us.lump.envelope.client.portal.HibernatePortal;
@@ -8,12 +9,13 @@ import us.lump.envelope.server.exception.EnvelopeException;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.2 2008/07/06 07:22:06 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.3 2008/07/07 06:04:34 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -69,26 +71,40 @@ public class CriteriaFactory {
     return retval;
   }
 
-  public List<Allocation> getAllocationsForCategory(Category category) {
+  public List<Allocation> getAllocationsForCategory(Category category, Date date) {
     List<Allocation> retval = new ArrayList<Allocation>();
     try {
       retval = (List<Allocation>)(new HibernatePortal()).detachedCriteriaQuery(
           DetachedCriteria.forClass(Allocation.class)
-              .add(Restrictions.eq("category", category)));
+              .createAlias("transaction", "t")
+              .add(Restrictions.eq("category", category))
+              .add(Restrictions.gt("t.date", date))
+              .addOrder(Order.asc("t.date"))
+      );
     } catch (EnvelopeException e) {
       logger.error(e);
     }
     return retval;
   }
 
-  public List<Transaction> getTransactionsForAccount(Account account) {
-    List<Transaction> retval = new ArrayList<Transaction>();
+  public ArrayList<Object[]> getTransactionsForAccount(Account account) {
+    ArrayList<Object[]> retval = new ArrayList<Object[]>();
     try {
-      retval = (List<Transaction>)(new HibernatePortal()).detachedCriteriaQuery(
+      ProjectionList plist = Projections.projectionList();
+      plist.add(Projections.property("reconciled"))
+          .add(Projections.property("date"))
+          .add(Projections.sum("a.amount"))
+          .add(Projections.property("entity"))
+          .add(Projections.property("description"))
+          .add(Projections.groupProperty("id"));
+      retval = (ArrayList<Object[]>)(new HibernatePortal()).detachedCriteriaQuery(
           DetachedCriteria.forClass(Transaction.class)
-              .createCriteria("allocations", "a")
-              .createCriteria("a.category", "c")
-              .add(Restrictions.eq("c.account", account)));
+              .createAlias("allocations", "a")
+              .createAlias("a.category", "c")
+              .add(Restrictions.eq("c.account", account))
+              .setProjection(plist)
+              .addOrder(Order.asc("date"))
+          );
     } catch (EnvelopeException e) {
       logger.error(e);
     }
