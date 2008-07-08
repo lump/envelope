@@ -8,19 +8,23 @@ import us.lump.lib.Money;
 
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableModel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.event.TableModelListener;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Date;
+import java.awt.*;
 
 /**
  * A table model which lists transactions.
  * @author Troy Bowman
- * @version $Id: TransactionTableModel.java,v 1.2 2008/07/07 06:04:34 troy Exp $
+ * @version $Id: TransactionTableModel.java,v 1.3 2008/07/08 06:41:25 troy Exp $
  */
 public class TransactionTableModel implements TableModel {
 //  private List<Transaction> transactions;
   private ArrayList<Object[]> transactions;
-  String[] columnNames = new String[]{"Reconciled","Date","Amount","Balance","Reconciled","Entity","Description"};
+  String[] columnNames = new String[]{"C","Date","Amount","Balance","Reconciled","Entity","Description"};
 
   TransactionTableModel(Account account) {
     transactions = new ArrayList<Object[]>();
@@ -33,8 +37,11 @@ public class TransactionTableModel implements TableModel {
       if ((Boolean)row[0]) reconciled = new Money(reconciled.add((Money)row[2]));
       transactions.add(new Object[]{row[0], row[1], row[2], new Money(balance), new Money(reconciled), row[3], row[4], row[5]});
     }
-
     System.out.println(transactions.size());
+  }
+
+  public ArrayList<Object[]> getTransactions() {
+    return transactions;
   }
 
   public int getRowCount() {

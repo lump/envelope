@@ -18,7 +18,7 @@ import java.beans.PropertyChangeEvent;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.2 2008/07/06 07:22:06 troy Exp $
+ * @version $Id: MainFrame.java,v 1.3 2008/07/08 06:41:25 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -29,16 +29,14 @@ public class MainFrame extends JFrame {
 
   //content
   private JScrollPane treeScrollPane = new JScrollPane();
-  private JScrollPane tableScrollPane = new JScrollPane();
-  private JTable transactionTable = new JTable();
+  private JPanel contentPane = new JPanel(new BorderLayout());
   private JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                                                treeScrollPane,
-                                                tableScrollPane);
+                                                treeScrollPane, null);
 
-  public JScrollPane getTableScrollPane() {
-    return tableScrollPane;
+  public void setContentPane(JPanel p) {
+    splitPane.setRightComponent(p);
+    splitPane.getRightComponent().setMinimumSize(new Dimension(300, 0));
   }
-
 
   private JLabel status = new JLabel(Strings.get("initializing"));
 
@@ -53,15 +51,12 @@ public class MainFrame extends JFrame {
   private MainFrame() {
     this.setTitle(Strings.get("envelope_budget"));
 
-    splitPane.setResizeWeight(.3);
+    splitPane.setResizeWeight(.15);
     splitPane.getLeftComponent().setMinimumSize(new Dimension(100, 0));
-    splitPane.getRightComponent().setMinimumSize(new Dimension(300, 0));
     splitPane.setContinuousLayout(true);
     splitPane.setOneTouchExpandable(true);
 
     status.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
-
-    tableScrollPane.setViewportView(transactionTable);
 
     this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     this.setLayout(new BorderLayout());
