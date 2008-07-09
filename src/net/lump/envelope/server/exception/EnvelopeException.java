@@ -6,7 +6,7 @@ import java.rmi.RemoteException;
  * An exception for the Envelope application.
  *
  * @author Troy Bowman
- * @version $Id: EnvelopeException.java,v 1.1 2008/07/06 04:14:24 troy Exp $
+ * @version $Id: EnvelopeException.java,v 1.2 2008/07/09 04:20:02 troy Exp $
  */
 abstract public class EnvelopeException extends RemoteException {
   public enum Type {

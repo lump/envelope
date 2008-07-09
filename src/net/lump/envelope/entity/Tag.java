@@ -16,12 +16,12 @@ import java.sql.Timestamp;
  * car.
  *
  * @author troy
- * @version $Id: Tag.java,v 1.2 2008/05/13 01:25:31 troy Exp $
+ * @version $Id: Tag.java,v 1.3 2008/07/09 04:20:02 troy Test $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
 @Table(name = "tags")
-public class Tag extends Identifiable {
+public class Tag extends Identifiable<Integer, Timestamp> {
   private Integer id;
   private Timestamp stamp;
   private String name;
@@ -34,16 +34,19 @@ public class Tag extends Identifiable {
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   @Column(name = "id", nullable = false)
+  @Override
   public Integer getId() {
     return id;
   }
 
-  public void setId(Serializable id) {
-    this.id = (Integer)id;
+  @Override
+  public void setId(Integer id) {
+    this.id = id;
   }
 
   @Version
   @Column(name = "stamp", nullable = false)
+  @Override
   public Timestamp getStamp() {
     return stamp;
   }

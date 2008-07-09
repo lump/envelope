@@ -16,12 +16,12 @@ import java.util.List;
  * An account object.
  *
  * @author Troy Bowman
- * @version $Id: Account.java,v 1.8 2008/07/06 04:14:24 troy Exp $
+ * @version $Id: Account.java,v 1.9 2008/07/09 04:20:02 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "accounts")
-public class Account extends Identifiable implements Comparable {
-//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.8 $".replaceAll("\\D", ""));
+public class Account extends Identifiable<Integer, Timestamp> implements Comparable<Account> {
+//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.9 $".replaceAll("\\D", ""));
 
   /** The type of an Account. */
   public static enum AccountType {
@@ -54,16 +54,19 @@ public class Account extends Identifiable implements Comparable {
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   @Column(name = "id", nullable = false)
+  @Override
   public Integer getId() {
     return id;
   }
 
-  public void setId(Serializable id) {
-    this.id = (Integer)id;
+  @Override
+  public void setId(Integer id) {
+    this.id = id;
   }
 
   @Version
   @Column(name = "stamp", nullable = false)
+  @Override
   public Timestamp getStamp() {
     return stamp;
   }
@@ -197,11 +200,11 @@ public class Account extends Identifiable implements Comparable {
     return result;
   }
 
-  public int compareTo(Object o) {
+  public int compareTo(Account that) {
     // If the names are different, we can sort by that, but if they're the same,
     // don't return 0 unless the Ids are actually the same.
-    int name = this.getName().compareTo(((Account)o).getName());
-    return name == 0 ? this.getId().compareTo(((Account)o).getId())
-           : name;
+    int name = this.getName().compareTo(that.getName());
+    return name == 0 ? this.getId().compareTo(that.getId()) : name;
+
   }
 }

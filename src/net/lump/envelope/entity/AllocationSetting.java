@@ -10,11 +10,11 @@ import java.text.MessageFormat;
  * An Allocation Setting object.
  *
  * @author Troy Bowman
- * @version $Id: AllocationSetting.java,v 1.2 2008/05/13 01:25:31 troy Exp $
+ * @version $Id: AllocationSetting.java,v 1.3 2008/07/09 04:20:02 troy Test $
  */
 @javax.persistence.Entity
 @Table(name = "allocation_settings")
-public class AllocationSetting extends Identifiable {
+public class AllocationSetting extends Identifiable<Integer, Timestamp> implements Stampable<Timestamp> {
   public static enum AllocationSettingType {
     Reimbursement,
     Weekly_Payday,
@@ -40,16 +40,19 @@ public class AllocationSetting extends Identifiable {
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   @Column(name = "id", nullable = false)
+  @Override
   public Integer getId() {
     return id;
   }
 
-  public void setId(Serializable id) {
-    this.id = (Integer)id;
+  @Override
+  public void setId(Integer id) {
+    this.id = id;
   }
 
   @Version
   @Column(name = "stamp", nullable = false)
+  @Override
   public Timestamp getStamp() {
     return stamp;
   }

@@ -13,11 +13,11 @@ import java.text.MessageFormat;
  * User.
  *
  * @author Troy Bowman
- * @version $Id: User.java,v 1.5 2008/05/13 01:25:31 troy Exp $
+ * @version $Id: User.java,v 1.6 2008/07/09 04:20:02 troy Test $
  */
 @javax.persistence.Entity
 @Table(name = "users")
-public class User extends Identifiable {
+public class User extends Identifiable<Integer, Timestamp> {
   private Integer id;
   private Timestamp stamp;
   private Budget budget;
@@ -34,16 +34,19 @@ public class User extends Identifiable {
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   @Column(name = "id", nullable = false)
+  @Override
   public Integer getId() {
     return id;
   }
 
-  public void setId(Serializable id) {
-    this.id = (Integer)id;
+  @Override
+  public void setId(Integer id) {
+    this.id = id;
   }
 
   @Version
   @Column(name = "stamp", nullable = false)
+  @Override
   public Timestamp getStamp() {
     return stamp;
   }

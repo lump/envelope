@@ -9,10 +9,11 @@ import java.sql.Timestamp;
  * Entity objects which contain an identification field.
  *
  * @author Troy Bowman
- * @version $Id: Identifiable.java,v 1.3 2008/05/13 01:25:31 troy Exp $
+ * @version $Id: Identifiable.java,v 1.4 2008/07/09 04:20:02 troy Test $
  */
-public abstract class Identifiable<T extends Serializable>
-    implements Serializable {
+public abstract class Identifiable <T extends Serializable, S extends Serializable>
+    implements Serializable, Stampable<S> {
+
   /**
    * Reflectively finds the object which identifies this object.  May be
    * overidden.
@@ -21,7 +22,7 @@ public abstract class Identifiable<T extends Serializable>
    */
   @SuppressWarnings({"unchecked"})
   public T getId() {
-    return (T)DAO.getIdentifier(this);
+    return DAO.getIdentifier(this);
   }
 
   /**
@@ -29,7 +30,7 @@ public abstract class Identifiable<T extends Serializable>
    *
    * @param id Serializable
    */
-  public void setId(Serializable id) {
+  public void setId(T id) {
     DAO.setIdentifier(this, id);
   }
 
@@ -38,10 +39,8 @@ public abstract class Identifiable<T extends Serializable>
    *
    * @return Timestamp
    */
-  public Timestamp getStamp() {
-    return (Timestamp)DAO.getVersion(this);
+  @SuppressWarnings({"unchecked"})
+  public S getStamp() {
+    return (S)DAO.getVersion(this);
   }
-
-  ;
-
 }

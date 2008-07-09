@@ -16,7 +16,7 @@ import java.util.Collection;
  * Categories, which are tied to Accounts.
  *
  * @author Troy Bowman
- * @version $Id: Allocation.java,v 1.7 2008/07/07 06:04:34 troy Exp $
+ * @version $Id: Allocation.java,v 1.8 2008/07/09 04:20:02 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
@@ -24,7 +24,7 @@ import java.util.Collection;
 @org.hibernate.annotations.Table(
     appliesTo = "allocations",
     fetch = org.hibernate.annotations.FetchMode.SELECT)
-public class Allocation extends Identifiable {
+public class Allocation extends Identifiable<Integer, Timestamp> {
   private Integer id;
   private Timestamp stamp;
   private Category category;
@@ -44,12 +44,14 @@ public class Allocation extends Identifiable {
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   @Column(name = "id", nullable = false)
+  @Override
   public Integer getId() {
     return id;
   }
 
-  public void setId(Serializable id) {
-    this.id = (Integer)id;
+  @Override
+  public void setId(Integer id) {
+    this.id = id;
   }
 
   /**
@@ -59,6 +61,7 @@ public class Allocation extends Identifiable {
    */
   @Version
   @Column(name = "stamp", nullable = false)
+  @Override
   public Timestamp getStamp() {
     return stamp;
   }

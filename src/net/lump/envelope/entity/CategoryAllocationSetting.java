@@ -17,7 +17,7 @@ import java.sql.Timestamp;
  */
 @javax.persistence.Entity
 @Table(name = "categories")
-public class CategoryAllocationSetting extends Identifiable {
+public class CategoryAllocationSetting extends Identifiable<Integer, Timestamp> {
   public static enum AllocationType {
     /** Percent per paycheck */
     ppp,
@@ -39,16 +39,19 @@ public class CategoryAllocationSetting extends Identifiable {
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   @Column(name = "id", nullable = false)
+  @Override
   public Integer getId() {
     return id;
   }
 
-  public void setId(Serializable id) {
-    this.id = (Integer)id;
+  @Override
+  public void setId(Integer id) {
+    this.id = id;
   }
 
   @Version
   @Column(name = "stamp", nullable = false)
+  @Override
   public Timestamp getStamp() {
     return stamp;
   }

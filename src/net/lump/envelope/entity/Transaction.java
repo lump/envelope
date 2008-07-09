@@ -15,7 +15,7 @@ import java.util.List;
  * A transaction.
  *
  * @author Troy Bowman
- * @version $Id: Transaction.java,v 1.7 2008/07/06 07:22:06 troy Exp $
+ * @version $Id: Transaction.java,v 1.8 2008/07/09 04:20:02 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
@@ -23,7 +23,7 @@ import java.util.List;
 @org.hibernate.annotations.Table(
     appliesTo = "transactions",
     fetch = org.hibernate.annotations.FetchMode.SELECT)
-public class Transaction extends Identifiable {
+public class Transaction extends Identifiable<Integer, Timestamp> {
 
   private Integer id;
   private Timestamp stamp;
@@ -48,16 +48,19 @@ public class Transaction extends Identifiable {
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   @Column(name = "id", nullable = false)
+  @Override
   public Integer getId() {
     return id;
   }
 
-  public void setId(Serializable id) {
-    this.id = (Integer)id;
+  @Override
+  public void setId(Integer id) {
+    this.id = id;
   }
 
   @Version
   @Column(name = "stamp", nullable = false)
+  @Override
   public Timestamp getStamp() {
     return stamp;
   }

@@ -26,7 +26,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.11 2008/07/07 06:04:34 troy Exp $
+ * @version $Id: DAO.java,v 1.12 2008/07/09 04:20:02 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -112,12 +112,18 @@ public abstract class DAO {
     List l = dc.getExecutableCriteria(getCurrentSession())
         .setCacheable(true)
         .list();
-    evict(l);
+
+    // evict if these are Identifiable objects.
+    if (l.size() > 0 && l.get(0) instanceof Identifiable)
+      evict(l);
+
     return l;
   }
 
-  public static Serializable getIdentifier(Serializable c) {
-    return getSessionFactory().getClassMetadata(c.getClass())
+  @SuppressWarnings({"unchecked"})
+  public static <T extends Serializable, S extends Serializable> T getIdentifier(
+      Identifiable<T, S> c) {
+    return (T)getSessionFactory().getClassMetadata(c.getClass())
         .getIdentifier(c, EntityMode.POJO);
   }
 
@@ -126,43 +132,45 @@ public abstract class DAO {
         .setIdentifier(c, value, EntityMode.POJO);
   }
 
-  public static Object getVersion(Serializable c) {
-    return getSessionFactory().getClassMetadata(c.getClass())
+  @SuppressWarnings({"unchecked"})
+  public static <T extends Serializable, S extends Serializable> S getVersion(
+      Identifiable<T, S> c) {
+    return (S)getSessionFactory().getClassMetadata(c.getClass())
         .getVersion(c, EntityMode.POJO);
   }
 
-  public <T extends Identifiable> void delete(T... is) {
+
+  public <T extends Identifiable> void delete(T i) {
+    getCurrentSession().delete(i);
+  }
+  public <T extends Identifiable> void delete(T[] is) {
     this.delete(listify(is));
   }
-
   public <T extends Identifiable> void delete(Iterable<T> l) {
-    for (T i : l) getCurrentSession().delete(i);
+    for (T i : l) delete(i);
   }
 
-  protected <T extends Identifiable> void evict(T... is) {
+  protected <T extends Identifiable> void evict(T i) {
+    getCurrentSession().evict(i);
+  }
+  protected <T extends Identifiable> void evict(T[] is) {
     this.evict(listify(is));
   }
-
-  public <T extends Serializable> void evict(Iterable<T> l) {
-    for (T i : l) getCurrentSession().evict(i);
+  public <T extends Identifiable> void evict(Iterable<T> l) {
+    for (T i : l) evict(i);
   }
 
   @SuppressWarnings("unchecked")
-  public <T extends Identifiable> T get(
-      Class<T> t,
-      Serializable id) {
+  public <T extends Identifiable> T get(Class<T> t, Serializable id) {
     return (T)getCurrentSession().get(t, id);
   }
-
-  public <T extends Identifiable> List<T> getList(
-      Class<T> t,
-      Serializable... ids) {
+  
+  public <T extends Identifiable> List<T> getList(Class<T> t,
+                                                  Serializable[] ids) {
     return getList(t, listify(ids));
   }
-
-  public <T extends Identifiable> List<T> getList(
-      Class<T> t,
-      Iterable<Serializable> ids) {
+  public <T extends Identifiable> List<T> getList(Class<T> t,
+                                                  Iterable<Serializable> ids) {
     List<T> out = new ArrayList<T>();
     for (Serializable id : ids) out.add(get(t, id));
     return out;
@@ -187,21 +195,15 @@ public abstract class DAO {
   }
 
   @SuppressWarnings("unchecked")
-  public <T extends Identifiable> T load(
-      Class<T> t,
-      Serializable id) {
+  public <T extends Identifiable> T load(Class<T> t, Serializable id) {
     return (T)getCurrentSession().load(t, id);
   }
-
-  public <T extends Identifiable> List<T> loadList(
-      Class<T> t,
-      Serializable... ids) {
+  public <T extends Identifiable> List<T> loadList(Class<T> t,
+                                                   Serializable... ids) {
     return loadList(t, listify(ids));
   }
-
-  public <T extends Identifiable> List<T> loadList(
-      Class<T> t,
-      Iterable<Serializable> ids) {
+  public <T extends Identifiable> List<T> loadList(Class<T> t,
+                                                   Iterable<Serializable> ids) {
     List<T> out = new ArrayList<T>();
     for (Serializable id : ids) out.add(load(t, id));
     return out;
@@ -211,27 +213,28 @@ public abstract class DAO {
   public <T extends Identifiable> T merge(T i) {
     return (T)getCurrentSession().merge(i);
   }
-
-  public <T extends Identifiable> List<T> mergeList(T... is) {
+  public <T extends Identifiable> List<T> mergeList(T[] is) {
     return mergeList(listify(is));
   }
-
   public <T extends Identifiable> List<T> mergeList(Iterable<T> is) {
     List<T> out = new ArrayList<T>();
     for (T i : is) out.add(merge(i));
     return out;
   }
 
-  public <T extends Identifiable> void refresh(T... is) {
+
+  public <T extends Identifiable> void refresh(T i) {
+    getCurrentSession().refresh(i);
+  }
+  public <T extends Identifiable> void refresh(T[] is) {
     refresh(listify(is));
   }
-
   public <T extends Identifiable> void refresh(Iterable<T> is) {
-    for (T i : is) getCurrentSession().refresh(i);
+    for (T i : is) refresh(i);
   }
 
-  public <T extends Identifiable> Serializable save(T os) {
-    return getCurrentSession().save(os);
+  public <T extends Identifiable> Serializable save(T o) {
+    return getCurrentSession().save(o);
   }
 
   public <T extends Identifiable> Serializable saveOrUpdate(T o) {
@@ -243,8 +246,7 @@ public abstract class DAO {
     }
   }
 
-  public <T extends Identifiable> List<Serializable> saveOrUpdateList(
-      T... os) {
+  public <T extends Identifiable> List<Serializable> saveOrUpdateList(T[] os) {
     return saveOrUpdateList(listify(os));
   }
 
@@ -255,12 +257,14 @@ public abstract class DAO {
     return out;
   }
 
-  public <T extends Identifiable> void update(T... os) {
+  public <T extends Identifiable> void update(T o) {
+    getCurrentSession().update(o);
+  }
+  public <T extends Identifiable> void update(T[] os) {
     update(listify(os));
   }
-
   public <T extends Identifiable> void update(Iterable<T> os) {
-    for (T o : os) getCurrentSession().update(o);
+    for (T o : os) update(o);
   }
 
   User getUser(String username) throws DataException {
@@ -283,7 +287,7 @@ public abstract class DAO {
 
       if (users.isEmpty())
         throw new DataException(EnvelopeException.Type.Invalid_User,
-                            "User " + username + " is invalid.");
+                                "User " + username + " is invalid.");
       user = users.get(0);
       cache.get(USER).put(new Element(username, user));
       ThreadInfo.setUser(user);
@@ -459,7 +463,7 @@ public abstract class DAO {
   }
 
 
-  <T> Iterable<T> listify(T... is) {
+  <T> Iterable<T> listify(T[] is) {
     ArrayList<T> list = new ArrayList<T>();
     Collections.addAll(list, is);
     return list;

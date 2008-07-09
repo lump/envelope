@@ -7,10 +7,10 @@ import java.io.Serializable;
 /** Generic DAO. */
 public class Generic extends DAO {
 
-  public <T extends Identifiable> T load(Class<T> t, Serializable id) {
-    T entity = super.load(t, id);
-    evict(entity);
-    return entity;
+  @Override
+  public <T extends Identifiable> T get(Class<T> t, Serializable id) {
+    T obj = super.get(t, id);
+    super.evict(obj);
+    return obj;
   }
-
 }
