@@ -1,11 +1,10 @@
 package us.lump.envelope.client;
 
 import org.hibernate.criterion.*;
-import org.hibernate.FetchMode;
 import org.apache.log4j.Logger;
 import us.lump.envelope.entity.*;
 import us.lump.envelope.client.portal.HibernatePortal;
-import us.lump.envelope.server.exception.EnvelopeException;
+import us.lump.envelope.exception.EnvelopeException;
 import us.lump.lib.Money;
 
 import java.util.List;
@@ -16,7 +15,7 @@ import java.util.Date;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.4 2008/07/09 07:58:25 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.5 2008/07/09 08:16:40 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {

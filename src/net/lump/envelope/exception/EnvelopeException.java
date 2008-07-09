@@ -1,4 +1,4 @@
-package us.lump.envelope.server.exception;
+package us.lump.envelope.exception;
 
 import java.rmi.RemoteException;
 
@@ -6,7 +6,7 @@ import java.rmi.RemoteException;
  * An exception for the Envelope application.
  *
  * @author Troy Bowman
- * @version $Id: EnvelopeException.java,v 1.2 2008/07/09 04:20:02 troy Exp $
+ * @version $Id: EnvelopeException.java,v 1.1 2008/07/09 08:16:40 troy Exp $
  */
 abstract public class EnvelopeException extends RemoteException {
   public enum Type {

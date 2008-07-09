@@ -3,7 +3,7 @@ package us.lump.envelope.client.portal;
 import us.lump.envelope.Command;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.server.security.Challenge;
-import us.lump.envelope.server.exception.EnvelopeException;
+import us.lump.envelope.exception.EnvelopeException;
 
 import javax.swing.*;
 
@@ -11,7 +11,7 @@ import javax.swing.*;
  * Security methods.
  *
  * @author Troy Bowman
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 
 public class SecurityPortal extends Portal {

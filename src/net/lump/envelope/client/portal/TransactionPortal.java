@@ -1,7 +1,7 @@
 package us.lump.envelope.client.portal;
 
 import us.lump.envelope.Command;
-import us.lump.envelope.server.exception.EnvelopeException;
+import us.lump.envelope.exception.EnvelopeException;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Category;
 import us.lump.envelope.entity.Transaction;
@@ -14,7 +14,7 @@ import java.util.List;
  * Transaction Methods.
  *
  * @author troy
- * @version $Id: TransactionPortal.java,v 1.5 2008/07/06 04:14:24 troy Exp $
+ * @version $Id: TransactionPortal.java,v 1.6 2008/07/09 08:16:40 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class TransactionPortal extends Portal {

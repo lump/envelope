@@ -14,8 +14,8 @@ import org.hibernate.impl.SessionImpl;
 import us.lump.envelope.entity.*;
 import us.lump.envelope.entity.Transaction;
 import us.lump.envelope.server.PrefsConfigurator;
-import us.lump.envelope.server.exception.DataException;
-import us.lump.envelope.server.exception.EnvelopeException;
+import us.lump.envelope.exception.DataException;
+import us.lump.envelope.exception.EnvelopeException;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -26,7 +26,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.12 2008/07/09 04:20:02 troy Exp $
+ * @version $Id: DAO.java,v 1.13 2008/07/09 08:16:40 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;

@@ -1,4 +1,4 @@
-package us.lump.envelope.server.exception;
+package us.lump.envelope.exception;
 
 /**
  * Created by IntelliJ IDEA. User: troy Date: Jul 4, 2008 Time: 5:07:12 PM To

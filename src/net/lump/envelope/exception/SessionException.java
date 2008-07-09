@@ -1,10 +1,10 @@
-package us.lump.envelope.server.exception;
+package us.lump.envelope.exception;
 
 /**
  * An exception dealing with Sessions.
  *
  * @author Troy Bowman
- * @version $Id: SessionException.java,v 1.3 2008/07/06 04:14:24 troy Exp $
+ * @version $Id: SessionException.java,v 1.1 2008/07/09 08:16:40 troy Exp $
  */
 public class SessionException extends EnvelopeException {
   public SessionException(Type type, String message, Throwable cause) {

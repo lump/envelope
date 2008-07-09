@@ -2,7 +2,7 @@ package us.lump.envelope.client.ui.prefs;
 
 import us.lump.envelope.server.security.Challenge;
 import us.lump.envelope.server.security.Crypt;
-import us.lump.envelope.server.exception.SessionException;
+import us.lump.envelope.exception.SessionException;
 import us.lump.lib.util.Encryption;
 
 import javax.crypto.BadPaddingException;
@@ -14,14 +14,13 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.prefs.Preferences;
-import java.util.Arrays;
 
 /**
  * Singleton for keeping track of login information.  (Basically the username
  * and password.
  *
  * @author Troy Bowman
- * @version $Id: LoginSettings.java,v 1.7 2008/07/06 04:14:24 troy Exp $
+ * @version $Id: LoginSettings.java,v 1.8 2008/07/09 08:16:40 troy Exp $
  */
 public class LoginSettings {
 

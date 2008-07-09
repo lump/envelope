@@ -2,14 +2,13 @@ package us.lump.envelope.client.portal;
 
 import org.apache.log4j.Logger;
 import us.lump.envelope.Command;
-import us.lump.envelope.client.Main;
 import us.lump.envelope.client.ui.Preferences;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
 import us.lump.envelope.server.rmi.Controller;
-import us.lump.envelope.server.exception.SessionException;
-import us.lump.envelope.server.exception.EnvelopeException;
+import us.lump.envelope.exception.SessionException;
+import us.lump.envelope.exception.EnvelopeException;
 
 import javax.swing.*;
 import java.io.Serializable;
@@ -21,7 +20,7 @@ import java.rmi.RemoteException;
  * exit/entry to the server.
  *
  * @author Troy Bowman
- * @version $Revision: 1.6 $
+ * @version $Revision: 1.7 $
  */
 
 abstract class Portal {

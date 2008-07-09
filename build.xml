@@ -114,7 +114,8 @@
                security.policy,
                Envelope.class,
                us/lump/lib/**/*,
-               us/lump/envelope/client/ui/**/*"/>
+               us/lump/envelope/exception/*
+               us/lump/envelope/client/**/*"/>
     </copy>
   </target>
 
