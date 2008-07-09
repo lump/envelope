@@ -18,7 +18,7 @@ import java.beans.PropertyChangeEvent;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.3 2008/07/08 06:41:25 troy Exp $
+ * @version $Id: MainFrame.java,v 1.4 2008/07/09 07:58:25 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -51,7 +51,7 @@ public class MainFrame extends JFrame {
   private MainFrame() {
     this.setTitle(Strings.get("envelope_budget"));
 
-    splitPane.setResizeWeight(.15);
+//    splitPane.setResizeWeight(.15);
     splitPane.getLeftComponent().setMinimumSize(new Dimension(100, 0));
     splitPane.setContinuousLayout(true);
     splitPane.setOneTouchExpandable(true);

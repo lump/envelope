@@ -1,28 +1,40 @@
 package us.lump.envelope.client.ui;
 
 import us.lump.envelope.entity.Category;
-import us.lump.envelope.entity.Transaction;
-import us.lump.envelope.entity.Allocation;
 import us.lump.envelope.client.CriteriaFactory;
+import us.lump.lib.Money;
 
 import javax.swing.table.AbstractTableModel;
-import java.util.List;
+import javax.swing.event.TableModelListener;
 import java.util.Date;
+import java.util.ArrayList;
 
 /**
  * A table model which lists transactions.
  *
  * @author Troy Bowman
- * @version $Id: AllocationTableModel.java,v 1.2 2008/07/07 06:04:34 troy Exp $
+ * @version $Id: AllocationTableModel.java,v 1.3 2008/07/09 07:58:25 troy Exp $
  */
 public class AllocationTableModel extends AbstractTableModel {
-  private List<Allocation> allocations;
+  private ArrayList<Object[]> allocations;
+  String[] columnNames = new String[]{"C","Date","Amount","Balance","Reconciled","Entity","Description"};
+  
+  AllocationTableModel(Category account, Date beginDate, Date endDate) {
+    CriteriaFactory cf = CriteriaFactory.getInstance();
+    allocations = new ArrayList<Object[]>();
+    Money balance = cf.getBeginningBalance(account, beginDate, null);
+    Money reconciled = cf.getBeginningBalance(account, beginDate, true);
+    ArrayList<Object[]> incoming =
+        cf.getAllocations(account, beginDate, endDate);
+    for (Object[] row : incoming) {
+      balance = new Money(balance.add((Money)row[2]));
+      if ((Boolean)row[0]) reconciled = new Money(reconciled.add((Money)row[2]));
+      allocations.add(new Object[]{row[0], row[1], row[2], new Money(balance), new Money(reconciled), row[3], row[4], row[5]});
+    }
+  }
 
-
-  AllocationTableModel(Category account) {
-    Date date = new Date((System.currentTimeMillis() - (86400000L*30L)));
-    allocations =
-        CriteriaFactory.getInstance().getAllocationsForCategory(account, date);
+  public ArrayList<Object[]> getTransactions() {
+    return allocations;
   }
 
   public int getRowCount() {
@@ -30,42 +42,32 @@ public class AllocationTableModel extends AbstractTableModel {
   }
 
   public int getColumnCount() {
-    return 5;
+    return 7;
   }
 
   public Object getValueAt(int rowIndex, int columnIndex) {
-    Allocation a = allocations.get(rowIndex);
+    return allocations.get(rowIndex)[columnIndex];
+  }
 
-    switch (columnIndex) {
-      case 0:
-        return a.getTransaction().getDate();
-      case 1:
-        return a.getAmount();
-      case 2:
-//        return a.getTags();
-        return null;
-      case 3:
-        return a.getTransaction().getEntity();
-      case 4:
-        return a.getTransaction().getDescription();
-    }
-    return null;
+  public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+  }
+
+  public void addTableModelListener(TableModelListener l) {
+  }
+
+  public void removeTableModelListener(TableModelListener l) {
   }
 
   public String getColumnName(int columnIndex) {
-    switch (columnIndex) {
-      case 0:
-        return "Date";
-      case 1:
-        return "Amount";
-      case 2:
-        return "Tags";
-      case 3:
-        return "Entity";
-      case 4:
-        return "Description";
-    }
-    return null;
-
+    return columnNames[columnIndex];
   }
+
+  public Class<?> getColumnClass(int columnIndex) {
+    return allocations.get(0)[columnIndex].getClass();
+  }
+
+  public boolean isCellEditable(int rowIndex, int columnIndex) {
+    return false;
+  }
+
 }

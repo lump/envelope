@@ -5,29 +5,39 @@ import us.lump.envelope.entity.Category;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.State;
+import us.lump.envelope.client.ui.defs.Fonts;
+import us.lump.envelope.client.ui.defs.Colors;
+import us.lump.lib.Money;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.CompoundBorder;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableModel;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.*;
 import java.util.List;
 import java.util.Collections;
 import java.util.ArrayList;
+import java.util.Date;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 
 /**
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.3 2008/07/08 06:41:25 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.4 2008/07/09 07:58:25 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
-  private State state = State.getInstance();
-  private DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode();
+  private final State state = State.getInstance();
+  private final DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode();
 
   public static Hierarchy getInstance() {
     if (singleton == null) singleton = new Hierarchy();
@@ -42,34 +52,83 @@ public class Hierarchy extends JTree {
         .setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
     addTreeSelectionListener(new TreeSelectionListener() {
       public void valueChanged(TreeSelectionEvent e) {
-        System.err.println(e.toString());
-        Object o = ((DefaultMutableTreeNode)e.getPath().getLastPathComponent()).getUserObject();
+        final Object o = ((DefaultMutableTreeNode)e.getPath()
+            .getLastPathComponent()).getUserObject();
+        final TableQueryBar tqb = TableQueryBar.getInstance();
+
+        if (tqb.getBeginDate().after(tqb.getEndDate())) {
+          Date temp = tqb.getBeginDate();
+          tqb.setBeginDate(tqb.getEndDate());
+          tqb.setEndDate(temp);
+        }
 
         if (o instanceof Account) {
-          final JTable table = new JTable(new TransactionTableModel((Account)o));
-          table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-          table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-          SwingUtilities.invokeLater(new Runnable(){
+
+          final Runnable refresh = new Runnable() {
             public void run() {
-              initColumnSizes(table);
+              final JTable table =
+                  new JTable(new TransactionTableModel(
+                      (Account)o, tqb.getBeginDate(), tqb.getEndDate()));
+              table.setDefaultRenderer(Money.class, new MoneyRenderer());
+              table.getTableHeader().setUpdateTableInRealTime(true);
+              table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+              table.getTableHeader().setReorderingAllowed(false);
+//              table.setPreferredSize(new Dimension(table.getParent().getWidth(),table.getHeight()));
+              table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+              tqb.setTitleLabel(((Account)o).getName());
+              MainFrame.getInstance().setContentPane(tqb.getTableQueryPanel());
+              tqb.setViewportView(table);
+              initColumnSizes(table,
+                              ((TransactionTableModel)table.getModel()).getTransactions());
+            }
+          };
+
+          for (ActionListener a : tqb.getRefreshButton().getActionListeners())
+            tqb.getRefreshButton().removeActionListener(a);
+
+          tqb.getRefreshButton().addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+              SwingUtilities.invokeLater(refresh);
             }
           });
 
-          TableQueryBar tqb = TableQueryBar.getInstance();
-          tqb.setTitleLabel(((Account)o).getName());
-          MainFrame.getInstance().setContentPane(tqb.getTableQueryPanel());
-          tqb.setViewportView(table);
+          SwingUtilities.invokeLater(refresh);
         }
         if (o instanceof Category) {
-          final JTable table = new JTable(new AllocationTableModel((Category)o));
-          table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-          table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-                    
-          TableQueryBar tqb = TableQueryBar.getInstance();
-          tqb.setTitleLabel(((Category)o).getName());
-          MainFrame.getInstance().setContentPane(tqb.getTableQueryPanel());
-          tqb.setViewportView(table);
+          final Runnable refresh = new Runnable() {
+            public void run() {
+              final JTable table = new JTable(new AllocationTableModel(
+                  (Category)o, tqb.getBeginDate(), tqb.getEndDate()));
+              table.setDefaultRenderer(Money.class, new MoneyRenderer());
+              table.getTableHeader().setUpdateTableInRealTime(true);
+              table.getTableHeader().setReorderingAllowed(false);
+              table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+//              table.setPreferredSize(new Dimension(table.getParent().getWidth(),table.getHeight()));
+              table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+              tqb.setTitleLabel(((Category)o).getName());
+              MainFrame.getInstance().setContentPane(tqb.getTableQueryPanel());
+              tqb.setViewportView(table);
+              table.getTableHeader().resizeAndRepaint();
+              initColumnSizes(table,
+                              ((AllocationTableModel)table.getModel()).getTransactions());
+            }
+          };
+
+          for (ActionListener a : tqb.getRefreshButton().getActionListeners())
+            tqb.getRefreshButton().removeActionListener(a);
+
+          tqb.getRefreshButton().addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+              SwingUtilities.invokeLater(refresh);
+            }
+          });
+
+          SwingUtilities.invokeLater(refresh);
         }
+
+        ((Component)e.getSource()).repaint();
+        RepaintManager.currentManager((Component)e.getSource())
+            .paintDirtyRegions();
       }
     });
   }
@@ -111,36 +170,46 @@ public class Hierarchy extends JTree {
     SwingUtilities.invokeLater(r);
   }
 
-  private void initColumnSizes(JTable table) {
-    TransactionTableModel model = (TransactionTableModel)table.getModel();
-    TableColumn column = null;
-    Component comp = null;
-//    int headerWidth = 0;
-    int cellWidth = 0;
-    ArrayList<Object[]> transactions = model.getTransactions();
+  private void initColumnSizes(JTable table, ArrayList<Object[]> transactions) {
+    TableModel model = table.getModel();
+    TableColumn column;
+    Component comp;
+    int headerWidth = 0;
+    int cellWidth;
     TableCellRenderer headerRenderer =
         table.getTableHeader().getDefaultRenderer();
 
     for (int i = 0; i < 7; i++) {
       column = table.getColumnModel().getColumn(i);
 
-//      comp = headerRenderer.getTableCellRendererComponent(
-//          null, column.getHeaderValue(),
-//          false, false, 0, 0);
-//      headerWidth = comp.getPreferredSize().width;
+      comp = headerRenderer.getTableCellRendererComponent(
+          null, column.getHeaderValue(),
+          false, false, 0, 0);
+      headerWidth = comp.getPreferredSize().width;
 
       cellWidth = 0;
+      String value = null;
+      if (i == 2 || i == 3 || i == 4) {
+        cellWidth =
+            comp.getFontMetrics(Fonts.getFont("fixed")).stringWidth("$9,999,999.00");
+      }
+
       for (int x = 0; x < transactions.size(); x++) {
         comp = table.getDefaultRenderer(model.getColumnClass(i)).
             getTableCellRendererComponent(
-                table, transactions.get(x)[i],
+                table,
+                transactions.get(x)[i],
                 false, false, x, i);
-        cellWidth = Math.max(comp.getPreferredSize().width, cellWidth);
+
+        if (comp.getPreferredSize().width > cellWidth)
+          cellWidth = comp.getPreferredSize().width;
       }
 
-//      column.setPreferredWidth(Math.max(headerWidth+2, cellWidth+2));
-      column.setPreferredWidth(cellWidth+1);
-      column.setWidth(cellWidth+1);
+      if (i == 0) column.setMaxWidth(cellWidth);
+
+      column.setPreferredWidth(Math.max(headerWidth, cellWidth));
+//      column.setPreferredWidth(cellWidth);
+      column.setWidth(cellWidth);
       column.setMinWidth(cellWidth);
       RepaintManager.currentManager(table).paintDirtyRegions();
 
@@ -148,5 +217,44 @@ public class Hierarchy extends JTree {
 
   }
 
+  class MoneyRenderer extends DefaultTableCellRenderer {
 
+
+    public MoneyRenderer() {
+      super();
+    }
+
+    public Component getTableCellRendererComponent(JTable table,
+                                                   Object value,
+                                                   boolean isSelected,
+                                                   boolean hasFocus,
+                                                   int row,
+                                                   int col) {
+      JLabel label = new JLabel(
+          value == null ? "" : ((Money)value).toFormattedString(),
+          SwingConstants.RIGHT);
+      label.setFont(Fonts.getFont("fixed"));
+      label.setBorder(
+        new CompoundBorder(
+             new EmptyBorder(new Insets(1,4,1,4)),
+             label.getBorder()));
+
+      if (value != null && ((Money)value).doubleValue() < 0)
+        label.setForeground(Colors.getColor("red"));
+//      else
+//        label.setForeground(Colors.getColor("green"));
+
+      if (isSelected) {
+        label.setBackground(table.getSelectionBackground());
+        label.setOpaque(true);
+        label.setForeground(table.getSelectionForeground());
+      }
+      if (hasFocus) {
+        label.setForeground(table.getSelectionBackground());
+        label.setBackground(table.getSelectionForeground());
+        label.setOpaque(true);
+      }
+      return label;
+    }
+  }
 }

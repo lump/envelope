@@ -50,8 +50,16 @@ public class TableQueryBar {
     return beginDate.getDate();
   }
 
+  public void setBeginDate(Date set) {
+    beginDate.setDate(set);
+  }
+
   public Date getEndDate() {
     return endDate.getDate();
+  }
+
+  public void setEndDate(Date set) {
+    endDate.setDate(set);
   }
 
   public JButton getRefreshButton() {
@@ -72,6 +80,14 @@ public class TableQueryBar {
     endDate = new JDateChooser(new Date(today),
                                "MMM d, yyyy",
                                new JTextFieldDateEditor());
+    beginDate.setPreferredSize(new Dimension(beginDate.getPreferredSize()
+        .width
+                                             + 10,
+                                             beginDate.getPreferredSize().height));
+    endDate.setPreferredSize(new Dimension(endDate.getPreferredSize()
+        .width
+                                           + 10,
+                                           endDate.getPreferredSize().height));
   }
 
   /**
@@ -84,7 +100,7 @@ public class TableQueryBar {
     tableQueryPanel.setLayout(new BorderLayout(0, 0));
     queryPanel = new JPanel();
     queryPanel.setLayout(new GridLayoutManager(1,
-                                               8,
+                                               7,
                                                new Insets(2, 2, 2, 2),
                                                2,
                                                2));
@@ -163,7 +179,7 @@ public class TableQueryBar {
     this.$$$loadButtonText$$$(refreshButton, ResourceBundle.getBundle(
         "us/lump/envelope/client/ui/defs/Strings").getString("refresh"));
     queryPanel.add(refreshButton, new GridConstraints(0,
-                                                      7,
+                                                      6,
                                                       1,
                                                       1,
                                                       GridConstraints.ANCHOR_CENTER,
@@ -178,20 +194,6 @@ public class TableQueryBar {
                                                       null,
                                                       0,
                                                       false));
-    final Spacer spacer1 = new Spacer();
-    queryPanel.add(spacer1, new GridConstraints(0,
-                                                6,
-                                                1,
-                                                1,
-                                                GridConstraints.ANCHOR_CENTER,
-                                                GridConstraints.FILL_HORIZONTAL,
-                                                GridConstraints.SIZEPOLICY_WANT_GROW,
-                                                1,
-                                                null,
-                                                null,
-                                                null,
-                                                0,
-                                                false));
     titleLabel = new JLabel();
     titleLabel.setFont(new Font("Dialog", Font.BOLD, 16));
     this.$$$loadLabelText$$$(titleLabel, ResourceBundle.getBundle(
@@ -212,8 +214,8 @@ public class TableQueryBar {
                                                    null,
                                                    0,
                                                    false));
-    final Spacer spacer2 = new Spacer();
-    queryPanel.add(spacer2, new GridConstraints(0,
+    final Spacer spacer1 = new Spacer();
+    queryPanel.add(spacer1, new GridConstraints(0,
                                                 1,
                                                 1,
                                                 1,

@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 import us.lump.envelope.entity.*;
 import us.lump.envelope.client.portal.HibernatePortal;
 import us.lump.envelope.server.exception.EnvelopeException;
+import us.lump.lib.Money;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -15,7 +16,7 @@ import java.util.Date;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.3 2008/07/07 06:04:34 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.4 2008/07/09 07:58:25 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -71,23 +72,79 @@ public class CriteriaFactory {
     return retval;
   }
 
-  public List<Allocation> getAllocationsForCategory(Category category, Date date) {
-    List<Allocation> retval = new ArrayList<Allocation>();
+  public ArrayList<Object[]> getAllocations(Category category,
+                                            Date beginDate,
+                                            Date endDate) {
+
+    ArrayList<Object[]> retval = new ArrayList<Object[]>();
     try {
-      retval = (List<Allocation>)(new HibernatePortal()).detachedCriteriaQuery(
+      ProjectionList plist = Projections.projectionList();
+      plist.add(Projections.property("t.reconciled"))
+          .add(Projections.property("t.date"))
+          .add(Projections.sum("amount"))
+          .add(Projections.property("t.entity"))
+          .add(Projections.property("t.description"))
+          .add(Projections.groupProperty("id"));
+      retval = (ArrayList<Object[]>)(new HibernatePortal()).detachedCriteriaQuery(
           DetachedCriteria.forClass(Allocation.class)
               .createAlias("transaction", "t")
               .add(Restrictions.eq("category", category))
-              .add(Restrictions.gt("t.date", date))
+              .add(Restrictions.ge("t.date", beginDate))
+              .add(Restrictions.le("t.date", endDate))
+              .setProjection(plist)
               .addOrder(Order.asc("t.date"))
-      );
+              .addOrder(Order.asc("stamp"))
+          );
     } catch (EnvelopeException e) {
       logger.error(e);
     }
     return retval;
   }
 
-  public ArrayList<Object[]> getTransactionsForAccount(Account account) {
+
+  public Money getBeginningBalance(Category category, Date endDate, Boolean reconciled) {
+    Money retval = null;
+
+    try {
+      DetachedCriteria dc = DetachedCriteria.forClass(Allocation.class)
+          .createAlias("transaction", "t")
+          .add(Restrictions.eq("category", category))
+          .add(Restrictions.lt("t.date", endDate));
+      if (reconciled != null)
+        dc.add(Restrictions.eq("t.reconciled", reconciled));
+      dc.setProjection(Projections.sum("amount"));
+
+      retval = (Money)(new HibernatePortal()).detachedCriteriaQuery(dc).get(0);
+    } catch (EnvelopeException e) {
+      logger.error(e);
+    }
+    return retval == null ? new Money(0) : retval;
+  }
+
+  public Money getBeginningBalance(Account account, Date endDate, Boolean reconciled) {
+    Money retval = null;
+
+    try {
+      DetachedCriteria dc = DetachedCriteria.forClass(Transaction.class)
+          .createAlias("allocations", "a")
+          .createAlias("a.category", "c")
+          .add(Restrictions.eq("c.account", account))
+          .add(Restrictions.lt("date", endDate));
+      if (reconciled != null)
+        dc.add(Restrictions.eq("reconciled", reconciled));
+      dc.setProjection(Projections.sum("a.amount"));
+
+      retval = (Money)(new HibernatePortal()).detachedCriteriaQuery(dc).get(0);
+    } catch (EnvelopeException e) {
+      logger.error(e);
+    }
+    return retval == null ? new Money(0) : retval;
+  }
+
+  public ArrayList<Object[]> getTransactions(Account account,
+                                                       Date beginDate,
+                                                       Date endDate) {
+
     ArrayList<Object[]> retval = new ArrayList<Object[]>();
     try {
       ProjectionList plist = Projections.projectionList();
@@ -102,8 +159,11 @@ public class CriteriaFactory {
               .createAlias("allocations", "a")
               .createAlias("a.category", "c")
               .add(Restrictions.eq("c.account", account))
+              .add(Restrictions.ge("date", beginDate))
+              .add(Restrictions.le("date", endDate))
               .setProjection(plist)
               .addOrder(Order.asc("date"))
+              .addOrder(Order.asc("stamp"))
           );
     } catch (EnvelopeException e) {
       logger.error(e);
