@@ -2,23 +2,19 @@ package us.lump.envelope.client.ui;
 
 import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationEvent;
-import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.client.ui.prefs.LoginSettings;
-import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.State;
+import us.lump.envelope.client.ui.defs.Strings;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
-import java.awt.event.*;
 import java.awt.*;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
+import java.awt.event.*;
 
 /**
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.4 2008/07/09 07:58:25 troy Exp $
+ * @version $Id: MainFrame.java,v 1.5 2008/07/10 19:09:48 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -51,7 +47,7 @@ public class MainFrame extends JFrame {
   private MainFrame() {
     this.setTitle(Strings.get("envelope_budget"));
 
-//    splitPane.setResizeWeight(.15);
+    splitPane.setResizeWeight(0);
     splitPane.getLeftComponent().setMinimumSize(new Dimension(100, 0));
     splitPane.setContinuousLayout(true);
     splitPane.setOneTouchExpandable(true);
@@ -154,15 +150,30 @@ public class MainFrame extends JFrame {
     }
 
 
-
     state.setHierarchy(Hierarchy.getInstance());
     state.getHierarchy().setRootNode(state.getBudget());
 
     treeScrollPane.setViewportView(state.getHierarchy());
 
 
+    addWindowListener(new WindowListener() {
+      public void windowOpened(WindowEvent e) {}
 
-    addComponentListener(new ComponentListener(){
+      public void windowClosing(WindowEvent e) { exit(0); }
+
+      public void windowClosed(WindowEvent e) {}
+
+      public void windowIconified(WindowEvent e) {}
+
+      public void windowDeiconified(WindowEvent e) {}
+
+      public void windowActivated(WindowEvent e) {}
+
+      public void windowDeactivated(WindowEvent e) {}
+    });
+
+
+    addComponentListener(new ComponentListener() {
 
       public void componentResized(ComponentEvent e) {
 //        System.err.println(e);
@@ -184,7 +195,10 @@ public class MainFrame extends JFrame {
     //    frame.pack();
     validate();
     pack();
-    setSize(getWindowSize());
+    setSize(new Dimension(prefs.getInt("windowSizeX", 640),
+                          prefs.getInt("windowSizeY", 480)));
+    splitPane.setDividerLocation(prefs.getInt("splitPaneLocation",
+                                              splitPane.getDividerLocation()));
     setStatus(Strings.get("ready"));
     setVisible(true);
   }
@@ -251,21 +265,9 @@ public class MainFrame extends JFrame {
   }
 
   void exit(int value) {
-    saveWindowSize(getSize());
+    prefs.putInt("splitPaneLocation", splitPane.getDividerLocation());
+    prefs.putInt("windowSizeX", getWidth());
+    prefs.putInt("windowSizeY", getHeight());
     System.exit(value);
   }
-
-  private Dimension getWindowSize() {
-    return new Dimension(
-        new Integer(prefs.get("windowSizeX", "640")
-            .replaceAll("^(\\d+).*", "$1")),
-        new Integer(prefs.get("windowSizeY", "480")
-            .replaceAll("^(\\d+).*", "$1")));
-  }
-
-  private void saveWindowSize(Dimension xy) {
-    prefs.put("windowSizeX", String.valueOf(xy.getWidth()));
-    prefs.put("windowSizeY", String.valueOf(xy.getHeight()));
-  }
-
 }

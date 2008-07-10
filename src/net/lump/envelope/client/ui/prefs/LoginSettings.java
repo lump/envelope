@@ -1,8 +1,8 @@
 package us.lump.envelope.client.ui.prefs;
 
+import us.lump.envelope.exception.SessionException;
 import us.lump.envelope.server.security.Challenge;
 import us.lump.envelope.server.security.Crypt;
-import us.lump.envelope.exception.SessionException;
 import us.lump.lib.util.Encryption;
 
 import javax.crypto.BadPaddingException;
@@ -20,7 +20,7 @@ import java.util.prefs.Preferences;
  * and password.
  *
  * @author Troy Bowman
- * @version $Id: LoginSettings.java,v 1.8 2008/07/09 08:16:40 troy Exp $
+ * @version $Id: LoginSettings.java,v 1.9 2008/07/10 19:09:48 troy Exp $
  */
 public class LoginSettings {
 
@@ -45,7 +45,6 @@ public class LoginSettings {
   {
     try {
       keyPair = Encryption.generateKeyPair();
-
     } catch (NoSuchAlgorithmException e) {
       e.printStackTrace();
       System.exit(1);
@@ -144,8 +143,7 @@ public class LoginSettings {
   }
 
   /**
-   * Generate a challenge response from a Challenge and the current
-   * password.
+   * Generate a challenge response from a Challenge and the current password.
    *
    * @param challenge the Challenge object from the server.
    *

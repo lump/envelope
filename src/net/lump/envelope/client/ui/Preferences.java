@@ -3,15 +3,18 @@ package us.lump.envelope.client.ui;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import us.lump.envelope.client.portal.SecurityPortal;
 import us.lump.envelope.client.ui.defs.Colors;
 import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.client.ui.prefs.ServerSettings;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
-import us.lump.envelope.client.portal.SecurityPortal;
+import us.lump.envelope.client.ui.prefs.ServerSettings;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ResourceBundle;
 
 public class Preferences extends JDialog {
@@ -49,6 +52,8 @@ public class Preferences extends JDialog {
 
   private static Preferences singleton = null;
   private static boolean checkingLoginSettings = false;
+  private boolean hadLoginSuccessYet = false;
+
 
   public static Preferences getInstance() {
     if (singleton == null) singleton = new Preferences();
@@ -141,6 +146,15 @@ public class Preferences extends JDialog {
     checkingLoginSettings = true;
 
     SecurityPortal sp = new SecurityPortal();
+
+    if (!hadLoginSuccessYet && !lsData.passwordIsSaved()
+        && java.util.Arrays.equals(password.getPassword(), new char[0])) {
+      sessionState.setForeground(Colors.getColor("red"));
+      sessionState.setText(Strings.get("session.state.not.attempted"));
+      checkingLoginSettings = false;
+      return false;
+    }
+
     Boolean authed = null;
     try {
       lsData.setUsername(userName.getText());
@@ -160,6 +174,7 @@ public class Preferences extends JDialog {
 
     if (authed != null) {
       if (authed) {
+        hadLoginSuccessYet = true;
         sessionState.setForeground(Colors.getColor("green"));
         sessionState.setText(Strings.get("session.state.authorized"));
       } else {

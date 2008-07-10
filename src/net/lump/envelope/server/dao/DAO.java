@@ -13,9 +13,9 @@ import org.hibernate.criterion.Restrictions;
 import org.hibernate.impl.SessionImpl;
 import us.lump.envelope.entity.*;
 import us.lump.envelope.entity.Transaction;
-import us.lump.envelope.server.PrefsConfigurator;
 import us.lump.envelope.exception.DataException;
 import us.lump.envelope.exception.EnvelopeException;
+import us.lump.envelope.server.PrefsConfigurator;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -26,7 +26,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.13 2008/07/09 08:16:40 troy Exp $
+ * @version $Id: DAO.java,v 1.14 2008/07/10 19:09:48 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -34,8 +34,8 @@ public abstract class DAO {
   private static SessionFactory sessionFactory = null;
 
   private static final int cacheSize = 32;
-  private static final int cacheTtl = 5;
-  private static final int cacheTti = 10;
+  private static final int cacheTtl = 4;
+  private static final int cacheTti = 5;
 
   // a userCache to ask the database for a User less.
   static final HashMap<String, Cache> cache = new HashMap<String, Cache>();
@@ -143,9 +143,11 @@ public abstract class DAO {
   public <T extends Identifiable> void delete(T i) {
     getCurrentSession().delete(i);
   }
+
   public <T extends Identifiable> void delete(T[] is) {
     this.delete(listify(is));
   }
+
   public <T extends Identifiable> void delete(Iterable<T> l) {
     for (T i : l) delete(i);
   }
@@ -153,9 +155,11 @@ public abstract class DAO {
   protected <T extends Identifiable> void evict(T i) {
     getCurrentSession().evict(i);
   }
+
   protected <T extends Identifiable> void evict(T[] is) {
     this.evict(listify(is));
   }
+
   public <T extends Identifiable> void evict(Iterable<T> l) {
     for (T i : l) evict(i);
   }
@@ -164,11 +168,12 @@ public abstract class DAO {
   public <T extends Identifiable> T get(Class<T> t, Serializable id) {
     return (T)getCurrentSession().get(t, id);
   }
-  
+
   public <T extends Identifiable> List<T> getList(Class<T> t,
                                                   Serializable[] ids) {
     return getList(t, listify(ids));
   }
+
   public <T extends Identifiable> List<T> getList(Class<T> t,
                                                   Iterable<Serializable> ids) {
     List<T> out = new ArrayList<T>();
@@ -198,10 +203,12 @@ public abstract class DAO {
   public <T extends Identifiable> T load(Class<T> t, Serializable id) {
     return (T)getCurrentSession().load(t, id);
   }
+
   public <T extends Identifiable> List<T> loadList(Class<T> t,
                                                    Serializable... ids) {
     return loadList(t, listify(ids));
   }
+
   public <T extends Identifiable> List<T> loadList(Class<T> t,
                                                    Iterable<Serializable> ids) {
     List<T> out = new ArrayList<T>();
@@ -213,9 +220,11 @@ public abstract class DAO {
   public <T extends Identifiable> T merge(T i) {
     return (T)getCurrentSession().merge(i);
   }
+
   public <T extends Identifiable> List<T> mergeList(T[] is) {
     return mergeList(listify(is));
   }
+
   public <T extends Identifiable> List<T> mergeList(Iterable<T> is) {
     List<T> out = new ArrayList<T>();
     for (T i : is) out.add(merge(i));
@@ -226,9 +235,11 @@ public abstract class DAO {
   public <T extends Identifiable> void refresh(T i) {
     getCurrentSession().refresh(i);
   }
+
   public <T extends Identifiable> void refresh(T[] is) {
     refresh(listify(is));
   }
+
   public <T extends Identifiable> void refresh(Iterable<T> is) {
     for (T i : is) refresh(i);
   }
@@ -260,9 +271,11 @@ public abstract class DAO {
   public <T extends Identifiable> void update(T o) {
     getCurrentSession().update(o);
   }
+
   public <T extends Identifiable> void update(T[] os) {
     update(listify(os));
   }
+
   public <T extends Identifiable> void update(Iterable<T> os) {
     for (T o : os) update(o);
   }

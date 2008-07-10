@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.9 2008/07/07 06:04:34 troy Exp $
+# $Id: migrate.pl,v 1.10 2008/07/10 19:09:48 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -20,7 +20,7 @@ $dbs = {
   dest => {
     database => "envelope",
     port => 3306,
-    host => "lump.us",
+    host => "localhost",
     user => "budget",
     password => "tegdub",
   },
@@ -174,17 +174,14 @@ values (?, ?)")
   or die $dbs->{source}->{connection}->errstr;;
 
 
-$sth = $dbs->{source}->{connection}->prepare("select * from transactions where budgetname = 'bowman' order by date, to_from, subcategory") or die $dbs->{source}->{connection}->errstr;;
+$sth = $dbs->{source}->{connection}->prepare("select * from transactions where budgetname = 'bowman' order by date, to_from, subcategory desc, stamp") or die $dbs->{source}->{connection}->errstr;;
 $sth->execute or die $sth->errstr;
 my $last = {};
 my $last_id = undef;
-print "Inserting transactions(-) and allocations(+)";
+print "Inserting transactions(X) and allocations(a) tag(t) (skipping beginning balance(-))";
 while (my $row = $sth->fetchrow_hashref()) {
   if ($row->{date} =~ /^200[45678]-01-01$/ and $row->{subcategory} eq "Beginning Balance") {
-    print "#";
-#    for my $key (keys %$row) {
-#      print "$row->{$key}\n";
-#    }
+    print "-";
     next;
   }
 
@@ -202,7 +199,7 @@ while (my $row = $sth->fetchrow_hashref()) {
       print "transaction: " . (join ",", @params) . "\n";
       die $dtrans->errstr;
     }
-    print "-";
+    print "X";
     ($last_id) = $dbs->{dest}->{connection}->selectrow_array("select id from transactions where id is null");
   }
 
@@ -213,7 +210,7 @@ while (my $row = $sth->fetchrow_hashref()) {
     die $dalloc->errstr;
   }
   my ($allocation_id) = $dbs->{dest}->{connection}->selectrow_array("select id from allocations where id is null");
-  print "+";
+  print "a";
 
 
   # tags
@@ -231,7 +228,7 @@ while (my $row = $sth->fetchrow_hashref()) {
 
   for my $tag_id (@tags) {
     $dtag->execute($allocation_id, $tag_id);
-    print "!"
+    print "t"
   }
 
   $last = $row;
