@@ -11,6 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.GZIPInputStream;
 
 import us.lump.envelope.Server;
 
@@ -28,7 +29,7 @@ import us.lump.envelope.Server;
  * this server in place of an HTTP server. <p>
  *
  * @author Troy Bowman
- * @version $Id: ClassServer.java,v 1.4 2008/07/06 04:14:24 troy Exp $
+ * @version $Id: ClassServer.java,v 1.5 2008/07/11 06:15:09 troy Exp $
  */
 public class ClassServer implements Runnable {
   private static final Logger logger = Logger.getLogger(ClassServer.class);
@@ -41,7 +42,7 @@ public class ClassServer implements Runnable {
       "us/lump/envelope/server/http",
       "us/lump/envelope/server/log",
       "us/lump/envelope/server/rmi/Controlled.class",
-      "us/lump/envelope/Server/class"
+      "us/lump/envelope/Server.class"
   };
 
   /**
@@ -57,48 +58,8 @@ public class ClassServer implements Runnable {
     newListener();
   }
 
-  /**
-   * Returns an array of bytes containing the bytecodes for the class
-   * represented by the argument <b>path</b>. The <b>path</b> is a dot separated
-   * class abbr with the ".class" extension removed.
-   *
-   * @param path the path of the object
-   *
-   * @return the bytecodes for the class
-   *
-   * @throws ClassNotFoundException if the class corresponding to <b>path</b>
-   *                                could not be loaded.
-   * @throws java.io.IOException    if there are IO problems.
-   */
-  public byte[] getBytes(String path)
-      throws IOException, ClassNotFoundException {
 
-    InputStream clin = ClassLoader.getSystemResourceAsStream(path);
 
-    if (clin == null) {
-      clin = Thread.currentThread()
-          .getContextClassLoader().getResourceAsStream(path);
-    }
-
-    if (clin == null) {
-      logger.error("Does not exist: " + path);
-      throw new ClassNotFoundException("File does not exist: " + path);
-    }
-
-    DataInputStream in = new DataInputStream(clin);
-
-    int bytesRead;
-    byte[] content = new byte[0];
-    byte[] buffer = new byte[1024];
-    while ((bytesRead = in.read(buffer, 0, buffer.length)) != -1) {
-      byte[] newContent = new byte[content.length + bytesRead];
-      System.arraycopy(content, 0, newContent, 0, content.length);
-      System.arraycopy(buffer, 0, newContent, content.length, bytesRead);
-      content = newContent;
-    }
-
-    return content;
-  }
 
   /**
    * The "listen" thread that accepts a connection to the server, parses the
@@ -160,15 +121,21 @@ public class ClassServer implements Runnable {
           }
         }
 
-        Matcher infoMatcher = Pattern.compile("^info/(.*)$").matcher(path);
+
+        Matcher infoMatcher = Pattern.compile("^(info/.*|log4j.properties)$").matcher(path);
         if (infoMatcher.matches() && infoMatcher.group(1) != null) {
           String query = infoMatcher.group(1);
           String returnValue = "";
-          if (query.matches("^ping$")) returnValue = "pong";
-          else if (query.matches("^port/rmi$"))
+          if (query.matches("^info/ping$")) returnValue = "pong";
+          else if (query.matches("^info/port/rmi$"))
             returnValue = Server.getConfig(Server.PROPERTY_RMI_PORT);
-          else if (query.matches("^uptime$"))
+          else if (query.matches("^info/uptime$"))
             returnValue = Server.uptime();
+          else if (query.matches("^info/security.policy$"))
+            returnValue = "grant { permission java.security.AllPermission; };";
+          else if (query.matches("^log4j.properties$"))
+            returnValue = getClientLog4j();
+          else throw new ClassNotFoundException();
 
           out.writeBytes("HTTP/1.0 200 OK\r\n");
           out.writeBytes("Content-Length: " + returnValue.length() + "\r\n");
@@ -178,10 +145,48 @@ public class ClassServer implements Runnable {
                       + socket.getInetAddress().getCanonicalHostName());
         }
         else {
-          byte[] bytecode = getBytes(path);
+
+          InputStream is;
+          String contentType;
+
+          is = ClassLoader.getSystemResourceAsStream(path);
+          if (is == null) {
+            is = Thread.currentThread()
+                .getContextClassLoader().getResourceAsStream(path);
+          }
+
+          if (is == null) {
+            logger.error("Does not exist: " + path);
+            throw new ClassNotFoundException("File does not exist: " + path);
+          }
+
+          DataInputStream dis = new DataInputStream(is);
+          int bytesRead;
+          byte[] bytecode = new byte[0];
+          byte[] buffer = new byte[1024];
+          while ((bytesRead = dis.read(buffer, 0, buffer.length)) != -1) {
+            byte[] newContent = new byte[bytecode.length + bytesRead];
+            System.arraycopy(bytecode, 0, newContent, 0, bytecode.length);
+            System.arraycopy(buffer, 0, newContent, bytecode.length, bytesRead);
+            bytecode = newContent;
+          }
+
+          int magic = (bytecode[0] & 0xff) << 24 | (bytecode[1] & 0xff) << 16
+                      | (bytecode[2] & 0xff) << 8 | (bytecode[3] & 0xff);
+          if (magic == 0xcafebabe) // 0xcafebabe = java classes
+            contentType = "application/java";
+          else if ((magic) == 0xcafed00d) // 0xcafed00d = pk200
+            contentType = "application/x-java-pack200";
+          else if ((magic >> 16) == ('P' << 8 | 'K')) // PKzip files have a ascii magic of PK :)
+            if (Pattern.compile("^.*\\.jar$", Pattern.CASE_INSENSITIVE).matcher(path).matches())
+              contentType = "application/java-archive";
+            else contentType = "application/zip";
+          else if ((magic >> 16) == GZIPInputStream.GZIP_MAGIC)
+            contentType = "application/x-gzip";
+          else contentType = "application/binary";
+
           byte[] compressedBytecode = bytecode;
           encoding = "raw";
-
           for (String format : encodings) {
             if (format.equals("raw")) {
               break;
@@ -221,7 +226,7 @@ public class ClassServer implements Runnable {
                          + "\r\n");
           if (!encoding.equals("raw"))
             out.writeBytes("Content-Encoding: " + encoding + "\r\n");
-          out.writeBytes("Content-Type: application/java\r\n\r\n");
+          out.writeBytes("Content-Type: " + contentType + "\r\n\r\n");
           out.write(compressedBytecode);
           out.flush();
         }
@@ -274,6 +279,17 @@ public class ClassServer implements Runnable {
         logger.error(e);
       }
     }
+  }
+
+  private String getClientLog4j() {
+    return "log4j.rootLogger=INFO, console\n"
+           + "log4j.logger.us.lump=DEBUG\n"
+           + "log4j.logger.envelope=DEBUG\n"
+           + "log4j.logger.org.hibernate=INFO\n";
+//           + "log4j.appender.console=org.apache.log4j.ConsoleAppender\n"
+//           + "log4j.appender.console.layout=org.apache.log4j.PatternLayout\n"
+//           + "log4j.appender.console.layout.ConversionPattern=%d [%t] %p %c{2} %m%n\n"
+//           + "log4j.appender.console.Target=System.err\n";
   }
 
   /** Create a new thread to listen. */
