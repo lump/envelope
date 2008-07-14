@@ -29,7 +29,7 @@ import java.util.prefs.Preferences;
  * Server Main Code.
  *
  * @author Troy Bowman
- * @version $Id: Server.java,v 1.8 2008/07/06 04:14:24 troy Exp $
+ * @version $Id: Server.java,v 1.9 2008/07/14 15:43:17 troy Exp $
  */
 
 public class Server {
@@ -39,7 +39,8 @@ public class Server {
   private static final long START_TIME = System.currentTimeMillis();
 
   public static final String PROPERTY_RMI_PORT = "server.rmi.port";
-  public static final String PROPERTY_CLASSLOADER_PORT = "server.http.classloader.port";
+  public static final String PROPERTY_CLASSLOADER_PORT =
+      "server.http.classloader.port";
 
   static {
     final java.net.InetAddress localMachine;
@@ -172,10 +173,10 @@ public class Server {
     // start the HTTP class server
     try {
       new ClassServer(Integer.parseInt(serverConfig.getProperty(
-          PROPERTY_CLASSLOADER_PORT)));
-      logger.info(MessageFormat.format("ClassServer started on port {0}",
-                                       serverConfig.getProperty(
-                                           PROPERTY_CLASSLOADER_PORT)));
+          PROPERTY_CLASSLOADER_PORT))).startServer();
+      logger.info(MessageFormat.format(
+          "ClassServer started on port {0}",
+          serverConfig.getProperty(PROPERTY_CLASSLOADER_PORT)));
     }
     catch (IOException e) {
       logger.error("Unable to start ClassServer: " + e.getMessage());
