@@ -32,7 +32,7 @@ import java.awt.event.ActionEvent;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.4 2008/07/09 07:58:25 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.5 2008/07/15 04:33:45 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -189,6 +189,10 @@ public class Hierarchy extends JTree {
 
       cellWidth = 0;
       String value = null;
+      if (i == 1) {
+        cellWidth =
+            comp.getFontMetrics(table.getFont()).stringWidth(" May 77, 7777");
+      }
       if (i == 2 || i == 3 || i == 4) {
         cellWidth =
             comp.getFontMetrics(Fonts.getFont("fixed")).stringWidth("$9,999,999.00");
@@ -246,14 +250,15 @@ public class Hierarchy extends JTree {
 
       if (isSelected) {
         label.setBackground(table.getSelectionBackground());
-        label.setOpaque(true);
         label.setForeground(table.getSelectionForeground());
+        label.setOpaque(true);
       }
       if (hasFocus) {
-        label.setForeground(table.getSelectionBackground());
-        label.setBackground(table.getSelectionForeground());
+        label.setForeground(table.getSelectionForeground());
+        label.setBackground(table.getSelectionBackground());
         label.setOpaque(true);
       }
+     
       return label;
     }
   }

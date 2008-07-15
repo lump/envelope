@@ -12,7 +12,7 @@ import java.util.Date;
 /**
  * A table model which lists transactions.
  * @author Troy Bowman
- * @version $Id: TransactionTableModel.java,v 1.4 2008/07/09 07:58:25 troy Exp $
+ * @version $Id: TransactionTableModel.java,v 1.5 2008/07/15 04:33:45 troy Exp $
  */
 public class TransactionTableModel implements TableModel {
 //  private List<Transaction> transactions;
@@ -29,7 +29,9 @@ public class TransactionTableModel implements TableModel {
     for (Object[] row : incoming) {
       balance = new Money(balance.add((Money)row[2]));
       if ((Boolean)row[0]) reconciled = new Money(reconciled.add((Money)row[2]));
-      transactions.add(new Object[]{row[0], row[1], row[2], new Money(balance), new Money(reconciled), row[3], row[4], row[5]});
+      transactions.add(
+          new Object[]{row[0], row[1], row[2], new Money(balance),
+                       new Money(reconciled), row[3], row[4], row[5]});
     }
   }
 
