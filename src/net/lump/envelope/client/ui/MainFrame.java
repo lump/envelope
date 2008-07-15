@@ -11,12 +11,14 @@ import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import java.awt.*;
 import java.awt.event.*;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.6 2008/07/15 02:38:35 troy Exp $
+ * @version $Id: MainFrame.java,v 1.7 2008/07/15 02:58:21 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -53,6 +55,13 @@ public class MainFrame extends JFrame {
 
 
     this.setTitle(Strings.get("envelope_budget"));
+    try {
+      this.setIconImage(new ImageIcon(new URL("http://"
+                                              + System.getProperty("codebase")
+                                              + "/lib/franklin.png")).getImage());
+    } catch (MalformedURLException e) {
+      e.printStackTrace();
+    }
 
     splitPane.setResizeWeight(0);
     splitPane.getLeftComponent().setMinimumSize(new Dimension(100, 0));
