@@ -7,6 +7,7 @@ package us.lump.envelope.server.http;
 
 import org.apache.log4j.Logger;
 
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -84,6 +85,13 @@ public class RequestQueue {
                                  + this.maxQueueLength);
     }
 
+    // Log some debugging information
+    if (socket instanceof Socket) {
+      InetAddress addr = ((Socket)socket).getInetAddress();
+      logger.debug("Received a new connection from ("
+                   + addr.getHostAddress() + "): " + addr.getHostName());
+    }
+
     // Add the new object to the end of the queue
     queue.addLast(socket);
 
@@ -119,7 +127,7 @@ public class RequestQueue {
   }
 
   /** Returns the first object in the queue */
-  public synchronized Object getNextObject() {
+  public synchronized Socket getNext() {
     // Setup waiting on the Request Queue
     while (queue.isEmpty()) {
       try {

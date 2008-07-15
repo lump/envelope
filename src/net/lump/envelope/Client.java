@@ -6,7 +6,7 @@ import us.lump.envelope.client.Main;
  * Client bootstrap.
  *
  * @author Troy Bowman
- * @version $Id: Client.java,v 1.4 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Client.java,v 1.5 2008/07/15 23:13:26 troy Test $
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class Client implements Runnable {
@@ -18,10 +18,6 @@ public class Client implements Runnable {
    */
   @SuppressWarnings("unchecked")
   public void run() {
-    javax.swing.SwingUtilities.invokeLater(new Runnable() {
-      public void run() {
-        Main.getInstance().run();
-      }
-    });
+    Main.getInstance().run();
   }
 }

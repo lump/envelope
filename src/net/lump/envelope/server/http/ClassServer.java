@@ -6,7 +6,7 @@ import java.io.IOException;
  * Create a class server which can serve classes, jars, files...
  *
  * @author Troy Bowman
- * @version $Id: ClassServer.java,v 1.7 2008/07/15 17:14:59 troy Exp $
+ * @version $Id: ClassServer.java,v 1.8 2008/07/15 23:13:26 troy Exp $
  */
 public class ClassServer extends AbstractServer {
 

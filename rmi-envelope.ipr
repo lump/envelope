@@ -371,7 +371,7 @@
       <ConfigurationWrapper RunnerId="Debug" />
       <ConfigurationWrapper RunnerId="Run" />
       <method>
-        <option name="Run Ant target" value="true" />
+        <option name="Run Ant target" value="false" />
         <option name="Run ant target" value="true" />
         <option name="Make" value="false" />
       </method>

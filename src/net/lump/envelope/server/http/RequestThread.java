@@ -62,11 +62,8 @@ public class RequestThread extends Thread {
         // Obtain the next pending socket from the queue; only process requests if
         // we are still running. The shutdown mechanism will wake up our threads at this
         // point, so our state could have changed to not running here.
-        Object o = queue.getNextObject();
+        Socket socket = queue.getNext();
         if (running) {
-          // Cast the object to a Socket
-          Socket socket = (Socket)o;
-
           // Mark ourselves as processing a request
           this.processing = true;
           logger.debug("[" + threadNumber + "]: Processing request...");
@@ -76,7 +73,9 @@ public class RequestThread extends Thread {
 
           // We?ve finished processing, so make ourselves available for the next request
           this.processing = false;
-          logger.debug("[" + threadNumber + "]: Finished Processing request...");
+          logger.debug("["
+                       + threadNumber
+                       + "]: Finished Processing request...");
         }
       }
       catch (Exception e) {

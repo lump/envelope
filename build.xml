@@ -124,7 +124,8 @@
     <!--</unzip>-->
     <copy todir="${client.classes}">
       <fileset dir="${classes}"
-               includes="Envelope.class, security.policy"/>
+               includes="Envelope.class"/>
+      <!--includes="Envelope.class, security.policy"/>-->
       <!--<fileset dir="${classes}"-->
       <!--includes="-->
       <!--security.policy,-->
@@ -150,7 +151,7 @@
         <attribute name="Build-Time" value="${timestamp}"/>
         <attribute name="Built-On-OS" value="${env.OSTYPE}"/>
         <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
-        <attribute name="Class-Path" value="http://localhost:7041/"/>
+        <!--<attribute name="Class-Path" value="http://localhost:7041/"/>-->
       </manifest>
     </jar>
     <pack200 src="${lib}/client.jar"

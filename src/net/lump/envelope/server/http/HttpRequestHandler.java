@@ -7,6 +7,7 @@ import java.io.*;
 import java.net.Socket;
 import java.security.AccessControlException;
 import java.text.MessageFormat;
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
@@ -38,6 +39,7 @@ public class HttpRequestHandler implements RequestHandler {
   public void handleRequest(Socket socket) {
     String encoding;
     String[] encodings = {"raw"};
+    HashMap<String, String> headers = new HashMap<String, String>();
 
     try {
       DataOutputStream out =
@@ -73,7 +75,8 @@ public class HttpRequestHandler implements RequestHandler {
           jnlp = jnlp.replaceAll("\\{icon\\}", "lib/franklin.png");
           jnlp = jnlp.replaceAll("\\{main-class\\}", "Envelope");
           jnlp =
-              jnlp.replaceAll("\\{jars\\}", "<jar href=\"lib/client.jar\">\n");
+              jnlp.replaceAll("\\{jars\\}",
+                              "<jar href=\"lib/client.jar.pack.gz\">\n");
 
           out.writeBytes("HTTP/1.0 200 OK\r\n");
           out.writeBytes("Content-Type: application/x-java-jnlp-file\r\n");
@@ -89,12 +92,17 @@ public class HttpRequestHandler implements RequestHandler {
         do {
           line = in.readLine();
           Matcher headerMatcher =
-              Pattern.compile("^Accept-Encoding:\\s+(.*?)$",
-                              Pattern.CASE_INSENSITIVE).matcher(line);
-          if (headerMatcher.matches() && headerMatcher.group(1) != null) {
-            encodings = headerMatcher.group(1).split("\\s*,\\s*");
+              Pattern.compile("^([A-Za-z0-9\\-]+):\\s+(.*?)$").matcher(line);
+
+          if (headerMatcher.matches() && headerMatcher.group(1) != null
+              && headerMatcher.group(2) != null) {
+            headers.put(headerMatcher.group(1).toLowerCase(),
+                        headerMatcher.group(2));
           }
         } while (line.matches("^\\S+.*\\r?\\n?$"));
+
+        if (headers.containsKey("accept-encoding"))
+          encodings = headers.get("accept-encoding").split("\\s*,\\s*");
 
         for (String deniedPath : denyList) {
           if (path.startsWith(deniedPath)) {
@@ -162,8 +170,7 @@ public class HttpRequestHandler implements RequestHandler {
             else contentType = "application/zip";
 
           else if (((magic >> 24) | ((magic >> 8) & 0xff00))
-                   == GZIPInputStream
-              .GZIP_MAGIC) {
+                   == GZIPInputStream.GZIP_MAGIC) {
             if (Pattern.compile("^.*\\.jar.pack.gz$", Pattern.CASE_INSENSITIVE)
                 .matcher(path).matches()) {
               contentType = "application/java-archive";
@@ -175,11 +182,10 @@ public class HttpRequestHandler implements RequestHandler {
 
           byte[] compressedBytecode = bytecode;
           for (String format : encodings) {
-            if (format.equals("raw") || format.equals("Pack200-gzip")) {
+            if (format.equals("raw") || encoding.equals("pack200-gzip")) {
               break;
-            } else if (format.equals("gzip") && ((magic >> 16)
-                                                 != GZIPInputStream
-                .GZIP_MAGIC)) {
+            } else if (format.equals("gzip")
+                       && ((magic >> 16) != GZIPInputStream.GZIP_MAGIC)) {
               encoding = "gzip";
               ByteArrayOutputStream baos = new ByteArrayOutputStream();
               GZIPOutputStream gzip = new GZIPOutputStream(baos);
@@ -227,33 +233,26 @@ public class HttpRequestHandler implements RequestHandler {
         logger.warn(MessageFormat.format(
             "to {0} status 403 denied for {1}",
             socket.getInetAddress().getCanonicalHostName(), path));
-        String denied = a.getMessage();
-        out.writeBytes("HTTP/1.0 403 Forbidden\r\n");
-        out.writeBytes("Content-Length: " + denied.length() + "\r\n");
-        out.writeBytes("Content-Type: text/plain\r\n\r\n");
-        out.writeBytes(denied);
+        writeError(out, "HTTP/1.0 403 Forbidden", headers.get("user-agent"),
+                   a.getMessage());
       }
       catch (ClassNotFoundException e) {
         logger.warn(MessageFormat.format(
             "to {0} status 404 not found for {1}",
             socket.getInetAddress().getCanonicalHostName(), path));
-        out.writeBytes("HTTP/1.1 404 " + e.getMessage() + "\r\n");
-        out.writeBytes("Content-Type: text/html\r\n\r\n");
-        out.writeBytes(
-            "<html><head><title>HTTP 404</title></head><body>HTTP 404<br>"
-            + e.getMessage()
-            + "</body></html>\r\n\r\n");
-        out.flush();
+
+        writeError(out, "HTTP/1.0 404 " + e.getMessage(),
+                   headers.get("user-agent"),
+                   e.getMessage());
       }
       catch (Exception e) {
         logger.warn(MessageFormat.format(
             "to {0} status 400 bad request for {1}",
             socket.getInetAddress().getCanonicalHostName(), path));
-        out.writeBytes("HTTP/1.1 400 " + e.getMessage() + "\r\n");
-        out.writeBytes("Content-Type: text/html\r\n\r\n");
-        out.writeBytes(
-            "<html><head><title>HTTP 400 Bad Request</title></head><body>HTTP 400<br>Bad Request</body></html>\r\n\r\n");
-        out.flush();
+
+        writeError(out, "HTTP/1.0 400 " + e.getMessage(),
+                   headers.get("user-agent"),
+                   e.getMessage());
       }
     }
     catch (IOException ex) {
@@ -271,6 +270,27 @@ public class HttpRequestHandler implements RequestHandler {
         logger.error(e);
       }
     }
+  }
+
+  private void writeError(DataOutputStream out,
+                          String header, String userAgent, String message)
+      throws IOException {
+    out.writeBytes(header + "\r\n");
+    if (userAgent != null && userAgent.matches("^Java/\\d+.*$")) {
+      out.writeBytes("\r\n\r\n");
+    } else {
+      out.writeBytes("Content-Length: " + message.length() + "\r\n");
+      out.writeBytes("Content-Type: text/html\r\n\r\n");
+      out.writeBytes(
+          "<html><head><title>"
+          + header
+          + "</title></head><body>"
+          + header
+          + "<br>"
+          + message
+          + "</body></html>\r\n\r\n");
+    }
+    out.flush();
   }
 
   private String getClientLog4j() {
