@@ -144,34 +144,42 @@ public class HttpRequestHandler implements RequestHandler {
             throw new ClassNotFoundException("File does not exist: " + path);
           }
 
+          encoding = "raw";
           byte[] bytecode = slurpInputSteam(is);
 
           int magic = (bytecode[0] & 0xff) << 24 | (bytecode[1] & 0xff) << 16
                       | (bytecode[2] & 0xff) << 8 | (bytecode[3] & 0xff);
           if (magic == 0xcafebabe) // 0xcafebabe = java classes
             contentType = "application/java";
-          else if ((magic) == 0xcafed00d) // 0xcafed00d = pk200
+          else if ((magic) == 0xcafed00d) {// 0xcafed00d = pk200
             contentType = "application/x-java-pack200";
-          else if ((magic >> 16) == ('P' << 8
-                                     | 'K')) // PKzip files have a ascii magic of PK :)
+          } else if ((magic >> 16) == ('P' << 8
+                                       | 'K')) // PKzip files have a ascii magic of PK :)
             if (Pattern.compile("^.*\\.jar$", Pattern.CASE_INSENSITIVE)
                 .matcher(path)
                 .matches())
               contentType = "application/java-archive";
             else contentType = "application/zip";
-          else if ((magic >> 16) == GZIPInputStream.GZIP_MAGIC)
-            contentType = "application/x-gzip";
-          else if (magic == 0x89504e47) //png = 0x89 + "PNG"
+
+          else if (((magic >> 24) | ((magic >> 8) & 0xff00))
+                   == GZIPInputStream
+              .GZIP_MAGIC) {
+            if (Pattern.compile("^.*\\.jar.pack.gz$", Pattern.CASE_INSENSITIVE)
+                .matcher(path).matches()) {
+              contentType = "application/java-archive";
+              encoding = "pack200-gzip";
+            } else contentType = "application/x-gzip";
+          } else if (magic == 0x89504e47) //png = 0x89 + "PNG"
             contentType = "image/png";
           else contentType = "application/binary";
 
-
           byte[] compressedBytecode = bytecode;
-          encoding = "raw";
           for (String format : encodings) {
-            if (format.equals("raw")) {
+            if (format.equals("raw") || format.equals("Pack200-gzip")) {
               break;
-            } else if (format.equals("gzip")) {
+            } else if (format.equals("gzip") && ((magic >> 16)
+                                                 != GZIPInputStream
+                .GZIP_MAGIC)) {
               encoding = "gzip";
               ByteArrayOutputStream baos = new ByteArrayOutputStream();
               GZIPOutputStream gzip = new GZIPOutputStream(baos);
@@ -196,15 +204,15 @@ public class HttpRequestHandler implements RequestHandler {
                 path, encoding, bytecode.length, compressedBytecode.length));
 
           logger.info(MessageFormat.format(
-              "to {0}, {1}B for {2}",
+              "to {0}, {1}B {2} {3}",
               socket.getInetAddress().getCanonicalHostName(),
-              compressedBytecode.length, path));
+              compressedBytecode.length,
+              command,
+              path));
 
           out.writeBytes("HTTP/1.1 200 OK\r\n");
-          out.writeBytes("Content-Length: "
-                         + compressedBytecode
-              .length
-                         + "\r\n");
+          out.writeBytes(
+              "Content-Length: " + compressedBytecode.length + "\r\n");
           if (!encoding.equals("raw"))
             out.writeBytes("Content-Encoding: " + encoding + "\r\n");
           out.writeBytes("Content-Type: " + contentType + "\r\n\r\n");

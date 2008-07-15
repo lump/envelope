@@ -44,11 +44,25 @@
     <dirset dir="${test.classes}"/>
   </path>
 
-  <taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
-    <classpath>
-      <fileset dir="${lib}/jaxb" includes="*.jar"/>
-    </classpath>
-  </taskdef>
+  <path id="ant.classpath">
+    <fileset dir="${lib}/ant">
+      <include name="**/*.jar"/>
+    </fileset>
+    <fileset dir="${lib}/jaxb">
+      <include name="**/*.jar"/>
+    </fileset>
+  </path>
+
+  <taskdef name="xjc"
+           classname="com.sun.tools.xjc.XJCTask"
+           classpathref="ant.classpath"/>
+  <taskdef name="pack200"
+           classname="com.sun.tools.apache.ant.pack200.Pack200Task"
+           classpathref="ant.classpath"/>
+  <taskdef name="unpack200"
+           classname="com.sun.tools.apache.ant.pack200.Unpack200Task"
+           classpathref="ant.classpath"/>
+
 
   <target name="clean.classes" description="clean the classes">
     <delete dir="${classes}"/>
@@ -139,10 +153,36 @@
         <attribute name="Class-Path" value="http://localhost:7041/"/>
       </manifest>
     </jar>
+    <pack200 src="${lib}/client.jar"
+             destfile="${lib}/client.pack200.jar"
+             repack="true"
+             deflatehint="false"
+             unknownattribute="error"
+             stripdebug="true"
+             modificationtime="keep"
+             segmentlimit="-1"
+             keepfileorder="true"
+             effort="9"
+             gzipoutput="false"
+             verbose="false"/>
+
     <signjar alias="envelope" keystore="security/keystore" storepass="OS.32sf"
              lazy="true">
-      <fileset dir="${lib}" includes="client.jar"/>
+      <fileset dir="${lib}" includes="client.pack200.jar"/>
     </signjar>
+    <pack200 src="${lib}/client.pack200.jar"
+             destfile="${lib}/client.jar.pack.gz"
+             repack="false"
+             deflatehint="false"
+             unknownattribute="error"
+             stripdebug="true"
+             modificationtime="keep"
+             segmentlimit="-1"
+             keepfileorder="true"
+             effort="9"
+             gzipoutput="true"
+             verbose="false"/>
+    <delete file="${lib}/client.pack200.jar"/>
   </target>
 
   <target name="server.jar" depends="compile" description="build server jar">
@@ -178,7 +218,7 @@
 
     <mkdir dir="${one.jar.classes}/lib"/>
     <copy todir="${one.jar.classes}/lib">
-      <fileset dir="${lib}" includes="*.jar, *.png"/>
+      <fileset dir="${lib}" includes="*.jar, *.pack.gz *.png"/>
       <fileset dir="${lib}/jaxb" includes="*.jar"/>
     </copy>
 

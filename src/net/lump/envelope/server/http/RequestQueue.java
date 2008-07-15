@@ -7,8 +7,11 @@ package us.lump.envelope.server.http;
 
 import org.apache.log4j.Logger;
 
-import java.util.*;
-import java.util.concurrent.BlockingQueue;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * A Request Queue accepts new requests and processes them with its associated
@@ -16,7 +19,7 @@ import java.util.concurrent.BlockingQueue;
  */
 public class RequestQueue {
   /** Request queue */
-  private LinkedList queue = new LinkedList();
+  private LinkedList<Socket> queue = new LinkedList<Socket>();
 
   /** The maximum length that the queue can grow to */
   private int maxQueueLength;
@@ -25,8 +28,8 @@ public class RequestQueue {
   private int minThreads;
 
   /**
-   * The maximum number of threads that can be in this queue?s associated
-   * thread pool
+   * The maximum number of threads that can be in this queue?s associated thread
+   * pool
    */
   private int maxThreads;
 
@@ -37,7 +40,7 @@ public class RequestQueue {
   private Class requestHandler;
 
   /** The thread pool that is servicing this request */
-  private List threadPool = new ArrayList();
+  private List<RequestThread> threadPool = new ArrayList<RequestThread>();
 
   private static final Logger logger = Logger.getLogger(RequestQueue.class);
 
@@ -72,18 +75,17 @@ public class RequestQueue {
   /**
    * Adds a new object to the end of the queue
    *
-   * @param o Adds the specified object to the Request Queue
+   * @param socket Adds the specified object to the Request Queue
    */
-  public synchronized void add(Object o) throws RuntimeException {
+  public synchronized void add(Socket socket) throws RuntimeException {
     // Validate that we have room of the object before we add it to the queue
     if (queue.size() > this.maxQueueLength) {
       throw new RuntimeException("The Request Queue is full. Max size = "
-                                 + this
-          .maxQueueLength);
+                                 + this.maxQueueLength);
     }
 
     // Add the new object to the end of the queue
-    queue.addLast(o);
+    queue.addLast(socket);
 
     // See if we have an available thread to process the request
     boolean availableThread = false;
@@ -107,7 +109,8 @@ public class RequestQueue {
         thread.start();
         this.threadPool.add(thread);
       } else {
-        logger.debug("Whoops, can?t grow the thread pool, guess you have to wait");
+        logger.debug(
+            "Whoops, can?t grow the thread pool, guess you have to wait");
       }
     }
 

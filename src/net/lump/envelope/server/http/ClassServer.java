@@ -6,7 +6,7 @@ import java.io.IOException;
  * Create a class server which can serve classes, jars, files...
  *
  * @author Troy Bowman
- * @version $Id: ClassServer.java,v 1.6 2008/07/13 22:52:06 troy Exp $
+ * @version $Id: ClassServer.java,v 1.7 2008/07/15 17:14:59 troy Exp $
  */
 public class ClassServer extends AbstractServer {
 
@@ -15,9 +15,10 @@ public class ClassServer extends AbstractServer {
    * bytecodes using the method <b>getBytes</b>.
    *
    * @param port the port number
+   *
    * @throws java.io.IOException
    */
   public ClassServer(int port) throws IOException {
-    super(port, 50, HttpRequestHandler.class, 2000, 5, 10);
+    super(port, 100, HttpRequestHandler.class, 2000, 10, 20);
   }
 }
