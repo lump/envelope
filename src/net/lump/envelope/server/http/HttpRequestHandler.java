@@ -1,25 +1,24 @@
 package us.lump.envelope.server.http;
 
 import org.apache.log4j.Logger;
+import us.lump.envelope.Server;
 
+import java.io.*;
+import java.net.Socket;
 import java.security.AccessControlException;
 import java.text.MessageFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
-import java.util.zip.GZIPOutputStream;
 import java.util.zip.GZIPInputStream;
-import java.net.Socket;
-import java.io.*;
-
-import us.lump.envelope.Server;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * Created by IntelliJ IDEA. User: troy Date: Jul 13, 2008 Time: 3:19:44 PM To
  * change this template use File | Settings | File Templates.
  */
 public class HttpRequestHandler implements RequestHandler {
-  
+
   // client is denied from downloading classes from the following paths
   private static final String[] denyList = new String[]{
       "us/lump/envelope/server/dao",
@@ -60,8 +59,31 @@ public class HttpRequestHandler implements RequestHandler {
           if (m.group(1) != null) command = m.group(1);
           if (m.group(2) != null) path = m.group(2);
         }
-        if (path == null || path.equals(""))
-          throw new Exception("Malformed Header");
+        if (path == null || path.equals("")) {
+          byte[] bjnlp =
+              slurpInputSteam(this.getClass().getResourceAsStream("jnlp.xml"));
+          String jnlp = new String(bjnlp);
+          jnlp = jnlp.replaceAll("\\{host\\}",
+                                 socket.getLocalAddress().getCanonicalHostName());
+          jnlp = jnlp.replaceAll("\\{port\\}",
+                                 String.valueOf(socket.getLocalPort()));
+          jnlp = jnlp.replaceAll("\\{title\\}", "Envelope Java Web Start");
+          jnlp = jnlp.replaceAll("\\{vendor\\}", "Lump Software");
+          jnlp = jnlp.replaceAll("\\{description\\}", "An Envelope Budget");
+          jnlp = jnlp.replaceAll("\\{icon\\}", "lib/franklin.png");
+          jnlp = jnlp.replaceAll("\\{main-class\\}", "Envelope");
+          jnlp =
+              jnlp.replaceAll("\\{jars\\}", "<jar href=\"lib/client.jar\">\n");
+
+          out.writeBytes("HTTP/1.0 200 OK\r\n");
+          out.writeBytes("Content-Type: application/x-java-jnlp-file\r\n");
+          out.writeBytes("Content-Disposition: name=envelope.jnlp\r\n");
+          out.writeBytes("Content-Length: " + jnlp.length() + "\r\n\r\n");
+          out.writeBytes(jnlp);
+          logger.info("returned " + jnlp + "for " + path + " from "
+                      + socket.getInetAddress().getCanonicalHostName());
+          return;
+        }
 
         // skip other headers;
         do {
@@ -81,7 +103,8 @@ public class HttpRequestHandler implements RequestHandler {
         }
 
 
-        Matcher infoMatcher = Pattern.compile("^(info/.*|log4j.properties)$").matcher(path);
+        Matcher infoMatcher =
+            Pattern.compile("^(info/.*|log4j.properties|)$").matcher(path);
         if (infoMatcher.matches() && infoMatcher.group(1) != null) {
           String query = infoMatcher.group(1);
           String returnValue = "";
@@ -102,8 +125,7 @@ public class HttpRequestHandler implements RequestHandler {
           if (!command.equals("HEAD")) out.writeBytes(returnValue);
           logger.info("returned " + returnValue + " for " + path + " from "
                       + socket.getInetAddress().getCanonicalHostName());
-        }
-        else {
+        } else {
 
           InputStream is;
           String contentType;
@@ -113,22 +135,16 @@ public class HttpRequestHandler implements RequestHandler {
             is = Thread.currentThread()
                 .getContextClassLoader().getResourceAsStream(path);
           }
+          if (is == null) {
+            this.getClass().getClassLoader().getResource(path);
+          }
 
           if (is == null) {
             logger.error("Does not exist: " + path);
             throw new ClassNotFoundException("File does not exist: " + path);
           }
 
-          DataInputStream dis = new DataInputStream(is);
-          int bytesRead;
-          byte[] bytecode = new byte[0];
-          byte[] buffer = new byte[1024];
-          while ((bytesRead = dis.read(buffer, 0, buffer.length)) != -1) {
-            byte[] newContent = new byte[bytecode.length + bytesRead];
-            System.arraycopy(bytecode, 0, newContent, 0, bytecode.length);
-            System.arraycopy(buffer, 0, newContent, bytecode.length, bytesRead);
-            bytecode = newContent;
-          }
+          byte[] bytecode = slurpInputSteam(is);
 
           int magic = (bytecode[0] & 0xff) << 24 | (bytecode[1] & 0xff) << 16
                       | (bytecode[2] & 0xff) << 8 | (bytecode[3] & 0xff);
@@ -136,13 +152,19 @@ public class HttpRequestHandler implements RequestHandler {
             contentType = "application/java";
           else if ((magic) == 0xcafed00d) // 0xcafed00d = pk200
             contentType = "application/x-java-pack200";
-          else if ((magic >> 16) == ('P' << 8 | 'K')) // PKzip files have a ascii magic of PK :)
-            if (Pattern.compile("^.*\\.jar$", Pattern.CASE_INSENSITIVE).matcher(path).matches())
+          else if ((magic >> 16) == ('P' << 8
+                                     | 'K')) // PKzip files have a ascii magic of PK :)
+            if (Pattern.compile("^.*\\.jar$", Pattern.CASE_INSENSITIVE)
+                .matcher(path)
+                .matches())
               contentType = "application/java-archive";
             else contentType = "application/zip";
           else if ((magic >> 16) == GZIPInputStream.GZIP_MAGIC)
             contentType = "application/x-gzip";
+          else if (magic == 0x89504e47) //png = 0x89 + "PNG"
+            contentType = "image/png";
           else contentType = "application/binary";
+
 
           byte[] compressedBytecode = bytecode;
           encoding = "raw";
@@ -245,8 +267,8 @@ public class HttpRequestHandler implements RequestHandler {
 
   private String getClientLog4j() {
     return "log4j.rootLogger=INFO, console\n"
-           + "log4j.logger.us.lump=DEBUG\n"
-           + "log4j.logger.envelope=DEBUG\n"
+           + "log4j.logger.us.lump=INFO\n"
+           + "log4j.logger.envelope=INFO\n"
            + "log4j.logger.org.hibernate=INFO\n"
            + "log4j.appender.console=org.apache.log4j.ConsoleAppender\n"
            + "log4j.appender.console.layout=org.apache.log4j.PatternLayout\n"
@@ -254,5 +276,18 @@ public class HttpRequestHandler implements RequestHandler {
            + "log4j.appender.console.Target=System.err\n";
   }
 
+  private byte[] slurpInputSteam(InputStream is) throws IOException {
+    DataInputStream dis = new DataInputStream(is);
+    int bytesRead;
+    byte[] content = new byte[0];
+    byte[] buffer = new byte[1024];
+    while ((bytesRead = dis.read(buffer, 0, buffer.length)) != -1) {
+      byte[] newContent = new byte[content.length + bytesRead];
+      System.arraycopy(content, 0, newContent, 0, content.length);
+      System.arraycopy(buffer, 0, newContent, content.length, bytesRead);
+      content = newContent;
+    }
+    return content;
+  }
 
 }

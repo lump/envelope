@@ -1,9 +1,3 @@
-import org.apache.log4j.BasicConfigurator;
-import us.lump.envelope.client.ui.Preferences;
-import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.client.ui.prefs.ServerSettings;
-import us.lump.lib.util.EmacsKeyBindings;
-
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RMISecurityManager;
@@ -13,10 +7,12 @@ import java.rmi.server.RMIClassLoader;
  * The class that starts the client by bootstrapping from RMI.
  *
  * @author Troy Bowman
- * @version $Id: Envelope.java,v 1.4 2008/07/06 04:14:24 troy Exp $
+ * @version $Id: Envelope.java,v 1.5 2008/07/15 02:38:35 troy Exp $
  */
 
 public class Envelope {
+
+  URL codebase;
 
   private Envelope() throws
       MalformedURLException,
@@ -24,25 +20,33 @@ public class Envelope {
       InstantiationException,
       IllegalAccessException {
 
-    EmacsKeyBindings.loadEmacsKeyBindings();
-
-    Preferences prefs = Preferences.getInstance();
-    prefs.setTitle(Strings.get("preferences"));
-    if (!prefs.areServerSettingsOk()) {
-      prefs.selectTab(Strings.get("server"));
-      prefs.setVisible(true);
-    }
-    ServerSettings ss = ServerSettings.getInstance();
-
     try {
-      URL url = ss.getCodeBase();
+      codebase = new URL("http://" + System.getProperty("codebase") + "/");
+//      System.setProperty("java.security.policy",
+//                         codebase + "info/security.policy");
+//      System.setProperty("java.security.policy",
+//                         this.getClass().getResource("security.policy").toString());
+      System.setSecurityManager(new RMISecurityManager());
+
+      ClassLoader cl = this.getClass().getClassLoader();
       String className = "us.lump.envelope.Client";
-      Class clientClass = RMIClassLoader.loadClass(url, className);
+//      Class clientClass = cl.loadClass(className);
+      Class clientClass = RMIClassLoader.loadClass(codebase, className);
       ((Runnable)clientClass.newInstance()).run();
     }
     catch (Exception e) {
       e.printStackTrace();
     }
+  }
+
+  private String join(String delimiter, Object[] array) {
+    String out = "";
+    int count = 0;
+    for (Object o : array) {
+      if (count > 0) out += delimiter;
+      out += o.toString();
+    }
+    return out;
   }
 
   /**
@@ -51,32 +55,10 @@ public class Envelope {
    * @param args command line args
    */
   public static void main(String args[]) {
-    URL securityPolicy = Envelope.class.getResource("security.policy");
-    if (securityPolicy != null) {
-      System.setProperty("java.security.policy", securityPolicy.toString());
-    }
-    if (System.getSecurityManager() == null) {
-      System.setSecurityManager(new RMISecurityManager());
-    }
-
-    BasicConfigurator.configure();
-
     try {
       new Envelope();
-    } catch (MalformedURLException mURLe) {
-      System.err
-          .println("URL not specified correctly for the Client class: "
-                   + mURLe);
-      System.exit(1);
-    } catch (ClassNotFoundException cnfe) {
-      System.err.println("Envelope, Class not found: " + cnfe);
-      System.exit(1);
-    } catch (InstantiationException ie) {
-      System.err.println("Envelope, class could not be instantiated" + ie);
-      System.exit(1);
-    } catch (IllegalAccessException iae) {
-      System.err.println("Internal error" + iae);
-      System.exit(1);
+    } catch (Exception e) {
+      e.printStackTrace();
     }
   }
 }

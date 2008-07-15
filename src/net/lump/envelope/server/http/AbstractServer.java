@@ -3,9 +3,9 @@ package us.lump.envelope.server.http;
 import org.apache.log4j.Logger;
 
 import javax.net.ServerSocketFactory;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.InetAddress;
 import java.net.SocketException;
 
 /** Abstract super class for creating servers */
@@ -83,8 +83,8 @@ public abstract class AbstractServer extends Thread {
 
         // Log some debugging information
         InetAddress addr = s.getInetAddress();
-        logger.info("Received a new connection from ("
-                    + addr.getHostAddress() + "): " + addr.getHostName());
+        logger.debug("Received a new connection from ("
+                     + addr.getHostAddress() + "): " + addr.getHostName());
 
         // Add the socket to the new RequestQueue
         this.requestQueue.add(s);

@@ -105,17 +105,19 @@
   <target name="client.dist.prepare" depends="compile">
     <delete dir="${client.classes}"/>
     <mkdir dir="${client.classes}"/>
-    <unzip dest="${client.classes}">
-      <fileset dir="${lib}" includes="log4j*.jar, ui.jar, forms_rt.jar"/>
-    </unzip>
+    <!--<unzip dest="${client.classes}">-->
+    <!--<fileset dir="${lib}" includes="log4j*.jar, ui.jar, forms_rt.jar"/>-->
+    <!--</unzip>-->
     <copy todir="${client.classes}">
       <fileset dir="${classes}"
-               includes="
-               security.policy,
-               Envelope.class,
-               us/lump/lib/**/*,
-               us/lump/envelope/exception/*
-               us/lump/envelope/client/**/*"/>
+               includes="Envelope.class, security.policy"/>
+      <!--<fileset dir="${classes}"-->
+      <!--includes="-->
+      <!--security.policy,-->
+      <!--Envelope.class,-->
+      <!--us/lump/lib/**/*,-->
+      <!--us/lump/envelope/exception/*-->
+      <!--us/lump/envelope/client/**/*"/>-->
     </copy>
   </target>
 
@@ -124,8 +126,8 @@
   </target>
   <target name="client.jar" depends="client.dist.prepare"
           description="build client jar">
-    <delete file="${dist}/client.jar"/>
-    <jar jarfile="${dist}/client.jar"
+    <delete file="${lib}/client.jar"/>
+    <jar jarfile="${lib}/client.jar"
          compress="${jar.compress}"
          basedir="${client.classes}">
       <manifest>
@@ -134,14 +136,19 @@
         <attribute name="Build-Time" value="${timestamp}"/>
         <attribute name="Built-On-OS" value="${env.OSTYPE}"/>
         <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
+        <attribute name="Class-Path" value="http://localhost:7041/"/>
       </manifest>
     </jar>
+    <signjar alias="envelope" keystore="security/keystore" storepass="OS.32sf"
+             lazy="true">
+      <fileset dir="${lib}" includes="client.jar"/>
+    </signjar>
   </target>
 
   <target name="server.jar" depends="compile" description="build server jar">
     <copy todir="${server.classes}">
-      <fileset dir="${classes}"
-               excludes="us/lump/envelope/client/ui/*, Envelope.class"/>
+      <fileset dir="${classes}"/>
+      <!--excludes="us/lump/envelope/client/ui/*, Envelope.class"/>-->
     </copy>
     <delete file="${dist}/${ant.project.name}-rmi.jar"/>
     <jar jarfile="${dist}/${ant.project.name}-rmi.jar"
@@ -157,7 +164,7 @@
     </jar>
   </target>
 
-  <target name="server.dist" depends="server.jar"
+  <target name="server.dist" depends="server.jar, client.jar"
           description="build server distribution">
     <mkdir dir="${one.jar.classes}"/>
 
@@ -171,7 +178,7 @@
 
     <mkdir dir="${one.jar.classes}/lib"/>
     <copy todir="${one.jar.classes}/lib">
-      <fileset dir="${lib}" includes="*.jar"/>
+      <fileset dir="${lib}" includes="*.jar, *.png"/>
       <fileset dir="${lib}/jaxb" includes="*.jar"/>
     </copy>
 

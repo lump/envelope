@@ -63,7 +63,7 @@ public class ServerSettings {
     BufferedReader r = new BufferedReader(
         new InputStreamReader(socket.getInputStream()));
     PrintWriter p = new PrintWriter(socket.getOutputStream(), true);
-    p.write("GET info"+ query +"\r\n\r\n");
+    p.write("GET info" + query + "\r\n\r\n");
     p.flush();
 
     boolean inHeader = true;
@@ -136,8 +136,7 @@ public class ServerSettings {
         if (infoQuery(PING).matches("^pong")) {
           setRmiPort();
           classServerValidated.setValid(true);
-        }
-        else
+        } else
           message = MessageFormat.format(
               Strings.get("error.verify_class_server"), this.getHostName());
       }

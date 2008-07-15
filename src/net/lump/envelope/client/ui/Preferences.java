@@ -227,7 +227,10 @@ public class Preferences extends JDialog {
 
 
   public void fillServerFormWithSavedData() {
-    hostName.setText(ssData.getHostName() + ":" + ssData.getClassPort());
+    if (System.getProperty("codebase") != null)
+      hostName.setText(System.getProperty("codebase"));
+    else
+      hostName.setText(ssData.getHostName() + ":" + ssData.getClassPort());
   }
 
   public void fillUserFormWithSavedData() {
