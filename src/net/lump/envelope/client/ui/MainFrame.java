@@ -18,7 +18,7 @@ import java.net.URL;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.8 2008/07/16 00:29:46 troy Exp $
+ * @version $Id: MainFrame.java,v 1.9 2008/07/16 00:55:16 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -127,7 +127,7 @@ public class MainFrame extends JFrame {
 //          }
 //          catch (Exception ex) { }
 //        }
-//      }
+      }
 
 
 
