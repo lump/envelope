@@ -20,7 +20,7 @@ import java.rmi.RemoteException;
  * exit/entry to the server.
  *
  * @author Troy Bowman
- * @version $Revision: 1.7 $
+ * @version $Revision: 1.8 $
  */
 
 abstract class Portal {
@@ -85,12 +85,12 @@ abstract class Portal {
       logger.warn(e);
       Throwable cause = e;
       boolean found = false;
-      while (cause != null && found == false  ) {
+      while (cause != null && !found) {
         if (cause instanceof SessionException) {
           found = true;
           Preferences p = Preferences.getInstance();
-          if (p.areLoginSettingsOk() == null) throw new SessionException(
-              ((SessionException)cause).getType(), cause);
+          JOptionPane.showMessageDialog(null, cause.getMessage(), "Session Exception", JOptionPane.ERROR_MESSAGE);
+          System.exit(0);
         }
         cause = cause.getCause();
       }

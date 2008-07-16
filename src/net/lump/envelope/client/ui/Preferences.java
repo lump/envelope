@@ -186,7 +186,7 @@ public class Preferences extends JDialog {
     checkingLoginSettings = false;
     return authed == null ? false : authed;
   }
-
+  
   public boolean areServerSettingsOk() {
     // set the host/port
     ssData.setHostName(hostName.getText());

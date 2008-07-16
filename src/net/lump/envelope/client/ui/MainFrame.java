@@ -18,7 +18,7 @@ import java.net.URL;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.7 2008/07/15 02:58:21 troy Exp $
+ * @version $Id: MainFrame.java,v 1.8 2008/07/16 00:29:46 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -116,8 +116,20 @@ public class MainFrame extends JFrame {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
       } catch (Exception e) { /* bah, nevermind */ }
       else {
-        shortcutKeyMask = Event.ALT_MASK | Event.SHIFT_MASK | Event.SHIFT_MASK;
-      }
+        shortcutKeyMask = Event.ALT_MASK | Event.SHIFT_MASK;
+
+//        try {
+//          UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+//        }
+//        catch (Exception e) {
+//          try {
+//            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+//          }
+//          catch (Exception ex) { }
+//        }
+//      }
+
+
 
       JMenu fileMenu = new JMenu(Strings.get("file"));
 

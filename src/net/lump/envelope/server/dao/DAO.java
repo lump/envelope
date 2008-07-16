@@ -26,7 +26,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.14 2008/07/10 19:09:48 troy Exp $
+ * @version $Id: DAO.java,v 1.15 2008/07/16 00:29:46 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -284,8 +284,8 @@ public abstract class DAO {
     User user;
 
     // if we've already retrieved the user for this thread, just use that.
-    user = ThreadInfo.getUser();
-    if (user != null) return user;
+//    user = ThreadInfo.getUser();
+//    if (user != null) return user;
 
     // if it exists in the userCache, retrieve it.
     Element ue = cache.get(USER).get(username);
