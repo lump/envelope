@@ -16,6 +16,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ResourceBundle;
+import java.util.Arrays;
 
 public class Preferences extends JDialog {
   private JPanel prefsPane;
@@ -148,7 +149,7 @@ public class Preferences extends JDialog {
     SecurityPortal sp = new SecurityPortal();
 
     if (!hadLoginSuccessYet && !lsData.passwordIsSaved()
-        && java.util.Arrays.equals(password.getPassword(), new char[0])) {
+        && Arrays.equals(password.getPassword(), new char[0])) {
       sessionState.setForeground(Colors.getColor("red"));
       sessionState.setText(Strings.get("session.state.not.attempted"));
       checkingLoginSettings = false;
@@ -186,7 +187,7 @@ public class Preferences extends JDialog {
     checkingLoginSettings = false;
     return authed == null ? false : authed;
   }
-  
+
   public boolean areServerSettingsOk() {
     // set the host/port
     ssData.setHostName(hostName.getText());

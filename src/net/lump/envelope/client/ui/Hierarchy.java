@@ -3,6 +3,7 @@ package us.lump.envelope.client.ui;
 import us.lump.envelope.entity.Budget;
 import us.lump.envelope.entity.Category;
 import us.lump.envelope.entity.Account;
+import us.lump.envelope.entity.Identifiable;
 import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.State;
 import us.lump.envelope.client.ui.defs.Fonts;
@@ -19,10 +20,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.tree.*;
+import java.util.*;
 import java.util.List;
-import java.util.Collections;
-import java.util.ArrayList;
-import java.util.Date;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -32,7 +31,7 @@ import java.awt.event.ActionEvent;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.5 2008/07/15 04:33:45 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.6 2008/07/16 05:40:00 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -62,55 +61,30 @@ public class Hierarchy extends JTree {
           tqb.setEndDate(temp);
         }
 
-        if (o instanceof Account) {
-
+        if (o instanceof Account || o instanceof Category) {
           final Runnable refresh = new Runnable() {
+
             public void run() {
               final JTable table =
                   new JTable(new TransactionTableModel(
-                      (Account)o, tqb.getBeginDate(), tqb.getEndDate()));
+                      (Identifiable)o, tqb.getBeginDate(), tqb.getEndDate()));
               table.setDefaultRenderer(Money.class, new MoneyRenderer());
               table.getTableHeader().setUpdateTableInRealTime(true);
-              table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+              table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
               table.getTableHeader().setReorderingAllowed(false);
 //              table.setPreferredSize(new Dimension(table.getParent().getWidth(),table.getHeight()));
               table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-              tqb.setTitleLabel(((Account)o).getName());
+              tqb.setTitleLabel(
+                  o instanceof Account
+                  ? ((Account)o).getName()
+                  : o instanceof Category
+                    ? ((Category)o).getName() : null);
               MainFrame.getInstance().setContentPane(tqb.getTableQueryPanel());
               tqb.setViewportView(table);
-              initColumnSizes(table,
-                              ((TransactionTableModel)table.getModel()).getTransactions());
-            }
-          };
 
-          for (ActionListener a : tqb.getRefreshButton().getActionListeners())
-            tqb.getRefreshButton().removeActionListener(a);
-
-          tqb.getRefreshButton().addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-              SwingUtilities.invokeLater(refresh);
-            }
-          });
-
-          SwingUtilities.invokeLater(refresh);
-        }
-        if (o instanceof Category) {
-          final Runnable refresh = new Runnable() {
-            public void run() {
-              final JTable table = new JTable(new AllocationTableModel(
-                  (Category)o, tqb.getBeginDate(), tqb.getEndDate()));
-              table.setDefaultRenderer(Money.class, new MoneyRenderer());
-              table.getTableHeader().setUpdateTableInRealTime(true);
-              table.getTableHeader().setReorderingAllowed(false);
-              table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-//              table.setPreferredSize(new Dimension(table.getParent().getWidth(),table.getHeight()));
-              table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-              tqb.setTitleLabel(((Category)o).getName());
-              MainFrame.getInstance().setContentPane(tqb.getTableQueryPanel());
-              tqb.setViewportView(table);
-              table.getTableHeader().resizeAndRepaint();
-              initColumnSizes(table,
-                              ((AllocationTableModel)table.getModel()).getTransactions());
+              initColumnSizes(
+                  table,
+                  ((TransactionTableModel)table.getModel()).getTransactions());
             }
           };
 
@@ -170,7 +144,7 @@ public class Hierarchy extends JTree {
     SwingUtilities.invokeLater(r);
   }
 
-  private void initColumnSizes(JTable table, ArrayList<Object[]> transactions) {
+  private void initColumnSizes(JTable table, Vector<Object[]> transactions) {
     TableModel model = table.getModel();
     TableColumn column;
     Component comp;

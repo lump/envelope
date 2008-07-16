@@ -4,6 +4,7 @@ import org.hibernate.criterion.DetachedCriteria;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Category;
 import us.lump.envelope.entity.Identifiable;
+import us.lump.envelope.entity.Transaction;
 import us.lump.envelope.server.security.Credentials;
 import us.lump.lib.util.Encryption;
 
@@ -19,7 +20,7 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Revision: 1.10 $
+ * @version $Revision: 1.11 $
  */
 public class Command implements Serializable {
   /**
@@ -39,7 +40,7 @@ public class Command implements Serializable {
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.10 $
+   * @version $Revision: 1.11 $
    */
   public enum Name {
 
@@ -58,6 +59,7 @@ public class Command implements Serializable {
     saveOrUpdate(Dao.Generic, Identifiable.class),
 
     // transaction
+    updateReconciled(Dao.Action, Integer.class, Boolean.class),
     listTransactionsInYear(Dao.Action, Integer.class),
     listTransactionsBetweenDates(Dao.Action, Date.class, Date.class),
 

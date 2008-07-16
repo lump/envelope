@@ -14,11 +14,16 @@ import java.util.List;
  * Transaction Methods.
  *
  * @author troy
- * @version $Id: TransactionPortal.java,v 1.6 2008/07/09 08:16:40 troy Exp $
+ * @version $Id: TransactionPortal.java,v 1.7 2008/07/16 05:40:00 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class TransactionPortal extends Portal {
 
+  public void updateReconciled(Integer transactionId, Boolean reconciled)
+      throws EnvelopeException {
+    invoke(new Command(
+        Command.Name.updateReconciled, transactionId, reconciled));
+  }
 
   public List<Transaction> listTransactions(int year) throws EnvelopeException {
     return (List<Transaction>)

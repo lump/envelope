@@ -13,9 +13,20 @@ import java.util.List;
  * A DAO for Transactions.
  *
  * @author Troy Bowman
- * @version $Id: Action.java,v 1.5 2008/01/20 05:15:41 troy Exp $
+ * @version $Id: Action.java,v 1.6 2008/07/16 05:40:00 troy Exp $
  */
 public class Action extends DAO {
+
+  /**
+   * Sets reconciled
+   * @param transactionID the ID of the transaction
+   * @param reconciled whether this is reconciled or not
+   * @return Transaction
+   */
+  public void updateReconciled(Integer transactionID, Boolean reconciled) {
+    Transaction t = load(Transaction.class, transactionID);
+    t.setReconciled(reconciled);
+  }
 
   /**
    * Lists all transactions for a given year.

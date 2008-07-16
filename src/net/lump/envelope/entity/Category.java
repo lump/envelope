@@ -1,5 +1,8 @@
 package us.lump.envelope.entity;
 
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+
 import javax.persistence.*;
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -12,7 +15,7 @@ import java.sql.Timestamp;
  * should match the account balance.
  *
  * @author Troy Bowman
- * @version $Id: Category.java,v 1.9 2008/07/09 04:20:02 troy Exp $
+ * @version $Id: Category.java,v 1.10 2008/07/16 05:40:00 troy Test $
  */
 @javax.persistence.Entity
 @Table(name = "categories")
@@ -58,6 +61,7 @@ public class Category extends Identifiable<Integer, Timestamp> implements Compar
    */
   @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
   @JoinColumn(name = "account")
+  @Fetch(value = FetchMode.JOIN)
   public Account getAccount() {
     return account;
   }

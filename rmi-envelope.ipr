@@ -352,7 +352,7 @@
     </configuration>
     <configuration default="false" name="Client" type="Application" factoryName="Application" enabled="false" merge="false">
       <option name="MAIN_CLASS_NAME" value="Envelope" />
-      <option name="VM_PARAMETERS" value="" />
+      <option name="VM_PARAMETERS" value="-Dcodebase=localhost:7041" />
       <option name="PROGRAM_PARAMETERS" value="" />
       <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
       <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
@@ -371,7 +371,7 @@
       <ConfigurationWrapper RunnerId="Debug" />
       <ConfigurationWrapper RunnerId="Run" />
       <method>
-        <option name="Run Ant target" value="false" />
+        <option name="Run Ant target" value="true" />
         <option name="Run ant target" value="true" />
         <option name="Make" value="false" />
       </method>

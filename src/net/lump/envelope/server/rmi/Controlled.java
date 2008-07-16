@@ -19,7 +19,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controlled.java,v 1.10 2008/07/16 00:29:46 troy Exp $
+ * @version $Id: Controlled.java,v 1.11 2008/07/16 05:40:00 troy Exp $
  */
 public class Controlled extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -122,7 +122,7 @@ public class Controlled extends UnicastRemoteObject implements Controller {
               .invoke(dao, args);
 
       // make sure the return value is Serializable.
-      if (returnValue instanceof Serializable)
+      if (returnValue instanceof Serializable || returnValue == null)
         return (Serializable)returnValue;
       else
         throw new RemoteException("return value is not serializable");
@@ -155,7 +155,7 @@ public class Controlled extends UnicastRemoteObject implements Controller {
             "Could not invoke " + command.getName().name());
       }
 
-      throw (RemoteException)e;
+      throw new RemoteException("wrapped throwable", e);
     }
     finally {
       if (dao != null) {
