@@ -1,31 +1,27 @@
 package us.lump.envelope.client.ui;
 
-import us.lump.envelope.entity.Account;
-import us.lump.envelope.entity.Identifiable;
-import us.lump.envelope.entity.Category;
-import us.lump.envelope.entity.Transaction;
 import us.lump.envelope.client.CriteriaFactory;
-import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.client.portal.HibernatePortal;
 import us.lump.envelope.client.portal.TransactionPortal;
-import us.lump.envelope.exception.EnvelopeException;
+import us.lump.envelope.client.ui.defs.Strings;
+import us.lump.envelope.entity.Account;
+import us.lump.envelope.entity.Category;
+import us.lump.envelope.entity.Identifiable;
 import us.lump.lib.Money;
 
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.event.TableModelListener;
 import javax.swing.*;
-import java.util.ArrayList;
+import javax.swing.table.AbstractTableModel;
 import java.util.Date;
 import java.util.Vector;
 
 /**
  * A table model which lists transactions.
+ *
  * @author Troy Bowman
- * @version $Id: TransactionTableModel.java,v 1.6 2008/07/16 05:40:00 troy Exp $
+ * @version $Id: TransactionTableModel.java,v 1.6 2008/07/16 05:40:00 troy Exp
+ *          $
  */
 public class TransactionTableModel extends AbstractTableModel {
-//  private List<Transaction> transactions;
+  //  private List<Transaction> transactions;
   private Vector<Object[]> transactions;
   private Money beginningBalance;
   private Money beginningReconciledBalance;
@@ -36,11 +32,21 @@ public class TransactionTableModel extends AbstractTableModel {
   public static final int AMOUNT = 2;
   public static final int RECONCILED = 4;
 
-  String[] columnNames = new String[]{"C","Date","Amount","Balance","Reconciled","Entity","Description"};
+  String[] columnNames = new String[]{"C",
+                                      "Date",
+                                      "Amount",
+                                      "Balance",
+                                      "Reconciled",
+                                      "Entity",
+                                      "Description"};
 
-  TransactionTableModel(Identifiable categoryOrAccount, Date beginDate, Date endDate) {
-    if (!(categoryOrAccount instanceof Account || categoryOrAccount instanceof Category))
-      throw new IllegalArgumentException("only Account or Budget aceptable as first argument");
+  TransactionTableModel(Identifiable categoryOrAccount,
+                        Date beginDate,
+                        Date endDate) {
+    if (!(categoryOrAccount instanceof Account
+          || categoryOrAccount instanceof Category))
+      throw new IllegalArgumentException(
+          "only Account or Budget aceptable as first argument");
     isTransaction = categoryOrAccount instanceof Account ? true : false;
 
     CriteriaFactory cf = CriteriaFactory.getInstance();
@@ -55,7 +61,8 @@ public class TransactionTableModel extends AbstractTableModel {
         cf.getTransactions(categoryOrAccount, beginDate, endDate);
     for (Object[] row : incoming) {
       balance = new Money(balance.add((Money)row[AMOUNT]));
-      if ((Boolean)row[RECONCILED_FLAG]) reconciled = new Money(reconciled.add((Money)row[AMOUNT]));
+      if ((Boolean)row[RECONCILED_FLAG])
+        reconciled = new Money(reconciled.add((Money)row[AMOUNT]));
       transactions.add(
           new Object[]{row[0], row[1], row[2], new Money(balance),
                        new Money(reconciled), row[3], row[4], row[5]});
@@ -96,22 +103,24 @@ public class TransactionTableModel extends AbstractTableModel {
           reconciled
               = new Money(reconciled.add((Money)transactions.get(x)[AMOUNT]));
         transactions.get(x)[RECONCILED] = new Money(reconciled);
-        fireTableCellUpdated(x,RECONCILED);
+        fireTableCellUpdated(x, RECONCILED);
       }
 
       // update the Transaction
-//      SwingUtilities.invokeLater(new Runnable() {
-//        public void run() {
+      ThreadPool.getInstance().execute(new Runnable() {
+        public void run() {
           try {
-//            Thread.sleep(5);
             new TransactionPortal().updateReconciled(
                 (Integer)transactions.get(row)[ID], (Boolean)aValue);
           } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e.getMessage(), Strings.get("error"), JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null,
+                                          e.getMessage(),
+                                          Strings.get("error"),
+                                          JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
           }
-//        }
-//      });
+        }
+      });
     }
   }
 

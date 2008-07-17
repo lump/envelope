@@ -18,7 +18,7 @@ import java.net.URL;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.9 2008/07/16 00:55:16 troy Exp $
+ * @version $Id: MainFrame.java,v 1.10 2008/07/17 00:58:26 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -38,7 +38,7 @@ public class MainFrame extends JFrame {
     splitPane.getRightComponent().setMinimumSize(new Dimension(300, 0));
   }
 
-  private JLabel status = new JLabel(Strings.get("initializing"));
+  private StatusBar status = StatusBar.getInstance();
 
   private static State state = State.getInstance();
 
@@ -49,6 +49,7 @@ public class MainFrame extends JFrame {
   }
 
   private MainFrame() {
+    StatusBar.Element initStatus = status.addTask(Strings.get("initializing"));
 
     BasicConfigurator.configure();
     EmacsKeyBindings.loadEmacsKeyBindings();
@@ -128,7 +129,6 @@ public class MainFrame extends JFrame {
 //          catch (Exception ex) { }
 //        }
       }
-
 
 
       JMenu fileMenu = new JMenu(Strings.get("file"));
@@ -229,6 +229,7 @@ public class MainFrame extends JFrame {
                                               splitPane.getDividerLocation()));
     setStatus(Strings.get("ready"));
     setVisible(true);
+    status.removeTask(initStatus);
   }
 
   public Preferences getPreferences() {

@@ -54,7 +54,7 @@ public class RequestThread extends Thread {
     this.running = false;
   }
 
-  /** The thread?s main processing loop */
+  /** The thread's main processing loop */
   public void run() {
     this.running = true;
     while (running) {
