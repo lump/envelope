@@ -21,7 +21,7 @@ import java.rmi.RemoteException;
  * exit/entry to the server.
  *
  * @author Troy Bowman
- * @version $Revision: 1.9 $
+ * @version $Revision: 1.10 $
  */
 
 abstract class Portal {
@@ -84,7 +84,7 @@ abstract class Portal {
       throws EnvelopeException {
 
     try {
-      StatusBar.Element e =
+      StatusBar.Element<String> e =
           StatusBar.getInstance().addTask(command.getName().toString());
       try {
         return controller.invoke(command);
@@ -97,7 +97,9 @@ abstract class Portal {
       Throwable cause = e;
       boolean found = false;
       while (cause != null && !found) {
-        if (cause instanceof SessionException) {
+        if (cause instanceof SessionException
+            || cause instanceof java.net.ConnectException
+            || cause instanceof java.rmi.ConnectException) {
           found = true;
           Preferences p = Preferences.getInstance();
           JOptionPane.showMessageDialog(null,

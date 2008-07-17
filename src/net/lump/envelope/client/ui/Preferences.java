@@ -192,11 +192,19 @@ public class Preferences extends JDialog {
     // set the host/port
     ssData.setHostName(hostName.getText());
 
+    rmiStatusMessage.setText(Strings.get("pending"));
+    rmiStatusMessage.setForeground(Colors.getColor("gray"));
+    rmiServerValid = false;
+
     String classTestResult = ssData.testClassServer();
     if (classTestResult.equals(Strings.get("ok"))) {
       classStatusMessage.setForeground(Colors.getColor("green"));
       classServerValid = true;
     } else {
+      // default rmi server status to invalid while testing class server
+      sessionState.setText(Strings.get("pending"));
+      sessionState.setForeground(Colors.getColor("gray"));
+      
       classStatusMessage.setForeground(Colors.getColor("red"));
       classServerValid = false;
     }

@@ -1,12 +1,9 @@
 package us.lump.envelope.entity;
 
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Type;
 import us.lump.lib.Money;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
@@ -16,12 +13,12 @@ import java.util.List;
  * An account object.
  *
  * @author Troy Bowman
- * @version $Id: Account.java,v 1.9 2008/07/09 04:20:02 troy Exp $
+ * @version $Id: Account.java,v 1.10 2008/07/17 03:30:40 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "accounts")
 public class Account extends Identifiable<Integer, Timestamp> implements Comparable<Account> {
-//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.9 $".replaceAll("\\D", ""));
+//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.10 $".replaceAll("\\D", ""));
 
   /** The type of an Account. */
   public static enum AccountType {
@@ -104,9 +101,8 @@ public class Account extends Identifiable<Integer, Timestamp> implements Compara
     this.type = type;
   }
 
-  @OneToMany(mappedBy = "account", fetch = javax.persistence.FetchType.EAGER)
-  @Fetch(value = FetchMode.SUBSELECT)
-  public List<Category> getCategories() {
+  @OneToMany(mappedBy = "account")
+    public List<Category> getCategories() {
     return this.categories;
   }
 

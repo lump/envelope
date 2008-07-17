@@ -18,7 +18,7 @@ import java.net.URL;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.10 2008/07/17 00:58:26 troy Exp $
+ * @version $Id: MainFrame.java,v 1.11 2008/07/17 03:30:40 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -49,7 +49,8 @@ public class MainFrame extends JFrame {
   }
 
   private MainFrame() {
-    StatusBar.Element initStatus = status.addTask(Strings.get("initializing"));
+    StatusBar.Element<String> initStatus =
+        status.addTask(Strings.get("initializing"));
 
     BasicConfigurator.configure();
     EmacsKeyBindings.loadEmacsKeyBindings();

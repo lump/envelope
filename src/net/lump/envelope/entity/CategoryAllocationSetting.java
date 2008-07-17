@@ -66,10 +66,8 @@ public class CategoryAllocationSetting extends Identifiable<Integer, Timestamp> 
    *
    * @return AllocationSetting
    */
-  @ManyToOne(
-      cascade = {CascadeType.PERSIST, CascadeType.MERGE},
-      fetch = javax.persistence.FetchType.EAGER)
-  @Fetch(value = FetchMode.SELECT)
+  @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @Fetch(value = FetchMode.SELECT)
   @JoinColumn(name = "allocationCategory")
   public AllocationSetting getAllocationSetting() {
     return allocationSetting;
@@ -84,9 +82,7 @@ public class CategoryAllocationSetting extends Identifiable<Integer, Timestamp> 
    *
    * @return Category
    */
-  @ManyToOne(
-      cascade = {CascadeType.PERSIST, CascadeType.MERGE},
-      fetch = javax.persistence.FetchType.EAGER)
+  @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
   @Fetch(value = FetchMode.SELECT)
   @JoinColumn(name = "category")
   public Category getCategory() {

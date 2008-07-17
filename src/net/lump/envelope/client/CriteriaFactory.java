@@ -1,6 +1,7 @@
 package us.lump.envelope.client;
 
 import org.hibernate.criterion.*;
+import org.hibernate.FetchMode;
 import org.apache.log4j.Logger;
 import us.lump.envelope.entity.*;
 import us.lump.envelope.client.portal.HibernatePortal;
@@ -16,7 +17,7 @@ import java.util.Vector;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.6 2008/07/16 05:40:00 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.7 2008/07/17 03:30:40 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -52,6 +53,8 @@ public class CriteriaFactory {
     try {
       retval = (List<Account>)(new HibernatePortal()).detachedCriteriaQuery(
           DetachedCriteria.forClass(Account.class)
+              .setFetchMode("categories", FetchMode.JOIN)
+              .setFetchMode("budget", FetchMode.JOIN)
               .add(Restrictions.eq("budget", budget)));
     } catch (EnvelopeException e) {
       logger.error(e);
@@ -64,6 +67,7 @@ public class CriteriaFactory {
     try {
       retval = (List<Category>)(new HibernatePortal()).detachedCriteriaQuery(
           DetachedCriteria.forClass(Category.class)
+              .setFetchMode("account", FetchMode.JOIN)
               .createCriteria("account", "a")
               .add(Restrictions.eq("a.budget", budget)));
     } catch (EnvelopeException e) {

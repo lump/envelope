@@ -1,12 +1,9 @@
 package us.lump.envelope.entity;
 
-import org.hibernate.annotations.Fetch;
-import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Type;
 import us.lump.lib.Money;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.util.Collection;
@@ -16,14 +13,12 @@ import java.util.Collection;
  * Categories, which are tied to Accounts.
  *
  * @author Troy Bowman
- * @version $Id: Allocation.java,v 1.8 2008/07/09 04:20:02 troy Exp $
+ * @version $Id: Allocation.java,v 1.9 2008/07/17 03:30:40 troy Test $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
 @Table(name = "allocations")
-@org.hibernate.annotations.Table(
-    appliesTo = "allocations",
-    fetch = org.hibernate.annotations.FetchMode.SELECT)
+@org.hibernate.annotations.Table(appliesTo = "allocations")
 public class Allocation extends Identifiable<Integer, Timestamp> {
   private Integer id;
   private Timestamp stamp;
@@ -80,10 +75,7 @@ public class Allocation extends Identifiable<Integer, Timestamp> {
    *
    * @return Category
    */
-  @ManyToOne(
-      cascade = {CascadeType.PERSIST, CascadeType.MERGE},
-      fetch = javax.persistence.FetchType.EAGER)
-  @Fetch(value = FetchMode.SELECT)
+  @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
   @JoinColumn(name = "category")
   public Category getCategory() {
     return category;
@@ -133,11 +125,8 @@ public class Allocation extends Identifiable<Integer, Timestamp> {
    *
    * @return Transaction
    */
-  @ManyToOne(
-      cascade = {CascadeType.PERSIST, CascadeType.MERGE},
-      fetch = javax.persistence.FetchType.EAGER)
-  @Fetch(value = FetchMode.JOIN)
-  @JoinColumn(name = "transaction")
+  @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinColumn(name = "transaction")
   public Transaction getTransaction() {
     return transaction;
   }

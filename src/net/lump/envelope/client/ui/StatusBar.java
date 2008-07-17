@@ -9,7 +9,7 @@ import java.util.Vector;
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 
 public class StatusBar extends JLabel {
@@ -28,19 +28,25 @@ public class StatusBar extends JLabel {
     super();
   }
 
-  public Element addTask(String description) {
+  public Element<String> addTask(String description) {
     Element<String> e = new Element<String>(description);
-    tasks.add(e);
+    changeTask(true, e);
     repaint();
     return e;
   }
 
-  public void removeTask(Element e) {
-    tasks.remove(e);
+  public void removeTask(Element<String> e) {
+    changeTask(false, e);
     repaint();
   }
 
-  public void repaint() {
+  private synchronized void changeTask(boolean addRemove, Element<String> e) {
+    if (addRemove) tasks.add(e);
+    else tasks.remove(e);
+  }
+
+
+  public synchronized void repaint() {
     if (tasks == null) tasks = new Vector<Element<String>>();
     String line = "(" + tasks.size() + ") ";
     if (tasks.size() == 0) line += Strings.get("ready");

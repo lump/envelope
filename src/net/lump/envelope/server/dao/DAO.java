@@ -26,7 +26,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.15 2008/07/16 00:29:46 troy Exp $
+ * @version $Id: DAO.java,v 1.16 2008/07/17 03:30:40 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -353,7 +353,7 @@ public abstract class DAO {
    *          - Indicates problems flushing the session or talking to the
    *          database.
    */
-  public void flush() throws HibernateException {
+  public synchronized void flush() throws HibernateException {
     getCurrentSession().flush();
     logger.debug("flushed session");
   }

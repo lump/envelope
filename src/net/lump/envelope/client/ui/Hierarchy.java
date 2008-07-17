@@ -36,7 +36,7 @@ import java.util.Vector;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.7 2008/07/17 00:58:26 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.8 2008/07/17 03:30:40 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -52,8 +52,8 @@ public class Hierarchy extends JTree {
     super();
     setModel(new DefaultTreeModel(rootNode, false));
 
-    getSelectionModel()
-        .setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+    getSelectionModel().setSelectionMode(
+        TreeSelectionModel.SINGLE_TREE_SELECTION);
     addTreeSelectionListener(new TreeSelectionListener() {
       public void valueChanged(final TreeSelectionEvent e) {
         final Object o = ((DefaultMutableTreeNode)e.getPath()
@@ -144,12 +144,15 @@ public class Hierarchy extends JTree {
             thisNode.add(new DefaultMutableTreeNode(c));
           }
           rootNode.add(thisNode);
-
         }
 
-        singleton.expandPath(new TreePath(rootNode));
-        singleton.repaint();
-        RepaintManager.currentManager(singleton).paintDirtyRegions();
+        SwingUtilities.invokeLater(new Runnable(){
+          public void run() {
+            singleton.expandPath(new TreePath(rootNode));
+            singleton.repaint();
+            RepaintManager.currentManager(singleton).paintDirtyRegions();
+          }
+        });
 
       }
     };

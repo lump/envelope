@@ -15,7 +15,7 @@ import java.util.List;
  * A transaction.
  *
  * @author Troy Bowman
- * @version $Id: Transaction.java,v 1.9 2008/07/16 05:40:00 troy Exp $
+ * @version $Id: Transaction.java,v 1.10 2008/07/17 03:30:40 troy Test $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
@@ -78,8 +78,7 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
     this.date = date;
   }
 
-  @OneToMany(mappedBy = "transaction",
-             fetch = javax.persistence.FetchType.EAGER)
+  @OneToMany(mappedBy = "transaction")
   @Fetch(value = FetchMode.JOIN)
   public List<Allocation> getAllocations() {
     return allocations;
