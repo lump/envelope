@@ -21,7 +21,7 @@ import java.rmi.RemoteException;
  * exit/entry to the server.
  *
  * @author Troy Bowman
- * @version $Revision: 1.10 $
+ * @version $Revision: 1.11 $
  */
 
 abstract class Portal {
@@ -101,12 +101,19 @@ abstract class Portal {
             || cause instanceof java.net.ConnectException
             || cause instanceof java.rmi.ConnectException) {
           found = true;
-          Preferences p = Preferences.getInstance();
-          JOptionPane.showMessageDialog(null,
-                                        cause.getMessage(),
-                                        "Session Exception",
-                                        JOptionPane.ERROR_MESSAGE);
-          System.exit(0);
+          if (cause instanceof SessionException
+              && ((SessionException)cause).getType()
+              .equals(SessionException.Type.Invalid_Credentials)) {
+            Preferences p = Preferences.getInstance();
+            p.setVisible(true);
+          }
+          else {
+            JOptionPane.showMessageDialog(null,
+                                          cause.getMessage(),
+                                          "Session Exception",
+                                          JOptionPane.ERROR_MESSAGE);
+            System.exit(0);
+          }
         }
         cause = cause.getCause();
       }
