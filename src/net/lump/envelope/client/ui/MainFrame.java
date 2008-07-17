@@ -4,6 +4,7 @@ import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationEvent;
 import org.apache.log4j.BasicConfigurator;
 import us.lump.envelope.client.State;
+import us.lump.envelope.client.thread.StatusElement;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.lib.util.EmacsKeyBindings;
 
@@ -18,7 +19,7 @@ import java.net.URL;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.11 2008/07/17 03:30:40 troy Exp $
+ * @version $Id: MainFrame.java,v 1.12 2008/07/17 21:49:43 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -49,8 +50,7 @@ public class MainFrame extends JFrame {
   }
 
   private MainFrame() {
-    StatusBar.Element<String> initStatus =
-        status.addTask(Strings.get("initializing"));
+    StatusElement initStatus = status.addTask(Strings.get("initializing"));
 
     BasicConfigurator.configure();
     EmacsKeyBindings.loadEmacsKeyBindings();
@@ -70,7 +70,7 @@ public class MainFrame extends JFrame {
     splitPane.setContinuousLayout(true);
     splitPane.setOneTouchExpandable(true);
 
-    status.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
+
 
     this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     this.setLayout(new BorderLayout());

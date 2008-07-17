@@ -1,20 +1,24 @@
 package us.lump.envelope.client.ui;
 
 import us.lump.envelope.client.ui.defs.Strings;
+import us.lump.envelope.client.thread.StatusElement;
 
 import javax.swing.*;
+import javax.swing.border.EtchedBorder;
 import java.util.Vector;
 
 /**
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 
 public class StatusBar extends JLabel {
 
-  private Vector<Element<String>> tasks = new Vector<Element<String>>();
+  private Vector<StatusElement> tasks
+      = new Vector<StatusElement>();
+
   private static StatusBar singleton = null;
 
 
@@ -26,82 +30,52 @@ public class StatusBar extends JLabel {
 
   private StatusBar() {
     super();
+    setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
+    setVerticalAlignment(SwingConstants.CENTER);
   }
 
-  public Element<String> addTask(String description) {
-    Element<String> e = new Element<String>(description);
+  public StatusElement addTask(String description) {
+    StatusElement e = new StatusElement(description);
+    return addTask(e);
+  }
+
+  public StatusElement addTask(StatusElement e) {
     changeTask(true, e);
     repaint();
     return e;
   }
 
-  public void removeTask(Element<String> e) {
+  public void removeTask(StatusElement e) {
     changeTask(false, e);
     repaint();
   }
+  public void removeTask(Object o) {
+    changeTask(false, o);
+    repaint();
+  }
 
-  private synchronized void changeTask(boolean addRemove, Element<String> e) {
-    if (addRemove) tasks.add(e);
-    else tasks.remove(e);
+  private synchronized void changeTask(boolean addRemove, Object o) {
+    StatusElement e = null;
+    if (o instanceof StatusElement) e = (StatusElement)o;
+    else for (StatusElement task : tasks)
+      if (task.getValue().equals(e)) { e = task; break; }
+
+    if (e != null) {
+      if (addRemove) tasks.add(e);
+      else tasks.remove(e);
+    }
   }
 
 
   public synchronized void repaint() {
-    if (tasks == null) tasks = new Vector<Element<String>>();
-    String line = "(" + tasks.size() + ") ";
+    if (tasks == null) tasks = new Vector<StatusElement>();
+    String line = "[" + tasks.size() + "] ";
     if (tasks.size() == 0) line += Strings.get("ready");
-    else for (Element task : tasks) {
-      line += "[" + task + "] ";
+    else for (StatusElement task : tasks) {
+      line += "(" + task.toString() + ") ";
     }
     this.setText(line);
     super.repaint();
   }
 
-  public static class Element<T> {
-    private long id;
-    T value;
-    private static long count = 0;
-
-    private Element() {}
-
-    public Element(T value) {
-      this.id = getNextId();
-      this.value = value;
-    }
-
-    public long getId() { return id; }
-
-    public T getValue() { return value; }
-
-    private synchronized long getNextId() {
-      return ++count;
-    }
-
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-
-      Element element = (Element)o;
-
-      if (id != element.id) return false;
-      return !(value != null
-               ? !value.equals(element.value)
-               : element.value != null);
-
-    }
-
-    public String toString() {
-      return new StringBuilder().append(value)
-          .append("-")
-          .append(id)
-          .toString();
-    }
-
-    public int hashCode() {
-      int result;
-      result = (int)(id ^ (id >>> 32));
-      result = 31 * result + (value != null ? value.hashCode() : 0);
-      return result;
-    }
-  }
 }

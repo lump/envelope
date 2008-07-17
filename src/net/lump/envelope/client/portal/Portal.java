@@ -29,7 +29,7 @@ import java.text.MessageFormat;
  * exit/entry to the server along with exception handling.
  *
  * @author Troy Bowman
- * @version $Revision: 1.12 $
+ * @version $Revision: 1.13 $
  */
 
 abstract class Portal {
@@ -64,19 +64,11 @@ abstract class Portal {
     // set instance variables for use if exceptions happen
     this.frame = jframe;
 
-    // add a status bar message
-    StatusBar.Element<String> statusElement =
-        StatusBar.getInstance().addTask(command.getName().toString());
-
     try {
       return getController().invoke(command);
     } catch (Exception e) {
       handleException(e);
       return null;
-    }
-    finally {
-      // remove status bar message
-      StatusBar.getInstance().removeTask(statusElement);
     }
   }
 

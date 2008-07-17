@@ -1,6 +1,8 @@
 package us.lump.envelope.client.ui;
 
 import us.lump.envelope.client.CriteriaFactory;
+import us.lump.envelope.client.thread.ThreadPool;
+import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.portal.TransactionPortal;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.entity.Account;
@@ -12,6 +14,7 @@ import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.util.Date;
 import java.util.Vector;
+import java.text.MessageFormat;
 
 /**
  * A table model which lists transactions.
@@ -107,7 +110,14 @@ public class TransactionTableModel extends AbstractTableModel {
       }
 
       // update the Transaction
-      ThreadPool.getInstance().execute(new Runnable() {
+      ThreadPool.getInstance().execute(new EnvelopeRunnable(
+          MessageFormat.format("{0} {1} {2}",
+                               ((Boolean)aValue)
+                               ? Strings.get("reconciling")
+                               : Strings.get("unreconciling"),
+                               Strings.get("transaction"),
+                               transactions.get(row)[ID])) {
+              
         public void run() {
           try {
             new TransactionPortal().updateReconciled(

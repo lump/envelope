@@ -2,8 +2,12 @@ package us.lump.envelope.client.ui;
 
 import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.State;
+import us.lump.envelope.client.thread.ThreadPool;
+import us.lump.envelope.client.thread.EnvelopeRunnable;
+import us.lump.envelope.client.thread.StatusElement;
 import us.lump.envelope.client.ui.defs.Colors;
 import us.lump.envelope.client.ui.defs.Fonts;
+import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Budget;
 import us.lump.envelope.entity.Category;
@@ -30,13 +34,14 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
+import java.text.MessageFormat;
 
 
 /**
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.9 2008/07/17 05:31:24 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.10 2008/07/17 21:49:43 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -67,7 +72,14 @@ public class Hierarchy extends JTree {
         }
 
         if (o instanceof Account || o instanceof Category) {
-          final Runnable refresh = new Runnable() {
+          String type = o instanceof Account
+                        ? Strings.get("account")
+                        : Strings.get("category");
+          final EnvelopeRunnable refresh = new EnvelopeRunnable(
+              MessageFormat.format("{0} {1} {2}",
+                                   Strings.get("retreving"),
+                                   o.toString(),
+                                   type)) {
 
             public void run() {
               final TableModel tm = new TransactionTableModel(
@@ -75,6 +87,9 @@ public class Hierarchy extends JTree {
 
               SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
+                  StatusElement se = StatusBar.getInstance()
+                      .addTask(Strings.get("preparing.table"));
+
                   final JTable table = new JTable(tm);
                   table.setDefaultRenderer(Money.class, new MoneyRenderer());
                   table.getTableHeader().setUpdateTableInRealTime(true);
@@ -92,13 +107,17 @@ public class Hierarchy extends JTree {
                   tqb.setViewportView(table);
 
 
-                  initColumnSizes(table,
-                                  ((TransactionTableModel)table.getModel()).getTransactions());
-                  table.scrollRectToVisible(table.getCellRect(tm.getRowCount()-1,0,true));
+                  initColumnSizes(
+                      table,
+                      ((TransactionTableModel)table.getModel()).getTransactions());
+                  table.scrollRectToVisible(
+                      table.getCellRect(tm.getRowCount()-1,0,true));
 
                   ((Component)e.getSource()).repaint();
                   RepaintManager.currentManager((Component)e.getSource())
                       .paintDirtyRegions();
+
+                  StatusBar.getInstance().removeTask(se);
                 }
               });
             }
@@ -122,7 +141,7 @@ public class Hierarchy extends JTree {
   public void setRootNode(Budget budget) {
     rootNode.setUserObject(budget);
 
-    Runnable r = new Runnable() {
+    EnvelopeRunnable r = new EnvelopeRunnable(Strings.get("building.tree")) {
       public void run() {
         for (Account a
             : CriteriaFactory.getInstance()
@@ -156,7 +175,7 @@ public class Hierarchy extends JTree {
 
       }
     };
-    ThreadPool.getInstance().getService().execute(r);
+    ThreadPool.getInstance().execute(r);
   }
 
   private void initColumnSizes(JTable table, Vector<Object[]> transactions) {
