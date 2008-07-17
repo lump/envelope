@@ -1,17 +1,16 @@
 package us.lump.envelope.client.ui;
 
-import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.thread.StatusElement;
+import us.lump.envelope.client.ui.defs.Strings;
 
 import javax.swing.*;
-import javax.swing.border.EtchedBorder;
 import java.util.Vector;
 
 /**
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 
 public class StatusBar extends JLabel {
@@ -30,7 +29,8 @@ public class StatusBar extends JLabel {
 
   private StatusBar() {
     super();
-    setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
+//    setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
+    setHorizontalAlignment(SwingConstants.LEFT);
     setVerticalAlignment(SwingConstants.CENTER);
   }
 
@@ -49,6 +49,7 @@ public class StatusBar extends JLabel {
     changeTask(false, e);
     repaint();
   }
+
   public void removeTask(Object o) {
     changeTask(false, o);
     repaint();
@@ -58,7 +59,10 @@ public class StatusBar extends JLabel {
     StatusElement e = null;
     if (o instanceof StatusElement) e = (StatusElement)o;
     else for (StatusElement task : tasks)
-      if (task.getValue().equals(e)) { e = task; break; }
+      if (task.getValue().equals(e)) {
+        e = task;
+        break;
+      }
 
     if (e != null) {
       if (addRemove) tasks.add(e);

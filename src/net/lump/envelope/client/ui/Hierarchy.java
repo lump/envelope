@@ -2,9 +2,9 @@ package us.lump.envelope.client.ui;
 
 import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.State;
-import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.thread.StatusElement;
+import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.defs.Colors;
 import us.lump.envelope.client.ui.defs.Fonts;
 import us.lump.envelope.client.ui.defs.Strings;
@@ -30,18 +30,18 @@ import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
-import java.text.MessageFormat;
 
 
 /**
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.10 2008/07/17 21:49:43 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.11 2008/07/17 22:31:35 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -77,7 +77,7 @@ public class Hierarchy extends JTree {
                         : Strings.get("category");
           final EnvelopeRunnable refresh = new EnvelopeRunnable(
               MessageFormat.format("{0} {1} {2}",
-                                   Strings.get("retreving"),
+                                   Strings.get("retrieving"),
                                    o.toString(),
                                    type)) {
 
@@ -111,7 +111,7 @@ public class Hierarchy extends JTree {
                       table,
                       ((TransactionTableModel)table.getModel()).getTransactions());
                   table.scrollRectToVisible(
-                      table.getCellRect(tm.getRowCount()-1,0,true));
+                      table.getCellRect(tm.getRowCount() - 1, 0, true));
 
                   ((Component)e.getSource()).repaint();
                   RepaintManager.currentManager((Component)e.getSource())
@@ -165,7 +165,7 @@ public class Hierarchy extends JTree {
           rootNode.add(thisNode);
         }
 
-        SwingUtilities.invokeLater(new Runnable(){
+        SwingUtilities.invokeLater(new Runnable() {
           public void run() {
             singleton.expandPath(new TreePath(rootNode));
             singleton.repaint();

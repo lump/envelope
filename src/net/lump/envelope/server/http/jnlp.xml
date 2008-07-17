@@ -13,7 +13,6 @@
   <resources>
     <j2se version="1.5+" java-vm-args="-Xmx512m"/>
     <property name="codebase" value="{host}:{port}"/>
-    <property name="java.class.path" value="http://{host}:{port}/"/>
     <property name="java.security.policy"
               value="http://{host}:{port}/info/security.policy"/>
     {jars}
