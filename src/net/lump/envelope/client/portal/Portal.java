@@ -1,6 +1,5 @@
 package us.lump.envelope.client.portal;
 
-import org.apache.log4j.Logger;
 import us.lump.envelope.Command;
 import us.lump.envelope.client.ui.Preferences;
 import us.lump.envelope.client.ui.StatusBar;
@@ -12,115 +11,193 @@ import us.lump.envelope.exception.SessionException;
 import us.lump.envelope.server.rmi.Controller;
 
 import javax.swing.*;
+import java.awt.*;
+import java.io.IOException;
+import java.io.InvalidClassException;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.rmi.Naming;
-import java.rmi.RemoteException;
+import java.rmi.NotBoundException;
+import java.rmi.UnmarshalException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.text.MessageFormat;
 
 /**
  * All portals should subclass this class, as this provides a single point of
- * exit/entry to the server.
+ * exit/entry to the server along with exception handling.
  *
  * @author Troy Bowman
- * @version $Revision: 1.11 $
+ * @version $Revision: 1.12 $
  */
 
 abstract class Portal {
-  Controller controller;
-  Logger logger;
-  JFrame frame;
-
-  {
-    this.logger = Logger.getLogger(this.getClass());
-  }
-
-  Portal() {
-    try {
-      this.controller = (Controller)Naming.lookup(
-          ServerSettings.getInstance().rmiController());
-    } catch (Exception e) {
-      logger.error(e);
-      Preferences p = Preferences.getInstance();
-      p.areServerSettingsOk();
-      p.selectTab(Strings.get("server"));
-      p.setVisible(true);
-    }
-  }
+  private Controller controller;
+  Component frame;
 
   public Serializable invoke(Command command) throws EnvelopeException {
     return invoke(null, command);
   }
 
-  public Serializable invoke(JFrame frame, Command command)
+  public Serializable invoke(Component frame, Command command)
       throws EnvelopeException {
-    LoginSettings ls = LoginSettings.getInstance();
-
-    // sign the command
+    // sign the command before invoking
     try {
+      LoginSettings ls = LoginSettings.getInstance();
       command.sign(ls.getUsername(), ls.getKeyPair().getPrivate());
     } catch (Exception e) {
-      // if we can't sign for any reason, this is fatal.
-      logger.error(e);
-      JOptionPane.showMessageDialog(
-          frame,
-          Strings.get(e.getClass().getSimpleName() + ": " + e.getMessage()),
-          Strings.get("error.fatal"),
-          JOptionPane.ERROR_MESSAGE);
-      System.exit(1);
+      handleException(e);
     }
-
-    return rawInvoke(command);
+    return rawInvoke(frame, command);
   }
 
 
-  public Serializable rawInvoke(final Command command)
+  public Serializable rawInvoke(Command command)
       throws EnvelopeException {
-    Serializable out = null;
-
-    out = rawInvoke(null, command);
-    return out;
+    return rawInvoke(null, command);
   }
 
-  public Serializable rawInvoke(JFrame jframe, Command command)
-      throws EnvelopeException {
+  // this is the real deal.
+  public Serializable rawInvoke(Component jframe, Command command) {
+
+    // set instance variables for use if exceptions happen
+    this.frame = jframe;
+
+    // add a status bar message
+    StatusBar.Element<String> statusElement =
+        StatusBar.getInstance().addTask(command.getName().toString());
 
     try {
-      StatusBar.Element<String> e =
-          StatusBar.getInstance().addTask(command.getName().toString());
-      try {
-        return controller.invoke(command);
-      }
-      finally {
-        StatusBar.getInstance().removeTask(e);
-      }
-    } catch (RemoteException e) {
-      logger.warn(e);
-      Throwable cause = e;
-      boolean found = false;
-      while (cause != null && !found) {
-        if (cause instanceof SessionException
-            || cause instanceof java.net.ConnectException
-            || cause instanceof java.rmi.ConnectException) {
-          found = true;
-          if (cause instanceof SessionException
-              && ((SessionException)cause).getType()
-              .equals(SessionException.Type.Invalid_Credentials)) {
-            Preferences p = Preferences.getInstance();
-            p.setVisible(true);
-          }
-          else {
-            JOptionPane.showMessageDialog(null,
-                                          cause.getMessage(),
-                                          "Session Exception",
-                                          JOptionPane.ERROR_MESSAGE);
-            System.exit(0);
-          }
-        }
-        cause = cause.getCause();
-      }
-      if (!found) {
-        //todo: catch other generic errors, rethrow non-generic errors
-      }
+      return getController().invoke(command);
+    } catch (Exception e) {
+      handleException(e);
+      return null;
     }
-    return null;
+    finally {
+      // remove status bar message
+      StatusBar.getInstance().removeTask(statusElement);
+    }
+  }
+
+  private Controller getController()
+      throws IOException, NotBoundException {
+    if (controller == null)
+      controller = (Controller)Naming.lookup(
+          ServerSettings.getInstance().rmiController());
+    return controller;
+  }
+
+  private void handleException(Exception incomingException) {
+
+    //try to find a nested envelope exception first...
+    Throwable cause = incomingException;
+    boolean found = false;
+    while (cause != null && !found) {
+      if (cause instanceof EnvelopeException) {
+        found = true;
+        SessionException e = (SessionException)cause;
+        switch (e.getType()) {
+          case Invalid_Credentials:
+            checkSettings(e);
+            break;
+          case Invalid_Session:
+            fatalError(e);
+            break;
+          case Invalid_User:
+            checkSettings(e);
+            break;
+          default:
+            error(incomingException);
+        }
+        break;
+      }
+      if (cause instanceof UnmarshalException
+          && cause.getCause() instanceof InvalidClassException
+          && cause.getCause().getMessage()
+          .matches("^.*local class incompatible.*$")) {
+        found = true;
+        String message =
+            MessageFormat.format(
+                Strings.get("error.invalidclassexception"),
+                ((InvalidClassException)cause.getCause()).classname);
+        fatalError(incomingException, message);
+        break;
+      }
+      cause = cause.getCause();
+    }
+
+    // move on to handling generic errors
+    if (!found)
+      try {
+        throw (incomingException);
+      } catch (java.net.ConnectException e) {
+        checkSettings(e);
+      } catch (java.net.MalformedURLException e) {
+        checkSettings(e);
+      } catch (java.rmi.ConnectException e) {
+        checkSettings(e);
+      } catch (NotBoundException e) {
+        checkSettings(e);
+      } catch (UnsupportedEncodingException e) {
+        fatalError(e);
+      } catch (IOException e) {
+        checkSettings(e);
+      } catch (NoSuchAlgorithmException e) {
+        fatalError(e);
+      } catch (SignatureException e) {
+        fatalError(e);
+      } catch (InvalidKeyException e) {
+        fatalError(e);
+      } catch (ClassNotFoundException e) {
+        fatalError(e);
+      } catch (Exception e) {
+        error(e);
+      }
+  }
+
+  private void error(Exception e) {
+    error(e, null);
+  }
+
+  private void error(Exception e, String message) {
+    if (message == null)
+      message = e.getClass().getSimpleName() + ": " + e.getLocalizedMessage();
+    e.printStackTrace();
+    JOptionPane.showMessageDialog(
+        frame,
+        message,
+        Strings.get("error"),
+        JOptionPane.ERROR_MESSAGE);
+  }
+
+  private void fatalError(Exception e) {
+    fatalError(e, null);
+  }
+
+  private void fatalError(Exception e, String message) {
+    if (message == null)
+      message = e.getClass().getSimpleName() + ": " + e.getLocalizedMessage();
+    e.printStackTrace();
+    JOptionPane.showMessageDialog(
+        frame,
+        message,
+        Strings.get("error.fatal"),
+        JOptionPane.ERROR_MESSAGE);
+    System.exit(1);
+  }
+
+  private void checkSettings(Exception e) {
+    Preferences appPrefs = Preferences.getInstance();
+
+    if (!appPrefs.areServerSettingsOk()) {
+      appPrefs.selectTab(Strings.get("server"));
+      appPrefs.setVisible(true);
+    } else if (!appPrefs.areLoginSettingsOk()) {
+      appPrefs.selectTab(Strings.get("login"));
+      appPrefs.setVisible(true);
+    } else {
+      error(e);
+    }
   }
 }
