@@ -10,7 +10,7 @@ import java.util.Vector;
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 
 public class StatusBar extends JLabel {
@@ -29,6 +29,7 @@ public class StatusBar extends JLabel {
 
   private StatusBar() {
     super();
+    setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
 //    setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
     setHorizontalAlignment(SwingConstants.LEFT);
     setVerticalAlignment(SwingConstants.CENTER);
