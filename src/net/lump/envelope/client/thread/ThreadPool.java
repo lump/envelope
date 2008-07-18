@@ -9,7 +9,7 @@ import java.util.concurrent.*;
  * to be updated with what the threadpool is doing.
  *
  * @author Troy Bowman
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 
 public class ThreadPool extends ThreadPoolExecutor {

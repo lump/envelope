@@ -19,7 +19,7 @@ import java.net.URL;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.12 2008/07/17 21:49:43 troy Exp $
+ * @version $Id: MainFrame.java,v 1.13 2008/07/18 05:00:41 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -54,7 +54,6 @@ public class MainFrame extends JFrame {
 
     BasicConfigurator.configure();
     EmacsKeyBindings.loadEmacsKeyBindings();
-
 
     this.setTitle(Strings.get("envelope_budget"));
     try {

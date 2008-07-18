@@ -163,25 +163,23 @@ public class Preferences extends JDialog {
       lsData.setPasswordShouldBeSaved(rememberPasswordCheckBox.isSelected());
       authed = sp.auth(lsData.challengeResponse(sp.getChallenge()));
     } catch (Exception setException) {
-      sessionState.setForeground(Colors.getColor("red"));
       String message = null;
       Throwable cause = setException;
       while (cause != null) {
         message = cause.getMessage();
         cause = cause.getCause();
       }
+      sessionState.setForeground(Colors.getColor("red"));
       sessionState.setText(message);
     }
 
-    if (authed != null) {
-      if (authed) {
-        hadLoginSuccessYet = true;
-        sessionState.setForeground(Colors.getColor("green"));
-        sessionState.setText(Strings.get("session.state.authorized"));
-      } else {
-        sessionState.setForeground(Colors.getColor("red"));
-        sessionState.setText(Strings.get("session.state.invalid"));
-      }
+    if (authed != null && authed) {
+      hadLoginSuccessYet = true;
+      sessionState.setForeground(Colors.getColor("green"));
+      sessionState.setText(Strings.get("session.state.authorized"));
+    } else {
+      sessionState.setForeground(Colors.getColor("red"));
+      sessionState.setText(Strings.get("session.state.invalid"));
     }
 
     checkingLoginSettings = false;

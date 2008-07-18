@@ -10,7 +10,7 @@ import java.util.Vector;
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Revision: 1.7 $
+ * @version $Revision: 1.8 $
  */
 
 public class StatusBar extends JLabel {
@@ -19,9 +19,12 @@ public class StatusBar extends JLabel {
       = new Vector<StatusElement>();
 
   private static StatusBar singleton = null;
-  private static Icon busy;
-  private static Icon idle;
+  private static Icon busy = new ImageIcon(StatusBar.class.getResource("images/busy.gif"));
+  private static Icon idle = new ImageIcon(StatusBar.class.getResource("images/idle.gif"));
 
+  {
+    setIcon(idle);
+  }
 
   public static StatusBar getInstance() {
     if (singleton == null) singleton = new StatusBar();
@@ -31,15 +34,10 @@ public class StatusBar extends JLabel {
 
   private StatusBar() {
     super();
-
-    busy = new ImageIcon(this.getClass().getResource("images/busy.gif"));
-    idle = new ImageIcon(this.getClass().getResource("images/idle.gif"));
-
     setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
 //    setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
     setHorizontalAlignment(SwingConstants.LEFT);
     setVerticalAlignment(SwingConstants.CENTER);
-    setIcon(idle);
   }
 
   public StatusElement addTask(String description) {
@@ -83,10 +81,16 @@ public class StatusBar extends JLabel {
     if (tasks == null) tasks = new Vector<StatusElement>();
     String line = "[" + tasks.size() + "] ";
     if (tasks.size() == 0) {
-      if (getIcon().equals(busy)) setIcon(idle);
+      if (busy.equals(getIcon())) {
+        ((ImageIcon)busy).setImageObserver(null);
+        setIcon(idle);
+      }
       line += Strings.get("ready");
     } else {
-      if (getIcon().equals(idle)) setIcon(busy);
+      if (idle.equals(getIcon())) {
+        setIcon(busy);
+        ((ImageIcon)busy).setImageObserver(this);
+      }
       for (StatusElement task : tasks)
         line += "(" + task.toString() + ") ";
     }
