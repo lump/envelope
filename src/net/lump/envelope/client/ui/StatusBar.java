@@ -10,7 +10,7 @@ import java.util.Vector;
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 
 public class StatusBar extends JLabel {
@@ -19,6 +19,8 @@ public class StatusBar extends JLabel {
       = new Vector<StatusElement>();
 
   private static StatusBar singleton = null;
+  private static Icon busy;
+  private static Icon idle;
 
 
   public static StatusBar getInstance() {
@@ -29,10 +31,15 @@ public class StatusBar extends JLabel {
 
   private StatusBar() {
     super();
+
+    busy = new ImageIcon(this.getClass().getResource("images/busy.gif"));
+    idle = new ImageIcon(this.getClass().getResource("images/idle.gif"));
+
     setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
 //    setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
     setHorizontalAlignment(SwingConstants.LEFT);
     setVerticalAlignment(SwingConstants.CENTER);
+    setIcon(idle);
   }
 
   public StatusElement addTask(String description) {
@@ -75,10 +82,15 @@ public class StatusBar extends JLabel {
   public synchronized void repaint() {
     if (tasks == null) tasks = new Vector<StatusElement>();
     String line = "[" + tasks.size() + "] ";
-    if (tasks.size() == 0) line += Strings.get("ready");
-    else for (StatusElement task : tasks) {
-      line += "(" + task.toString() + ") ";
+    if (tasks.size() == 0) {
+      setIcon(idle);
+      line += Strings.get("ready");
+    } else {
+      setIcon(busy);
+      for (StatusElement task : tasks)
+        line += "(" + task.toString() + ") ";
     }
+
     this.setText(line);
     super.repaint();
   }
