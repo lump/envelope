@@ -10,7 +10,7 @@ import java.util.Vector;
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Revision: 1.6 $
+ * @version $Revision: 1.7 $
  */
 
 public class StatusBar extends JLabel {
@@ -83,10 +83,10 @@ public class StatusBar extends JLabel {
     if (tasks == null) tasks = new Vector<StatusElement>();
     String line = "[" + tasks.size() + "] ";
     if (tasks.size() == 0) {
-      setIcon(idle);
+      if (getIcon().equals(busy)) setIcon(idle);
       line += Strings.get("ready");
     } else {
-      setIcon(busy);
+      if (getIcon().equals(idle)) setIcon(busy);
       for (StatusElement task : tasks)
         line += "(" + task.toString() + ") ";
     }
