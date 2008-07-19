@@ -6,7 +6,7 @@ import us.lump.envelope.client.ui.MainFrame;
  * Main class.
  *
  * @author troy
- * @version $Id: Main.java,v 1.7 2008/07/06 04:14:24 troy Exp $
+ * @version $Id: Main.java,v 1.8 2008/07/19 05:39:44 troy Exp $
  */
 public class Main implements Runnable {
   private static Main singleton;
@@ -27,9 +27,5 @@ public class Main implements Runnable {
 
   public void run() {
     mf = MainFrame.getInstance();
-  }
-
-  public void setStatus(String status) {
-    mf.setStatus(status);
   }
 }

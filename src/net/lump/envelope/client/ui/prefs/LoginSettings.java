@@ -21,7 +21,7 @@ import java.util.prefs.Preferences;
  * and password.
  *
  * @author Troy Bowman
- * @version $Id: LoginSettings.java,v 1.11 2008/07/18 05:00:41 troy Exp $
+ * @version $Id: LoginSettings.java,v 1.12 2008/07/19 05:39:44 troy Exp $
  */
 public class LoginSettings {
 
@@ -53,7 +53,7 @@ public class LoginSettings {
           System.exit(1);
         }
       }
-    }, Strings.get("generating.keypair")).run();
+    }, Strings.get("generating.keypair")).start();
   }
 
 

@@ -11,9 +11,10 @@ import java.text.ParseException;
  * and formatting.
  *
  * @author Troy Bowman
- * @version $Id: Money.java,v 1.2 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Money.java,v 1.3 2008/07/19 05:39:44 troy Test $
  */
 public class Money extends BigDecimal implements Serializable {
+  
   /**
    * Attempts to parse the string with the current locale's Currency
    * NumberFormat parser.  If that fails, it falls back to the BigDecimal

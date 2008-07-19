@@ -19,7 +19,7 @@ import java.net.URL;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.13 2008/07/18 05:00:41 troy Exp $
+ * @version $Id: MainFrame.java,v 1.14 2008/07/19 05:39:44 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -227,7 +227,6 @@ public class MainFrame extends JFrame {
                           prefs.getInt("windowSizeY", 480)));
     splitPane.setDividerLocation(prefs.getInt("splitPaneLocation",
                                               splitPane.getDividerLocation()));
-    setStatus(Strings.get("ready"));
     setVisible(true);
     status.removeTask(initStatus);
   }
@@ -276,10 +275,6 @@ public class MainFrame extends JFrame {
     public void actionPerformed(ActionEvent e) {
       appPrefs.setVisible(true);
     }
-  }
-
-  public void setStatus(String status) {
-    this.status.setText(status);
   }
 
   public class exitActionClass extends AbstractAction {

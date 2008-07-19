@@ -2,6 +2,7 @@ import javax.swing.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.rmi.RMISecurityManager;
 import java.rmi.server.RMIClassLoader;
 
@@ -9,7 +10,7 @@ import java.rmi.server.RMIClassLoader;
  * The class that starts the client by bootstrapping from RMI.
  *
  * @author Troy Bowman
- * @version $Id: Envelope.java,v 1.7 2008/07/15 23:13:26 troy Exp $
+ * @version $Id: Envelope.java,v 1.8 2008/07/19 05:39:44 troy Exp $
  */
 
 public class Envelope {
@@ -58,14 +59,21 @@ public class Envelope {
 
     // try to load the class normally, else use RMI classloader
     try {
-      ClassLoader cl = this.getClass().getClassLoader();
-      Class clientClass = cl.loadClass(className);
+      Class clientClass = Class.forName(
+          className, true, Thread.currentThread().getContextClassLoader());
       System.err.println("loading from local classloader");
       ((Runnable)clientClass.newInstance()).run();
     }
     catch (ClassNotFoundException e) {
       System.err.println("loading from RMI");
-      Class clientClass = RMIClassLoader.loadClass(urlCodebase(), className);
+      Class clientClass = Class.forName(
+          className, true,
+          RMIClassLoader.getClassLoader(urlCodebase().toString()));
+//      Class clientClass = Class.forName(
+//          className, true,
+//          new URLClassLoader(new URL[]{urlCodebase()},
+//                             ClassLoader.getSystemClassLoader()));
+
       ((Runnable)clientClass.newInstance()).run();
     }
   }

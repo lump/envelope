@@ -5,12 +5,14 @@ import us.lump.envelope.client.ui.defs.Strings;
 
 import javax.swing.*;
 import java.util.Vector;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 /**
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Revision: 1.8 $
+ * @version $Revision: 1.9 $
  */
 
 public class StatusBar extends JLabel {
@@ -18,9 +20,12 @@ public class StatusBar extends JLabel {
   private Vector<StatusElement> tasks
       = new Vector<StatusElement>();
 
+  private long lastRun = 0;
+  private Timer timer;
+
   private static StatusBar singleton = null;
-  private static Icon busy = new ImageIcon(StatusBar.class.getResource("images/busy.gif"));
-  private static Icon idle = new ImageIcon(StatusBar.class.getResource("images/idle.gif"));
+  private ImageIcon busy = new ImageIcon(StatusBar.class.getResource("images/busy.gif"));
+  private ImageIcon idle = new ImageIcon(StatusBar.class.getResource("images/idle.gif"));
 
   {
     setIcon(idle);
@@ -47,18 +52,15 @@ public class StatusBar extends JLabel {
 
   public StatusElement addTask(StatusElement e) {
     changeTask(true, e);
-    repaint();
     return e;
   }
 
   public void removeTask(StatusElement e) {
     changeTask(false, e);
-    repaint();
   }
 
   public void removeTask(Object o) {
     changeTask(false, o);
-    repaint();
   }
 
   private synchronized void changeTask(boolean addRemove, Object o) {
@@ -74,29 +76,46 @@ public class StatusBar extends JLabel {
       if (addRemove) tasks.add(e);
       else tasks.remove(e);
     }
+    repaint();
   }
-
 
   public synchronized void repaint() {
-    if (tasks == null) tasks = new Vector<StatusElement>();
-    String line = "[" + tasks.size() + "] ";
-    if (tasks.size() == 0) {
-      if (busy.equals(getIcon())) {
-        ((ImageIcon)busy).setImageObserver(null);
-        setIcon(idle);
-      }
-      line += Strings.get("ready");
-    } else {
-      if (idle.equals(getIcon())) {
-        setIcon(busy);
-        ((ImageIcon)busy).setImageObserver(this);
-      }
-      for (StatusElement task : tasks)
-        line += "(" + task.toString() + ") ";
-    }
+    long now = System.currentTimeMillis();
+    if (getIcon() != null && (now - 100) > lastRun) {
+      if (timer != null) timer.stop();
 
-    this.setText(line);
+      if (tasks == null) tasks = new Vector<StatusElement>();
+      String line = "[" + tasks.size() + "] ";
+      if (getIcon() == null) setIcon(idle);
+      if (tasks.size() == 0) {
+        if (!getIcon().equals(idle)) {
+          busy.setImageObserver(null);
+          setIcon(idle);
+        }
+        line += Strings.get("ready");
+      } else {
+        if (!getIcon().equals(busy)) {
+          setIcon(busy);
+          busy.setImageObserver(this);
+        }
+        for (StatusElement task : tasks)
+          line += task.getId() + ". " + task.toString() + "  ";
+      }
+
+      this.setText(line);
+      lastRun = System.currentTimeMillis();
+    }
+    else {
+      timer = new Timer(
+          (int)(100 - (now - lastRun)),
+          new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+              repaint();
+            }
+          });
+      timer.setRepeats(false);
+      timer.start();
+    }
     super.repaint();
   }
-
 }
