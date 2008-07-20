@@ -41,7 +41,7 @@ import java.util.Vector;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.11 2008/07/17 22:31:35 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.12 2008/07/20 01:37:57 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -85,10 +85,11 @@ public class Hierarchy extends JTree {
               final TableModel tm = new TransactionTableModel(
                   (Identifiable)o, tqb.getBeginDate(), tqb.getEndDate());
 
+              final StatusElement se = StatusBar.getInstance()
+                  .addTask(Strings.get("preparing.table"));
+
               SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                  StatusElement se = StatusBar.getInstance()
-                      .addTask(Strings.get("preparing.table"));
 
                   final JTable table = new JTable(tm);
                   table.setDefaultRenderer(Money.class, new MoneyRenderer());
