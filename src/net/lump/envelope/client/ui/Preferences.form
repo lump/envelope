@@ -141,6 +141,7 @@
                         </constraints>
                         <properties>
                           <background swing-color="Label.background"/>
+                          <editable value="false"/>
                           <foreground swing-color="Label.foreground"/>
                           <text resource-bundle="us/lump/envelope/client/ui/defs/Strings" key="test_not_performed_yet"/>
                         </properties>

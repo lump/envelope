@@ -41,7 +41,7 @@ import java.util.Vector;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.13 2008/07/20 01:45:34 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.14 2008/07/21 14:59:42 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -63,18 +63,13 @@ public class Hierarchy extends JTree {
       public void valueChanged(final TreeSelectionEvent e) {
         final Object o = ((DefaultMutableTreeNode)e.getPath()
             .getLastPathComponent()).getUserObject();
-        final TableQueryBar tqb = TableQueryBar.getInstance();
-
-        if (tqb.getBeginDate().after(tqb.getEndDate())) {
-          Date temp = tqb.getBeginDate();
-          tqb.setBeginDate(tqb.getEndDate());
-          tqb.setEndDate(temp);
-        }
-
         if (o instanceof Account || o instanceof Category) {
           final String type = o instanceof Account
                         ? Strings.get("account")
                         : Strings.get("category");
+
+          final TableQueryBar tqb = TableQueryBar.getInstance();
+
           final EnvelopeRunnable refresh = new EnvelopeRunnable(
               MessageFormat.format("{0} {1} {2}",
                                    Strings.get("retrieving"),
@@ -82,6 +77,13 @@ public class Hierarchy extends JTree {
                                    type)) {
 
             public void run() {
+
+              if (tqb.getBeginDate().after(tqb.getEndDate())) {
+                Date temp = tqb.getBeginDate();
+                tqb.setBeginDate(tqb.getEndDate());
+                tqb.setEndDate(temp);
+              }
+
               final TableModel tm = new TransactionTableModel(
                   (Identifiable)o, tqb.getBeginDate(), tqb.getEndDate());
 
@@ -100,7 +102,6 @@ public class Hierarchy extends JTree {
                   table.getTableHeader().setUpdateTableInRealTime(true);
                   table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
                   table.getTableHeader().setReorderingAllowed(false);
-//              table.setPreferredSize(new Dimension(table.getParent().getWidth(),table.getHeight()));
                   table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
                   tqb.setTitleLabel(
                       o instanceof Account
@@ -125,7 +126,10 @@ public class Hierarchy extends JTree {
                   StatusBar.getInstance().removeTask(se);
                 }
               });
+
+
             }
+
           };
 
           for (ActionListener a : tqb.getRefreshButton().getActionListeners())

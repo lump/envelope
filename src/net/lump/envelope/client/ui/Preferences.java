@@ -202,7 +202,7 @@ public class Preferences extends JDialog {
       // default rmi server status to invalid while testing class server
       sessionState.setText(Strings.get("pending"));
       sessionState.setForeground(Colors.getColor("gray"));
-      
+
       classStatusMessage.setForeground(Colors.getColor("red"));
       classServerValid = false;
     }
@@ -570,6 +570,7 @@ public class Preferences extends JDialog {
             "rmi_server_status")));
     rmiStatusMessage = new JTextPane();
     rmiStatusMessage.setBackground(UIManager.getColor("Label.background"));
+    rmiStatusMessage.setEditable(false);
     rmiStatusMessage.setForeground(UIManager.getColor("Label.foreground"));
     rmiStatusMessage.setText(ResourceBundle.getBundle(
         "us/lump/envelope/client/ui/defs/Strings").getString(

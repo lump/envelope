@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.10 2008/07/10 19:09:48 troy Exp $
+# $Id: migrate.pl,v 1.11 2008/07/21 14:59:42 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -56,12 +56,11 @@ print "Budget id: $budget_id\n";
 $accounts = {
     Checking => { id => undef, type => 'Debit', rate => 0.005 },
     Savings => { id => undef, type => 'Debit', rate => 0.0141 },
-    MMSavings => { id => undef, type => 'Debit', rate => 0.0140 },
-    Odyssey => { id => undef, type => 'Loan', rate => 0.046 },
-    Civic => { id => undef, type => 'Loan', rate => 0.0625 },
+    DSavings => { id => undef, type => 'Debit', rate => 0.0475 },
+    Tacoma => { id => undef, type => 'Loan', rate => 0.0 },
 };
 
-for my $account (qw(Checking Savings MMSavings Odyssey Civic)) {
+for my $account (qw(Checking Savings DSavings Tacoma)) {
   my $entry = $accounts->{$account};
   $dbs->{dest}->{connection}->do("replace into accounts values (null, null, ?, ?, ?, ?, 0)", 
                                   undef, $budget_id, $account, $entry->{type}, $entry->{rate});
@@ -136,7 +135,7 @@ while (my $row = $sth->fetchrow_hashref()) {
 
   my $account_id = $accounts->{Checking}->{id};
   if ($row->{category} eq "Savings") { $account_id = $accounts->{Savings}->{id} }
-  elsif ($row->{category} eq "Tithing") { $account_id = $accounts->{MMSavings}->{id}; $row->{deducted} = 0 }
+  elsif ($row->{category} eq "Tithing") { $account_id = $accounts->{DSavings}->{id}; $row->{deducted} = 0 }
   $dsth->execute($account_id, $row->{category})
     or die $dsth->errstr;
   print "inserted account $account_id, $row->{category}\n";

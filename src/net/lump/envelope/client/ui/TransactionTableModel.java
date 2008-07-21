@@ -30,18 +30,9 @@ public class TransactionTableModel extends AbstractTableModel {
   private Money beginningReconciledBalance;
   private boolean isTransaction;
 
-  public static final int ID = 7;
-  public static final int RECONCILED_FLAG = 0;
-  public static final int AMOUNT = 2;
-  public static final int RECONCILED = 4;
-
-  String[] columnNames = new String[]{"C",
-                                      "Date",
-                                      "Amount",
-                                      "Balance",
-                                      "Reconciled",
-                                      "Entity",
-                                      "Description"};
+  public static enum COLUMN {
+    C, Date, Amount, Balance, Reconciled, Entity, Description, ID
+  }
 
   TransactionTableModel(Identifiable categoryOrAccount,
                         Date beginDate,
@@ -50,7 +41,7 @@ public class TransactionTableModel extends AbstractTableModel {
           || categoryOrAccount instanceof Category))
       throw new IllegalArgumentException(
           "only Account or Budget aceptable as first argument");
-    isTransaction = categoryOrAccount instanceof Account ? true : false;
+    isTransaction = categoryOrAccount instanceof Account;
 
     CriteriaFactory cf = CriteriaFactory.getInstance();
     transactions = new Vector<Object[]>();
@@ -63,9 +54,10 @@ public class TransactionTableModel extends AbstractTableModel {
     Vector<Object[]> incoming =
         cf.getTransactions(categoryOrAccount, beginDate, endDate);
     for (Object[] row : incoming) {
-      balance = new Money(balance.add((Money)row[AMOUNT]));
-      if ((Boolean)row[RECONCILED_FLAG])
-        reconciled = new Money(reconciled.add((Money)row[AMOUNT]));
+      balance = new Money(balance.add((Money)row[COLUMN.Amount.ordinal()]));
+      if ((Boolean)row[COLUMN.C.ordinal()])
+        reconciled =
+            new Money(reconciled.add((Money)row[COLUMN.Amount.ordinal()]));
       transactions.add(
           new Object[]{row[0], row[1], row[2], new Money(balance),
                        new Money(reconciled), row[3], row[4], row[5]});
@@ -98,15 +90,16 @@ public class TransactionTableModel extends AbstractTableModel {
       // establish the beginning reconciled balance
       Money reconciled = row == 0
                          ? beginningReconciledBalance
-                         : (Money)transactions.get(row - 1)[RECONCILED];
+                         : (Money)transactions.get(row - 1)[COLUMN.Amount.ordinal()];
+
       // step through each row beginning with the row we're on
       // and re-total the reconciled column
       for (int x = row; x < transactions.size(); x++) {
-        if ((Boolean)transactions.get(x)[RECONCILED_FLAG])
-          reconciled
-              = new Money(reconciled.add((Money)transactions.get(x)[AMOUNT]));
-        transactions.get(x)[RECONCILED] = new Money(reconciled);
-        fireTableCellUpdated(x, RECONCILED);
+        if ((Boolean)transactions.get(x)[COLUMN.C.ordinal()])
+          reconciled = new Money(reconciled.add(
+              (Money)transactions.get(x)[COLUMN.Amount.ordinal()]));
+        transactions.get(x)[COLUMN.Reconciled.ordinal()] = new Money(reconciled);
+        fireTableCellUpdated(x, COLUMN.Reconciled.ordinal());
       }
 
       // update the Transaction
@@ -116,12 +109,13 @@ public class TransactionTableModel extends AbstractTableModel {
                                ? Strings.get("reconciling")
                                : Strings.get("unreconciling"),
                                Strings.get("transaction"),
-                               transactions.get(row)[ID])) {
+                               transactions.get(row)[COLUMN.ID.ordinal()])) {
               
         public void run() {
           try {
             new TransactionPortal().updateReconciled(
-                (Integer)transactions.get(row)[ID], (Boolean)aValue);
+                (Integer)transactions.get(row)[COLUMN.ID.ordinal()],
+                (Boolean)aValue);
           } catch (Exception e) {
             JOptionPane.showMessageDialog(null,
                                           e.getMessage(),
@@ -141,7 +135,7 @@ public class TransactionTableModel extends AbstractTableModel {
 //  }
 
   public String getColumnName(int columnIndex) {
-    return columnNames[columnIndex];
+    return COLUMN.values()[columnIndex].toString();
   }
 
   public Class<?> getColumnClass(int columnIndex) {
