@@ -2,17 +2,20 @@ package us.lump.envelope.client.ui;
 
 import us.lump.envelope.client.thread.StatusElement;
 import us.lump.envelope.client.ui.defs.Strings;
+import us.lump.envelope.client.ui.defs.Fonts;
 
 import javax.swing.*;
 import java.util.Vector;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.*;
+import java.awt.geom.AffineTransform;
 
 /**
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Revision: 1.9 $
+ * @version $Revision: 1.10 $
  */
 
 public class StatusBar extends JLabel {
@@ -43,6 +46,7 @@ public class StatusBar extends JLabel {
 //    setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
     setHorizontalAlignment(SwingConstants.LEFT);
     setVerticalAlignment(SwingConstants.CENTER);
+    setFont(getFont().deriveFont(Font.PLAIN));
   }
 
   public StatusElement addTask(String description) {
