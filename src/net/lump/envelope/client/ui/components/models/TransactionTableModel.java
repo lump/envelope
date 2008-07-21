@@ -81,8 +81,7 @@ public class TransactionTableModel extends AbstractTableModel {
   }
 
   public void setValueAt(final Object aValue, final int row, final int col) {
-    if (col == 0) {
-//      System.out.println("update transaction " + transactions.get(row)[ID]+ " set reconcied = " + aValue);
+    if (col == COLUMN.C.ordinal()) {
       // update the column
       transactions.get(row)[col] = aValue;
       fireTableCellUpdated(row, col);
@@ -90,7 +89,7 @@ public class TransactionTableModel extends AbstractTableModel {
       // establish the beginning reconciled balance
       Money reconciled = row == 0
                          ? beginningReconciledBalance
-                         : (Money)transactions.get(row - 1)[COLUMN.Amount.ordinal()];
+                         : (Money)transactions.get(row - 1)[COLUMN.Reconciled.ordinal()];
 
       // step through each row beginning with the row we're on
       // and re-total the reconciled column
