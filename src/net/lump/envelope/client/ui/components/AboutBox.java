@@ -1,4 +1,4 @@
-package us.lump.envelope.client.ui;
+package us.lump.envelope.client.ui.components;
 
 import us.lump.envelope.client.ui.defs.Fonts;
 import us.lump.envelope.client.ui.defs.Strings;

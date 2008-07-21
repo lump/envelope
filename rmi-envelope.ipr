@@ -305,11 +305,19 @@
         <default-constraints vsize-policy="6" hsize-policy="0" anchor="0" fill="2" />
       </item>
     </group>
-    <group name="jcalendar">
+    <group name="JCalendar">
       <item class="com.toedter.calendar.JSpinnerDateEditor" icon="jcalendar/src/com/toedter/calendar/images/JDateChooserColor16.gif" removable="true" auto-create-binding="false" can-attach-label="false">
         <default-constraints vsize-policy="3" hsize-policy="3" anchor="0" fill="0" />
       </item>
       <item class="com.toedter.calendar.JDateChooser" icon="jcalendar/doc/images/JDateChooserColor16.gif" removable="true" auto-create-binding="false" can-attach-label="false">
+        <default-constraints vsize-policy="3" hsize-policy="3" anchor="0" fill="0" />
+      </item>
+      <item class="com.toedter.calendar.JTextFieldDateEditor" icon="jcalendar/doc/images/JDateChooserColor16.gif" removable="true" auto-create-binding="false" can-attach-label="false">
+        <default-constraints vsize-policy="3" hsize-policy="3" anchor="0" fill="0" />
+      </item>
+    </group>
+    <group name="Custom">
+      <item class="us.lump.envelope.client.ui.components.MoneyTextField" icon="/com/intellij/uiDesigner/icons/textField.png" removable="true" auto-create-binding="false" can-attach-label="false">
         <default-constraints vsize-policy="3" hsize-policy="3" anchor="0" fill="0" />
       </item>
     </group>

@@ -1,6 +1,5 @@
-package us.lump.envelope.client.ui;
+package us.lump.envelope.client.ui.components.forms;
 
-import com.toedter.calendar.JSpinnerDateEditor;
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
 import com.intellij.uiDesigner.core.GridLayoutManager;

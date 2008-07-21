@@ -6,10 +6,14 @@ import org.apache.log4j.BasicConfigurator;
 import us.lump.envelope.client.State;
 import us.lump.envelope.client.thread.StatusElement;
 import us.lump.envelope.client.ui.defs.Strings;
+import us.lump.envelope.client.ui.components.StatusBar;
+import us.lump.envelope.client.ui.components.Hierarchy;
+import us.lump.envelope.client.ui.components.AboutBox;
+import us.lump.envelope.client.ui.components.forms.Preferences;
+import us.lump.envelope.client.ui.components.forms.TransactionForm;
 import us.lump.lib.util.EmacsKeyBindings;
 
 import javax.swing.*;
-import javax.swing.border.EtchedBorder;
 import java.awt.*;
 import java.awt.event.*;
 import java.net.MalformedURLException;
@@ -19,7 +23,7 @@ import java.net.URL;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.14 2008/07/19 05:39:44 troy Exp $
+ * @version $Id: MainFrame.java,v 1.15 2008/07/21 21:59:18 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -78,6 +82,18 @@ public class MainFrame extends JFrame {
     this.getContentPane().add(BorderLayout.SOUTH, status);
 
     int shortcutKeyMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+
+    JMenu fileMenu = new JMenu(Strings.get("file"));
+
+    JMenuItem addTransaction = new JMenuItem(Strings.get("new.transaction"));
+    addTransaction.addActionListener(new AbstractAction(){
+      public void actionPerformed(ActionEvent e) {
+        TransactionForm tf = new TransactionForm();
+        setContentPane(tf.getTransactionFormPanel());
+      }
+    });
+    fileMenu.add(addTransaction);
+
     if (System.getProperty("os.name").toLowerCase()
         .matches("^.*?mac os x.*$")) {
       // the Mac specific code here
@@ -131,8 +147,6 @@ public class MainFrame extends JFrame {
       }
 
 
-      JMenu fileMenu = new JMenu(Strings.get("file"));
-
       fileMenu.add(new JMenuItem(new prefsActionClass(
           Strings.get("preferences"), KeyStroke.getKeyStroke(
           KeyEvent.VK_S, shortcutKeyMask)
@@ -153,6 +167,8 @@ public class MainFrame extends JFrame {
       mainMenuBar.add(fileMenu);
       mainMenuBar.add(helpMenu);
     }
+
+
 
     setMinimumSize(getSize());
 

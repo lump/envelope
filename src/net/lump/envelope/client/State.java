@@ -4,7 +4,7 @@ import us.lump.envelope.entity.Budget;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Category;
 import us.lump.envelope.client.ui.MainFrame;
-import us.lump.envelope.client.ui.Hierarchy;
+import us.lump.envelope.client.ui.components.Hierarchy;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
 
 import javax.swing.*;
@@ -15,7 +15,7 @@ import java.util.TreeSet;
 /**
  * This is a repository for globally accessed object instances.
  * 
- * @version $Id: State.java,v 1.2 2008/07/06 07:22:06 troy Exp $
+ * @version $Id: State.java,v 1.3 2008/07/21 21:59:18 troy Exp $
  */
 public class State {
 

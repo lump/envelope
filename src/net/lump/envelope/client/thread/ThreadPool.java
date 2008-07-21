@@ -1,6 +1,6 @@
 package us.lump.envelope.client.thread;
 
-import us.lump.envelope.client.ui.StatusBar;
+import us.lump.envelope.client.ui.components.StatusBar;
 
 import java.util.concurrent.*;
 
@@ -9,7 +9,7 @@ import java.util.concurrent.*;
  * to be updated with what the threadpool is doing.
  *
  * @author Troy Bowman
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 
 public class ThreadPool extends ThreadPoolExecutor {

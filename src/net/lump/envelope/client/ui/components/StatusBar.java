@@ -1,21 +1,20 @@
-package us.lump.envelope.client.ui;
+package us.lump.envelope.client.ui.components;
 
 import us.lump.envelope.client.thread.StatusElement;
 import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.client.ui.defs.Fonts;
+import us.lump.envelope.client.ui.images.ImageResource;
 
 import javax.swing.*;
 import java.util.Vector;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.*;
-import java.awt.geom.AffineTransform;
 
 /**
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Revision: 1.10 $
+ * @version $Revision: 1.1 $
  */
 
 public class StatusBar extends JLabel {
@@ -27,8 +26,8 @@ public class StatusBar extends JLabel {
   private Timer timer;
 
   private static StatusBar singleton = null;
-  private ImageIcon busy = new ImageIcon(StatusBar.class.getResource("images/busy.gif"));
-  private ImageIcon idle = new ImageIcon(StatusBar.class.getResource("images/idle.gif"));
+  private ImageIcon busy = new ImageIcon(ImageResource.class.getResource("busy.gif"));
+  private ImageIcon idle = new ImageIcon(ImageResource.class.getResource("idle.gif"));
 
   {
     setIcon(idle);

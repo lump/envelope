@@ -1,8 +1,7 @@
 package us.lump.envelope.client.portal;
 
 import us.lump.envelope.Command;
-import us.lump.envelope.client.ui.Preferences;
-import us.lump.envelope.client.ui.StatusBar;
+import us.lump.envelope.client.ui.components.forms.Preferences;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
@@ -29,7 +28,7 @@ import java.text.MessageFormat;
  * exit/entry to the server along with exception handling.
  *
  * @author Troy Bowman
- * @version $Revision: 1.13 $
+ * @version $Revision: 1.14 $
  */
 
 abstract class Portal {

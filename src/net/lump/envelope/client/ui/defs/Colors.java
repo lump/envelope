@@ -7,10 +7,10 @@ import java.util.HashMap;
 import java.util.Properties;
 
 /**
- * .
+ * Keeps our color definitions.
  *
  * @author troy
- * @version $Id: Colors.java,v 1.2 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Colors.java,v 1.3 2008/07/21 21:59:18 troy Test $
  */
 public class Colors {
   private HashMap<String, Color> colors = new HashMap<String, Color>();

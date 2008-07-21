@@ -1,12 +1,10 @@
 package us.lump.envelope.client.thread;
 
-import us.lump.envelope.client.ui.StatusBar;
-
 /**
  * A runnable with a status identifier.
  *
  * @author Troy Bowman
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public abstract class EnvelopeRunnable implements java.lang.Runnable {
 

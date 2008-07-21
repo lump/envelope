@@ -1,4 +1,4 @@
-package us.lump.envelope.client.ui;
+package us.lump.envelope.client.ui.components;
 
 import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.State;
@@ -8,6 +8,10 @@ import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.defs.Colors;
 import us.lump.envelope.client.ui.defs.Fonts;
 import us.lump.envelope.client.ui.defs.Strings;
+import us.lump.envelope.client.ui.components.StatusBar;
+import us.lump.envelope.client.ui.components.models.TransactionTableModel;
+import us.lump.envelope.client.ui.components.forms.TableQueryBar;
+import us.lump.envelope.client.ui.MainFrame;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Budget;
 import us.lump.envelope.entity.Category;
@@ -41,7 +45,7 @@ import java.util.Vector;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.14 2008/07/21 14:59:42 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.1 2008/07/21 21:59:18 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -65,8 +69,8 @@ public class Hierarchy extends JTree {
             .getLastPathComponent()).getUserObject();
         if (o instanceof Account || o instanceof Category) {
           final String type = o instanceof Account
-                        ? Strings.get("account")
-                        : Strings.get("category");
+                        ? Strings.get("account").toLowerCase()
+                        : Strings.get("category").toLowerCase();
 
           final TableQueryBar tqb = TableQueryBar.getInstance();
 

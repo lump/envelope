@@ -1,4 +1,4 @@
-package us.lump.envelope.client.ui;
+package us.lump.envelope.client.ui.components.forms;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;

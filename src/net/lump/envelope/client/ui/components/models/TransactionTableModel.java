@@ -1,4 +1,4 @@
-package us.lump.envelope.client.ui;
+package us.lump.envelope.client.ui.components.models;
 
 import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.thread.ThreadPool;
@@ -34,7 +34,7 @@ public class TransactionTableModel extends AbstractTableModel {
     C, Date, Amount, Balance, Reconciled, Entity, Description, ID
   }
 
-  TransactionTableModel(Identifiable categoryOrAccount,
+  public TransactionTableModel(Identifiable categoryOrAccount,
                         Date beginDate,
                         Date endDate) {
     if (!(categoryOrAccount instanceof Account
@@ -108,7 +108,7 @@ public class TransactionTableModel extends AbstractTableModel {
                                ((Boolean)aValue)
                                ? Strings.get("reconciling")
                                : Strings.get("unreconciling"),
-                               Strings.get("transaction"),
+                               Strings.get("transaction").toLowerCase(),
                                transactions.get(row)[COLUMN.ID.ordinal()])) {
               
         public void run() {
