@@ -14,7 +14,7 @@ import java.awt.*;
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 
 public class StatusBar extends JLabel {
@@ -22,8 +22,8 @@ public class StatusBar extends JLabel {
   private Vector<StatusElement> tasks
       = new Vector<StatusElement>();
 
-  private long lastRun = 0;
-  private Timer timer;
+//  private long lastRun = 0;
+//  private Timer timer;
 
   private static StatusBar singleton = null;
   private ImageIcon busy = new ImageIcon(ImageResource.class.getResource("busy.gif"));
@@ -79,13 +79,11 @@ public class StatusBar extends JLabel {
       if (addRemove) tasks.add(e);
       else tasks.remove(e);
     }
-    repaint();
-  }
 
-  public synchronized void repaint() {
-    long now = System.currentTimeMillis();
-    if (getIcon() != null && (now - 100) > lastRun) {
-      if (timer != null) timer.stop();
+    //regenerate label
+//    long now = System.currentTimeMillis();
+//    if (getIcon() != null && (now - 500) > lastRun) {
+//      if (timer != null) timer.stop();
 
       if (tasks == null) tasks = new Vector<StatusElement>();
       String line = "[" + tasks.size() + "] ";
@@ -106,19 +104,24 @@ public class StatusBar extends JLabel {
       }
 
       this.setText(line);
-      lastRun = System.currentTimeMillis();
-    }
-    else {
-      timer = new Timer(
-          (int)(100 - (now - lastRun)),
-          new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-              repaint();
-            }
-          });
-      timer.setRepeats(false);
-      timer.start();
-    }
-    super.repaint();
+//      lastRun = System.currentTimeMillis();
+//    }
+//    else {
+//      timer = new Timer(
+//          (int)(100 - (now - lastRun)),
+//          new ActionListener() {
+//            public void actionPerformed(ActionEvent e) {
+//              repaint();
+//            }
+//          });
+//      timer.setRepeats(false);
+//      timer.start();
+//    }
+
+    repaint();
   }
+
+//  public synchronized void repaint() {
+//    super.repaint();
+//  }
 }
