@@ -18,7 +18,6 @@ import java.util.Date;
 public class TableQueryBar {
   private JPanel queryPanel;
   private JDateChooser beginDate;
-  private JLabel beginDateLabel;
   private JLabel endDateLabel;
   private JDateChooser endDate;
   private JButton refreshButton;
@@ -99,33 +98,15 @@ public class TableQueryBar {
     tableQueryPanel.setLayout(new BorderLayout(0, 0));
     queryPanel = new JPanel();
     queryPanel.setLayout(new GridLayoutManager(1,
-                                               7,
+                                               6,
                                                new Insets(2, 2, 2, 2),
                                                2,
                                                2));
     tableQueryPanel.add(queryPanel, BorderLayout.NORTH);
     queryPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
                                                           null));
-    beginDateLabel = new JLabel();
-    beginDateLabel.setHorizontalAlignment(4);
-    beginDateLabel.setHorizontalTextPosition(4);
-    this.$$$loadLabelText$$$(beginDateLabel, ResourceBundle.getBundle(
-        "us/lump/envelope/client/ui/defs/Strings").getString("begin.date"));
-    queryPanel.add(beginDateLabel, new GridConstraints(0,
-                                                       2,
-                                                       1,
-                                                       1,
-                                                       GridConstraints.ANCHOR_EAST,
-                                                       GridConstraints.FILL_NONE,
-                                                       GridConstraints.SIZEPOLICY_FIXED,
-                                                       GridConstraints.SIZEPOLICY_FIXED,
-                                                       null,
-                                                       null,
-                                                       null,
-                                                       0,
-                                                       false));
     queryPanel.add(beginDate, new GridConstraints(0,
-                                                  3,
+                                                  2,
                                                   1,
                                                   1,
                                                   GridConstraints.ANCHOR_CENTER,
@@ -144,12 +125,12 @@ public class TableQueryBar {
     endDateLabel.setHorizontalAlignment(4);
     endDateLabel.setHorizontalTextPosition(4);
     this.$$$loadLabelText$$$(endDateLabel, ResourceBundle.getBundle(
-        "us/lump/envelope/client/ui/defs/Strings").getString("end.date"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("to"));
     queryPanel.add(endDateLabel, new GridConstraints(0,
-                                                     4,
+                                                     3,
                                                      1,
                                                      1,
-                                                     GridConstraints.ANCHOR_EAST,
+                                                     GridConstraints.ANCHOR_CENTER,
                                                      GridConstraints.FILL_NONE,
                                                      1,
                                                      1,
@@ -159,7 +140,7 @@ public class TableQueryBar {
                                                      0,
                                                      false));
     queryPanel.add(endDate, new GridConstraints(0,
-                                                5,
+                                                4,
                                                 1,
                                                 1,
                                                 GridConstraints.ANCHOR_CENTER,
@@ -178,7 +159,7 @@ public class TableQueryBar {
     this.$$$loadButtonText$$$(refreshButton, ResourceBundle.getBundle(
         "us/lump/envelope/client/ui/defs/Strings").getString("refresh"));
     queryPanel.add(refreshButton, new GridConstraints(0,
-                                                      6,
+                                                      5,
                                                       1,
                                                       1,
                                                       GridConstraints.ANCHOR_CENTER,
@@ -195,8 +176,7 @@ public class TableQueryBar {
                                                       false));
     titleLabel = new JLabel();
     titleLabel.setFont(new Font("Dialog", Font.BOLD, 16));
-    this.$$$loadLabelText$$$(titleLabel, ResourceBundle.getBundle(
-        "us/lump/envelope/client/ui/defs/Strings").getString("loading"));
+    titleLabel.setText("");
     queryPanel.add(titleLabel, new GridConstraints(0,
                                                    0,
                                                    1,

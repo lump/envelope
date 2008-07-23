@@ -19,7 +19,7 @@ import us.lump.envelope.client.ui.components.MoneyTextField;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.1 2008/07/21 21:59:18 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.2 2008/07/23 05:19:20 troy Exp $
  */
 public class TransactionForm {
   private JButton cancelButton;
@@ -128,6 +128,10 @@ public class TransactionForm {
     transactionDate.setPreferredSize(new Dimension(
         transactionDate.getPreferredSize().width + 30,
         transactionDate.getPreferredSize().height));
+
+    referencePaydate = new JDateChooser(null, "MMM d, yyyy",
+                                        new JTextFieldDateEditor());
+
   }
 
   /**
@@ -192,7 +196,7 @@ public class TransactionForm {
                                                      0,
                                                      false));
     transactionInfoPanel = new JPanel();
-    transactionInfoPanel.setLayout(new GridLayoutManager(7,
+    transactionInfoPanel.setLayout(new GridLayoutManager(8,
                                                          4,
                                                          new Insets(0, 0, 0, 0),
                                                          -1,
@@ -362,7 +366,7 @@ public class TransactionForm {
                                                           0,
                                                           false));
     allocationSettingsPanel = new JPanel();
-    allocationSettingsPanel.setLayout(new GridLayoutManager(4,
+    allocationSettingsPanel.setLayout(new GridLayoutManager(3,
                                                             2,
                                                             new Insets(0,
                                                                        0,
@@ -405,12 +409,11 @@ public class TransactionForm {
                                                                 null,
                                                                 0,
                                                                 false));
-    referencePaydate = new JDateChooser();
     allocationSettingsPanel.add(referencePaydate, new GridConstraints(1,
                                                                       1,
                                                                       1,
                                                                       1,
-                                                                      GridConstraints.ANCHOR_CENTER,
+                                                                      GridConstraints.ANCHOR_WEST,
                                                                       GridConstraints.FILL_NONE,
                                                                       GridConstraints
                                                                           .SIZEPOLICY_CAN_SHRINK
@@ -476,27 +479,13 @@ public class TransactionForm {
                                                     null,
                                                     0,
                                                     false));
-    final Spacer spacer2 = new Spacer();
-    allocationSettingsPanel.add(spacer2, new GridConstraints(3,
-                                                             0,
-                                                             1,
-                                                             1,
-                                                             GridConstraints.ANCHOR_CENTER,
-                                                             GridConstraints.FILL_VERTICAL,
-                                                             1,
-                                                             GridConstraints.SIZEPOLICY_WANT_GROW,
-                                                             null,
-                                                             null,
-                                                             null,
-                                                             0,
-                                                             false));
     totalsPanel = new JPanel();
     totalsPanel.setLayout(new GridLayoutManager(1,
                                                 1,
                                                 new Insets(0, 0, 0, 0),
                                                 -1,
                                                 -1));
-    transactionInfoPanel.add(totalsPanel, new GridConstraints(6,
+    transactionInfoPanel.add(totalsPanel, new GridConstraints(7,
                                                               0,
                                                               1,
                                                               4,
@@ -579,6 +568,20 @@ public class TransactionForm {
                                                                   null,
                                                                   0,
                                                                   false));
+    final Spacer spacer2 = new Spacer();
+    transactionInfoPanel.add(spacer2, new GridConstraints(6,
+                                                          0,
+                                                          1,
+                                                          1,
+                                                          GridConstraints.ANCHOR_CENTER,
+                                                          GridConstraints.FILL_VERTICAL,
+                                                          1,
+                                                          GridConstraints.SIZEPOLICY_WANT_GROW,
+                                                          null,
+                                                          null,
+                                                          null,
+                                                          0,
+                                                          false));
     allocationsPanel = new JPanel();
     allocationsPanel.setLayout(new GridLayoutManager(1,
                                                      1,
