@@ -99,12 +99,10 @@ public class TableQueryBar {
     queryPanel = new JPanel();
     queryPanel.setLayout(new GridLayoutManager(1,
                                                6,
-                                               new Insets(2, 2, 2, 2),
+                                               new Insets(0, 2, 0, 2),
                                                2,
                                                2));
     tableQueryPanel.add(queryPanel, BorderLayout.NORTH);
-    queryPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
-                                                          null));
     queryPanel.add(beginDate, new GridConstraints(0,
                                                   2,
                                                   1,

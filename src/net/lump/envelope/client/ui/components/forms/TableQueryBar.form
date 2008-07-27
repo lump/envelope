@@ -8,10 +8,10 @@
     <border type="none"/>
     <children>
       <grid id="27dc6" binding="queryPanel" layout-manager="GridLayoutManager" row-count="1" column-count="6" same-size-horizontally="false" same-size-vertically="false" hgap="2" vgap="2">
-        <margin top="2" left="2" bottom="2" right="2"/>
+        <margin top="0" left="2" bottom="0" right="2"/>
         <constraints border-constraint="North"/>
         <properties/>
-        <border type="etched"/>
+        <border type="none"/>
         <children>
           <component id="4cd72" class="com.toedter.calendar.JDateChooser" binding="beginDate" custom-create="true">
             <constraints>
