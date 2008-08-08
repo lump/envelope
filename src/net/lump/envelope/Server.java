@@ -29,7 +29,7 @@ import java.util.prefs.Preferences;
  * Server Main Code.
  *
  * @author Troy Bowman
- * @version $Id: Server.java,v 1.9 2008/07/14 15:43:17 troy Exp $
+ * @version $Id: Server.java,v 1.10 2008/08/08 08:16:35 troy Exp $
  */
 
 public class Server {
@@ -69,23 +69,24 @@ public class Server {
         "http://" + LOCAL_HOST + ":"
         + serverConfig.getProperty(PROPERTY_RMI_PORT) + "/");
 
-    LocateRegistry.createRegistry(
-        Integer.parseInt(serverConfig.getProperty(PROPERTY_RMI_PORT)));
-
-    logger.info(MessageFormat.format(
-        "Registry created on host computer {0} on port {1}",
-        LOCAL_HOST,
-        serverConfig.getProperty(PROPERTY_RMI_PORT))
-    );
-
     Controller controller = new Controlled();
     logger.info("Remote Controller implementation object created");
+
+    LocateRegistry.createRegistry(
+        Integer.parseInt(serverConfig.getProperty(PROPERTY_RMI_PORT)));
 
     Naming.rebind("//"
                   + LOCAL_HOST
                   + ":"
                   + serverConfig.getProperty(PROPERTY_RMI_PORT)
                   + "/Controller", controller);
+
+
+    logger.info(MessageFormat.format(
+        "Registry created on host computer {0} on port {1}",
+        LOCAL_HOST,
+        serverConfig.getProperty(PROPERTY_RMI_PORT))
+    );
 
     logger.info("Bindings Finished, waiting for client requests.");
   }

@@ -15,6 +15,8 @@ import javax.swing.table.AbstractTableModel;
 import java.text.MessageFormat;
 import java.util.Date;
 import java.util.Vector;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 
 /**
  * A table model which lists transactions.
@@ -32,10 +34,12 @@ public class TransactionTableModel extends AbstractTableModel {
   private Date beginDate;
   private Date endDate;
   private Identifiable identifiable;
+  private Object lock = new Object();
 
   private EnvelopeRunnable refresh =
       new EnvelopeRunnable("Retrieving Transactions") {
-        synchronized public void run() {
+        public void run() {
+          synchronized(lock) {
           CriteriaFactory cf = CriteriaFactory.getInstance();
           int oldSize = transactions.size();
           transactions = new Vector<Object[]>();
@@ -64,6 +68,8 @@ public class TransactionTableModel extends AbstractTableModel {
 
           if (oldSize > incoming.size())
             fireTableRowsDeleted(incoming.size(), oldSize + 1);
+
+        }
         }
       };
 
@@ -78,12 +84,9 @@ public class TransactionTableModel extends AbstractTableModel {
     refresh(categoryOrAccount, begin, end);
   }
 
-  public void refresh() {
-    ThreadPool.getInstance().execute(refresh);
-  }
-
-  public void refresh(Identifiable categoryOrAccount, Date begin, Date end) {
-
+  public void refresh(
+      Identifiable categoryOrAccount, Date begin, Date end) {
+    synchronized(lock) {
     this.beginDate = begin;
     this.endDate = end;
     this.identifiable = categoryOrAccount;
@@ -105,8 +108,9 @@ public class TransactionTableModel extends AbstractTableModel {
                              Strings.get("retrieving"),
                              identifiable.toString(),
                              type));
-
-    refresh();
+      
+      ThreadPool.getInstance().execute(refresh);
+    }
   }
 
   public Vector<Object[]> getTransactions() {

@@ -19,7 +19,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controlled.java,v 1.11 2008/07/16 05:40:00 troy Exp $
+ * @version $Id: Controlled.java,v 1.12 2008/08/08 08:16:35 troy Exp $
  */
 public class Controlled extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -33,9 +33,11 @@ public class Controlled extends UnicastRemoteObject implements Controller {
    * @throws RemoteException
    */
   public Controlled() throws RemoteException {
-    super();
+    super(0);
+//    super(0, ZipSocket.getClientSocketFactory(),
+//          ZipSocket.getServerSocketFactory());
   }
-
+  
   /**
    * Invoke a command. This is the central method where every command must pass.
    * Since this causes centralization, we can check for security as defined by
