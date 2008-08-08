@@ -3,15 +3,13 @@ package us.lump.envelope.client.ui.components;
 import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.State;
 import us.lump.envelope.client.thread.EnvelopeRunnable;
-import us.lump.envelope.client.thread.StatusElement;
 import us.lump.envelope.client.thread.ThreadPool;
+import us.lump.envelope.client.ui.MainFrame;
+import us.lump.envelope.client.ui.components.forms.TableQueryBar;
+import us.lump.envelope.client.ui.components.models.TransactionTableModel;
 import us.lump.envelope.client.ui.defs.Colors;
 import us.lump.envelope.client.ui.defs.Fonts;
 import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.client.ui.components.StatusBar;
-import us.lump.envelope.client.ui.components.models.TransactionTableModel;
-import us.lump.envelope.client.ui.components.forms.TableQueryBar;
-import us.lump.envelope.client.ui.MainFrame;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Budget;
 import us.lump.envelope.entity.Category;
@@ -24,9 +22,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
@@ -34,27 +29,34 @@ import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Vector;
 
 
 /**
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.1 2008/07/21 21:59:18 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.2 2008/08/08 01:21:15 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
   private final State state = State.getInstance();
   private final DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode();
+  TransactionTableModel tm;
 
   public static Hierarchy getInstance() {
     if (singleton == null) singleton = new Hierarchy();
     return singleton;
+  }
+
+  private void sanifyDates(TableQueryBar tqb) {
+    if (tqb.getBeginDate().after(tqb.getEndDate())) {
+      Date temp = tqb.getBeginDate();
+      tqb.setBeginDate(tqb.getEndDate());
+      tqb.setEndDate(temp);
+    }
   }
 
   private Hierarchy() {
@@ -68,84 +70,63 @@ public class Hierarchy extends JTree {
         final Object o = ((DefaultMutableTreeNode)e.getPath()
             .getLastPathComponent()).getUserObject();
         if (o instanceof Account || o instanceof Category) {
-          final String type = o instanceof Account
-                        ? Strings.get("account").toLowerCase()
-                        : Strings.get("category").toLowerCase();
-
           final TableQueryBar tqb = TableQueryBar.getInstance();
+          sanifyDates(tqb);
 
-          final EnvelopeRunnable refresh = new EnvelopeRunnable(
-              MessageFormat.format("{0} {1} {2}",
-                                   Strings.get("retrieving"),
-                                   o.toString(),
-                                   type)) {
+          if (tm == null)
+            tm = new TransactionTableModel(
+                (Identifiable)o, tqb.getBeginDate(), tqb.getEndDate());
+          else tm.refresh(
+              (Identifiable)o, tqb.getBeginDate(), tqb.getEndDate());
 
-            public void run() {
+          JTable table = tqb.getTable();
+          table.getTableHeader().setUpdateTableInRealTime(false);
+          table.setModel(tm);
 
-              if (tqb.getBeginDate().after(tqb.getEndDate())) {
-                Date temp = tqb.getBeginDate();
-                tqb.setBeginDate(tqb.getEndDate());
-                tqb.setEndDate(temp);
-              }
+          table.setDefaultRenderer(Money.class, new MoneyRenderer());
+          table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+          table.getTableHeader().setReorderingAllowed(false);
+          table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+          tqb.setTitleLabel(
+              o instanceof Account
+              ? ((Account)o).getName()
+              : o instanceof Category
+                ? ((Category)o).getName() : null);
+          MainFrame.getInstance()
+              .setContentPane(tqb.getTableQueryPanel());
+          tqb.setViewportView(table);
 
-              final TableModel tm = new TransactionTableModel(
-                  (Identifiable)o, tqb.getBeginDate(), tqb.getEndDate());
+          Dimension checkWidth = new JCheckBox().getPreferredSize();
+          int dateWidth =
+              table.getFontMetrics(table.getFont()).stringWidth("MMM MM, MMMM");
+          int amountWidth = table.getFontMetrics(Fonts.getFont("fixed"))
+              .stringWidth("$9,999,999.00");
+          table.getColumnModel().getColumn(0).setMaxWidth(checkWidth.width);
 
-              final StatusElement se = StatusBar.getInstance().
-                  addTask(MessageFormat.format(
-                      "{0} {1} {2}",
-                      Strings.get("preparing.table"),
-                      o.toString(),
-                      type));
-              
-              SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-
-                  final JTable table = new JTable(tm);
-                  table.setDefaultRenderer(Money.class, new MoneyRenderer());
-                  table.getTableHeader().setUpdateTableInRealTime(true);
-                  table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-                  table.getTableHeader().setReorderingAllowed(false);
-                  table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-                  tqb.setTitleLabel(
-                      o instanceof Account
-                      ? ((Account)o).getName()
-                      : o instanceof Category
-                        ? ((Category)o).getName() : null);
-                  MainFrame.getInstance()
-                      .setContentPane(tqb.getTableQueryPanel());
-                  tqb.setViewportView(table);
-
-
-                  initColumnSizes(
-                      table,
-                      ((TransactionTableModel)table.getModel()).getTransactions());
-                  table.scrollRectToVisible(
-                      table.getCellRect(tm.getRowCount() - 1, 0, true));
-
-                  ((Component)e.getSource()).repaint();
-                  RepaintManager.currentManager((Component)e.getSource())
-                      .paintDirtyRegions();
-
-                  StatusBar.getInstance().removeTask(se);
-                }
-              });
-
-
-            }
-
+          Integer[] settings = new Integer[]{
+              checkWidth.width,
+              dateWidth,
+              amountWidth,
+              amountWidth,
+              amountWidth
           };
+          for (int x = 0; x < 5; x++) {
+            table.getColumnModel().getColumn(x).setMinWidth(settings[x]);
+            table.getColumnModel().getColumn(x).setMaxWidth(settings[x]);
+          }
+
+          table.getTableHeader().setUpdateTableInRealTime(true);
+
 
           for (ActionListener a : tqb.getRefreshButton().getActionListeners())
             tqb.getRefreshButton().removeActionListener(a);
 
           tqb.getRefreshButton().addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-              ThreadPool.getInstance().execute(refresh);
+              sanifyDates(tqb);
+              tm.refresh((Identifiable)o, tqb.getBeginDate(), tqb.getEndDate());
             }
           });
-
-          ThreadPool.getInstance().execute(refresh);
         }
       }
     });
@@ -191,61 +172,7 @@ public class Hierarchy extends JTree {
     ThreadPool.getInstance().execute(r);
   }
 
-  private void initColumnSizes(JTable table, Vector<Object[]> transactions) {
-    TableModel model = table.getModel();
-    TableColumn column;
-    Component comp;
-    int headerWidth = 0;
-    int cellWidth;
-    TableCellRenderer headerRenderer =
-        table.getTableHeader().getDefaultRenderer();
-
-    for (int i = 0; i < 7; i++) {
-      column = table.getColumnModel().getColumn(i);
-
-      comp = headerRenderer.getTableCellRendererComponent(
-          null, column.getHeaderValue(),
-          false, false, 0, 0);
-      headerWidth = comp.getPreferredSize().width;
-
-      cellWidth = 0;
-      String value = null;
-      if (i == 1) {
-        cellWidth =
-            comp.getFontMetrics(table.getFont()).stringWidth(" May 77, 7777");
-      }
-      if (i == 2 || i == 3 || i == 4) {
-        cellWidth =
-            comp.getFontMetrics(Fonts.getFont("fixed"))
-                .stringWidth("$9,999,999.00");
-      }
-
-      for (int x = 0; x < transactions.size(); x++) {
-        comp = table.getDefaultRenderer(model.getColumnClass(i)).
-            getTableCellRendererComponent(
-                table,
-                transactions.get(x)[i],
-                false, false, x, i);
-
-        if (comp.getPreferredSize().width > cellWidth)
-          cellWidth = comp.getPreferredSize().width;
-      }
-
-      if (i == 0) column.setMaxWidth(cellWidth);
-
-      column.setPreferredWidth(Math.max(headerWidth, cellWidth));
-//      column.setPreferredWidth(cellWidth);
-      column.setWidth(cellWidth);
-      column.setMinWidth(cellWidth);
-      RepaintManager.currentManager(table).paintDirtyRegions();
-
-    }
-
-  }
-
   class MoneyRenderer extends DefaultTableCellRenderer {
-
-
     public MoneyRenderer() {
       super();
     }

@@ -1,15 +1,15 @@
 package us.lump.envelope.client.ui.components.forms;
 
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.Spacer;
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.Spacer;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.ResourceBundle;
 import java.util.Date;
+import java.util.ResourceBundle;
 
 /**
  * Created by IntelliJ IDEA. User: troy Date: Jul 7, 2008 Time: 10:39:36 PM To
@@ -24,6 +24,7 @@ public class TableQueryBar {
   private JScrollPane tableScrollPane;
   private JLabel titleLabel;
   private JPanel tableQueryPanel;
+  private JTable table;
 
   private static TableQueryBar singleton;
 
@@ -68,6 +69,9 @@ public class TableQueryBar {
     titleLabel.setText(title);
   }
 
+  public JTable getTable() {
+    return table;
+  }
 
   private void createUIComponents() {
     Long today = System.currentTimeMillis();
@@ -207,6 +211,8 @@ public class TableQueryBar {
                                                 false));
     tableScrollPane = new JScrollPane();
     tableQueryPanel.add(tableScrollPane, BorderLayout.CENTER);
+    table = new JTable();
+    tableScrollPane.setViewportView(table);
   }
 
   /** @noinspection ALL */

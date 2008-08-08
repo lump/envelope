@@ -4,7 +4,7 @@ package us.lump.envelope.client.thread;
  * Status element.
  *
  * @author Troy Bowman
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 
 public class StatusElement {
@@ -22,6 +22,10 @@ public class StatusElement {
   public long getId() { return id; }
 
   public Object getValue() { return value; }
+
+  public void setValue(Object value) {
+    this.value = value;
+  }
 
   private synchronized long getNextId() {
     return ++count;

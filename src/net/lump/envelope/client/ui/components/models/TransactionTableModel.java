@@ -1,9 +1,9 @@
 package us.lump.envelope.client.ui.components.models;
 
 import us.lump.envelope.client.CriteriaFactory;
-import us.lump.envelope.client.thread.ThreadPool;
-import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.portal.TransactionPortal;
+import us.lump.envelope.client.thread.EnvelopeRunnable;
+import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Category;
@@ -12,9 +12,9 @@ import us.lump.lib.Money;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import java.text.MessageFormat;
 import java.util.Date;
 import java.util.Vector;
-import java.text.MessageFormat;
 
 /**
  * A table model which lists transactions.
@@ -25,43 +25,88 @@ import java.text.MessageFormat;
  */
 public class TransactionTableModel extends AbstractTableModel {
   //  private List<Transaction> transactions;
-  private Vector<Object[]> transactions;
-  private Money beginningBalance;
-  private Money beginningReconciledBalance;
+  private Vector<Object[]> transactions = new Vector<Object[]>();
+  private Money beginningBalance = new Money(0);
+  private Money beginningReconciledBalance = new Money(0);
   private boolean isTransaction;
+  private Date beginDate;
+  private Date endDate;
+  private Identifiable identifiable;
+
+  private EnvelopeRunnable refresh =
+      new EnvelopeRunnable("Retrieving Transactions") {
+        synchronized public void run() {
+          CriteriaFactory cf = CriteriaFactory.getInstance();
+          int oldSize = transactions.size();
+          transactions = new Vector<Object[]>();
+          beginningBalance
+              = cf.getBeginningBalance(identifiable, beginDate, null);
+          Money balance = beginningBalance;
+          beginningReconciledBalance
+              = cf.getBeginningBalance(identifiable, beginDate, true);
+          Money reconciled = beginningReconciledBalance;
+          Vector<Object[]> incoming =
+              cf.getTransactions(identifiable, beginDate, endDate);
+          for (int x = 0; x < incoming.size(); x++) {
+            Object[] row = incoming.get(x);
+            balance =
+                new Money(balance.add((Money)row[COLUMN.Amount.ordinal()]));
+            if ((Boolean)row[COLUMN.C.ordinal()])
+              reconciled =
+                  new Money(reconciled.add((Money)row[COLUMN.Amount
+                      .ordinal()]));
+            transactions.add(
+                new Object[]{row[0], row[1], row[2], new Money(balance),
+                             new Money(reconciled), row[3], row[4], row[5]});
+            if (x <= oldSize) fireTableRowsUpdated(x, x);
+            else fireTableRowsInserted(x, x);
+          }
+
+          if (oldSize > incoming.size())
+            fireTableRowsDeleted(incoming.size(), oldSize + 1);
+        }
+      };
+
 
   public static enum COLUMN {
     C, Date, Amount, Balance, Reconciled, Entity, Description, ID
   }
 
-  public TransactionTableModel(Identifiable categoryOrAccount,
-                        Date beginDate,
-                        Date endDate) {
-    if (!(categoryOrAccount instanceof Account
-          || categoryOrAccount instanceof Category))
+  public TransactionTableModel(final Identifiable categoryOrAccount,
+                               final Date begin,
+                               final Date end) {
+    refresh(categoryOrAccount, begin, end);
+  }
+
+  public void refresh() {
+    ThreadPool.getInstance().execute(refresh);
+  }
+
+  public void refresh(Identifiable categoryOrAccount, Date begin, Date end) {
+
+    this.beginDate = begin;
+    this.endDate = end;
+    this.identifiable = categoryOrAccount;
+
+
+    if (!(identifiable instanceof Account
+          || identifiable instanceof Category))
       throw new IllegalArgumentException(
           "only Account or Budget aceptable as first argument");
-    isTransaction = categoryOrAccount instanceof Account;
 
-    CriteriaFactory cf = CriteriaFactory.getInstance();
-    transactions = new Vector<Object[]>();
-    beginningBalance
-        = cf.getBeginningBalance(categoryOrAccount, beginDate, null);
-    Money balance = beginningBalance;
-    beginningReconciledBalance
-        = cf.getBeginningBalance(categoryOrAccount, beginDate, true);
-    Money reconciled = beginningReconciledBalance;
-    Vector<Object[]> incoming =
-        cf.getTransactions(categoryOrAccount, beginDate, endDate);
-    for (Object[] row : incoming) {
-      balance = new Money(balance.add((Money)row[COLUMN.Amount.ordinal()]));
-      if ((Boolean)row[COLUMN.C.ordinal()])
-        reconciled =
-            new Money(reconciled.add((Money)row[COLUMN.Amount.ordinal()]));
-      transactions.add(
-          new Object[]{row[0], row[1], row[2], new Money(balance),
-                       new Money(reconciled), row[3], row[4], row[5]});
-    }
+    isTransaction = identifiable instanceof Account;
+
+    final String type = isTransaction
+                        ? Strings.get("account").toLowerCase()
+                        : Strings.get("category").toLowerCase();
+
+    refresh.setStatusMessage(
+        MessageFormat.format("{0} {1} {2}",
+                             Strings.get("retrieving"),
+                             identifiable.toString(),
+                             type));
+
+    refresh();
   }
 
   public Vector<Object[]> getTransactions() {
@@ -77,6 +122,7 @@ public class TransactionTableModel extends AbstractTableModel {
   }
 
   public Object getValueAt(int rowIndex, int columnIndex) {
+    if (transactions.size() == 0) return null;
     return transactions.get(rowIndex)[columnIndex];
   }
 
@@ -89,7 +135,8 @@ public class TransactionTableModel extends AbstractTableModel {
       // establish the beginning reconciled balance
       Money reconciled = row == 0
                          ? beginningReconciledBalance
-                         : (Money)transactions.get(row - 1)[COLUMN.Reconciled.ordinal()];
+                         : (Money)transactions.get(row - 1)[COLUMN.Reconciled
+                             .ordinal()];
 
       // step through each row beginning with the row we're on
       // and re-total the reconciled column
@@ -97,7 +144,8 @@ public class TransactionTableModel extends AbstractTableModel {
         if ((Boolean)transactions.get(x)[COLUMN.C.ordinal()])
           reconciled = new Money(reconciled.add(
               (Money)transactions.get(x)[COLUMN.Amount.ordinal()]));
-        transactions.get(x)[COLUMN.Reconciled.ordinal()] = new Money(reconciled);
+        transactions.get(x)[COLUMN.Reconciled.ordinal()] =
+            new Money(reconciled);
         fireTableCellUpdated(x, COLUMN.Reconciled.ordinal());
       }
 
@@ -109,7 +157,7 @@ public class TransactionTableModel extends AbstractTableModel {
                                : Strings.get("unreconciling"),
                                Strings.get("transaction").toLowerCase(),
                                transactions.get(row)[COLUMN.ID.ordinal()])) {
-              
+
         public void run() {
           try {
             new TransactionPortal().updateReconciled(
@@ -138,6 +186,7 @@ public class TransactionTableModel extends AbstractTableModel {
   }
 
   public Class<?> getColumnClass(int columnIndex) {
+    if (transactions.size() == 0) return null;
     return transactions.get(0)[columnIndex].getClass();
   }
 
