@@ -6,14 +6,15 @@ import java.rmi.RemoteException;
  * An exception for the Envelope application.
  *
  * @author Troy Bowman
- * @version $Id: EnvelopeException.java,v 1.1 2008/07/09 08:16:40 troy Exp $
+ * @version $Id: EnvelopeException.java,v 1.2 2008/08/09 03:31:02 troy Exp $
  */
 abstract public class EnvelopeException extends RemoteException {
   public enum Type {
     Undefined,
     Invalid_Credentials,
     Invalid_Session,
-    Invalid_User
+    Invalid_User,
+    Invalid_Command
   }
 
   private Type type = Type.Undefined;

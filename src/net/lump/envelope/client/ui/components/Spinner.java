@@ -11,7 +11,7 @@ import java.awt.geom.Line2D;
  * A little spinning line.
  *
  * @author Troy Bowman
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 
 public class Spinner extends JComponent {
@@ -38,6 +38,12 @@ public class Spinner extends JComponent {
     stroke = new BasicStroke(width / 10F,
                              BasicStroke.CAP_ROUND,
                              BasicStroke.JOIN_ROUND);
+
+//    java.util.Timer timer = new java.util.Timer("Spinner");
+//    timer.scheduleAtFixedRate(
+//        new TimerTask() { public void run() { if (twirling) repaint(); } },
+//        1, 30);
+//argh, stipd java.util.Timer isn't responsive enough    
 
     animator = new Thread(new Runnable() {
 

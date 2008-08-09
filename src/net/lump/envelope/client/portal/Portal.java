@@ -28,7 +28,7 @@ import java.text.MessageFormat;
  * exit/entry to the server along with exception handling.
  *
  * @author Troy Bowman
- * @version $Revision: 1.14 $
+ * @version $Revision: 1.15 $
  */
 
 abstract class Portal {
@@ -64,6 +64,7 @@ abstract class Portal {
     this.frame = jframe;
 
     try {
+//      return new SocketController().invoke(command);
       return getController().invoke(command);
     } catch (Exception e) {
       handleException(e);

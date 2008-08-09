@@ -2,11 +2,11 @@ package us.lump.envelope.server.rmi;
 
 import org.apache.log4j.Logger;
 import us.lump.envelope.Command;
-import us.lump.envelope.server.dao.DAO;
-import us.lump.envelope.server.dao.Security;
-import us.lump.envelope.exception.SessionException;
 import us.lump.envelope.exception.DataException;
 import us.lump.envelope.exception.EnvelopeException;
+import us.lump.envelope.exception.SessionException;
+import us.lump.envelope.server.dao.DAO;
+import us.lump.envelope.server.dao.Security;
 import us.lump.lib.util.Span;
 
 import java.io.Serializable;
@@ -19,7 +19,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controlled.java,v 1.12 2008/08/08 08:16:35 troy Exp $
+ * @version $Id: Controlled.java,v 1.13 2008/08/09 03:31:02 troy Exp $
  */
 public class Controlled extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -37,7 +37,18 @@ public class Controlled extends UnicastRemoteObject implements Controller {
 //    super(0, ZipSocket.getClientSocketFactory(),
 //          ZipSocket.getServerSocketFactory());
   }
-  
+
+  /**
+   * start a controlled without a socket.
+   *
+   * @param bla
+   *
+   * @throws RemoteException
+   */
+  public Controlled(String bla) throws RemoteException {
+
+  }
+
   /**
    * Invoke a command. This is the central method where every command must pass.
    * Since this causes centralization, we can check for security as defined by
@@ -70,8 +81,7 @@ public class Controlled extends UnicastRemoteObject implements Controller {
             ((DataException)e).getType() == EnvelopeException.Type.Invalid_User
             ) {
           throw new SessionException(SessionException.Type.Invalid_Credentials);
-        }
-        else {
+        } else {
           logger.warn("error in session validation", e);
           throw new SessionException(SessionException.Type.Invalid_Session);
         }

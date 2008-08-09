@@ -16,7 +16,6 @@ import us.lump.envelope.entity.Transaction;
 import us.lump.envelope.exception.DataException;
 import us.lump.envelope.exception.EnvelopeException;
 import us.lump.envelope.server.PrefsConfigurator;
-import us.lump.lib.util.IncrementalArray;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -27,7 +26,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.17 2008/08/08 08:16:35 troy Exp $
+ * @version $Id: DAO.java,v 1.18 2008/08/09 03:31:02 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -108,15 +107,18 @@ public abstract class DAO {
    * @return List
    */
   @SuppressWarnings({"unchecked"})
-  public IncrementalArray detachedCriteriaQuery(DetachedCriteria dc) {
+  public List detachedCriteriaQuery(DetachedCriteria dc) {
     logger.info(dc.toString());
-    IncrementalArray l = new IncrementalArray(dc.getExecutableCriteria(getCurrentSession())
+
+    List l = dc.getExecutableCriteria(getCurrentSession())
         .setCacheable(true)
-        .list());
+        .list();
 
     // evict if these are Identifiable objects.
     if (l.size() > 0 && l.get(0) instanceof Identifiable)
       evict(l);
+
+//    BackgroundList bl = new BackgroundList(l);
 
     return l;
   }

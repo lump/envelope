@@ -16,7 +16,7 @@ import java.text.MessageFormat;
 import java.util.Date;
 import java.util.Vector;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * A table model which lists transactions.
@@ -34,12 +34,20 @@ public class TransactionTableModel extends AbstractTableModel {
   private Date beginDate;
   private Date endDate;
   private Identifiable identifiable;
-  private Object lock = new Object();
 
   private EnvelopeRunnable refresh =
-      new EnvelopeRunnable("Retrieving Transactions") {
+      new EnvelopeRunnable("") {
         public void run() {
-          synchronized(lock) {
+
+          final String type = isTransaction
+                              ? Strings.get("account").toLowerCase()
+                              : Strings.get("category").toLowerCase();
+          setStatusMessage(
+              MessageFormat.format("{0} {1} {2}",
+                                   Strings.get("retrieving"),
+                                   identifiable.toString(),
+                                   type));
+
           CriteriaFactory cf = CriteriaFactory.getInstance();
           int oldSize = transactions.size();
           transactions = new Vector<Object[]>();
@@ -68,11 +76,11 @@ public class TransactionTableModel extends AbstractTableModel {
 
           if (oldSize > incoming.size())
             fireTableRowsDeleted(incoming.size(), oldSize + 1);
-
-        }
         }
       };
 
+  private BlockingQueue<Task> q =
+      new LinkedBlockingQueue<Task>();
 
   public static enum COLUMN {
     C, Date, Amount, Balance, Reconciled, Entity, Description, ID
@@ -81,37 +89,55 @@ public class TransactionTableModel extends AbstractTableModel {
   public TransactionTableModel(final Identifiable categoryOrAccount,
                                final Date begin,
                                final Date end) {
-    refresh(categoryOrAccount, begin, end);
+
+    new Thread(new Runnable() {
+      public void run() {
+        try {
+          while (true) {
+            Task t = q.take();
+
+            beginDate = t.begin;
+            endDate = t.end;
+            identifiable = t.categoryOrAccount;
+
+            if (!(identifiable instanceof Account
+                  || identifiable instanceof Category))
+              throw new IllegalArgumentException(
+                  "only Account or Budget aceptable as first argument");
+
+            isTransaction = identifiable instanceof Account;
+
+            ThreadPool.getInstance().execute(refresh);
+          }
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    }).start();
+
+    queue(categoryOrAccount, begin, end);
   }
 
-  public void refresh(
-      Identifiable categoryOrAccount, Date begin, Date end) {
-    synchronized(lock) {
-    this.beginDate = begin;
-    this.endDate = end;
-    this.identifiable = categoryOrAccount;
+  class Task {
+    Task(Identifiable categoryOrAccount, Date begin, Date end) {
+      this.categoryOrAccount = categoryOrAccount;
+      this.begin = begin;
+      this.end = end;
+    }
 
+    Identifiable categoryOrAccount;
+    Date begin;
+    Date end;
+  }
 
-    if (!(identifiable instanceof Account
-          || identifiable instanceof Category))
-      throw new IllegalArgumentException(
-          "only Account or Budget aceptable as first argument");
-
-    isTransaction = identifiable instanceof Account;
-
-    final String type = isTransaction
-                        ? Strings.get("account").toLowerCase()
-                        : Strings.get("category").toLowerCase();
-
-    refresh.setStatusMessage(
-        MessageFormat.format("{0} {1} {2}",
-                             Strings.get("retrieving"),
-                             identifiable.toString(),
-                             type));
-      
-      ThreadPool.getInstance().execute(refresh);
+  public void queue(Identifiable categoryOrAccount, Date begin, Date end) {
+    try {
+      q.put(new Task(categoryOrAccount, begin, end));
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     }
   }
+
 
   public Vector<Object[]> getTransactions() {
     return transactions;
@@ -136,14 +162,14 @@ public class TransactionTableModel extends AbstractTableModel {
       transactions.get(row)[col] = aValue;
       fireTableCellUpdated(row, col);
 
-      // establish the beginning reconciled balance
+// establish the beginning reconciled balance
       Money reconciled = row == 0
                          ? beginningReconciledBalance
                          : (Money)transactions.get(row - 1)[COLUMN.Reconciled
                              .ordinal()];
 
-      // step through each row beginning with the row we're on
-      // and re-total the reconciled column
+// step through each row beginning with the row we're on
+// and re-total the reconciled column
       for (int x = row; x < transactions.size(); x++) {
         if ((Boolean)transactions.get(x)[COLUMN.C.ordinal()])
           reconciled = new Money(reconciled.add(

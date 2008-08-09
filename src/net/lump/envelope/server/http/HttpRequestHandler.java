@@ -1,7 +1,10 @@
 package us.lump.envelope.server.http;
 
 import org.apache.log4j.Logger;
+import us.lump.envelope.Command;
 import us.lump.envelope.Server;
+import us.lump.envelope.exception.DataException;
+import us.lump.envelope.server.rmi.Controlled;
 
 import java.io.*;
 import java.net.Socket;
@@ -42,25 +45,98 @@ public class HttpRequestHandler implements RequestHandler {
     HashMap<String, String> headers = new HashMap<String, String>();
 
     try {
-      DataOutputStream out =
-          new DataOutputStream(socket.getOutputStream());
+      socket.setSoTimeout(900000);
+      socket.setKeepAlive(true);
+
       String path = null;
 
       try {
         // get path to class file from header
-        BufferedReader in = new BufferedReader(
-            new InputStreamReader(socket.getInputStream()));
-        String line = in.readLine();
+        BufferedInputStream is =
+            new BufferedInputStream(socket.getInputStream());
+        int max = 65536;
+        is.mark(max);
+
+        String header = "";
+
+        int read = 0;
+        do {
+          byte[] buffer = new byte[1024];
+          read += is.read(buffer, 0, 1024);
+          header += new String(buffer).substring(0, read);
+        } while (header.indexOf("\r\n\r\n") == -1 || read > max - 1024);
+
+        String line = header.substring(0, header.indexOf("\r\n") + 2);
+
         String command = "GET";
 
-        // parse get
+        // parse command
         Matcher m = Pattern.compile(
-            "^(GET|HEAD)\\s*/?(.*?)(?:\\s+HTTP/\\d+(?:\\.\\d+)*)?\\r?\\n?$")
+            "^((GET|HEAD|COMMAND)\\s*/?(.*?)(?:\\s+HTTP/\\d+(?:\\.\\d+)*)?\\r?\\n?)$")
             .matcher(line);
         if (m.matches()) {
-          if (m.group(1) != null) command = m.group(1);
-          if (m.group(2) != null) path = m.group(2);
+          if (m.group(1) != null) line = m.group(1);
+          if (m.group(2) != null) command = m.group(2);
+          if (m.group(3) != null) path = m.group(3);
         }
+
+        if (command.equals("COMMAND") && path.equals("invoke")) {
+          String magic =
+              new String(new byte[]{(byte)0xac, (byte)0xed, 0x00, 0x05});
+
+          // go until we find the object header
+          int objectInputStart = -1;
+          do {
+            byte[] buffer = new byte[1024];
+            read += is.read(buffer, 0, 1024);
+            header += new String(buffer).substring(0, read);
+            objectInputStart = header.indexOf(magic);
+          } while (objectInputStart == -1 || read == 0);
+
+          ObjectOutputStream oos =
+              new ObjectOutputStream(socket.getOutputStream());
+
+          if (objectInputStart == -1) {
+            //noinspection ThrowableInstanceNeverThrown
+            oos.writeObject(
+                new DataException(DataException.Type.Invalid_Command));
+          }
+
+          is.reset();
+          is.skip(objectInputStart);
+
+          try {
+            ObjectInputStream ois = new ObjectInputStream(is);
+            Object o = ois.readObject();
+
+            Command[] commands = null;
+
+            if (o instanceof Command[]) commands = (Command[])o;
+            if (o instanceof Command) commands = new Command[]{(Command)o};
+
+            if (commands != null) {
+              Controlled c = new Controlled(null);
+              Object retval = c.invoke(commands);
+//              if (retval instanceof List) {
+//                retval = new BackgroundList((List)retval);
+//              }
+              oos.writeObject(retval);
+            } else {
+              //noinspection ThrowableInstanceNeverThrown
+              oos.writeObject(
+                  new DataException(DataException.Type.Invalid_Command));
+            }
+          }
+          catch (Exception e) {
+            oos.writeObject(e);
+          }
+          return;
+        }
+
+        // okay, we can do a dataOutputStream now
+        DataOutputStream out =
+            new DataOutputStream(socket.getOutputStream());
+
         if (path == null || path.equals("")) {
           byte[] bjnlp =
               slurpInputSteam(this.getClass().getResourceAsStream("jnlp.xml"));
@@ -87,6 +163,11 @@ public class HttpRequestHandler implements RequestHandler {
                       + socket.getInetAddress().getCanonicalHostName());
           return;
         }
+
+        is.reset();
+        is.skip(line.length());
+        BufferedReader in = new BufferedReader(
+            new InputStreamReader(is));
 
         // skip other headers;
         do {
@@ -135,25 +216,25 @@ public class HttpRequestHandler implements RequestHandler {
                       + socket.getInetAddress().getCanonicalHostName());
         } else {
 
-          InputStream is;
+          InputStream cis;
           String contentType;
 
-          is = ClassLoader.getSystemResourceAsStream(path);
-          if (is == null) {
-            is = Thread.currentThread()
+          cis = ClassLoader.getSystemResourceAsStream(path);
+          if (cis == null) {
+            cis = Thread.currentThread()
                 .getContextClassLoader().getResourceAsStream(path);
           }
-          if (is == null) {
+          if (cis == null) {
             this.getClass().getClassLoader().getResource(path);
           }
 
-          if (is == null) {
+          if (cis == null) {
             logger.error("Does not exist: " + path);
             throw new ClassNotFoundException("File does not exist: " + path);
           }
 
           encoding = "raw";
-          byte[] bytecode = slurpInputSteam(is);
+          byte[] bytecode = slurpInputSteam(cis);
 
           int magic = (bytecode[0] & 0xff) << 24 | (bytecode[1] & 0xff) << 16
                       | (bytecode[2] & 0xff) << 8 | (bytecode[3] & 0xff);
@@ -233,7 +314,8 @@ public class HttpRequestHandler implements RequestHandler {
         logger.warn(MessageFormat.format(
             "to {0} status 403 denied for {1}",
             socket.getInetAddress().getCanonicalHostName(), path));
-        writeError(out, "HTTP/1.0 403 Forbidden", headers.get("user-agent"),
+        writeError(new DataOutputStream(socket.getOutputStream()),
+                   "HTTP/1.0 403 Forbidden", headers.get("user-agent"),
                    a.getMessage());
       }
       catch (ClassNotFoundException e) {
@@ -241,7 +323,8 @@ public class HttpRequestHandler implements RequestHandler {
             "to {0} status 404 not found for {1}",
             socket.getInetAddress().getCanonicalHostName(), path));
 
-        writeError(out, "HTTP/1.0 404 " + e.getMessage(),
+        writeError(new DataOutputStream(socket.getOutputStream()),
+                   "HTTP/1.0 404 " + e.getMessage(),
                    headers.get("user-agent"),
                    e.getMessage());
       }
@@ -250,7 +333,8 @@ public class HttpRequestHandler implements RequestHandler {
             "to {0} status 400 bad request for {1}",
             socket.getInetAddress().getCanonicalHostName(), path));
 
-        writeError(out, "HTTP/1.0 400 " + e.getMessage(),
+        writeError(new DataOutputStream(socket.getOutputStream()),
+                   "HTTP/1.0 400 " + e.getMessage(),
                    headers.get("user-agent"),
                    e.getMessage());
       }
