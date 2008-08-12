@@ -38,7 +38,7 @@ import java.util.List;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.3 2008/08/09 03:31:02 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.4 2008/08/12 03:05:33 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -69,17 +69,17 @@ public class Hierarchy extends JTree {
       public void valueChanged(final TreeSelectionEvent e) {
         final Object o = ((DefaultMutableTreeNode)e.getPath()
             .getLastPathComponent()).getUserObject();
+
         if (o instanceof Account || o instanceof Category) {
           final TableQueryBar tqb = TableQueryBar.getInstance();
           sanifyDates(tqb);
 
-          if (tm == null)
-            tm = new TransactionTableModel(
-                (Identifiable)o, tqb.getBeginDate(), tqb.getEndDate());
+          if (tm == null) tm = new TransactionTableModel(
+              (Identifiable)o, tqb.getBeginDate(), tqb.getEndDate());
           else tm.queue((Identifiable)o, tqb.getBeginDate(), tqb.getEndDate());
 
           JTable table = tqb.getTable();
-          table.getTableHeader().setUpdateTableInRealTime(false);
+          table.getTableHeader().setUpdateTableInRealTime(true);
           table.setModel(tm);
 
           table.setDefaultRenderer(Money.class, new MoneyRenderer());
@@ -91,6 +91,7 @@ public class Hierarchy extends JTree {
               ? ((Account)o).getName()
               : o instanceof Category
                 ? ((Category)o).getName() : null);
+
           MainFrame.getInstance()
               .setContentPane(tqb.getTableQueryPanel());
           tqb.setViewportView(table);
@@ -114,7 +115,7 @@ public class Hierarchy extends JTree {
             table.getColumnModel().getColumn(x).setMaxWidth(settings[x]);
           }
 
-          table.getTableHeader().setUpdateTableInRealTime(true);
+//          table.getTableHeader().setUpdateTableInRealTime(true);
 
 
           for (ActionListener a : tqb.getRefreshButton().getActionListeners())
@@ -126,6 +127,9 @@ public class Hierarchy extends JTree {
               tm.queue((Identifiable)o, tqb.getBeginDate(), tqb.getEndDate());
             }
           });
+        }
+        else {
+          MainFrame.getInstance().setContentPane(null);
         }
       }
     });

@@ -56,7 +56,12 @@ public class TransactionTableModel extends AbstractTableModel {
           while (true) {
 
             // if there's something else in the queue, abort it.
-            while (q.size() > 1) { q.take().finish(); }
+            while (q.size() > 1) {
+              List<Task> l = new ArrayList<Task>();
+              q.drainTo(l, q.size()-1);
+              for (Task t : l) t.finish();
+              Thread.sleep(100);
+            }
             // take the last one.
             Task t = q.take();
 
@@ -64,6 +69,7 @@ public class TransactionTableModel extends AbstractTableModel {
             beginDate = t.begin;
             endDate = t.end;
             identifiable = t.categoryOrAccount;
+            isTransaction = identifiable instanceof Account;
 
             if (!(identifiable instanceof Account
                   || identifiable instanceof Category))
@@ -74,6 +80,8 @@ public class TransactionTableModel extends AbstractTableModel {
             CriteriaFactory cf = CriteriaFactory.getInstance();
             int oldSize = transactions.size();
             transactions = new Vector<Object[]>();
+            fireTableRowsDeleted(0, oldSize+1);
+
             beginningBalance
                 = cf.getBeginningBalance(identifiable, beginDate, null);
             Money balance = beginningBalance;
@@ -119,10 +127,7 @@ public class TransactionTableModel extends AbstractTableModel {
       this.categoryOrAccount = categoryOrAccount;
       this.begin = begin;
       this.end = end;
-
-      this.isTransaction = identifiable instanceof Account;
-
-      final String type = isTransaction
+      final String type = identifiable instanceof Account
                           ? Strings.get("account").toLowerCase()
                           : Strings.get("category").toLowerCase();
       e =
