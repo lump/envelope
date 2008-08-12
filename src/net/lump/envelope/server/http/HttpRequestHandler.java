@@ -23,6 +23,8 @@ import java.util.zip.GZIPOutputStream;
  */
 public class HttpRequestHandler implements RequestHandler {
 
+  private static final int MAX_READ = 5242880;
+
   // client is denied from downloading classes from the following paths
   private static final String[] denyList = new String[]{
       "us/lump/envelope/server/dao",
@@ -33,6 +35,21 @@ public class HttpRequestHandler implements RequestHandler {
   };
 
   private static final Logger logger = Logger.getLogger(ClassServer.class);
+
+
+  public String readTo(BufferedInputStream bis, String search)
+      throws IOException {
+
+    StringBuffer s = new StringBuffer();
+    int read = 0;
+    do {
+      byte[] buffer = new byte[1024];
+      read += bis.read(buffer, 0, 1024);
+      s.append(new String(buffer).substring(0, read));
+    } while (s.indexOf(search) == -1 || read > MAX_READ - 1024);
+
+    return s.substring(0, s.indexOf(search) + search.length());
+  }
 
   /**
    * The "listen" thread that accepts a connection to the server, parses the
@@ -54,26 +71,17 @@ public class HttpRequestHandler implements RequestHandler {
         // get path to class file from header
         BufferedInputStream is =
             new BufferedInputStream(socket.getInputStream());
-        int max = 65536;
-        is.mark(max);
+        is.mark(MAX_READ);
+        String header = readTo(is, "\r\n\r\n");
+        is.reset();
 
-        String header = "";
-
-        int read = 0;
-        do {
-          byte[] buffer = new byte[1024];
-          read += is.read(buffer, 0, 1024);
-          header += new String(buffer).substring(0, read);
-        } while (header.indexOf("\r\n\r\n") == -1 || read > max - 1024);
-
-        String line = header.substring(0, header.indexOf("\r\n") + 2);
-
+        String line = "";
         String command = "GET";
 
         // parse command
         Matcher m = Pattern.compile(
-            "^((GET|HEAD|COMMAND)\\s*/?(.*?)(?:\\s+HTTP/\\d+(?:\\.\\d+)*)?\\r?\\n?)$")
-            .matcher(line);
+            "^((GET|HEAD|COMMAND)\\s*/?(.*?)(?:\\s+(?:HT|JO)TP/\\d+(?:\\.\\d+)*)?\\r\\n)")
+            .matcher(header.subSequence(0, header.indexOf("\r\n")+2));
         if (m.matches()) {
           if (m.group(1) != null) line = m.group(1);
           if (m.group(2) != null) command = m.group(2);
@@ -84,52 +92,59 @@ public class HttpRequestHandler implements RequestHandler {
           String magic =
               new String(new byte[]{(byte)0xac, (byte)0xed, 0x00, 0x05});
 
-          // go until we find the object header
-          int objectInputStart = -1;
-          do {
-            byte[] buffer = new byte[1024];
-            read += is.read(buffer, 0, 1024);
-            header += new String(buffer).substring(0, read);
-            objectInputStart = header.indexOf(magic);
-          } while (objectInputStart == -1 || read == 0);
+          boolean loop = true;
+          while (loop) {
+            
+            header = readTo(is, "JOTP/1.0\r\n\r\n" + magic);
+            is.reset();
+            is.skip(header.length() - magic.length());
+            is.mark(MAX_READ);
 
-          ObjectOutputStream oos =
-              new ObjectOutputStream(socket.getOutputStream());
+            ObjectOutputStream oos =
+                new ObjectOutputStream(socket.getOutputStream());
 
-          if (objectInputStart == -1) {
-            //noinspection ThrowableInstanceNeverThrown
-            oos.writeObject(
-                new DataException(DataException.Type.Invalid_Command));
-          }
+            try {
 
-          is.reset();
-          is.skip(objectInputStart);
+                //noinspection ThrowableInstanceNeverThrown
+//                oos.writeObject(
+//                    new DataException(DataException.Type.Invalid_Command));
 
-          try {
-            ObjectInputStream ois = new ObjectInputStream(is);
-            Object o = ois.readObject();
+              ObjectInputStream ois = new ObjectInputStream(is);
 
-            Command[] commands = null;
+              Object o = ois.readObject();
+              is.mark(MAX_READ);
 
-            if (o instanceof Command[]) commands = (Command[])o;
-            if (o instanceof Command) commands = new Command[]{(Command)o};
+              Command[] commands = null;
 
-            if (commands != null) {
-              Controlled c = new Controlled(null);
-              Object retval = c.invoke(commands);
+              if (o instanceof Command[]) commands = (Command[])o;
+              if (o instanceof Command) commands = new Command[]{(Command)o};
+
+              if (commands != null) {
+                Controlled c = new Controlled(null);
+                Object retval = c.invoke(commands);
 //              if (retval instanceof List) {
 //                retval = new BackgroundList((List)retval);
 //              }
-              oos.writeObject(retval);
-            } else {
-              //noinspection ThrowableInstanceNeverThrown
-              oos.writeObject(
-                  new DataException(DataException.Type.Invalid_Command));
+                oos.writeObject(retval);
+              } else {
+                //noinspection ThrowableInstanceNeverThrown
+                oos.writeObject(
+                    new DataException(DataException.Type.Invalid_Command));
+              }
+              
+              oos = null;
+            }
+            catch (EOFException e) {
+              loop = false;
+            }
+            catch (IOException e) {
+              loop = false;
+            }
+            catch (Exception e) {
+              oos.writeObject(e);
             }
           }
-          catch (Exception e) {
-            oos.writeObject(e);
-          }
+
           return;
         }
 

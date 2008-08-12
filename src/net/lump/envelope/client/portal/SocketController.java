@@ -15,27 +15,34 @@ import java.rmi.RemoteException;
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 
 public class SocketController implements Controller {
 
-  Socket s;
+  private static Socket s;
 
   public SocketController() throws IOException {
-    s = new Socket(
-        ServerSettings.getInstance().getHostName(),
-        Integer.parseInt(ServerSettings.getInstance().getClassPort()));
+    init();
+  }
+
+  private void init() throws IOException {
+    if (s == null || s.isClosed() || !s.isConnected() || s.isInputShutdown()
+        || s.isOutputShutdown() || ! s.isBound()) {
+      s = new Socket(
+          ServerSettings.getInstance().getHostName(),
+          Integer.parseInt(ServerSettings.getInstance().getClassPort()));
+      s.setKeepAlive(true);
+      s.setSoLinger(true, 5000);
+      s.setSoTimeout(0);
+    }
+    s.getOutputStream().write("COMMAND /invoke JOTP/1.0\r\n\r\n".getBytes());
   }
 
   public Serializable invoke(Command... commands) throws RemoteException {
     Serializable retval = null;
 
     try {
-      s.setKeepAlive(true);
-      s.setSoTimeout(0);
-
-      s.getOutputStream().write("COMMAND /invoke HTTP/1.0\r\n\r\n".getBytes());
       ObjectOutputStream oos = new ObjectOutputStream(s.getOutputStream());
       oos.writeObject(commands);
       oos.flush();
@@ -48,7 +55,15 @@ public class SocketController implements Controller {
       if (retval instanceof Exception) {
         throw new Exception((Exception)retval);
       }
-      s.close();
+    } catch (IOException e) {
+      try {
+        s.close();
+        s = null;
+        init();
+        invoke(commands);
+      } catch (IOException e1) {
+        throw new RemoteException("invoke failed", e);  
+      }
     } catch (Exception e) {
       throw new RemoteException("invoke failed", e);
     }

@@ -28,7 +28,7 @@ import java.text.MessageFormat;
  * exit/entry to the server along with exception handling.
  *
  * @author Troy Bowman
- * @version $Revision: 1.15 $
+ * @version $Revision: 1.16 $
  */
 
 abstract class Portal {
