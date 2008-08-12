@@ -4,7 +4,9 @@ import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.portal.TransactionPortal;
 import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.thread.ThreadPool;
+import us.lump.envelope.client.thread.StatusElement;
 import us.lump.envelope.client.ui.defs.Strings;
+import us.lump.envelope.client.ui.components.StatusBar;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Category;
 import us.lump.envelope.entity.Identifiable;
@@ -15,6 +17,8 @@ import javax.swing.table.AbstractTableModel;
 import java.text.MessageFormat;
 import java.util.Date;
 import java.util.Vector;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -35,50 +39,6 @@ public class TransactionTableModel extends AbstractTableModel {
   private Date endDate;
   private Identifiable identifiable;
 
-  private EnvelopeRunnable refresh =
-      new EnvelopeRunnable("") {
-        public void run() {
-
-          final String type = isTransaction
-                              ? Strings.get("account").toLowerCase()
-                              : Strings.get("category").toLowerCase();
-          setStatusMessage(
-              MessageFormat.format("{0} {1} {2}",
-                                   Strings.get("retrieving"),
-                                   identifiable.toString(),
-                                   type));
-
-          CriteriaFactory cf = CriteriaFactory.getInstance();
-          int oldSize = transactions.size();
-          transactions = new Vector<Object[]>();
-          beginningBalance
-              = cf.getBeginningBalance(identifiable, beginDate, null);
-          Money balance = beginningBalance;
-          beginningReconciledBalance
-              = cf.getBeginningBalance(identifiable, beginDate, true);
-          Money reconciled = beginningReconciledBalance;
-          Vector<Object[]> incoming =
-              cf.getTransactions(identifiable, beginDate, endDate);
-          for (int x = 0; x < incoming.size(); x++) {
-            Object[] row = incoming.get(x);
-            balance =
-                new Money(balance.add((Money)row[COLUMN.Amount.ordinal()]));
-            if ((Boolean)row[COLUMN.C.ordinal()])
-              reconciled =
-                  new Money(reconciled.add((Money)row[COLUMN.Amount
-                      .ordinal()]));
-            transactions.add(
-                new Object[]{row[0], row[1], row[2], new Money(balance),
-                             new Money(reconciled), row[3], row[4], row[5]});
-            if (x <= oldSize) fireTableRowsUpdated(x, x);
-            else fireTableRowsInserted(x, x);
-          }
-
-          if (oldSize > incoming.size())
-            fireTableRowsDeleted(incoming.size(), oldSize + 1);
-        }
-      };
-
   private BlockingQueue<Task> q =
       new LinkedBlockingQueue<Task>();
 
@@ -91,10 +51,15 @@ public class TransactionTableModel extends AbstractTableModel {
                                final Date end) {
 
     new Thread(new Runnable() {
-      public void run() {
+      public synchronized void run() {
         try {
           while (true) {
+
+            // if there's something else in the queue, abort it.
+            while (q.size() > 1) { q.take().finish(); }
+            // take the last one.
             Task t = q.take();
+
 
             beginDate = t.begin;
             endDate = t.end;
@@ -105,15 +70,46 @@ public class TransactionTableModel extends AbstractTableModel {
               throw new IllegalArgumentException(
                   "only Account or Budget aceptable as first argument");
 
-            isTransaction = identifiable instanceof Account;
 
-            ThreadPool.getInstance().execute(refresh);
+            CriteriaFactory cf = CriteriaFactory.getInstance();
+            int oldSize = transactions.size();
+            transactions = new Vector<Object[]>();
+            beginningBalance
+                = cf.getBeginningBalance(identifiable, beginDate, null);
+            Money balance = beginningBalance;
+            beginningReconciledBalance
+                = cf.getBeginningBalance(identifiable, beginDate, true);
+            Money reconciled = beginningReconciledBalance;
+            Vector<Object[]> incoming =
+                cf.getTransactions(identifiable, beginDate, endDate);
+            for (int x = 0; x < incoming.size(); x++) {
+              if (q.size() > 0) { t.finish(); continue; }
+              Object[] row = incoming.get(x);
+              balance =
+                  new Money(balance.add((Money)row[COLUMN.Amount.ordinal()]));
+              if ((Boolean)row[COLUMN.C.ordinal()])
+                reconciled =
+                    new Money(reconciled.add((Money)row[COLUMN.Amount
+                        .ordinal()]));
+              transactions.add(
+                  new Object[]{row[0], row[1], row[2], new Money(balance),
+                               new Money(reconciled), row[3], row[4], row[5]});
+              if (x <= oldSize) fireTableRowsUpdated(x, x);
+              else fireTableRowsInserted(x, x);
+            }
+
+            if (oldSize > incoming.size())
+              fireTableRowsDeleted(incoming.size(), oldSize + 1);
+
+            t.finish();
           }
-        } catch (InterruptedException e) {
+        }
+
+        catch (InterruptedException e) {
           e.printStackTrace();
         }
       }
-    }).start();
+    }, "Transaction Table Filler").start();
 
     queue(categoryOrAccount, begin, end);
   }
@@ -123,11 +119,29 @@ public class TransactionTableModel extends AbstractTableModel {
       this.categoryOrAccount = categoryOrAccount;
       this.begin = begin;
       this.end = end;
+
+      this.isTransaction = identifiable instanceof Account;
+
+      final String type = isTransaction
+                          ? Strings.get("account").toLowerCase()
+                          : Strings.get("category").toLowerCase();
+      e =
+          StatusBar.getInstance().addTask(MessageFormat.format(
+              "{0} {1} {2}",
+              Strings.get("retrieving"),
+              this.categoryOrAccount.toString(),
+              type));
     }
 
+    public void finish() {
+      StatusBar.getInstance().removeTask(e);
+    }
+
+    StatusElement e;
     Identifiable categoryOrAccount;
     Date begin;
     Date end;
+    boolean isTransaction;
   }
 
   public void queue(Identifiable categoryOrAccount, Date begin, Date end) {
