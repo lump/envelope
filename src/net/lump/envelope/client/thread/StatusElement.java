@@ -4,7 +4,7 @@ package us.lump.envelope.client.thread;
  * Status element.
  *
  * @author Troy Bowman
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 
 public class StatusElement {
@@ -45,7 +45,7 @@ public class StatusElement {
   }
 
   public String toString() {
-    return value.toString();
+    return value == null ? "null" : value.toString();
   }
 
   public int hashCode() {
