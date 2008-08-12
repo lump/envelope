@@ -38,7 +38,7 @@ import java.util.List;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.4 2008/08/12 03:05:33 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.5 2008/08/12 03:30:20 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -128,9 +128,9 @@ public class Hierarchy extends JTree {
             }
           });
         }
-        else {
-          MainFrame.getInstance().setContentPane(null);
-        }
+//        else {
+//          MainFrame.getInstance().setContentPane(null);
+//        }
       }
     });
   }

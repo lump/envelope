@@ -30,7 +30,6 @@ import java.util.concurrent.LinkedBlockingQueue;
  *          $
  */
 public class TransactionTableModel extends AbstractTableModel {
-  //  private List<Transaction> transactions;
   private Vector<Object[]> transactions = new Vector<Object[]>();
   private Money beginningBalance = new Money(0);
   private Money beginningReconciledBalance = new Money(0);
@@ -65,7 +64,6 @@ public class TransactionTableModel extends AbstractTableModel {
             // take the last one.
             Task t = q.take();
 
-
             beginDate = t.begin;
             endDate = t.end;
             identifiable = t.categoryOrAccount;
@@ -78,30 +76,29 @@ public class TransactionTableModel extends AbstractTableModel {
 
 
             CriteriaFactory cf = CriteriaFactory.getInstance();
-            int oldSize = transactions.size();
-            transactions = new Vector<Object[]>();
-            fireTableRowsDeleted(0, oldSize+1);
-
             beginningBalance
                 = cf.getBeginningBalance(identifiable, beginDate, null);
             Money balance = beginningBalance;
             beginningReconciledBalance
                 = cf.getBeginningBalance(identifiable, beginDate, true);
             Money reconciled = beginningReconciledBalance;
+
+            int oldSize = transactions.size();
+            transactions = new Vector<Object[]>();
+
             Vector<Object[]> incoming =
                 cf.getTransactions(identifiable, beginDate, endDate);
             for (int x = 0; x < incoming.size(); x++) {
-              if (q.size() > 0) { t.finish(); continue; }
               Object[] row = incoming.get(x);
               balance =
                   new Money(balance.add((Money)row[COLUMN.Amount.ordinal()]));
               if ((Boolean)row[COLUMN.C.ordinal()])
-                reconciled =
-                    new Money(reconciled.add((Money)row[COLUMN.Amount
-                        .ordinal()]));
+                reconciled = new Money(reconciled.add((Money)row[COLUMN.Amount
+                    .ordinal()]));
               transactions.add(
                   new Object[]{row[0], row[1], row[2], new Money(balance),
                                new Money(reconciled), row[3], row[4], row[5]});
+              fireTableRowsInserted(x, x);
               if (x <= oldSize) fireTableRowsUpdated(x, x);
               else fireTableRowsInserted(x, x);
             }
@@ -127,14 +124,14 @@ public class TransactionTableModel extends AbstractTableModel {
       this.categoryOrAccount = categoryOrAccount;
       this.begin = begin;
       this.end = end;
-      final String type = identifiable instanceof Account
+      final String type = categoryOrAccount instanceof Account
                           ? Strings.get("account").toLowerCase()
                           : Strings.get("category").toLowerCase();
       e =
           StatusBar.getInstance().addTask(MessageFormat.format(
               "{0} {1} {2}",
               Strings.get("retrieving"),
-              this.categoryOrAccount.toString(),
+              categoryOrAccount.toString(),
               type));
     }
 
@@ -146,7 +143,6 @@ public class TransactionTableModel extends AbstractTableModel {
     Identifiable categoryOrAccount;
     Date begin;
     Date end;
-    boolean isTransaction;
   }
 
   public void queue(Identifiable categoryOrAccount, Date begin, Date end) {
