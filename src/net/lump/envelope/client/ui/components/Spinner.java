@@ -11,19 +11,28 @@ import java.awt.geom.Line2D;
  * A little spinning line.
  *
  * @author Troy Bowman
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 
 public class Spinner extends JComponent {
   static final int steps = 30;
   static final int degrees = 360;
   static final int step = degrees / steps;
+  int blurBacklog = 0;
   Stroke stroke;
   Dimension size;
   AffineTransform translate = new AffineTransform();
   AffineTransform rotate = new AffineTransform();
   Thread animator;
   boolean twirling = false;
+  private static Color[] shades;
+
+  static {
+    int y = 16;
+    shades = new Color[y];
+    for (int x = 0; x < y; x++)
+      shades[x] = new Color((12 * x) + 64, (12 * x) + 64, (12 * x) + 64);
+  }
 
   public Spinner() {
     this(20, 20);
@@ -48,7 +57,8 @@ public class Spinner extends JComponent {
     animator = new Thread(new Runnable() {
 
       private void redo() {
-        if (twirling) paintImmediately(new Rectangle(new Point(0, 0), size));
+        if (twirling || blurBacklog > 0)
+          paintImmediately(new Rectangle(new Point(0, 0), size));
         Timer timer = new Timer(33,
                                 new ActionListener() {
                                   public void actionPerformed(ActionEvent e) {
@@ -84,12 +94,45 @@ public class Spinner extends JComponent {
 
     Graphics2D g = (Graphics2D)g1;
     g.transform(translate);
-    if (twirling) rotate.rotate(Math.toRadians(step));
-    g.transform(rotate);
     g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                        RenderingHints.VALUE_ANTIALIAS_ON);
-    g.setPaint(Color.BLACK);
     g.setStroke(stroke);
+    if (twirling) {
+      rotate.rotate(Math.toRadians(step));
+      if (blurBacklog < shades.length) blurBacklog++;
+    } else if (blurBacklog > 0) {
+      blurBacklog--;
+    }
+    g.transform(rotate);
+
+    if (blurBacklog > 0) {
+      // rotate our reference rotation one step
+      // rotate back shades.length steps
+      AffineTransform tmpRotate = new AffineTransform();
+      tmpRotate.rotate(Math.toRadians(step * blurBacklog * -1));
+      g.transform(tmpRotate);
+
+      // for each shade, draw a line
+      for (int x = blurBacklog - 1; x > -1; x--)
+        // if we're twirling, grow
+        if (twirling)
+          rotateAndPaintLine(g, shades[x]);
+          // else, decay
+        else
+          rotateAndPaintLine(g, shades[x + (shades.length - blurBacklog)]);
+    }
+    paintLine(g, Color.black);
+  }
+
+  private void rotateAndPaintLine(Graphics2D g, Color color) {
+    AffineTransform tmpRotate = new AffineTransform();
+    tmpRotate.rotate(Math.toRadians(step));
+    g.transform(tmpRotate);
+    paintLine(g, color);
+  }
+
+  private void paintLine(Graphics2D g, Color color) {
+    g.setPaint(color);
     g.draw(new Line2D.Float(((size.width / 3F) * -1), 0.0F,
                             (size.width / 3F), 0.0F));
   }

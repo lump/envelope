@@ -11,13 +11,14 @@ import java.util.Vector;
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Revision: 1.3 $
+ * @version $Revision: 1.4 $
  */
 
 public class StatusBar extends JPanel {
 
   private static StatusBar singleton = null;
   Spinner spinner = new Spinner(16, 16);
+  //  Spinner spinner = new Spinner(256, 256);
   StatusLabel label = new StatusLabel();
 
   public static StatusBar getInstance() {
