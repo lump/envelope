@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.14 2008/08/27 02:25:11 troy Exp $
+# $Id: migrate.pl,v 1.15 2008/08/27 02:50:56 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -188,9 +188,12 @@ while (my $row = $sth->fetchrow_hashref()) {
   # transactions
   if ($row->{to_from} eq undef) { $row->{to_from} = "" }
   if ($row->{description} eq undef) { $row->{description} = "" }
-  unless ($row->{subcategory} =~ /^Payday|Adjustment$/
-      && $last->{subcategory} =~ /^Payday|Adjustment$/
-      && ($row->{to_from} =~ /^SOS|ArosNet|America First|Original Amount$/ && ($row->{to_from} eq $last->{to_from}))
+  unless ($row->{subcategory} =~ /^Payday|Adjustment|Auto Debit$/
+      && $last->{subcategory} =~ /^Payday|Adjustment|Auto Debit$/
+      && ($row->{to_from} =~ /^SOS|ArosNet|America First|Original Amount|$/
+          and ($row->{to_from} eq $last->{to_from}
+               or ($row->{to_from} =~ /^$/ && $row->{subcategory} eq "Auto Debit"))
+         )
       && ($row->{date} eq $last->{date})
       && $last_id ne undef) {
     my @params = ($row->{stamp}, $row->{date}, $row->{to_from}, $row->{description}, $row->{reconciled},
