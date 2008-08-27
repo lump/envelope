@@ -30,6 +30,15 @@ public class TableQueryBar {
 
   public TableQueryBar() {
     $$$setupUI$$$();
+
+//    table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
+//      public void valueChanged(ListSelectionEvent e) {
+//        if (!e.getValueIsAdjusting()) {
+//          ((TransactionTableModel)table.getModel()).setSelectionCache(
+//              ((DefaultListSelectionModel)e.getSource()).getAnchorSelectionIndex());
+//        }
+//      }
+//    });
   }
 
   public static TableQueryBar getInstance() {

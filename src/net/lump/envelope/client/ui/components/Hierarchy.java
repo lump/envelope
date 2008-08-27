@@ -38,7 +38,7 @@ import java.util.List;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.5 2008/08/12 03:30:20 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.6 2008/08/27 01:13:27 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -61,6 +61,7 @@ public class Hierarchy extends JTree {
 
   private Hierarchy() {
     super();
+
     setModel(new DefaultTreeModel(rootNode, false));
 
     getSelectionModel().setSelectionMode(
@@ -75,7 +76,8 @@ public class Hierarchy extends JTree {
           sanifyDates(tqb);
 
           if (tm == null) tm = new TransactionTableModel(
-              (Identifiable)o, tqb.getBeginDate(), tqb.getEndDate());
+              (Identifiable)o, tqb.getBeginDate(), tqb.getEndDate(),
+              tqb.getTable());
           else tm.queue((Identifiable)o, tqb.getBeginDate(), tqb.getEndDate());
 
           JTable table = tqb.getTable();
@@ -100,7 +102,7 @@ public class Hierarchy extends JTree {
           int dateWidth =
               table.getFontMetrics(table.getFont()).stringWidth("MMM MM, MMMM");
           int amountWidth = table.getFontMetrics(Fonts.getFont("fixed"))
-              .stringWidth("$9,999,999.00");
+              .stringWidth("$0,000,000.00");
           table.getColumnModel().getColumn(0).setMaxWidth(checkWidth.width);
 
           Integer[] settings = new Integer[]{
@@ -116,7 +118,6 @@ public class Hierarchy extends JTree {
           }
 
 //          table.getTableHeader().setUpdateTableInRealTime(true);
-
 
           for (ActionListener a : tqb.getRefreshButton().getActionListeners())
             tqb.getRefreshButton().removeActionListener(a);

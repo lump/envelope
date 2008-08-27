@@ -1,23 +1,23 @@
 package us.lump.envelope.client;
 
-import org.hibernate.criterion.*;
-import org.hibernate.FetchMode;
 import org.apache.log4j.Logger;
-import us.lump.envelope.entity.*;
+import org.hibernate.FetchMode;
+import org.hibernate.criterion.*;
 import us.lump.envelope.client.portal.HibernatePortal;
+import us.lump.envelope.entity.*;
 import us.lump.envelope.exception.EnvelopeException;
 import us.lump.lib.Money;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Vector;
 
 /**
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.7 2008/07/17 03:30:40 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.8 2008/08/27 01:13:27 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -76,10 +76,14 @@ public class CriteriaFactory {
     return retval;
   }
 
-  public Money getBeginningBalance(Identifiable categoryOrAccount, Date endDate, Boolean reconciled) {
+  public Money getBeginningBalance(Identifiable categoryOrAccount,
+                                   Date endDate,
+                                   Boolean reconciled) {
     Money retval = null;
-    if (!(categoryOrAccount instanceof Category || categoryOrAccount instanceof Account))
-      throw new IllegalArgumentException("first argument must be Cateogry or Budget");
+    if (!(categoryOrAccount instanceof Category
+          || categoryOrAccount instanceof Account))
+      throw new IllegalArgumentException(
+          "first argument must be Cateogry or Budget");
 
     try {
       DetachedCriteria dc;
@@ -91,8 +95,7 @@ public class CriteriaFactory {
         if (reconciled != null)
           dc.add(Restrictions.eq("t.reconciled", reconciled));
         dc.setProjection(Projections.sum("amount"));
-      }
-      else {
+      } else {
         dc = DetachedCriteria.forClass(Transaction.class)
             .createAlias("allocations", "a")
             .createAlias("a.category", "c")
@@ -112,10 +115,12 @@ public class CriteriaFactory {
   }
 
   public Vector<Object[]> getTransactions(Identifiable categoryOrAccount,
-                                             Date beginDate,
-                                             Date endDate) {
-    if (!(categoryOrAccount instanceof Category || categoryOrAccount instanceof Account))
-      throw new IllegalArgumentException("first argument must be Category or Account");
+                                          Date beginDate,
+                                          Date endDate) {
+    if (!(categoryOrAccount instanceof Category
+          || categoryOrAccount instanceof Account))
+      throw new IllegalArgumentException(
+          "first argument must be Category or Account");
 
     Vector<Object[]> retval = new Vector<Object[]>();
     List blah;
@@ -129,35 +134,37 @@ public class CriteriaFactory {
             .add(Projections.property("entity"))
             .add(Projections.property("description"))
             .add(Projections.groupProperty("id"));
-        retval = new Vector<Object[]>((new HibernatePortal()).detachedCriteriaQuery(
-            DetachedCriteria.forClass(Transaction.class)
-                .createAlias("allocations", "a")
-                .createAlias("a.category", "c")
-                .add(Restrictions.eq("c.account", categoryOrAccount))
-                .add(Restrictions.ge("date", beginDate))
-                .add(Restrictions.le("date", endDate))
-                .setProjection(plist)
-                .addOrder(Order.asc("date"))
-                .addOrder(Order.asc("stamp"))
-        ));
-      }
-      else {
+        retval =
+            new Vector<Object[]>((new HibernatePortal()).detachedCriteriaQuery(
+                DetachedCriteria.forClass(Transaction.class)
+                    .createAlias("allocations", "a")
+                    .createAlias("a.category", "c")
+                    .add(Restrictions.eq("c.account", categoryOrAccount))
+                    .add(Restrictions.ge("date", beginDate))
+                    .add(Restrictions.le("date", endDate))
+                    .setProjection(plist)
+                    .addOrder(Order.asc("date"))
+                    .addOrder(Order.asc("stamp"))
+            ));
+      } else {
         ProjectionList plist = Projections.projectionList();
         plist.add(Projections.property("t.reconciled"))
             .add(Projections.property("t.date"))
             .add(Projections.sum("amount"))
             .add(Projections.property("t.entity"))
             .add(Projections.property("t.description"))
+            .add(Projections.property("t.id"))
             .add(Projections.groupProperty("id"));
-        retval = new Vector<Object[]>((new HibernatePortal()).detachedCriteriaQuery(
-            DetachedCriteria.forClass(Allocation.class)
-                .createAlias("transaction", "t")
-                .add(Restrictions.eq("category", categoryOrAccount))
-                .add(Restrictions.ge("t.date", beginDate))
-                .add(Restrictions.le("t.date", endDate))
-                .setProjection(plist)
-                .addOrder(Order.asc("t.date"))
-                .addOrder(Order.asc("stamp"))
+        retval =
+            new Vector<Object[]>((new HibernatePortal()).detachedCriteriaQuery(
+                DetachedCriteria.forClass(Allocation.class)
+                    .createAlias("transaction", "t")
+                    .add(Restrictions.eq("category", categoryOrAccount))
+                    .add(Restrictions.ge("t.date", beginDate))
+                    .add(Restrictions.le("t.date", endDate))
+                    .setProjection(plist)
+                    .addOrder(Order.asc("t.date"))
+                    .addOrder(Order.asc("stamp"))
             ));
       }
     } catch (EnvelopeException e) {

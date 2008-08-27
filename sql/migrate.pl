@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.11 2008/07/21 14:59:42 troy Exp $
+# $Id: migrate.pl,v 1.12 2008/08/27 01:13:27 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -127,6 +127,7 @@ values (?, (select id from categories where id is null), ?, ?, ?)")
 $sth = $dbs->{source}->{connection}->prepare("select * from categories where budgetname = 'bowman'") or die $dbs->{source}->{connection}->errstr;;
 $sth->execute or die $sth->errstr;
 while (my $row = $sth->fetchrow_hashref()) {
+  #next if ($row->{category} eq "All Categories");
   my $allocation_amount = $row->{which} eq "fpp"
     ? $row->{fixed_per_paycheck}
     : $row->{which} eq "ppp"
