@@ -11,6 +11,7 @@ import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Category;
 import us.lump.envelope.entity.Identifiable;
 import us.lump.lib.Money;
+import us.lump.lib.util.BackgroundList;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -109,11 +110,15 @@ public class TransactionTableModel extends AbstractTableModel {
                 = cf.getBeginningBalance(identifiable, beginDate, true);
             Money reconciled = beginningReconciledBalance;
 
-            Vector<Object[]> incoming =
-                new Vector(cf.getTransactions(identifiable,
-                                              beginDate,
-                                              endDate));
+            BackgroundList<Object[]> incoming = (BackgroundList<Object[]>)
+                cf.getTransactions(identifiable, beginDate, endDate);
+
+
             for (int x = 0; x < incoming.size(); x++) {
+//              if (q.size() > 0) {
+//                incoming.fireAbort();
+//                break;
+//              }
               Object[] row = incoming.get(x);
               balance =
                   new Money(balance.add((Money)row[COLUMN.Amount.ordinal()]));

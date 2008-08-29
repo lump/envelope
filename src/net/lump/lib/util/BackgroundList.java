@@ -44,6 +44,10 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
     }
   }
 
+  public boolean aborted() {
+    return abort;
+  }
+
   public boolean filled() {
     return size != -1 && size == filled;
   }
@@ -58,10 +62,11 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
    */
   public E get(final int index) {
     do {
+      if (filled >= index) break;
+
       try {
-        if (filled >= index) break;
         if (abort) throw new InterruptedException();
-        Thread.sleep(50);
+        Thread.sleep(1);
       } catch (InterruptedException e) {
         break;
       }
@@ -70,13 +75,12 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
   }
 
   public int size() {
-    do {
+    while (size < 0)
       try {
-        Thread.sleep(50);
+        Thread.sleep(1);
       } catch (InterruptedException e) {
         break;
       }
-    } while (size < 0);
     return size;
   }
 
