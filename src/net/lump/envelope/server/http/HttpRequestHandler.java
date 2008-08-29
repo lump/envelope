@@ -355,8 +355,10 @@ public class HttpRequestHandler implements RequestHandler {
       }
       catch (Exception e) {
         logger.warn(MessageFormat.format(
-            "to {0} status 400 bad request for {1}",
-            socket.getInetAddress().getCanonicalHostName(), path));
+            "to {0} status 400 bad request for {1}, {2}",
+            socket.getInetAddress().getCanonicalHostName(),
+            path,
+            e.getMessage()));
 
         writeError(new DataOutputStream(socket.getOutputStream()),
                    "HTTP/1.0 400 " + e.getMessage(),

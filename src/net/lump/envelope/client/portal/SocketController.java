@@ -16,7 +16,7 @@ import java.util.Vector;
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 
 public class SocketController implements Controller {
@@ -46,6 +46,22 @@ public class SocketController implements Controller {
       if (!s.busy) {
         s.busy = true;
         sc.s = s;
+
+        // flush the input stream if there's anything on it.
+        InputStream i = sc.s.socket.getInputStream();
+        int available = i.available();
+        if (available > 0) {
+          byte[] buffer = new byte[available];
+          int read = i.read(buffer, 0, 2048);
+          String message = new String(buffer);
+
+          // if the message is an HTTP message, close socket
+          if (message.matches("HTTP/\\d+\\.\\d+\\s+")) {
+            s.socket.close();
+            socketPool.removeElement(s);
+            continue;
+          }
+        }
         break;
       }
     }
@@ -64,8 +80,8 @@ public class SocketController implements Controller {
         ServerSettings.getInstance().getHostName(),
         Integer.parseInt(ServerSettings.getInstance().getClassPort()));
     socket.setKeepAlive(true);
-    socket.setSoLinger(true, 5000);
-    socket.setSoTimeout(0);
+    socket.setSoLinger(false, 0);
+    socket.setSoTimeout(300);
 
     if (s != null) {
       s.busy = true;
@@ -117,6 +133,13 @@ public class SocketController implements Controller {
           });
           Thread.sleep(0);
           return bl;
+        case 0x48: // H -- http error
+          b.reset();
+          byte[] buffer = new byte[2048];
+          int length = b.read(buffer, 0, 2048);
+          System.err.println(new String(buffer).substring(0, length));
+//          s.socket.close();
+          return null;
       }
     } catch (IOException e) {
       try {
