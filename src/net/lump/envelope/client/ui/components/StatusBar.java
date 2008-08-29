@@ -11,7 +11,7 @@ import java.util.Vector;
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 
 public class StatusBar extends JPanel {
@@ -20,6 +20,7 @@ public class StatusBar extends JPanel {
   Spinner spinner = new Spinner(16, 16);
   //  Spinner spinner = new Spinner(256, 256);
   StatusLabel label = new StatusLabel();
+  JProgressBar progress = new JProgressBar(JProgressBar.HORIZONTAL, 0,0);
 
   public static StatusBar getInstance() {
     if (singleton == null) singleton = new StatusBar();
@@ -32,6 +33,8 @@ public class StatusBar extends JPanel {
     this.setLayout(new BorderLayout());
     this.add(spinner, BorderLayout.WEST);
     this.add(label, BorderLayout.CENTER);
+    this.add(progress, BorderLayout.EAST);
+    progress.setVisible(false);
   }
 
   public StatusElement addTask(String description) {
@@ -50,6 +53,9 @@ public class StatusBar extends JPanel {
     label.removeTask(o);
   }
 
+  public JProgressBar getProgress() {
+    return progress;
+  }
 
   class StatusLabel extends JLabel {
 

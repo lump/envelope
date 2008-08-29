@@ -2,16 +2,19 @@ package us.lump.envelope.client.ui.components.models;
 
 import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.portal.TransactionPortal;
-import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.thread.StatusElement;
 import us.lump.envelope.client.thread.ThreadPool;
+import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.ui.components.StatusBar;
+import us.lump.envelope.client.ui.components.forms.TableQueryBar;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Category;
 import us.lump.envelope.entity.Identifiable;
 import us.lump.lib.Money;
 import us.lump.lib.util.BackgroundList;
+import us.lump.lib.util.BackgroundListListener;
+import us.lump.lib.util.BackgroundListEvent;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -40,6 +43,11 @@ public class TransactionTableModel extends AbstractTableModel {
   private Identifiable identifiable;
   private JTable table;
   private Integer selectionCache = null;
+
+  private int filled = -1;
+  private int oldTransactionsSize = -1;
+  private long startDate = -1;
+
 
   private BlockingQueue<Task> q =
       new LinkedBlockingQueue<Task>();
@@ -110,46 +118,61 @@ public class TransactionTableModel extends AbstractTableModel {
                 = cf.getBeginningBalance(identifiable, beginDate, true);
             Money reconciled = beginningReconciledBalance;
 
-            BackgroundList<Object[]> incoming = (BackgroundList<Object[]>)
+            oldTransactionsSize = transactions.size();
+            startDate = System.currentTimeMillis();
+
+            final BackgroundList<Object[]> incoming = (BackgroundList<Object[]>)
                 cf.getTransactions(identifiable, beginDate, endDate);
 
+            // boostrap statusbar
+            StatusBar.getInstance().getProgress().setMinimum(0);
+            StatusBar.getInstance().getProgress().setMaximum(incoming.size());
 
-            for (int x = 0; x < incoming.size(); x++) {
-//              if (q.size() > 0) {
-//                incoming.fireAbort();
-//                break;
-//              }
-              Object[] row = incoming.get(x);
-              balance =
-                  new Money(balance.add((Money)row[COLUMN.Amount.ordinal()]));
-              if ((Boolean)row[COLUMN.C.ordinal()])
-                reconciled = new Money(reconciled.add((Money)row[COLUMN.Amount
-                    .ordinal()]));
-
-              Object[] newRow =
-                  new Object[]{row[0], row[1], row[2], new Money(balance),
-                               new Money(reconciled), row[3], row[4], row[5]};
-              if (x < transactions.size()) {
-                transactions.set(x, newRow);
-                fireTableRowsUpdated(x, x);
-              } else {
-                transactions.add(x, newRow);
-                fireTableRowsInserted(x, x);
-              }
-
-              if (selectionCache != null
-                  && newRow[COLUMN.TransactionID.ordinal()].equals(
-                  selectionCache)) {
-                table.getSelectionModel().clearSelection();
-                table.changeSelection(x, 0, false, false);
-              }
-            }
-
+            // nuke any rows not needed in the table
             if (incoming.size() < transactions.size()) {
               int oldSize = transactions.size();
               transactions.setSize(incoming.size());
               fireTableRowsDeleted(incoming.size(), oldSize - 1);
             }
+
+            filled = 0;
+            updateTableToFrom(incoming.filledSize(), incoming);
+
+            incoming.addBackgroundListListener(new BackgroundListListener() {
+              public void backgroundListEventOccurred(BackgroundListEvent event) {
+                synchronized(incoming) {
+                  if (event.getType() == BackgroundListEvent.Type.filled) {
+//                    try {
+//                      Thread.sleep(50);
+//                    } catch (InterruptedException e) {
+////                       blah
+//                    }
+//                    updateTableToFrom(incoming.size(), incoming);
+                    StatusBar.getInstance().getProgress().setVisible(false);
+                  }
+                  if (event.getType() == BackgroundListEvent.Type.added) {
+                    updateTableFor(event.getRow(), incoming);
+
+                    if (startDate < (System.currentTimeMillis() - 100)) {
+                      StatusBar.getInstance().getProgress().setVisible(true);
+                    }
+                    if (StatusBar.getInstance().getProgress().isVisible()) {
+                      StatusBar.getInstance().getProgress().setValue(filled);
+                    }
+                  }
+                }
+                Thread.yield();
+              }
+
+//                if (q.size() > 0
+//                    && event.getType() == BackgroundListEvent.Type.aborted) {
+//                  incoming.fireAbort();
+//                }
+
+            });
+
+            Thread.yield();
+//            if (incoming.filled()) incoming.fireAllFilled();
 
             t.finish();
           }
@@ -164,31 +187,63 @@ public class TransactionTableModel extends AbstractTableModel {
     queue(categoryOrAccount, begin, end);
   }
 
-  class Task {
-    Task(Identifiable categoryOrAccount, Date begin, Date end) {
-      this.categoryOrAccount = categoryOrAccount;
-      this.begin = begin;
-      this.end = end;
-      final String type = categoryOrAccount instanceof Account
-                          ? Strings.get("account").toLowerCase()
-                          : Strings.get("category").toLowerCase();
-      e =
-          StatusBar.getInstance().addTask(MessageFormat.format(
-              "{0} {1} {2}",
-              Strings.get("retrieving"),
-              categoryOrAccount.toString(),
-              type));
-    }
+  private void updateTableToFrom(
+      int target, BackgroundList<Object[]> incoming) {
 
-    public void finish() {
-      StatusBar.getInstance().removeTask(e);
+    for (int x = filled; x < target; x++) {
+      updateTableFor(x, incoming);
     }
-
-    StatusElement e;
-    Identifiable categoryOrAccount;
-    Date begin;
-    Date end;
   }
+
+  private synchronized void updateTableFor(int x, BackgroundList<Object[]> incoming) {
+    filled = x;
+    Object[] row = incoming.get(x);
+
+      // refresh our amnesia on the balances
+      Money reconciled =
+          x == 0 ? beginningReconciledBalance
+          : (Money)transactions
+              .get(x - 1)[COLUMN.Reconciled.ordinal()];
+      Money balance =
+          x == 0 ? beginningBalance
+          : (Money)transactions
+              .get(x - 1)[COLUMN.Balance.ordinal()];
+
+      // calculate balance column
+      balance = new Money(balance.add(
+          (Money)row[COLUMN.Amount.ordinal()]));
+
+      // only add reconciled balance if it tx is reconciled
+      if ((Boolean)row[COLUMN.C.ordinal()]) reconciled =
+          new Money(reconciled.add(
+              (Money)row[COLUMN.Amount.ordinal()]));
+
+      // create our new row
+      Object[] newRow = new Object[]{
+          row[0], row[1], row[2], new Money(balance),
+          new Money(reconciled), row[3], row[4], row[5]};
+
+
+      if (x < oldTransactionsSize) {
+        transactions.set(x, newRow);
+        fireTableRowsUpdated(x, x);
+      } else {
+        transactions.add(x, newRow);
+        fireTableRowsInserted(x, x);
+      }
+
+      if (selectionCache != null
+          && newRow[COLUMN.TransactionID.ordinal()]
+          .equals(selectionCache)) {
+        table.getSelectionModel().clearSelection();
+        table.changeSelection(x, 0, false, false);
+      }
+
+      TableQueryBar.getInstance()
+          .getTxCount()
+          .setText(String.valueOf(filled + 1));
+    }
+
 
   public void queue(Identifiable categoryOrAccount, Date begin, Date end) {
     try {
@@ -288,4 +343,29 @@ public class TransactionTableModel extends AbstractTableModel {
     return columnIndex == 0 && isTransaction;
   }
 
+  class Task {
+    Task(Identifiable categoryOrAccount, Date begin, Date end) {
+      this.categoryOrAccount = categoryOrAccount;
+      this.begin = begin;
+      this.end = end;
+      final String type = categoryOrAccount instanceof Account
+                          ? Strings.get("account").toLowerCase()
+                          : Strings.get("category").toLowerCase();
+      e =
+          StatusBar.getInstance().addTask(MessageFormat.format(
+              "{0} {1} {2}",
+              Strings.get("retrieving"),
+              categoryOrAccount.toString(),
+              type));
+    }
+
+    public void finish() {
+      StatusBar.getInstance().removeTask(e);
+    }
+
+    StatusElement e;
+    Identifiable categoryOrAccount;
+    Date begin;
+    Date end;
+  }
 }

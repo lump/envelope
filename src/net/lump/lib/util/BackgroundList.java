@@ -13,8 +13,7 @@ import java.util.Collection;
 public class BackgroundList<E> extends AbstractList<E> implements Serializable {
 
   private transient EventListenerList listenerList = new EventListenerList();
-  private transient volatile E[] list = (E[])new Object[0];
-  private transient volatile int size = -1;
+  private transient volatile E[] list = null;
   private transient volatile int filled = -1;
   private transient volatile boolean abort = false;
   private static final Object token = new Object();
@@ -23,14 +22,14 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
 
   public BackgroundList(int size) {
     synchronized (token) {
-      this.size = size;
+      //noinspection unchecked
       list = (E[])new Object[size];
     }
   }
 
   public BackgroundList(Collection<E> c) {
     synchronized (token) {
-      size = c.size();
+      //noinspection unchecked
       list = (E[])c.toArray();
       filled = c.size();
     }
@@ -38,7 +37,6 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
 
   public BackgroundList(E[] array) {
     synchronized (token) {
-      size = array.length;
       list = array;
       filled = array.length;
     }
@@ -49,7 +47,7 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
   }
 
   public boolean filled() {
-    return size != -1 && size == filled;
+    return list != null && filled == list.length -1;
   }
 
   /**
@@ -75,13 +73,13 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
   }
 
   public int size() {
-    while (size < 0)
+    while (list == null && !abort)
       try {
         Thread.sleep(1);
       } catch (InterruptedException e) {
         break;
       }
-    return size;
+    return list == null ? -1 : list.length;
   }
 
   public int filledSize() {
@@ -133,8 +131,8 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
     Object[] listeners = listenerList.getListenerList();
     for (int i = listeners.length - 2; i >= 0; i -= 2) {
       if (listeners[i] == BackgroundListListener.class) {
-        ((BackgroundListListener)listeners[i
-                                           + 1]).backgroundListEventOccurred(e);
+        ((BackgroundListListener)listeners[i+1])
+            .backgroundListEventOccurred(e);
       }
     }
   }
@@ -144,71 +142,13 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
   }
 
   public boolean add(E object) {
-    changeList(true, object);
-    return true;
-  }
-
-//  public void setSize(int size) {
-//    synchronized (token) {
-//      E[] tempList = (E[])new Object[size];
-//      System.arraycopy(
-//          list,0,tempList,0,
-//          tempList.length >= list.length ? list.length : tempList.length);
-//      this.list = tempList;
-//      this.size = size;
-//    }
-//  }
-
-  private void changeList(Boolean add, E object) {
     int fire = -1;
     synchronized (token) {
-      if (add) {
-        list[++filled] = object;
-        fire = filled;
-      }
+      list[++filled] = object;
+      fire = filled;
     }
     fireRowAdded(fire);
-    if (fire == (size - 1)) fireAllFilled();
+    if (fire == (list.length - 1)) fireAllFilled();
+    return true;
   }
-
-//  public void writeExternal(ObjectOutput out) throws IOException {
-//    out.writeObject(size);
-//    out.flush();
-//    for (Object row : list) {
-//      out.writeObject(row);
-//      out.flush();
-//    }
-//  }
-
-//  public void readExternal(final ObjectInput in)
-//      throws IOException, ClassNotFoundException {
-//
-//    // use array to allow modification of final boolean
-//    final boolean[] done = new boolean[1]; done[0] = false;
-//
-//    ThreadPool.getInstance().execute(new EnvelopeRunnable("Reading") {
-//      public synchronized void run() {
-//        try {
-//          ObjectInputStream ois = new ObjectInputStream((ObjectInputStream)in);
-//          size = (Integer)ois.readObject();
-//          list = (E[])new Object[size];
-//          filled = -1;
-//
-//          for (int i = 0; i < size; i++) {
-//            list[i] = (E)ois.readObject();
-//            filled = i;
-//            fireRowAdded(i);
-//          }
-//          fireAllFilled();
-//        } catch (ClassNotFoundException e) {
-//          fireAbort();
-//        } catch (IOException e) {
-//          fireAbort();
-//        } finally {
-//          done[0] = true;
-//        }
-//      }
-//    });
-//
-//  }
 }

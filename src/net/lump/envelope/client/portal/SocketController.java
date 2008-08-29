@@ -16,7 +16,7 @@ import java.util.Vector;
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 
 public class SocketController implements Controller {
@@ -131,20 +131,7 @@ public class SocketController implements Controller {
       throw new RemoteException("invoke failed", e);
     }
 
-//    if (retval instanceof BackgroundList) {
-//      BackgroundList bl = (BackgroundList)retval;
-//      bl.addBackgroundListListener(new BackgroundListListener() {
-//        public void backgroundListEventOccurred(BackgroundListEvent event) {
-//          if (event.getType().equals(BackgroundListEvent.Type.filled)) {
-//            s.busy = false;
-//          }
-//        }
-//      });
-//      if (bl.filled()) s.busy = false;
-//    } else {
-//      s.busy = false;
-//    }
-
+    s.busy = false;
     if (retval instanceof Exception) {
       throw new RemoteException("Remote Exception caught", (Exception)retval);
     } else return retval;
