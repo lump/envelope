@@ -16,7 +16,7 @@ import java.util.List;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.9 2008/08/29 03:10:28 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.10 2008/08/29 23:11:58 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -105,7 +105,9 @@ public class CriteriaFactory {
         dc.setProjection(Projections.sum("a.amount"));
       }
 
-      retval = (Money)(new HibernatePortal()).detachedCriteriaQuery(dc).get(0);
+      List l = (new HibernatePortal()).detachedCriteriaQuery(dc);
+      retval = l != null && l.size() > 0 ? (Money)l.get(0) : new Money(0);
+
 
     } catch (EnvelopeException e) {
       logger.error(e);

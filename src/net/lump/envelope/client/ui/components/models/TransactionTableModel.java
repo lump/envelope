@@ -6,7 +6,6 @@ import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.thread.StatusElement;
 import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.components.StatusBar;
-import us.lump.envelope.client.ui.components.forms.TableQueryBar;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Category;
@@ -81,21 +80,23 @@ public class TransactionTableModel extends AbstractTableModel {
 
     this.table = table;
 
-    new Thread(new Runnable() {
+    final Runnable r = new Runnable() {
       public synchronized void run() {
-        try {
-          while (true) {
+        Task t = null;
 
+        while (true) {
+
+          try {
             // if there's something else in the queue,
             // abort everything until the last one.
             while (q.size() > 1) {
               List<Task> l = new ArrayList<Task>();
               q.drainTo(l, q.size() - 1);
-              for (Task t : l) t.finish();
+              for (Task tt : l) tt.finish();
               Thread.sleep(100);
             }
             // take the next
-            Task t = q.take();
+            t = q.take();
 
             int selectedRow = table.getSelectedRow();
             if (selectedRow > -1)
@@ -114,6 +115,8 @@ public class TransactionTableModel extends AbstractTableModel {
               throw new IllegalArgumentException(
                   "only Account or Budget aceptable as first argument");
 
+            beginningBalance = getBeginningBalance(null);
+            beginningReconciledBalance = getBeginningBalance(Boolean.FALSE);
             startDate = System.currentTimeMillis();
 
             CriteriaFactory cf = CriteriaFactory.getInstance();
@@ -121,14 +124,12 @@ public class TransactionTableModel extends AbstractTableModel {
                 cf.getTransactions(identifiable, beginDate, endDate);
 
             // boostrap statusbar
-            StatusBar.getInstance().getProgress().setMinimum(0);
-            StatusBar.getInstance().getProgress().setMaximum(incoming.size());
-
-            // nuke any rows not needed in the table
-            if (incoming.size() < transactions.size()) {
-              int oldSize = transactions.size();
-              transactions.setSize(incoming.size());
-              fireTableRowsDeleted(incoming.size(), oldSize - 1);
+            try {
+              StatusBar.getInstance().getProgress().setMinimum(0);
+              StatusBar.getInstance().getProgress().setMaximum(incoming.size());
+            }
+            catch (NullPointerException e) {
+              e.printStackTrace();
             }
 
             filled = 0;
@@ -137,19 +138,15 @@ public class TransactionTableModel extends AbstractTableModel {
             incoming.addBackgroundListListener(new BackgroundListListener() {
               public void backgroundListEventOccurred(BackgroundListEvent event) {
                 synchronized (incoming) {
-                  if (event.getType() == BackgroundListEvent.Type.filled) {
-//                    try {
-//                      Thread.sleep(50);
-//                    } catch (InterruptedException e) {
-////                       blah
-//                    }
-//                    updateTableToFrom(incoming.size(), incoming);
+                  if (event.getType() == BackgroundListEvent.Type.filled
+                      || event.getType() == BackgroundListEvent.Type.aborted) {
+                    incoming.notifyAll();
                     StatusBar.getInstance().getProgress().setVisible(false);
                   }
                   if (event.getType() == BackgroundListEvent.Type.added) {
                     updateTableForRow(event.getRow(), incoming);
 
-                    if (startDate < (System.currentTimeMillis() - 100)) {
+                    if (startDate < (System.currentTimeMillis() - 150)) {
                       StatusBar.getInstance().getProgress().setVisible(true);
                     }
                     if (StatusBar.getInstance().getProgress().isVisible()) {
@@ -157,28 +154,44 @@ public class TransactionTableModel extends AbstractTableModel {
                     }
                   }
                 }
-                Thread.yield();
               }
-
-//                if (q.size() > 0
-//                    && event.getType() == BackgroundListEvent.Type.aborted) {
-//                  incoming.fireAbort();
-//                }
-
             });
 
-            Thread.yield();
-//            if (incoming.filled()) incoming.fireAllFilled();
+            // nuke any rows not needed in the table
+            if (incoming.size() < transactions.size()) {
+              int oldSize = transactions.size();
+              transactions.setSize(incoming.size());
+              fireTableRowsDeleted(incoming.size(), oldSize - 1);
+            }
 
             t.finish();
+            t = null;
+
+            // wait until filled (so other things in the queue can't start and conflict)
+            try {
+              synchronized (incoming) {
+                while (!incoming.filled())
+                  incoming.wait(20000);
+              }
+            }
+            catch (InterruptedException e) {
+              // KTHXBYE
+            }
+          }
+          catch (InterruptedException e) {
+            break;
+          }
+          catch (Exception e) {
+            e.printStackTrace();
+          }
+          finally {
+            if (t != null) t.finish();
           }
         }
-
-        catch (InterruptedException e) {
-          e.printStackTrace();
-        }
       }
-    }, "Transaction Table Filler").start();
+    };
+
+    new Thread(r, "Transaction table filler queue").start();
 
     queue(categoryOrAccount, begin, end);
   }
@@ -186,9 +199,10 @@ public class TransactionTableModel extends AbstractTableModel {
   private synchronized void updateTableForRow(int x,
                                               BackgroundList<Object[]> incoming) {
     if (x < 0) return;
-    if (x > filled + 1) {
+    if (x > filled + 1)
       for (int row = filled; row <= x; row++) updateTableFor(row, incoming);
-    } else updateTableFor(x, incoming);
+    else
+      updateTableFor(x, incoming);
   }
 
   private synchronized void updateTableFor(int x,
@@ -205,10 +219,10 @@ public class TransactionTableModel extends AbstractTableModel {
 
     // refresh our amnesia on the balances
     Money reconciled =
-        x == 0 ? getBeginningBalance(Boolean.TRUE)
+        x == 0 ? beginningBalance
         : (Money)transactions.get(x - 1)[COLUMN.Reconciled.ordinal()];
     Money balance =
-        x == 0 ? getBeginningBalance(Boolean.FALSE)
+        x == 0 ? beginningReconciledBalance
         : (Money)transactions.get(x - 1)[COLUMN.Balance.ordinal()];
 
     // calculate balance column
@@ -239,9 +253,6 @@ public class TransactionTableModel extends AbstractTableModel {
       table.getSelectionModel().clearSelection();
       table.changeSelection(x, 0, false, false);
     }
-
-    TableQueryBar.getInstance().getTxCount()
-        .setText(String.valueOf(filled + 1));
   }
 
 

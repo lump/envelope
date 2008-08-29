@@ -42,14 +42,26 @@ public class HttpRequestHandler implements RequestHandler {
   public String readTo(BufferedInputStream bis, String search)
       throws IOException {
 
+    bis.mark(MAX_READ);
+    byte[] buffer = new byte[1024];
+
+//    while (bis.read(buffer,0,4) > 0
+//           && (0x4e4f4f50 // NOOP
+//               == ((buffer[0] & 0xff << 24)
+//                   | (buffer[1] & 0xff << 16)
+//                   | (buffer[2] & 0xff << 8)
+//                   | (buffer[3] & 0xff)))) {
+//      bis.mark(MAX_READ);
+//    }
+//    bis.reset();
+
     StringBuffer s = new StringBuffer();
     int read = 0;
     do {
-//      byte[] buffer = new byte[1024];
-      byte[] buffer = new byte[1024];
       read += bis.read(buffer, 0, 1024);
       s.append(new String(buffer).substring(0, read > 1024 ? 1024 : read));
     } while (s.indexOf(search) == -1 || read > MAX_READ - 1024);
+    bis.reset();
 
     return s.substring(0, s.indexOf(search) + search.length());
   }
@@ -75,9 +87,7 @@ public class HttpRequestHandler implements RequestHandler {
         // get path to class file from header
         BufferedInputStream is =
             new BufferedInputStream(socket.getInputStream());
-        is.mark(MAX_READ);
         String header = readTo(is, "\r\n\r\n");
-        is.reset();
 
         String line = "";
         String command = "GET";
@@ -99,9 +109,7 @@ public class HttpRequestHandler implements RequestHandler {
           boolean loop = true;
           while (loop) {
 
-            is.mark(MAX_READ);
             header = readTo(is, "JOTP/1.0\r\n\r\n" + magic);
-            is.reset();
             is.skip(header.length() - magic.length());
             is.mark(MAX_READ);
 

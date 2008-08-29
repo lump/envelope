@@ -25,7 +25,6 @@ public class TableQueryBar {
   private JLabel titleLabel;
   private JPanel tableQueryPanel;
   private JTable table;
-  private JLabel txCount;
 
   private static TableQueryBar singleton;
 
@@ -79,10 +78,6 @@ public class TableQueryBar {
     titleLabel.setText(title);
   }
 
-  public JLabel getTxCount() {
-    return txCount;
-  }
-
   public JTable getTable() {
     return table;
   }
@@ -116,13 +111,13 @@ public class TableQueryBar {
     tableQueryPanel.setLayout(new BorderLayout(0, 0));
     queryPanel = new JPanel();
     queryPanel.setLayout(new GridLayoutManager(1,
-                                               7,
+                                               6,
                                                new Insets(0, 2, 0, 2),
                                                2,
                                                2));
     tableQueryPanel.add(queryPanel, BorderLayout.NORTH);
     queryPanel.add(beginDate, new GridConstraints(0,
-                                                  3,
+                                                  2,
                                                   1,
                                                   1,
                                                   GridConstraints.ANCHOR_CENTER,
@@ -143,7 +138,7 @@ public class TableQueryBar {
     this.$$$loadLabelText$$$(endDateLabel, ResourceBundle.getBundle(
         "us/lump/envelope/client/ui/defs/Strings").getString("to"));
     queryPanel.add(endDateLabel, new GridConstraints(0,
-                                                     4,
+                                                     3,
                                                      1,
                                                      1,
                                                      GridConstraints.ANCHOR_CENTER,
@@ -156,7 +151,7 @@ public class TableQueryBar {
                                                      0,
                                                      false));
     queryPanel.add(endDate, new GridConstraints(0,
-                                                5,
+                                                4,
                                                 1,
                                                 1,
                                                 GridConstraints.ANCHOR_CENTER,
@@ -175,7 +170,7 @@ public class TableQueryBar {
     this.$$$loadButtonText$$$(refreshButton, ResourceBundle.getBundle(
         "us/lump/envelope/client/ui/defs/Strings").getString("refresh"));
     queryPanel.add(refreshButton, new GridConstraints(0,
-                                                      6,
+                                                      5,
                                                       1,
                                                       1,
                                                       GridConstraints.ANCHOR_CENTER,
@@ -218,21 +213,6 @@ public class TableQueryBar {
                                                 GridConstraints.FILL_HORIZONTAL,
                                                 GridConstraints.SIZEPOLICY_WANT_GROW,
                                                 1,
-                                                null,
-                                                null,
-                                                null,
-                                                0,
-                                                false));
-    txCount = new JLabel();
-    txCount.setText("");
-    queryPanel.add(txCount, new GridConstraints(0,
-                                                2,
-                                                1,
-                                                1,
-                                                GridConstraints.ANCHOR_WEST,
-                                                GridConstraints.FILL_NONE,
-                                                GridConstraints.SIZEPOLICY_FIXED,
-                                                GridConstraints.SIZEPOLICY_FIXED,
                                                 null,
                                                 null,
                                                 null,

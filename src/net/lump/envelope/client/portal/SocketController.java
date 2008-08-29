@@ -3,12 +3,14 @@ package us.lump.envelope.client.portal;
 import us.lump.envelope.Command;
 import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.thread.ThreadPool;
+import us.lump.envelope.client.ui.components.StatusBar;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
 import us.lump.envelope.server.rmi.Controller;
 import us.lump.lib.util.BackgroundList;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.rmi.RemoteException;
 import java.util.Vector;
 
@@ -16,7 +18,7 @@ import java.util.Vector;
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.8 $
+ * @version $Revision: 1.9 $
  */
 
 public class SocketController implements Controller {
@@ -48,20 +50,20 @@ public class SocketController implements Controller {
         sc.s = s;
 
         // flush the input stream if there's anything on it.
-        InputStream i = sc.s.socket.getInputStream();
-        int available = i.available();
-        if (available > 0) {
-          byte[] buffer = new byte[available];
-          int read = i.read(buffer, 0, available);
-          String message = new String(buffer).substring(0, read);
-
-          // if the message is an HTTP message, close socket
-          if (message.matches("HTTP/\\d+\\.\\d+\\s+")) {
-            s.socket.close();
-            socketPool.removeElement(s);
-            continue;
+        try {
+          InputStream i = sc.s.socket.getInputStream();
+          int available = i.available();
+          if (available > 0) {
+            byte[] buffer = new byte[available];
+            i.read(buffer, 0, available);
           }
         }
+        catch (SocketException e) {
+          s.socket.close();
+          s.socket = null;
+          sc.connect();
+        }
+
         break;
       }
     }
@@ -120,6 +122,8 @@ public class SocketController implements Controller {
             public synchronized void run() {
               try {
                 for (int x = 0; x < size; x++) {
+                  this.setStatusMessage("Reading " + x);
+                  StatusBar.getInstance().updateLabel();
                   bl.add(ois.readObject());
 //                  if (bl.aborted()) break;
                 }
@@ -131,15 +135,14 @@ public class SocketController implements Controller {
               s.busy = false;
             }
           });
-          Thread.sleep(0);
           return bl;
-        case 0x48: // H -- http error
-          b.reset();
-          byte[] buffer = new byte[2048];
-          int length = b.read(buffer, 0, 2048);
-          System.err.println(new String(buffer).substring(0, length));
-//          s.socket.close();
-          return null;
+//        case 0x48: // H -- http error
+//          b.reset();
+//          byte[] buffer = new byte[2048];
+//          int length = b.read(buffer, 0, 2048);
+//          System.err.println(new String(buffer).substring(0, length));
+////          s.socket.close();
+//          return null;
       }
     } catch (IOException e) {
       try {
