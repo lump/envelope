@@ -3,14 +3,15 @@ package us.lump.envelope.server.http;
 import org.apache.log4j.Logger;
 import us.lump.envelope.Command;
 import us.lump.envelope.Server;
-import us.lump.envelope.exception.DataException;
 import us.lump.envelope.server.rmi.Controlled;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.AccessControlException;
 import java.text.MessageFormat;
 import java.util.HashMap;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.DeflaterOutputStream;
@@ -43,9 +44,10 @@ public class HttpRequestHandler implements RequestHandler {
     StringBuffer s = new StringBuffer();
     int read = 0;
     do {
+//      byte[] buffer = new byte[1024];
       byte[] buffer = new byte[1024];
       read += bis.read(buffer, 0, 1024);
-      s.append(new String(buffer).substring(0, read));
+      s.append(new String(buffer).substring(0, read > 1024 ? 1024 : read));
     } while (s.indexOf(search) == -1 || read > MAX_READ - 1024);
 
     return s.substring(0, s.indexOf(search) + search.length());
@@ -81,7 +83,7 @@ public class HttpRequestHandler implements RequestHandler {
         // parse command
         Matcher m = Pattern.compile(
             "^((GET|HEAD|COMMAND)\\s*/?(.*?)(?:\\s+(?:HT|JO)TP/\\d+(?:\\.\\d+)*)?\\r\\n)")
-            .matcher(header.subSequence(0, header.indexOf("\r\n")+2));
+            .matcher(header.subSequence(0, header.indexOf("\r\n") + 2));
         if (m.matches()) {
           if (m.group(1) != null) line = m.group(1);
           if (m.group(2) != null) command = m.group(2);
@@ -94,25 +96,17 @@ public class HttpRequestHandler implements RequestHandler {
 
           boolean loop = true;
           while (loop) {
-            
+
+            is.mark(MAX_READ);
             header = readTo(is, "JOTP/1.0\r\n\r\n" + magic);
             is.reset();
             is.skip(header.length() - magic.length());
             is.mark(MAX_READ);
 
-            ObjectOutputStream oos =
-                new ObjectOutputStream(socket.getOutputStream());
-
             try {
-
-                //noinspection ThrowableInstanceNeverThrown
-//                oos.writeObject(
-//                    new DataException(DataException.Type.Invalid_Command));
-
               ObjectInputStream ois = new ObjectInputStream(is);
-
               Object o = ois.readObject();
-              is.mark(MAX_READ);
+              is.mark(MAX_READ); // mark right after object
 
               Command[] commands = null;
 
@@ -122,29 +116,45 @@ public class HttpRequestHandler implements RequestHandler {
               if (commands != null) {
                 Controlled c = new Controlled(null);
                 Object retval = c.invoke(commands);
-//              if (retval instanceof List) {
-//                retval = new BackgroundList((List)retval);
-//              }
-                oos.writeObject(retval);
-              } else {
-                //noinspection ThrowableInstanceNeverThrown
-                oos.writeObject(
-                    new DataException(DataException.Type.Invalid_Command));
+
+                if (retval instanceof List) {
+                  // write a number before startign oos.
+                  socket.getOutputStream().write(0x4c);
+                  ObjectOutputStream oos =
+                      new ObjectOutputStream(socket.getOutputStream());
+                  oos.writeObject(new Integer(((List)retval).size()));
+                  for (Object out : (List)retval) {
+                    oos.writeObject(out);
+                    oos.flush();
+                  }
+                } else {
+                  socket.getOutputStream().write(0x4f);
+                  ObjectOutputStream oos =
+                      new ObjectOutputStream(socket.getOutputStream());
+                  oos.writeObject(retval);
+                  oos.flush();
+                }
               }
-              
-              oos = null;
             }
             catch (EOFException e) {
+              loop = false;
+            }
+            catch (SocketException e) {
               loop = false;
             }
             catch (IOException e) {
               loop = false;
             }
             catch (Exception e) {
+              socket.getOutputStream().write(0x4f);
+              ObjectOutputStream oos =
+                  new ObjectOutputStream(socket.getOutputStream());
               oos.writeObject(e);
+              oos.flush();
             }
           }
 
+          socket.close();
           return;
         }
 

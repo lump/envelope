@@ -1,13 +1,7 @@
 package us.lump.lib.util;
 
-import us.lump.envelope.client.thread.EnvelopeRunnable;
-import us.lump.envelope.client.thread.ThreadPool;
-
 import javax.swing.event.EventListenerList;
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.Collection;
 
@@ -16,84 +10,85 @@ import java.util.Collection;
  *
  * @author Troy Bowman
  */
-public class BackgroundList<E> extends AbstractList<E>
-    implements Externalizable {
+public class BackgroundList<E> extends AbstractList<E> implements Serializable {
 
-  transient EventListenerList listenerList = new EventListenerList();
-  transient volatile E[] list = (E[])new Object[0];
-  transient volatile int size = -1;
-  transient volatile int filled = -1;
+  private transient EventListenerList listenerList = new EventListenerList();
+  private transient volatile E[] list = (E[])new Object[0];
+  private transient volatile int size = -1;
+  private transient volatile int filled = -1;
+  private transient volatile boolean abort = false;
+  private static final Object token = new Object();
 
   public BackgroundList() {}
 
+  public BackgroundList(int size) {
+    synchronized (token) {
+      this.size = size;
+      list = (E[])new Object[size];
+    }
+  }
+
   public BackgroundList(Collection<E> c) {
-    size = c.size();
-    list = (E[])c.toArray();
-    filled = c.size();
-
-//    E[] array = (E[])java.lang.reflect.Array.
-//        newInstance(c.getClass().getComponentType(), size);
-
+    synchronized (token) {
+      size = c.size();
+      list = (E[])c.toArray();
+      filled = c.size();
+    }
   }
 
   public BackgroundList(E[] array) {
-    size = array.length;
-    list = array;
-    filled = array.length;
+    synchronized (token) {
+      size = array.length;
+      list = array;
+      filled = array.length;
+    }
   }
 
   public boolean filled() {
-    return size == filled;
+    return size != -1 && size == filled;
   }
 
   /**
-   * Gets the value at <code>index</code>.  If the value doesn't exist yet, it
-   * blocks.
+   * Gets the value at <code>index</code>. If the value doesn't exist yet, it
+   * blocks execution on current thread.
    *
    * @param index
    *
    * @return
    */
   public E get(final int index) {
-    final Thread t = Thread.currentThread();
-    while (filled < size) {
-
-//      addBackgroundListListener(new BackgroundListListener() {
-//        public void backgroundListEventOccurred(BackgroundListEvent event) {
-//          if (event.getType() == BackgroundListEvent.Type.added
-//              && event.getEffect() ==  BackgroundListEvent.Effect.single
-//              && event.getRow() >= index) {
-//            t.notify();
-//          }
-//        }
-//      });
-
-//      try {
-//        t.wait();
-//      } catch (InterruptedException e) {
-//        if (filled < size) return null;
-//      }
-
+    do {
       try {
-        Thread.sleep(10);
+        if (filled >= index) break;
+        if (abort) throw new InterruptedException();
+        Thread.sleep(50);
       } catch (InterruptedException e) {
-        if (filled < size) return null;
+        break;
       }
-    }
-
-    return list[index];
+    } while (true);
+    return filled < index ? null : list[index];
   }
 
   public int size() {
+    do {
+      try {
+        Thread.sleep(50);
+      } catch (InterruptedException e) {
+        break;
+      }
+    } while (size < 0);
     return size;
-  }
-
-  public boolean invalid() {
-    return size != list.length;
   }
 
   public int filledSize() {
     return filled;
+  }
+
+  public void fireAbort() {
+    abort = true;
+    fireChange(new BackgroundListEvent(
+        this,
+        BackgroundListEvent.Type.aborted, BackgroundListEvent.Effect.all, -1));
   }
 
   public void fireRowAdded(int row) {
@@ -127,8 +122,7 @@ public class BackgroundList<E> extends AbstractList<E>
   public void fireAllRemoved() {
     fireChange(new BackgroundListEvent(
         this,
-        BackgroundListEvent.Type.deleted, BackgroundListEvent.Effect.all,
-        -1));
+        BackgroundListEvent.Type.deleted, BackgroundListEvent.Effect.all));
   }
 
   public void fireChange(BackgroundListEvent e) {
@@ -145,35 +139,72 @@ public class BackgroundList<E> extends AbstractList<E>
     listenerList.add(BackgroundListListener.class, l);
   }
 
-  public void writeExternal(ObjectOutput out) throws IOException {
-    out.writeInt(size);
-    for (Object row : list)
-      out.writeObject(row);
+  public boolean add(E object) {
+    changeList(true, object);
+    return true;
   }
 
-  public void readExternal(final ObjectInput in)
-      throws IOException, ClassNotFoundException {
+//  public void setSize(int size) {
+//    synchronized (token) {
+//      E[] tempList = (E[])new Object[size];
+//      System.arraycopy(
+//          list,0,tempList,0,
+//          tempList.length >= list.length ? list.length : tempList.length);
+//      this.list = tempList;
+//      this.size = size;
+//    }
+//  }
 
-    ThreadPool.getInstance().execute(new EnvelopeRunnable("Reading") {
-      public synchronized void run() {
-        try {
-
-          size = in.readInt();
-          list = (E[])new Object[size];
-          filled = 0;
-
-          for (int i = 0; i < size; i++) {
-            list[i] = (E)in.readObject();
-            filled = i;
-            fireRowAdded(i);
-          }
-          fireAllFilled();
-        } catch (ClassNotFoundException e) {
-          e.printStackTrace();
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
+  private void changeList(Boolean add, E object) {
+    int fire = -1;
+    synchronized (token) {
+      if (add) {
+        list[++filled] = object;
+        fire = filled;
       }
-    });
+    }
+    fireRowAdded(fire);
+    if (fire == (size - 1)) fireAllFilled();
   }
+
+//  public void writeExternal(ObjectOutput out) throws IOException {
+//    out.writeObject(size);
+//    out.flush();
+//    for (Object row : list) {
+//      out.writeObject(row);
+//      out.flush();
+//    }
+//  }
+
+//  public void readExternal(final ObjectInput in)
+//      throws IOException, ClassNotFoundException {
+//
+//    // use array to allow modification of final boolean
+//    final boolean[] done = new boolean[1]; done[0] = false;
+//
+//    ThreadPool.getInstance().execute(new EnvelopeRunnable("Reading") {
+//      public synchronized void run() {
+//        try {
+//          ObjectInputStream ois = new ObjectInputStream((ObjectInputStream)in);
+//          size = (Integer)ois.readObject();
+//          list = (E[])new Object[size];
+//          filled = -1;
+//
+//          for (int i = 0; i < size; i++) {
+//            list[i] = (E)ois.readObject();
+//            filled = i;
+//            fireRowAdded(i);
+//          }
+//          fireAllFilled();
+//        } catch (ClassNotFoundException e) {
+//          fireAbort();
+//        } catch (IOException e) {
+//          fireAbort();
+//        } finally {
+//          done[0] = true;
+//        }
+//      }
+//    });
+//
+//  }
 }

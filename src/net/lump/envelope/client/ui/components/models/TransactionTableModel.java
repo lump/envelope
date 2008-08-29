@@ -110,7 +110,9 @@ public class TransactionTableModel extends AbstractTableModel {
             Money reconciled = beginningReconciledBalance;
 
             Vector<Object[]> incoming =
-                cf.getTransactions(identifiable, beginDate, endDate);
+                new Vector(cf.getTransactions(identifiable,
+                                              beginDate,
+                                              endDate));
             for (int x = 0; x < incoming.size(); x++) {
               Object[] row = incoming.get(x);
               balance =

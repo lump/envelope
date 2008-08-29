@@ -11,13 +11,12 @@ import us.lump.lib.Money;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Vector;
 
 /**
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.8 2008/08/27 01:13:27 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.9 2008/08/29 03:10:28 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -114,16 +113,15 @@ public class CriteriaFactory {
     return retval == null ? new Money(0) : retval;
   }
 
-  public Vector<Object[]> getTransactions(Identifiable categoryOrAccount,
-                                          Date beginDate,
-                                          Date endDate) {
+  public List<Object[]> getTransactions(Identifiable categoryOrAccount,
+                                        Date beginDate,
+                                        Date endDate) {
     if (!(categoryOrAccount instanceof Category
           || categoryOrAccount instanceof Account))
       throw new IllegalArgumentException(
           "first argument must be Category or Account");
 
-    Vector<Object[]> retval = new Vector<Object[]>();
-    List blah;
+    List<Object[]> retval = new ArrayList<Object[]>();
     try {
 
       if (categoryOrAccount instanceof Account) {
@@ -135,7 +133,7 @@ public class CriteriaFactory {
             .add(Projections.property("description"))
             .add(Projections.groupProperty("id"));
         retval =
-            new Vector<Object[]>((new HibernatePortal()).detachedCriteriaQuery(
+            (new HibernatePortal()).detachedCriteriaQuery(
                 DetachedCriteria.forClass(Transaction.class)
                     .createAlias("allocations", "a")
                     .createAlias("a.category", "c")
@@ -145,7 +143,7 @@ public class CriteriaFactory {
                     .setProjection(plist)
                     .addOrder(Order.asc("date"))
                     .addOrder(Order.asc("stamp"))
-            ));
+            );
       } else {
         ProjectionList plist = Projections.projectionList();
         plist.add(Projections.property("t.reconciled"))
@@ -156,7 +154,7 @@ public class CriteriaFactory {
             .add(Projections.property("t.id"))
             .add(Projections.groupProperty("id"));
         retval =
-            new Vector<Object[]>((new HibernatePortal()).detachedCriteriaQuery(
+            (new HibernatePortal()).detachedCriteriaQuery(
                 DetachedCriteria.forClass(Allocation.class)
                     .createAlias("transaction", "t")
                     .add(Restrictions.eq("category", categoryOrAccount))
@@ -165,7 +163,7 @@ public class CriteriaFactory {
                     .setProjection(plist)
                     .addOrder(Order.asc("t.date"))
                     .addOrder(Order.asc("stamp"))
-            ));
+            );
       }
     } catch (EnvelopeException e) {
       logger.error(e);
