@@ -16,7 +16,7 @@ import java.util.Vector;
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.6 $
+ * @version $Revision: 1.7 $
  */
 
 public class SocketController implements Controller {
@@ -81,7 +81,7 @@ public class SocketController implements Controller {
         Integer.parseInt(ServerSettings.getInstance().getClassPort()));
     socket.setKeepAlive(true);
     socket.setSoLinger(false, 0);
-    socket.setSoTimeout(300);
+    socket.setSoTimeout(300000);
 
     if (s != null) {
       s.busy = true;
