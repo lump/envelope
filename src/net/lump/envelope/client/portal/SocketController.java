@@ -16,7 +16,7 @@ import java.util.Vector;
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.7 $
+ * @version $Revision: 1.8 $
  */
 
 public class SocketController implements Controller {
@@ -52,8 +52,8 @@ public class SocketController implements Controller {
         int available = i.available();
         if (available > 0) {
           byte[] buffer = new byte[available];
-          int read = i.read(buffer, 0, 2048);
-          String message = new String(buffer);
+          int read = i.read(buffer, 0, available);
+          String message = new String(buffer).substring(0, read);
 
           // if the message is an HTTP message, close socket
           if (message.matches("HTTP/\\d+\\.\\d+\\s+")) {
@@ -81,7 +81,7 @@ public class SocketController implements Controller {
         Integer.parseInt(ServerSettings.getInstance().getClassPort()));
     socket.setKeepAlive(true);
     socket.setSoLinger(false, 0);
-    socket.setSoTimeout(300000);
+    socket.setSoTimeout(10000);
 
     if (s != null) {
       s.busy = true;

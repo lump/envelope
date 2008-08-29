@@ -49,7 +49,6 @@ public abstract class AbstractServer extends Thread {
       // Create our Server Socket
       ServerSocketFactory ssf = ServerSocketFactory.getDefault();
       serverSocket = ssf.createServerSocket(this.port, this.backlog);
-      serverSocket.setSoTimeout(60);
 
       // Start our thread
       this.start();

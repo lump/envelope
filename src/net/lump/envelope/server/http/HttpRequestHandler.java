@@ -8,6 +8,7 @@ import us.lump.envelope.server.rmi.Controlled;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.security.AccessControlException;
 import java.text.MessageFormat;
 import java.util.HashMap;
@@ -59,12 +60,13 @@ public class HttpRequestHandler implements RequestHandler {
    * class (or error if the class is not found or the response was malformed).
    */
   public void handleRequest(Socket socket) {
+
     String encoding;
     String[] encodings = {"raw"};
     HashMap<String, String> headers = new HashMap<String, String>();
 
     try {
-      socket.setSoTimeout(900000);
+      socket.setSoTimeout(15000);
       socket.setKeepAlive(true);
 
       String path = null;
@@ -352,6 +354,15 @@ public class HttpRequestHandler implements RequestHandler {
                    "HTTP/1.0 404 " + e.getMessage(),
                    headers.get("user-agent"),
                    e.getMessage());
+      }
+      catch (SocketTimeoutException e) {
+        logger.info(MessageFormat.format("socket to {0} timed out",
+                                         socket.getInetAddress().getCanonicalHostName()));
+      }
+      catch (SocketException e) {
+        logger.info(MessageFormat.format("socket to {0} {1}",
+                                         socket.getInetAddress().getCanonicalHostName(),
+                                         e.getMessage()));
       }
       catch (Exception e) {
         logger.warn(MessageFormat.format(

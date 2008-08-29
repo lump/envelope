@@ -47,7 +47,7 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
   }
 
   public boolean filled() {
-    return list != null && filled == list.length -1;
+    return list != null && filled == list.length - 1;
   }
 
   /**
@@ -60,7 +60,7 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
    */
   public E get(final int index) {
     do {
-      if (filled >= index) break;
+      if (filled >= index && list.length > index) break;
 
       try {
         if (abort) throw new InterruptedException();
@@ -69,7 +69,12 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
         break;
       }
     } while (true);
-    return filled < index ? null : list[index];
+    try {
+      return filled < index ? null : list[index];
+    } catch (ArrayIndexOutOfBoundsException e) {
+      System.out.println("gah");
+    }
+    return null;
   }
 
   public int size() {
@@ -131,7 +136,7 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
     Object[] listeners = listenerList.getListenerList();
     for (int i = listeners.length - 2; i >= 0; i -= 2) {
       if (listeners[i] == BackgroundListListener.class) {
-        ((BackgroundListListener)listeners[i+1])
+        ((BackgroundListListener)listeners[i + 1])
             .backgroundListEventOccurred(e);
       }
     }
