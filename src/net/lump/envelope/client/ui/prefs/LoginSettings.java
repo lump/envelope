@@ -21,7 +21,7 @@ import java.util.prefs.Preferences;
  * and password.
  *
  * @author Troy Bowman
- * @version $Id: LoginSettings.java,v 1.12 2008/07/19 05:39:44 troy Exp $
+ * @version $Id: LoginSettings.java,v 1.13 2008/08/30 17:38:46 troy Exp $
  */
 public class LoginSettings {
 
@@ -87,7 +87,9 @@ public class LoginSettings {
   }
 
   public Boolean passwordIsSaved() {
-    return (prefs.getByteArray(ENCRYPTED_PASSWORD, null) != null);
+    return (prefs.getByteArray(
+        ENCRYPTED_PASSWORD  + "." + ServerSettings.getInstance().getHostName(),
+        null) != null);
   }
 
   public LoginSettings setPassword(String password)
@@ -105,7 +107,8 @@ public class LoginSettings {
   public LoginSettings setPasswordShouldBeSaved(Boolean flag) {
     prefs.putBoolean(SHOULD_SAVE_ENCRYPTED_PASSWORD, flag);
     // reset the password if we're setting it to false
-    if (!flag) prefs.remove(ENCRYPTED_PASSWORD);
+    if (!flag) prefs.remove(
+        ENCRYPTED_PASSWORD  + "." + ServerSettings.getInstance().getHostName());
     return this;
   }
 
@@ -122,7 +125,9 @@ public class LoginSettings {
    * @throws IllegalStateException if the encrypted password is not saved.
    */
   public byte[] challengeResponse() {
-    byte[] response = prefs.getByteArray(ENCRYPTED_PASSWORD, null);
+    byte[] response = prefs.getByteArray(
+        ENCRYPTED_PASSWORD  + "." + ServerSettings.getInstance().getHostName(),
+        null);
     if (!shouldPasswordBeSaved() || null == response || response.length == 0)
       throw new IllegalStateException("Password is not saved.");
     else
@@ -175,7 +180,9 @@ public class LoginSettings {
     byte[] response = null;
 
     if (password == null && shouldPasswordBeSaved() && passwordIsSaved()) {
-      response = prefs.getByteArray(ENCRYPTED_PASSWORD, new byte[]{});
+      response = prefs.getByteArray(
+          ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName(),
+          new byte[]{});
       if (response.length == 0)
         throw new SessionException(SessionException.Type.Invalid_Credentials);
       else return response;
@@ -202,9 +209,12 @@ public class LoginSettings {
     // server can use it, we can save it, and the saved challenge response
     // on disk cannot be decrypted to find the original password.
     if (shouldPasswordBeSaved())
-      prefs.putByteArray(ENCRYPTED_PASSWORD, response);
+      prefs.putByteArray(
+          ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName(),
+          response);
       // else make sure it is null
-    else prefs.remove(ENCRYPTED_PASSWORD);
+    else prefs.remove(
+        ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName());
 
     return response;
   }
