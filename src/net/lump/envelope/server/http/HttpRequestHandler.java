@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import us.lump.envelope.Command;
 import us.lump.envelope.Server;
 import us.lump.envelope.server.rmi.Controlled;
+import us.lump.lib.util.Compression;
 
 import java.io.*;
 import java.net.Socket;
@@ -59,8 +60,11 @@ public class HttpRequestHandler implements RequestHandler {
     int read = 0;
     do {
       read += bis.read(buffer, 0, 1024);
-      s.append(new String(buffer).substring(0, read > 1024 ? 1024 : read));
-    } while (s.indexOf(search) == -1 || read > MAX_READ - 1024);
+      if (read > 0)
+        s.append(new String(buffer).substring(0, read > 1024 ? 1024 : read));
+    } while (read > 0 && (s.indexOf(search) == -1
+                          || s.length() > MAX_READ - 1024));
+    if (read == -1) throw new EOFException();
     bis.reset();
 
     return s.substring(0, s.indexOf(search) + search.length());
@@ -109,12 +113,15 @@ public class HttpRequestHandler implements RequestHandler {
           boolean loop = true;
           while (loop) {
 
-            header = readTo(is, "JOTP/1.0\r\n\r\n" + magic);
-            is.skip(header.length() - magic.length());
-            is.mark(MAX_READ);
-
             try {
-              ObjectInputStream ois = new ObjectInputStream(is);
+
+              header = readTo(is, "JOTP/1.0\r\n\r\n");// + magic);
+              is.skip(header.length());// - magic.length());
+              is.mark(MAX_READ);
+
+
+              ObjectInputStream ois =
+                  new ObjectInputStream(new GZIPInputStream(is));
               Object o = ois.readObject();
               is.mark(MAX_READ); // mark right after object
 
@@ -128,21 +135,25 @@ public class HttpRequestHandler implements RequestHandler {
                 Object retval = c.invoke(commands);
 
                 if (retval instanceof List) {
-                  // write a number before startign oos.
                   socket.getOutputStream().write(0x4c);
-                  ObjectOutputStream oos =
-                      new ObjectOutputStream(socket.getOutputStream());
+                  ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                  GZIPOutputStream z = new GZIPOutputStream(baos);
+                  ObjectOutputStream oos = new ObjectOutputStream(z);
                   oos.writeObject(new Integer(((List)retval).size()));
+                  oos.flush();
+
                   for (Object out : (List)retval) {
                     oos.writeObject(out);
                     oos.flush();
                   }
+                  oos.flush();
+                  oos.close();
+                  baos.writeTo(socket.getOutputStream());
                 } else {
                   socket.getOutputStream().write(0x4f);
-                  ObjectOutputStream oos =
-                      new ObjectOutputStream(socket.getOutputStream());
-                  oos.writeObject(retval);
-                  oos.flush();
+                  Compression.compress(retval)
+                      .writeTo(socket.getOutputStream());
+                  socket.getOutputStream().flush();
                 }
               }
             }
@@ -163,8 +174,6 @@ public class HttpRequestHandler implements RequestHandler {
               oos.flush();
             }
           }
-
-          socket.close();
           return;
         }
 

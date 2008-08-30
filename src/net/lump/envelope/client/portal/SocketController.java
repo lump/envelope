@@ -7,18 +7,20 @@ import us.lump.envelope.client.ui.components.StatusBar;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
 import us.lump.envelope.server.rmi.Controller;
 import us.lump.lib.util.BackgroundList;
+import us.lump.lib.util.Compression;
 
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.rmi.RemoteException;
 import java.util.Vector;
+import java.util.zip.GZIPInputStream;
 
 /**
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.9 $
+ * @version $Revision: 1.10 $
  */
 
 public class SocketController implements Controller {
@@ -101,10 +103,7 @@ public class SocketController implements Controller {
       s.socket.getOutputStream()
           .write("COMMAND /invoke JOTP/1.0\r\n\r\n".getBytes());
 
-      ObjectOutputStream oos =
-          new ObjectOutputStream(s.socket.getOutputStream());
-      oos.writeObject(commands);
-      oos.flush();
+      Compression.compress(commands).writeTo(s.socket.getOutputStream());
 
       final BufferedInputStream b
           = new BufferedInputStream(s.socket.getInputStream());
@@ -112,10 +111,12 @@ public class SocketController implements Controller {
       int type = b.read();
       switch (type & 0xff) {
         case 0x4f: // O for object
-          retval = (Serializable)new ObjectInputStream(b).readObject();
+          retval = (Serializable)new ObjectInputStream(new GZIPInputStream(b))
+              .readObject();
           break;
         case 0x4c: // L for list
-          final ObjectInputStream ois = new ObjectInputStream(b);
+          final ObjectInputStream ois =
+              new ObjectInputStream(new GZIPInputStream(b));
           final Integer size = (Integer)ois.readObject();
           final BackgroundList bl = new BackgroundList(size);
           ThreadPool.getInstance().execute(new EnvelopeRunnable("Reading") {
