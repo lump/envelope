@@ -5,7 +5,9 @@ import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.components.StatusBar;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
+import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.server.rmi.Controller;
+import us.lump.envelope.server.XferFlags;
 import us.lump.lib.util.BackgroundList;
 import us.lump.lib.util.Compression;
 
@@ -20,13 +22,16 @@ import java.util.zip.GZIPInputStream;
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.10 $
+ * @version $Revision: 1.11 $
  */
 
 public class SocketController implements Controller {
   private static final int MAX_READ = 5242880;
   private volatile static Vector<S> socketPool = new Vector<S>();
   private volatile S s;
+
+  private static final ServerSettings serverSettings
+      = ServerSettings.getInstance();
 
   private SocketController() {
     s = null;
@@ -81,11 +86,12 @@ public class SocketController implements Controller {
 
   private synchronized void connect() throws IOException {
     Socket socket = new Socket(
-        ServerSettings.getInstance().getHostName(),
-        Integer.parseInt(ServerSettings.getInstance().getClassPort()));
+        serverSettings.getHostName(),
+        Integer.parseInt(serverSettings.getClassPort()));
     socket.setKeepAlive(true);
     socket.setSoLinger(false, 0);
-    socket.setSoTimeout(10000);
+//    socket.setSoTimeout(10000);
+    socket.setSoTimeout(0);    
 
     if (s != null) {
       s.busy = true;
@@ -94,7 +100,7 @@ public class SocketController implements Controller {
   }
 
   // falsifying busy only happens here.
-  public synchronized Serializable invoke(Command... commands)
+  public synchronized Serializable invoke(Command command)
       throws RemoteException {
     Serializable retval = null;
 
@@ -103,54 +109,69 @@ public class SocketController implements Controller {
       s.socket.getOutputStream()
           .write("COMMAND /invoke JOTP/1.0\r\n\r\n".getBytes());
 
-      Compression.compress(commands).writeTo(s.socket.getOutputStream());
+      // check server flags settings, set compress and/or encrypt
+      XferFlags flags = new XferFlags();
+      if (serverSettings.getCompress()) flags.setFlags(XferFlags.COMPRESS);
+//      if (serverSettings.getEncrypt()) flags.setFlags(XferFlags.ENCRYPT);
+      // if we're compressing, compress the stream
+      ByteArrayOutputStream baos = Compression.serializeOnly(command);
+      if (flags.hasFlag(XferFlags.COMPRESS)) baos = Compression.compress(baos);
+//      if (flags.hasFlag(XferFlags.ENCRYPT)
+//          && command.getName() != Command.Name.authChallengeResponse
+//          && command.getName() != Command.Name.getServerPublicKey) {
+////        todo: get encryption working
+//          Encryption.encodeAsym(SecurityPortal.getServerPublicKey(), baos);
+//      }
+
+      // write our flags
+      s.socket.getOutputStream().write(flags.getByte());
+      // write the (possibly mangled) command
+      baos.writeTo(s.socket.getOutputStream());
 
       final BufferedInputStream b
           = new BufferedInputStream(s.socket.getInputStream());
+      InputStream i;
       b.mark(MAX_READ);
-      int type = b.read();
-      switch (type & 0xff) {
-        case 0x4f: // O for object
-          retval = (Serializable)new ObjectInputStream(new GZIPInputStream(b))
-              .readObject();
-          break;
-        case 0x4c: // L for list
-          final ObjectInputStream ois =
-              new ObjectInputStream(new GZIPInputStream(b));
-          final Integer size = (Integer)ois.readObject();
-          final BackgroundList bl = new BackgroundList(size);
-          ThreadPool.getInstance().execute(new EnvelopeRunnable("Reading") {
-            public synchronized void run() {
-              try {
-                for (int x = 0; x < size; x++) {
-                  this.setStatusMessage("Reading " + x);
-                  StatusBar.getInstance().updateLabel();
-                  bl.add(ois.readObject());
+      XferFlags flag = new XferFlags((byte)b.read());
+
+      if (flag.hasFlag(XferFlags.COMPRESS)) i = new GZIPInputStream(b);
+//        if (flag.hasFlag(XferFlags.ENCRYPT)) //blablabla
+      else i = b;
+      final ObjectInputStream ois = new ObjectInputStream(i);
+
+      if (flag.hasFlag(XferFlags.LIST)) {
+        final Integer size = (Integer)ois.readObject();
+        final BackgroundList bl = new BackgroundList(size);
+        ThreadPool.getInstance().execute(
+            new EnvelopeRunnable(Strings.get("reading")) {
+              public synchronized void run() {
+                try {
+                  for (int x = 0; x < size; x++) {
+                    this.setStatusMessage(Strings.get("reading") + " " + x);
+                    StatusBar.getInstance().updateLabel();
+                    bl.add(ois.readObject());
 //                  if (bl.aborted()) break;
+                  }
+                } catch (ClassNotFoundException e) {
+                  bl.fireAbort();
+                } catch (IOException e) {
+                  bl.fireAbort();
                 }
-              } catch (ClassNotFoundException e) {
-                bl.fireAbort();
-              } catch (IOException e) {
-                bl.fireAbort();
+                s.busy = false;
               }
-              s.busy = false;
-            }
-          });
-          return bl;
-//        case 0x48: // H -- http error
-//          b.reset();
-//          byte[] buffer = new byte[2048];
-//          int length = b.read(buffer, 0, 2048);
-//          System.err.println(new String(buffer).substring(0, length));
-////          s.socket.close();
-//          return null;
+            });
+        return bl;
       }
+      else { // a list isn't being returned
+        retval = (Serializable)ois.readObject();
+      }
+      
     } catch (IOException e) {
       try {
         s.socket.close();
         s.socket = null;
         connect();
-        retval = invoke(commands);
+        retval = invoke(command);
       } catch (IOException e1) {
         throw new RemoteException("invoke failed", e);
       }

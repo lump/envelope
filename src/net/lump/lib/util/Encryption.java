@@ -13,7 +13,7 @@ import java.security.spec.X509EncodedKeySpec;
  * signing and encryption.
  *
  * @author Troy Bowman
- * @version $Id: Encryption.java,v 1.5 2007/08/21 05:50:46 troy Exp $
+ * @version $Id: Encryption.java,v 1.6 2008/08/30 22:06:34 troy Exp $
  */
 
 public final class Encryption {
@@ -160,7 +160,40 @@ public final class Encryption {
       IllegalBlockSizeException {
     final Cipher c = Cipher.getInstance(keyAlg);
     c.init(Cipher.ENCRYPT_MODE, key);
+//    if (data.length > c.getBlockSize()) throw new IllegalBlockSizeException();
     return c.doFinal(data);
+  }
+
+  /**
+   * Encrypts a bytearray using the Key algorithm. The length of the message is
+   * limited by the key size.
+   *
+   * @param key  to use
+   * @param data to encode
+   *
+   * @return byte[]
+   *
+   * @throws InvalidKeyException
+   * @throws NoSuchAlgorithmException
+   * @throws NoSuchPaddingException
+   * @throws BadPaddingException
+   * @throws IllegalBlockSizeException
+   */
+  public static ByteArrayOutputStream
+  encodeAsym(PublicKey key, ByteArrayOutputStream data)
+      throws
+      IOException,
+      InvalidKeyException,
+      NoSuchAlgorithmException,
+      NoSuchPaddingException,
+      BadPaddingException,
+      IllegalBlockSizeException {
+    final Cipher c = Cipher.getInstance(keyAlg);
+    c.init(Cipher.ENCRYPT_MODE, key);
+    //todo loop through blocks
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    baos.write(c.doFinal(data.toByteArray()));
+    return baos;
   }
 
   /**

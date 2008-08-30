@@ -20,7 +20,7 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Revision: 1.11 $
+ * @version $Revision: 1.12 $
  */
 public class Command implements Serializable {
   /**
@@ -40,7 +40,7 @@ public class Command implements Serializable {
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.11 $
+   * @version $Revision: 1.12 $
    */
   public enum Name {
 
@@ -49,6 +49,7 @@ public class Command implements Serializable {
     authedPing(Dao.Security),
     getChallenge(false, Dao.Security, String.class, PublicKey.class),
     authChallengeResponse(false, Dao.Security, String.class, byte[].class),
+    getServerPublicKey(false, Dao.Security),
 
     // generic
     detachedCriteriaQuery(Dao.Generic, DetachedCriteria.class),

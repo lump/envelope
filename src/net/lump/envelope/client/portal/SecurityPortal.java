@@ -6,22 +6,27 @@ import us.lump.envelope.server.security.Challenge;
 import us.lump.envelope.exception.EnvelopeException;
 
 import javax.swing.*;
+import java.security.PublicKey;
 
 /**
  * Security methods.
  *
  * @author Troy Bowman
- * @version $Revision: 1.6 $
+ * @version $Revision: 1.7 $
  */
 
 public class SecurityPortal extends Portal {
 
+  private static PublicKey serverKey = null;
+
   public Challenge getChallenge() throws EnvelopeException {
     LoginSettings ls = LoginSettings.getInstance();
-    return (Challenge)rawInvoke(new Command(
+    Challenge challenge = (Challenge)rawInvoke(new Command(
         Command.Name.getChallenge,
         ls.getUsername(),
         ls.getKeyPair().getPublic()));
+    serverKey = challenge.getServerKey();
+    return challenge;
   }
 
   public Boolean auth(byte[] challengeResponse) throws EnvelopeException {
@@ -43,5 +48,14 @@ public class SecurityPortal extends Portal {
 
   public Boolean authedPing(JFrame jframe) throws EnvelopeException {
     return (Boolean)invoke(jframe, new Command(Command.Name.authedPing));
+  }
+
+  public static PublicKey getServerPublicKey() throws EnvelopeException {
+    // if we don't have the serverKey saved already (from a challenge or this)
+    if (serverKey == null) serverKey =
+        // instantiate ourselves and invoke the command to get it
+        (PublicKey)(new SecurityPortal()).
+            rawInvoke(new Command(Command.Name.getServerPublicKey));
+    return serverKey;
   }
 }

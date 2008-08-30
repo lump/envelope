@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import us.lump.envelope.Command;
 import us.lump.envelope.Server;
 import us.lump.envelope.server.rmi.Controlled;
+import us.lump.envelope.server.XferFlags;
 import us.lump.lib.util.Compression;
 
 import java.io.*;
@@ -82,7 +83,8 @@ public class HttpRequestHandler implements RequestHandler {
     HashMap<String, String> headers = new HashMap<String, String>();
 
     try {
-      socket.setSoTimeout(15000);
+//      socket.setSoTimeout(15000);
+      socket.setSoTimeout(0);
       socket.setKeepAlive(true);
 
       String path = null;
@@ -94,7 +96,7 @@ public class HttpRequestHandler implements RequestHandler {
         String header = readTo(is, "\r\n\r\n");
 
         String line = "";
-        String command = "GET";
+        String httpcommand = "GET";
 
         // parse command
         Matcher m = Pattern.compile(
@@ -102,11 +104,11 @@ public class HttpRequestHandler implements RequestHandler {
             .matcher(header.subSequence(0, header.indexOf("\r\n") + 2));
         if (m.matches()) {
           if (m.group(1) != null) line = m.group(1);
-          if (m.group(2) != null) command = m.group(2);
+          if (m.group(2) != null) httpcommand = m.group(2);
           if (m.group(3) != null) path = m.group(3);
         }
 
-        if (command.equals("COMMAND") && path.equals("invoke")) {
+        if (httpcommand.equals("COMMAND") && path.equals("invoke")) {
           String magic =
               new String(new byte[]{(byte)0xac, (byte)0xed, 0x00, 0x05});
 
@@ -117,45 +119,52 @@ public class HttpRequestHandler implements RequestHandler {
 
               header = readTo(is, "JOTP/1.0\r\n\r\n");// + magic);
               is.skip(header.length());// - magic.length());
+              XferFlags flags = new XferFlags((byte)is.read());
               is.mark(MAX_READ);
+              
+              InputStream optionIs = null;
 
+//              if (flags.hasFlag(XferFlags.ENCRYPT))
+              //todo decrypt
+              if (flags.hasFlag(XferFlags.COMPRESS))
+                optionIs = new GZIPInputStream(is);
+              if (optionIs == null) optionIs = is;
 
-              ObjectInputStream ois =
-                  new ObjectInputStream(new GZIPInputStream(is));
-              Object o = ois.readObject();
+              ObjectInputStream ois = new ObjectInputStream(optionIs);
+              Command command = (Command)ois.readObject();
               is.mark(MAX_READ); // mark right after object
 
-              Command[] commands = null;
+              Controlled c = new Controlled(null);
+              Object retval = c.invoke(command);
 
-              if (o instanceof Command[]) commands = (Command[])o;
-              if (o instanceof Command) commands = new Command[]{(Command)o};
+              // create a oos from a baos to hold our stream of objects
+              ByteArrayOutputStream baos = new ByteArrayOutputStream();
+              ObjectOutputStream oos = new ObjectOutputStream(baos);
 
-              if (commands != null) {
-                Controlled c = new Controlled(null);
-                Object retval = c.invoke(commands);
-
-                if (retval instanceof List) {
-                  socket.getOutputStream().write(0x4c);
-                  ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                  GZIPOutputStream z = new GZIPOutputStream(baos);
-                  ObjectOutputStream oos = new ObjectOutputStream(z);
-                  oos.writeObject(new Integer(((List)retval).size()));
-                  oos.flush();
-
-                  for (Object out : (List)retval) {
-                    oos.writeObject(out);
-                    oos.flush();
-                  }
-                  oos.flush();
-                  oos.close();
-                  baos.writeTo(socket.getOutputStream());
-                } else {
-                  socket.getOutputStream().write(0x4f);
-                  Compression.compress(retval)
-                      .writeTo(socket.getOutputStream());
-                  socket.getOutputStream().flush();
-                }
+              if (retval instanceof List) {
+                flags.addFlag(XferFlags.LIST);
+                oos.writeObject(new Integer(((List)retval).size()));
+                for (Object out : (List)retval) oos.writeObject(out);
+              } else {
+                flags.removeFlag(XferFlags.LIST); // make sure it's not there.
+                oos.writeObject(retval);
               }
+              oos.flush();
+              oos.close();
+
+              // if we're supposed to compress the output stream, do it.
+              if (flags.hasFlag(XferFlags.COMPRESS))
+                baos = Compression.compress(baos);
+
+              if (flags.hasFlag(XferFlags.ENCRYPT)) {
+                // todo: encrypt crap
+//                Encryption.encodeAsym(users's public key, baos);
+              }
+
+              // write our flags
+              socket.getOutputStream().write(flags.getByte());
+              // yay, now we can finally write the output
+              baos.writeTo(socket.getOutputStream());
             }
             catch (EOFException e) {
               loop = false;
@@ -167,7 +176,7 @@ public class HttpRequestHandler implements RequestHandler {
               loop = false;
             }
             catch (Exception e) {
-              socket.getOutputStream().write(0x4f);
+              socket.getOutputStream().write(0);
               ObjectOutputStream oos =
                   new ObjectOutputStream(socket.getOutputStream());
               oos.writeObject(e);
@@ -255,7 +264,7 @@ public class HttpRequestHandler implements RequestHandler {
           out.writeBytes("HTTP/1.0 200 OK\r\n");
           out.writeBytes("Content-Length: " + returnValue.length() + "\r\n");
           out.writeBytes("Content-Type: text/plain\r\n\r\n");
-          if (!command.equals("HEAD")) out.writeBytes(returnValue);
+          if (!httpcommand.equals("HEAD")) out.writeBytes(returnValue);
           logger.info("returned " + returnValue + " for " + path + " from "
                       + socket.getInetAddress().getCanonicalHostName());
         } else {
@@ -338,7 +347,7 @@ public class HttpRequestHandler implements RequestHandler {
               "to {0}, {1}B {2} {3}",
               socket.getInetAddress().getCanonicalHostName(),
               compressedBytecode.length,
-              command,
+              httpcommand,
               path));
 
           out.writeBytes("HTTP/1.1 200 OK\r\n");
@@ -347,7 +356,7 @@ public class HttpRequestHandler implements RequestHandler {
           if (!encoding.equals("raw"))
             out.writeBytes("Content-Encoding: " + encoding + "\r\n");
           out.writeBytes("Content-Type: " + contentType + "\r\n\r\n");
-          if (!command.equals("HEAD")) out.write(compressedBytecode);
+          if (!httpcommand.equals("HEAD")) out.write(compressedBytecode);
           out.flush();
           out.flush();
           out.close();

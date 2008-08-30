@@ -19,7 +19,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controlled.java,v 1.13 2008/08/09 03:31:02 troy Exp $
+ * @version $Id: Controlled.java,v 1.14 2008/08/30 22:06:34 troy Exp $
  */
 public class Controlled extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -55,7 +55,7 @@ public class Controlled extends UnicastRemoteObject implements Controller {
    * the command, and validate sessions if necessary.  We can also catch errors
    * and handle graceful closing or rollbacks of transactions.
    *
-   * @param commands one more more commands
+   * @param command one more more commands
    *
    * @return Object if there are more than one command, the object will be a
    *         List of objects.
@@ -63,42 +63,31 @@ public class Controlled extends UnicastRemoteObject implements Controller {
    * @throws RemoteException
    */
   @SuppressWarnings({"LoopStatementThatDoesntLoop"})
-  public Serializable invoke(Command... commands) throws RemoteException {
+  public Serializable invoke(Command command) throws RemoteException {
 
 
     ArrayList<Serializable> returnList = new ArrayList<Serializable>();
 
-    for (Command command : commands) {
-      logger.debug("Received command " + command.getName().name());
+    logger.debug("Received command " + command.getName().name());
 
-      try {
-        // if a session is required, force check authorization first
-        if (command.getName().isSessionRequired()
-            && !(new Security()).validateSession(command))
-          throw new SessionException(SessionException.Type.Invalid_Session);
-      } catch (Exception e) {
-        if (e instanceof DataException &&
-            ((DataException)e).getType() == EnvelopeException.Type.Invalid_User
-            ) {
-          throw new SessionException(SessionException.Type.Invalid_Credentials);
-        } else {
-          logger.warn("error in session validation", e);
-          throw new SessionException(SessionException.Type.Invalid_Session);
-        }
+    try {
+      // if a session is required, force check authorization first
+      if (command.getName().isSessionRequired()
+          && !(new Security()).validateSession(command))
+        throw new SessionException(SessionException.Type.Invalid_Session);
+    } catch (Exception e) {
+      if (e instanceof DataException &&
+          ((DataException)e).getType() == EnvelopeException.Type.Invalid_User
+          ) {
+        throw new SessionException(SessionException.Type.Invalid_Credentials);
+      } else {
+        logger.warn("error in session validation", e);
+        throw new SessionException(SessionException.Type.Invalid_Session);
       }
-
-      // session management should be done now, so we can now dispatch
-      returnList.add(dispatch(command));
     }
 
-    // return the single return object if the list size is 1.
-    return returnList.size() == 1
-           ? returnList.get(0)
-           // return the list if there are more than one
-           : returnList.size() > 1
-             ? returnList
-             // else, return null if it's empty
-             : null;
+    // session management should be done now, so we can now dispatch and return
+    return dispatch(command);
   }
 
   /*
@@ -145,7 +134,7 @@ public class Controlled extends UnicastRemoteObject implements Controller {
           && dao.getTransaction().isActive()
           && !dao.getTransaction().wasRolledBack()) {
         dao.getTransaction().rollback();
-        logger.warn("transaction was rolled back");
+        logger.warn("transaction was rolled back", e);
       }
 
       //every exception will be caught, logged, and re-thrown to the client.

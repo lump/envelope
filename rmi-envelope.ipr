@@ -468,8 +468,5 @@
   <component name="uidesigner-configuration">
     <option name="INSTRUMENT_CLASSES" value="false" />
   </component>
-  <UsedPathMacros>
-    <macro name="JAVA" />
-  </UsedPathMacros>
 </project>
 

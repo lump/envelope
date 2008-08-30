@@ -46,6 +46,8 @@ public class Preferences extends JDialog {
   private JLabel passwordLabel;
   private JLabel sessionStateLabel;
   private JLabel sessionState;
+  private JCheckBox compress;
+  private JCheckBox encrypt;
   private ServerSettings ssData = ServerSettings.getInstance();
   private LoginSettings lsData = LoginSettings.getInstance();
   private Boolean classServerValid = null;
@@ -74,7 +76,7 @@ public class Preferences extends JDialog {
       public void mousePressed(MouseEvent e) {
         super.mousePressed(e);
         // reset the cache when we're explicitly checking
-        ServerSettings.getInstance().resetCache();
+        ssData.resetCache();
         areServerSettingsOk();
       }
     });
@@ -126,6 +128,16 @@ public class Preferences extends JDialog {
     });
 
     pack();
+    compress.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        ssData.setCompress(compress.isSelected());
+      }
+    });
+    encrypt.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        ssData.setCompress(encrypt.isSelected());
+      }
+    });
   }
 
   public void selectTab(String title) {
@@ -238,6 +250,9 @@ public class Preferences extends JDialog {
       hostName.setText(System.getProperty("codebase"));
     else
       hostName.setText(ssData.getHostName() + ":" + ssData.getClassPort());
+
+    compress.setSelected(ssData.getCompress());
+    encrypt.setSelected(ssData.getEncrypt());
   }
 
   public void fillUserFormWithSavedData() {
@@ -425,7 +440,7 @@ public class Preferences extends JDialog {
         "us/lump/envelope/client/ui/defs/Strings").getString("server"),
                      serverTab);
     serverFormPanel = new JPanel();
-    serverFormPanel.setLayout(new GridLayoutManager(1,
+    serverFormPanel.setLayout(new GridLayoutManager(3,
                                                     2,
                                                     new Insets(0, 0, 0, 0),
                                                     -1,
@@ -479,6 +494,44 @@ public class Preferences extends JDialog {
                                                       null,
                                                       0,
                                                       false));
+    compress = new JCheckBox();
+    this.$$$loadButtonText$$$(compress, ResourceBundle.getBundle(
+        "us/lump/envelope/client/ui/defs/Strings").getString("compress"));
+    serverFormPanel.add(compress, new GridConstraints(1,
+                                                      1,
+                                                      1,
+                                                      1,
+                                                      GridConstraints.ANCHOR_WEST,
+                                                      GridConstraints.FILL_NONE,
+                                                      GridConstraints
+                                                          .SIZEPOLICY_CAN_SHRINK
+                                                      | GridConstraints
+                                                          .SIZEPOLICY_CAN_GROW,
+                                                      GridConstraints.SIZEPOLICY_FIXED,
+                                                      null,
+                                                      null,
+                                                      null,
+                                                      0,
+                                                      false));
+    encrypt = new JCheckBox();
+    this.$$$loadButtonText$$$(encrypt, ResourceBundle.getBundle(
+        "us/lump/envelope/client/ui/defs/Strings").getString("encrypt"));
+    serverFormPanel.add(encrypt, new GridConstraints(2,
+                                                     1,
+                                                     1,
+                                                     1,
+                                                     GridConstraints.ANCHOR_WEST,
+                                                     GridConstraints.FILL_NONE,
+                                                     GridConstraints
+                                                         .SIZEPOLICY_CAN_SHRINK
+                                                     | GridConstraints
+                                                         .SIZEPOLICY_CAN_GROW,
+                                                     GridConstraints.SIZEPOLICY_FIXED,
+                                                     null,
+                                                     null,
+                                                     null,
+                                                     0,
+                                                     false));
     classServerStatusPanel = new JPanel();
     classServerStatusPanel.setLayout(new GridLayoutManager(1,
                                                            1,

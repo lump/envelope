@@ -31,7 +31,9 @@ public class ServerSettings {
   enum fields {
     host_name,
     rmi_port,
-    class_port
+    class_port,
+    encrypt,
+    compress
   }
 
   private ServerSettings() { }
@@ -102,6 +104,20 @@ public class ServerSettings {
     prefs.put(class_port.name(), classPort);
   }
 
+  public boolean getEncrypt() {
+    return prefs.getBoolean(encrypt.name(), false);
+  }
+  public void setEncrypt(boolean flag) {
+    prefs.putBoolean(encrypt.name(), flag);
+  }
+
+  public boolean getCompress() {
+    return prefs.getBoolean(compress.name(), false);
+  }
+  public void setCompress(boolean flag) {
+    prefs.putBoolean(compress.name(), flag);
+  }
+  
   public URL getCodeBase() throws MalformedURLException {
     URL url = new URL("http://" + getHostName() + ":" + getClassPort() + "/");
     if (System.getProperties().get(CODEBASE) == null

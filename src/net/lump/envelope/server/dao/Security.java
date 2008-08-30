@@ -22,7 +22,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.11 2008/07/09 08:16:40 troy Exp $
+ * @version $Id: Security.java,v 1.12 2008/08/30 22:06:34 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption
@@ -148,6 +148,10 @@ public class Security extends DAO {
         publicKey,
         Crypt.yankSalt(user.getCryptPassword())
     );
+  }
+
+  public PublicKey getServerPublicKey() {
+    return serverKeyPair.getPublic();
   }
 
 

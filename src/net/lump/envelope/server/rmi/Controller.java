@@ -22,5 +22,5 @@ public interface Controller extends Remote {
    *
    * @throws RemoteException
    */
-  public Serializable invoke(Command... commands) throws RemoteException;
+  public Serializable invoke(Command commands) throws RemoteException;
 }
