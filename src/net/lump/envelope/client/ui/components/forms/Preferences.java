@@ -135,7 +135,7 @@ public class Preferences extends JDialog {
     });
     encrypt.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        ssData.setCompress(encrypt.isSelected());
+        ssData.setEncrypt(encrypt.isSelected());
       }
     });
   }

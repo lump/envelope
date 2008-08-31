@@ -26,7 +26,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.18 2008/08/09 03:31:02 troy Exp $
+ * @version $Id: DAO.java,v 1.19 2008/08/31 00:29:59 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -283,7 +283,7 @@ public abstract class DAO {
     for (T o : os) update(o);
   }
 
-  User getUser(String username) throws DataException {
+  public User getUser(String username) throws DataException {
     User user;
 
     // if we've already retrieved the user for this thread, just use that.

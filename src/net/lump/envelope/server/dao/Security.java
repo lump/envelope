@@ -14,6 +14,9 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.ByteArrayInputStream;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.prefs.Preferences;
@@ -22,7 +25,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.12 2008/08/30 22:06:34 troy Exp $
+ * @version $Id: Security.java,v 1.13 2008/08/31 00:29:59 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption
@@ -148,6 +151,16 @@ public class Security extends DAO {
         publicKey,
         Crypt.yankSalt(user.getCryptPassword())
     );
+  }
+
+  public ByteArrayInputStream decrypt(InputStream is) throws
+      IllegalBlockSizeException,
+      IOException,
+      InvalidKeyException,
+      NoSuchAlgorithmException,
+      NoSuchPaddingException,
+      BadPaddingException {
+    return Encryption.decodeAsym(serverKeyPair.getPrivate(), is);
   }
 
   public PublicKey getServerPublicKey() {

@@ -1,5 +1,7 @@
 package us.lump.lib.util;
 
+import com.sun.crypto.provider.RSACipher;
+
 import javax.crypto.*;
 import java.io.*;
 import java.security.*;
@@ -13,7 +15,7 @@ import java.security.spec.X509EncodedKeySpec;
  * signing and encryption.
  *
  * @author Troy Bowman
- * @version $Id: Encryption.java,v 1.6 2008/08/30 22:06:34 troy Exp $
+ * @version $Id: Encryption.java,v 1.7 2008/08/31 00:29:59 troy Exp $
  */
 
 public final class Encryption {
@@ -85,6 +87,42 @@ public final class Encryption {
     final Cipher c = Cipher.getInstance(keyAlg);
     c.init(Cipher.DECRYPT_MODE, key);
     return c.doFinal(data);
+  }
+
+  /**
+   * Decode an asymmetrically encrypted message with a private key.
+   *
+   * @param key  private key
+   * @param is InputStream
+   *
+   * @return ByteArrayOutputStream
+   *
+   * @throws InvalidKeyException
+   * @throws BadPaddingException
+   * @throws IllegalBlockSizeException
+   * @throws NoSuchAlgorithmException
+   * @throws NoSuchPaddingException
+   */
+  public static ByteArrayInputStream decodeAsym(PrivateKey key, InputStream is)
+      throws
+      InvalidKeyException,
+      BadPaddingException,
+      IllegalBlockSizeException,
+      NoSuchAlgorithmException,
+      NoSuchPaddingException, IOException {
+    final Cipher c = Cipher.getInstance(keyAlg);
+    byte[] buffer = new byte[128];
+    int read = 0;
+    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+    while ((read = is.read(buffer, 0, buffer.length)) > 0) {
+      // check for eof
+      if (read == 1 && buffer[0] == -1) break;
+      
+      c.init(Cipher.DECRYPT_MODE, key);
+      baos.write(c.doFinal(buffer));
+      if (read < buffer.length) break;
+    }
+    return new ByteArrayInputStream(baos.toByteArray());
   }
 
   public static PublicKey decodePublicKey(String key)
@@ -189,10 +227,18 @@ public final class Encryption {
       BadPaddingException,
       IllegalBlockSizeException {
     final Cipher c = Cipher.getInstance(keyAlg);
-    c.init(Cipher.ENCRYPT_MODE, key);
-    //todo loop through blocks
+    byte[] buffer = new byte[117];
+    int read = 0;
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    baos.write(c.doFinal(data.toByteArray()));
+    ByteArrayInputStream bis = new ByteArrayInputStream(data.toByteArray());
+    while ((read = bis.read(buffer, 0, buffer.length)) > 0) {
+      c.init(Cipher.ENCRYPT_MODE, key);
+      baos.write(c.doFinal(buffer));
+      if (read < buffer.length) break;
+    }
+    // send an eof of sorts
+    baos.write(-1);
+
     return baos;
   }
 

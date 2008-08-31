@@ -5,11 +5,13 @@ import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.components.StatusBar;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
+import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.server.rmi.Controller;
 import us.lump.envelope.server.XferFlags;
 import us.lump.lib.util.BackgroundList;
 import us.lump.lib.util.Compression;
+import us.lump.lib.util.Encryption;
 
 import java.io.*;
 import java.net.Socket;
@@ -22,7 +24,7 @@ import java.util.zip.GZIPInputStream;
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.11 $
+ * @version $Revision: 1.12 $
  */
 
 public class SocketController implements Controller {
@@ -109,34 +111,43 @@ public class SocketController implements Controller {
       s.socket.getOutputStream()
           .write("COMMAND /invoke JOTP/1.0\r\n\r\n".getBytes());
 
-      // check server flags settings, set compress and/or encrypt
-      XferFlags flags = new XferFlags();
-      if (serverSettings.getCompress()) flags.setFlags(XferFlags.COMPRESS);
-//      if (serverSettings.getEncrypt()) flags.setFlags(XferFlags.ENCRYPT);
-      // if we're compressing, compress the stream
       ByteArrayOutputStream baos = Compression.serializeOnly(command);
-      if (flags.hasFlag(XferFlags.COMPRESS)) baos = Compression.compress(baos);
-//      if (flags.hasFlag(XferFlags.ENCRYPT)
-//          && command.getName() != Command.Name.authChallengeResponse
-//          && command.getName() != Command.Name.getServerPublicKey) {
-////        todo: get encryption working
-//          Encryption.encodeAsym(SecurityPortal.getServerPublicKey(), baos);
-//      }
+
+      // new empty transfer flags
+      XferFlags flags = new XferFlags();
+
+      // if we're compressing, compress the stream
+      if (serverSettings.getCompress()) {
+        flags.addFlag(XferFlags.COMPRESS);
+        baos = Compression.compress(baos);
+      }
+
+      // if we're encrypting, encrypt the (possibly compressed) stream
+      if (serverSettings.getEncrypt()
+          && command.getName() != Command.Name.authChallengeResponse
+          && command.getName() != Command.Name.getServerPublicKey) {
+        flags.addFlag(XferFlags.ENCRYPT);
+        baos = Encryption.encodeAsym(SecurityPortal.getServerPublicKey(), baos);
+      }
 
       // write our flags
       s.socket.getOutputStream().write(flags.getByte());
       // write the (possibly mangled) command
       baos.writeTo(s.socket.getOutputStream());
+      s.socket.getOutputStream().flush();
 
+      // prepare inputstream
       final BufferedInputStream b
           = new BufferedInputStream(s.socket.getInputStream());
-      InputStream i;
-      b.mark(MAX_READ);
-      XferFlags flag = new XferFlags((byte)b.read());
 
-      if (flag.hasFlag(XferFlags.COMPRESS)) i = new GZIPInputStream(b);
-//        if (flag.hasFlag(XferFlags.ENCRYPT)) //blablabla
-      else i = b;
+      XferFlags flag = new XferFlags((byte)b.read());
+      b.mark(MAX_READ);
+
+      InputStream i = b;
+      if (flag.hasFlag(XferFlags.ENCRYPT)) {
+        i = Encryption.decodeAsym(LoginSettings.getInstance().getKeyPair().getPrivate(), i);
+      }
+      if (flag.hasFlag(XferFlags.COMPRESS)) i = new GZIPInputStream(i);
       final ObjectInputStream ois = new ObjectInputStream(i);
 
       if (flag.hasFlag(XferFlags.LIST)) {

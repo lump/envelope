@@ -3,9 +3,14 @@ package us.lump.envelope.server.http;
 import org.apache.log4j.Logger;
 import us.lump.envelope.Command;
 import us.lump.envelope.Server;
+import us.lump.envelope.entity.User;
 import us.lump.envelope.server.rmi.Controlled;
 import us.lump.envelope.server.XferFlags;
+import us.lump.envelope.server.security.Credentials;
+import us.lump.envelope.server.dao.Security;
+import us.lump.envelope.server.dao.Generic;
 import us.lump.lib.util.Compression;
+import us.lump.lib.util.Encryption;
 
 import java.io.*;
 import java.net.Socket;
@@ -122,13 +127,12 @@ public class HttpRequestHandler implements RequestHandler {
               XferFlags flags = new XferFlags((byte)is.read());
               is.mark(MAX_READ);
               
-              InputStream optionIs = null;
+              InputStream optionIs = is;
 
-//              if (flags.hasFlag(XferFlags.ENCRYPT))
-              //todo decrypt
+              if (flags.hasFlag(XferFlags.ENCRYPT))
+                optionIs = new Security().decrypt(optionIs);
               if (flags.hasFlag(XferFlags.COMPRESS))
-                optionIs = new GZIPInputStream(is);
-              if (optionIs == null) optionIs = is;
+                optionIs = new GZIPInputStream(optionIs);
 
               ObjectInputStream ois = new ObjectInputStream(optionIs);
               Command command = (Command)ois.readObject();
@@ -152,13 +156,24 @@ public class HttpRequestHandler implements RequestHandler {
               oos.flush();
               oos.close();
 
-              // if we're supposed to compress the output stream, do it.
+              // if we're asked to compress the output stream...
               if (flags.hasFlag(XferFlags.COMPRESS))
                 baos = Compression.compress(baos);
 
+              // if we're asked to encrypt the output stream...
               if (flags.hasFlag(XferFlags.ENCRYPT)) {
-                // todo: encrypt crap
-//                Encryption.encodeAsym(users's public key, baos);
+                // check credentials.
+                Credentials credentials = command.getCredentials();
+                if (credentials != null) {
+                  // get the key, likely from cache in DAO.
+                  User user =
+                      (new Generic()).getUser(credentials.getUsername());
+                  baos = Encryption.encodeAsym(user.getPublicKey(), baos);
+                }
+                else {
+                  // we can't encrypt because we don't know who to encrypt for.
+                  flags.removeFlag(XferFlags.ENCRYPT);
+                }
               }
 
               // write our flags
