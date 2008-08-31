@@ -127,7 +127,6 @@ public class Preferences extends JDialog {
       }
     });
 
-    pack();
     compress.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         ssData.setCompress(compress.isSelected());
@@ -138,6 +137,8 @@ public class Preferences extends JDialog {
         ssData.setEncrypt(encrypt.isSelected());
       }
     });
+
+    pack();
   }
 
   public void selectTab(String title) {

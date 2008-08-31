@@ -13,6 +13,7 @@ import us.lump.lib.util.BackgroundList;
 import us.lump.lib.util.Compression;
 import us.lump.lib.util.Encryption;
 
+import javax.crypto.CipherInputStream;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
@@ -24,7 +25,7 @@ import java.util.zip.GZIPInputStream;
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.12 $
+ * @version $Revision: 1.13 $
  */
 
 public class SocketController implements Controller {
@@ -145,6 +146,7 @@ public class SocketController implements Controller {
 
       InputStream i = b;
       if (flag.hasFlag(XferFlags.ENCRYPT)) {
+        // todo: use CipherInputStream
         i = Encryption.decodeAsym(LoginSettings.getInstance().getKeyPair().getPrivate(), i);
       }
       if (flag.hasFlag(XferFlags.COMPRESS)) i = new GZIPInputStream(i);

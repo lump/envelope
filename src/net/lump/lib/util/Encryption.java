@@ -15,7 +15,7 @@ import java.security.spec.X509EncodedKeySpec;
  * signing and encryption.
  *
  * @author Troy Bowman
- * @version $Id: Encryption.java,v 1.7 2008/08/31 00:29:59 troy Exp $
+ * @version $Id: Encryption.java,v 1.8 2008/08/31 01:08:26 troy Exp $
  */
 
 public final class Encryption {
@@ -104,6 +104,7 @@ public final class Encryption {
    * @throws NoSuchPaddingException
    */
   public static ByteArrayInputStream decodeAsym(PrivateKey key, InputStream is)
+//  public static CipherInputStream decodeAsym(PrivateKey key, InputStream is)
       throws
       InvalidKeyException,
       BadPaddingException,
@@ -111,13 +112,16 @@ public final class Encryption {
       NoSuchAlgorithmException,
       NoSuchPaddingException, IOException {
     final Cipher c = Cipher.getInstance(keyAlg);
+//    c.init(Cipher.DECRYPT_MODE, key);
+//    return new CipherInputStream(is, Cipher.getInstance(keyAlg));
+
     byte[] buffer = new byte[128];
     int read = 0;
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     while ((read = is.read(buffer, 0, buffer.length)) > 0) {
       // check for eof
       if (read == 1 && buffer[0] == -1) break;
-      
+
       c.init(Cipher.DECRYPT_MODE, key);
       baos.write(c.doFinal(buffer));
       if (read < buffer.length) break;
@@ -217,6 +221,22 @@ public final class Encryption {
    * @throws BadPaddingException
    * @throws IllegalBlockSizeException
    */
+  public static CipherOutputStream
+  encodeAsym(PublicKey key, OutputStream data)
+      throws
+      IOException,
+      InvalidKeyException,
+      NoSuchAlgorithmException,
+      NoSuchPaddingException,
+      BadPaddingException,
+      IllegalBlockSizeException {
+
+    final Cipher c = Cipher.getInstance(keyAlg);
+    c.init(Cipher.ENCRYPT_MODE, key);
+    return new CipherOutputStream(data, Cipher.getInstance(keyAlg));
+
+  }
+
   public static ByteArrayOutputStream
   encodeAsym(PublicKey key, ByteArrayOutputStream data)
       throws
@@ -226,7 +246,9 @@ public final class Encryption {
       NoSuchPaddingException,
       BadPaddingException,
       IllegalBlockSizeException {
+    
     final Cipher c = Cipher.getInstance(keyAlg);
+
     byte[] buffer = new byte[117];
     int read = 0;
     ByteArrayOutputStream baos = new ByteArrayOutputStream();

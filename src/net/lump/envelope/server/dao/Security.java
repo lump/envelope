@@ -10,9 +10,7 @@ import us.lump.envelope.server.security.Credentials;
 import us.lump.envelope.server.security.Crypt;
 import us.lump.lib.util.Encryption;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
+import javax.crypto.*;
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -25,7 +23,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.13 2008/08/31 00:29:59 troy Exp $
+ * @version $Id: Security.java,v 1.14 2008/08/31 01:08:26 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption
@@ -153,6 +151,7 @@ public class Security extends DAO {
     );
   }
 
+//  public CipherInputStream decrypt(InputStream is) throws
   public ByteArrayInputStream decrypt(InputStream is) throws
       IllegalBlockSizeException,
       IOException,
