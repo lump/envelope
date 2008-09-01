@@ -1,9 +1,12 @@
 package us.lump.envelope.client.ui.prefs;
 
 import us.lump.envelope.exception.SessionException;
+import us.lump.envelope.exception.EnvelopeException;
 import us.lump.envelope.server.security.Challenge;
 import us.lump.envelope.server.security.Crypt;
 import us.lump.envelope.client.ui.defs.Strings;
+import us.lump.envelope.client.portal.SecurityPortal;
+import us.lump.envelope.Command;
 import us.lump.lib.util.Encryption;
 
 import javax.crypto.BadPaddingException;
@@ -13,6 +16,7 @@ import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.prefs.Preferences;
 
@@ -21,7 +25,7 @@ import java.util.prefs.Preferences;
  * and password.
  *
  * @author Troy Bowman
- * @version $Id: LoginSettings.java,v 1.13 2008/08/30 17:38:46 troy Exp $
+ * @version $Id: LoginSettings.java,v 1.14 2008/09/01 07:00:08 troy Exp $
  */
 public class LoginSettings {
 
@@ -37,6 +41,7 @@ public class LoginSettings {
 
   // the key-pair, generated once at instantiation of the singleton.
   private KeyPair keyPair;
+  private PublicKey serverKey = null;
 
   transient private byte[] password;
 
@@ -218,4 +223,16 @@ public class LoginSettings {
 
     return response;
   }
+
+  public PublicKey getServerKey() throws EnvelopeException {
+    // if we don't have the serverKey saved already (from a challenge or this)
+    if (serverKey == null)
+      setServerKey((new SecurityPortal()).getServerPublicKey());
+    return serverKey;
+  }
+
+  public void setServerKey(PublicKey serverKey) {
+    this.serverKey = serverKey;
+  }
+
 }

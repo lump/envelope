@@ -7,7 +7,7 @@ import java.io.Serializable;
  * session with a client to simplify authentication for each request.
  *
  * @author Troy Bowman
- * @version $Id: Credentials.java,v 1.4 2008/05/12 18:36:49 troy Exp $
+ * @version $Id: Credentials.java,v 1.5 2008/09/01 07:00:08 troy Exp $
  */
 public class Credentials implements Serializable {
   private String username;

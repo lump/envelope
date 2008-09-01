@@ -11,7 +11,10 @@ import us.lump.envelope.server.dao.Security;
 import us.lump.envelope.server.dao.Generic;
 import us.lump.lib.util.Compression;
 import us.lump.lib.util.Encryption;
+import us.lump.lib.util.Base64;
+import us.lump.lib.util.CipherOutputStream;
 
+import javax.crypto.SecretKey;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
@@ -129,8 +132,17 @@ public class HttpRequestHandler implements RequestHandler {
               
               InputStream optionIs = is;
 
-              if (flags.hasFlag(XferFlags.ENCRYPT))
-                optionIs = new Security().decrypt(optionIs);
+              SecretKey sessionKey = null;
+              if (flags.hasFlag(XferFlags.ENCRYPT)) {
+                Security security = new Security();
+                // read the session key, ecnrypted for me.
+                String b64encryptedKey =
+                    (String)(new ObjectInputStream(is)).readObject();
+                byte[] encryptedKey = Base64.base64ToByteArray(b64encryptedKey);
+                is.mark(MAX_READ);
+                sessionKey = (SecretKey)security.unwrapSessionKey(encryptedKey);
+                optionIs = Encryption.decodeSym(sessionKey, optionIs);
+              }
               if (flags.hasFlag(XferFlags.COMPRESS))
                 optionIs = new GZIPInputStream(optionIs);
 
@@ -138,10 +150,22 @@ public class HttpRequestHandler implements RequestHandler {
               Command command = (Command)ois.readObject();
               is.mark(MAX_READ); // mark right after object
 
+              logger.info(
+                  "["
+                  + (flags.hasFlag(XferFlags.ENCRYPT)
+                     ? "encrypted" 
+                     : "cleartext")
+                  + ","
+                  + (flags.hasFlag(XferFlags.COMPRESS)
+                     ? "deflated"
+                     : "inflated")
+                  + "] " + command.toString());
+
               Controlled c = new Controlled(null);
               Object retval = c.invoke(command);
 
               // create a oos from a baos to hold our stream of objects
+              // because gzip outputstream will close the socket when we close.
               ByteArrayOutputStream baos = new ByteArrayOutputStream();
               ObjectOutputStream oos = new ObjectOutputStream(baos);
 
@@ -160,26 +184,22 @@ public class HttpRequestHandler implements RequestHandler {
               if (flags.hasFlag(XferFlags.COMPRESS))
                 baos = Compression.compress(baos);
 
+              OutputStream os = socket.getOutputStream();
+              os.write(flags.getByte());
+
               // if we're asked to encrypt the output stream...
               if (flags.hasFlag(XferFlags.ENCRYPT)) {
-                // check credentials.
-                Credentials credentials = command.getCredentials();
-                if (credentials != null) {
-                  // get the key, likely from cache in DAO.
-                  User user =
-                      (new Generic()).getUser(credentials.getUsername());
-                  baos = Encryption.encodeAsym(user.getPublicKey(), baos);
-                }
-                else {
-                  // we can't encrypt because we don't know who to encrypt for.
-                  flags.removeFlag(XferFlags.ENCRYPT);
-                }
+                CipherOutputStream cos = Encryption.encodeSym(sessionKey, os);
+                baos.writeTo(cos);
+                // if we're not on the padding boundary, pad some zeros
+                if (baos.size() % cos.getBlockSize() != 0)
+                  cos.write(new byte[baos.size() % cos.getBlockSize()]);
+                cos.flush();
               }
-
-              // write our flags
-              socket.getOutputStream().write(flags.getByte());
-              // yay, now we can finally write the output
-              baos.writeTo(socket.getOutputStream());
+              else {
+                baos.writeTo(os);
+              }
+              os.flush();
             }
             catch (EOFException e) {
               loop = false;
@@ -187,9 +207,9 @@ public class HttpRequestHandler implements RequestHandler {
             catch (SocketException e) {
               loop = false;
             }
-            catch (IOException e) {
-              loop = false;
-            }
+//            catch (IOException e) {
+//              loop = false;
+//            }
             catch (Exception e) {
               socket.getOutputStream().write(0);
               ObjectOutputStream oos =

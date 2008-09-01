@@ -8,8 +8,11 @@ import us.lump.envelope.client.ui.prefs.ServerSettings;
 import us.lump.envelope.exception.EnvelopeException;
 import us.lump.envelope.exception.SessionException;
 import us.lump.envelope.server.rmi.Controller;
+import us.lump.lib.util.Encryption;
 
 import javax.swing.*;
+import javax.crypto.SecretKey;
+import javax.crypto.KeyGenerator;
 import java.awt.*;
 import java.io.IOException;
 import java.io.InvalidClassException;
@@ -21,6 +24,7 @@ import java.rmi.UnmarshalException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.security.PublicKey;
 import java.text.MessageFormat;
 
 /**
@@ -28,7 +32,7 @@ import java.text.MessageFormat;
  * exit/entry to the server along with exception handling.
  *
  * @author Troy Bowman
- * @version $Revision: 1.17 $
+ * @version $Revision: 1.18 $
  */
 
 abstract class Portal {

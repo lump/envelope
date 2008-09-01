@@ -1,7 +1,5 @@
 package us.lump.lib.util;
 
-import com.sun.crypto.provider.RSACipher;
-
 import javax.crypto.*;
 import java.io.*;
 import java.security.*;
@@ -15,7 +13,7 @@ import java.security.spec.X509EncodedKeySpec;
  * signing and encryption.
  *
  * @author Troy Bowman
- * @version $Id: Encryption.java,v 1.8 2008/08/31 01:08:26 troy Exp $
+ * @version $Id: Encryption.java,v 1.9 2008/09/01 07:00:08 troy Exp $
  */
 
 public final class Encryption {
@@ -24,15 +22,19 @@ public final class Encryption {
   public static final String TRANS_ENCODING = "US-ASCII";
 
   // 1024-bit rsa key
-  static final String keyAlg = "RSA";
-  static final int keyBits = 1024;
+  public static final String keyAlg = "RSA";
+  public static final int keyBits = 1024;
 
   // signature algorithm: the reputable SHA
-  static final String sigAlg = "SHA1with" + keyAlg;
+  public static final String sigAlg = "SHA1with" + keyAlg;
 
   // 168 bit triple-des for symmetric encryption
-  static final String symAlg = "DESede";
-  static final int symBits = 168;  //112;
+//  public static final String symAlg = "DESede";
+  public static final String symKeyAlg = "DESede";
+  public static final String symAlg = symKeyAlg;// + "/ECB/PKCS5Padding";
+  public static final int symKeyBits = 168;  //112;
+
+  private static KeyGenerator keyGenerator = null;
 
   private Encryption() {
   }
@@ -112,8 +114,6 @@ public final class Encryption {
       NoSuchAlgorithmException,
       NoSuchPaddingException, IOException {
     final Cipher c = Cipher.getInstance(keyAlg);
-//    c.init(Cipher.DECRYPT_MODE, key);
-//    return new CipherInputStream(is, Cipher.getInstance(keyAlg));
 
     byte[] buffer = new byte[128];
     int read = 0;
@@ -206,37 +206,6 @@ public final class Encryption {
     return c.doFinal(data);
   }
 
-  /**
-   * Encrypts a bytearray using the Key algorithm. The length of the message is
-   * limited by the key size.
-   *
-   * @param key  to use
-   * @param data to encode
-   *
-   * @return byte[]
-   *
-   * @throws InvalidKeyException
-   * @throws NoSuchAlgorithmException
-   * @throws NoSuchPaddingException
-   * @throws BadPaddingException
-   * @throws IllegalBlockSizeException
-   */
-  public static CipherOutputStream
-  encodeAsym(PublicKey key, OutputStream data)
-      throws
-      IOException,
-      InvalidKeyException,
-      NoSuchAlgorithmException,
-      NoSuchPaddingException,
-      BadPaddingException,
-      IllegalBlockSizeException {
-
-    final Cipher c = Cipher.getInstance(keyAlg);
-    c.init(Cipher.ENCRYPT_MODE, key);
-    return new CipherOutputStream(data, Cipher.getInstance(keyAlg));
-
-  }
-
   public static ByteArrayOutputStream
   encodeAsym(PublicKey key, ByteArrayOutputStream data)
       throws
@@ -284,10 +253,16 @@ public final class Encryption {
    *
    * @throws NoSuchAlgorithmException
    */
-  public static Key generateSymKey() throws NoSuchAlgorithmException {
-    final KeyGenerator kg = KeyGenerator.getInstance(symAlg);
-    kg.init(symBits);
-    return kg.generateKey();
+  public static SecretKey generateSymKey() throws NoSuchAlgorithmException {
+    return getKeyGenerator().generateKey();
+  }
+
+  public static KeyGenerator getKeyGenerator() throws NoSuchAlgorithmException {
+    if (keyGenerator == null) {
+      keyGenerator = KeyGenerator.getInstance(symKeyAlg);
+      keyGenerator.init(symKeyBits);
+    }
+    return keyGenerator;
   }
 
   /**
@@ -342,7 +317,8 @@ public final class Encryption {
    * @throws InvalidKeyException
    * @throws IOException
    */
-  public static Key unwrapSessionKey(byte[] encryptedKey, PrivateKey privateKey)
+  public static Key unwrapSessionKey(byte[] encryptedKey,
+                                           PrivateKey privateKey)
       throws
       NoSuchAlgorithmException,
       NoSuchPaddingException,
@@ -350,8 +326,7 @@ public final class Encryption {
       IOException {
     final Cipher decKeyCipher = Cipher.getInstance(keyAlg);
     decKeyCipher.init(Cipher.UNWRAP_MODE, privateKey);
-
-    return decKeyCipher.unwrap(encryptedKey, keyAlg, Cipher.SECRET_KEY);
+    return decKeyCipher.unwrap(encryptedKey, symKeyAlg, Cipher.SECRET_KEY);
   }
 
   /**
@@ -422,6 +397,25 @@ public final class Encryption {
     final Cipher sessionEncKeyCipher = Cipher.getInstance(keyAlg);
     sessionEncKeyCipher.init(Cipher.WRAP_MODE, publicKey);
     return sessionEncKeyCipher.wrap(sessionKey);
+  }
+
+  public static CipherOutputStream encodeSym(SecretKey sessionKey, OutputStream os)
+      throws
+      NoSuchAlgorithmException,
+      NoSuchPaddingException,
+      InvalidKeyException {
+    return new CipherOutputStream(os, sessionKey, symAlg);
+  }
+
+  public static CipherInputStream decodeSym(SecretKey sessionKey,
+                                            InputStream is)
+      throws
+      NoSuchAlgorithmException,
+      NoSuchPaddingException,
+      InvalidKeyException {
+    final Cipher c = Cipher.getInstance(symAlg);
+    c.init(Cipher.DECRYPT_MODE, sessionKey);
+    return new CipherInputStream(is, c);
   }
 
   /**

@@ -23,7 +23,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.14 2008/08/31 01:08:26 troy Exp $
+ * @version $Id: Security.java,v 1.15 2008/09/01 07:00:08 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption
@@ -94,6 +94,8 @@ public class Security extends DAO {
       throw new SessionException(SessionException.Type.Invalid_Credentials);
     }
 
+    
+
     return authed;
   }
 
@@ -160,6 +162,14 @@ public class Security extends DAO {
       NoSuchPaddingException,
       BadPaddingException {
     return Encryption.decodeAsym(serverKeyPair.getPrivate(), is);
+  }
+
+  public Key unwrapSessionKey(byte[] encryptedKey) throws
+      IOException,
+      InvalidKeyException,
+      NoSuchAlgorithmException,
+      NoSuchPaddingException {
+    return Encryption.unwrapSessionKey(encryptedKey, serverKeyPair.getPrivate());
   }
 
   public PublicKey getServerPublicKey() {

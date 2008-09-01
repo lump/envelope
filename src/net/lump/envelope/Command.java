@@ -6,6 +6,7 @@ import us.lump.envelope.entity.Category;
 import us.lump.envelope.entity.Identifiable;
 import us.lump.envelope.entity.Transaction;
 import us.lump.envelope.server.security.Credentials;
+import us.lump.envelope.client.portal.SecurityPortal;
 import us.lump.lib.util.Encryption;
 
 import java.io.Serializable;
@@ -20,7 +21,7 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Revision: 1.12 $
+ * @version $Revision: 1.13 $
  */
 public class Command implements Serializable {
   /**
@@ -40,7 +41,7 @@ public class Command implements Serializable {
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Revision: 1.12 $
+   * @version $Revision: 1.13 $
    */
   public enum Name {
 
@@ -279,6 +280,17 @@ public class Command implements Serializable {
         credentials.getUsername() + String.valueOf(credentials.getStamp()),
         credentials.getSignature()
     );
+  }
+
+  public String toString() {
+    String out = "";
+    if (credentials != null) {
+      out += "[" + credentials.getUsername() + "] ";
+    }
+    out += name.toString() + "(";
+    for (Object param : params) out += param.toString() + ",";
+    out += ")";
+    return out;
   }
 
   /**
