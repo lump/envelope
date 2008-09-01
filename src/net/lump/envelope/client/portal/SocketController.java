@@ -23,7 +23,7 @@ import java.util.zip.GZIPInputStream;
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.14 $
+ * @version $Revision: 1.15 $
  */
 
 public class SocketController implements Controller {
@@ -147,14 +147,11 @@ public class SocketController implements Controller {
       if (flags.hasFlag(XferFlags.ENCRYPT)
           && sessionKey != null
           && encodedKey != null) {
-        Compression.serializeOnly(encodedKey).writeTo(os);
-        os.flush();
-        CipherOutputStream cos = Encryption.encodeSym(sessionKey, os);
-        baos.writeTo(cos);
-        // if we're not on the padding boundary, pad some zeros
-        if (baos.size() % cos.getBlockSize() != 0)
-          cos.write(new byte[baos.size() % cos.getBlockSize()]);
-        cos.flush();
+        ObjectOutputStream oos = new ObjectOutputStream(os);
+        oos.writeObject(encodedKey);
+        oos.flush();
+        oos.writeObject(Encryption.encodeSym(sessionKey, baos.toByteArray()));
+        oos.flush();
       }
       // not encrypted, nothing special, just write it.
       else {

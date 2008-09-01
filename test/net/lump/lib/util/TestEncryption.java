@@ -3,18 +3,23 @@ package us.lump.lib.util;
 import junit.framework.TestCase;
 import org.junit.Test;
 import us.lump.envelope.server.security.Challenge;
+import us.lump.envelope.Command;
 
 import javax.crypto.SecretKey;
+import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import java.security.KeyPair;
 import java.io.ByteArrayOutputStream;
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.util.Arrays;
 
 /**
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.4 $
+ * @version $Revision: 1.5 $
  */
 public class TestEncryption extends TestCase {
 
@@ -37,22 +42,60 @@ public class TestEncryption extends TestCase {
 
   @Test
   public void testSymmetric() throws Exception {
-    SecretKey key = Encryption.generateSymKey();
-    String message = "abc123";
+
+    KeyPair kp = Encryption.generateKeyPair();
+    SecretKey sessionKey = Encryption.generateSymKey();
+
+    int startSize;
+    int finishSize;
+//    int buffsize = 0;
+//    do {
+    Command command =
+        new Command(Command.Name.getChallenge, "troy", kp.getPublic());
+
+    ByteArrayOutputStream serializedos = Compression.serializeOnly(command);
+    startSize = serializedos.size();
+
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    CipherOutputStream cos = Encryption.encodeSym(key, baos);
-    cos.write(message.getBytes());
+    CipherOutputStream cos = Encryption.encodeSym(sessionKey, baos);
+    serializedos.writeTo(cos);
     cos.flush();
+//    Cipher cipherin = Cipher.getInstance(Encryption.symAlg);
+//    cipherin.init(Cipher.ENCRYPT_MODE, sessionKey);
 
-    byte[] encrypted = baos.toByteArray();
+//      byte[] serializedbytes = serializedos.toByteArray();
+//      for (int x = 0; x < serializedbytes.length; x += 168) {
+//        int size = 168;
+//        if (serializedbytes.length < (x+168)) {
+//          size = serializedbytes.length - x;
+//        }
+//        byte[] array = new byte[size];
+//        System.arraycopy(serializedbytes, x, array, 0, size);
+//        if (array.length < (168))
+//          baos.write(cipherin.doFinal(array));
+//        else baos.write(cipherin.update(array));
+//      }
 
-    ByteArrayInputStream bis = new ByteArrayInputStream(baos.toByteArray());
-    CipherInputStream cis = Encryption.decodeSym(key, bis);
+//      serializedos.writeTo(cos);
+//      if (buffsize>0)cos.write(new byte[buffsize]);
+//      cos.flush();
+//      cos.close();
 
-    byte[] decrypted = new byte[4096];
-    int read = cis.read(decrypted, 0, 4096);
-    String decryptedMessage = (new String(decrypted)).substring(0,read);
-    System.out.println(decryptedMessage);
+//    Cipher cipherout = Cipher.getInstance(Encryption.symAlg);
+//    cipherout.init(Cipher.DECRYPT_MODE, sessionKey);
+//    byte[] output = cipherout.doFinal(baos.toByteArray());
+//    finishSize = output.length;
+
+      InputStream is3 = new ByteArrayInputStream(baos.toByteArray());
+      CipherInputStream cis3 = Encryption.decodeSym(sessionKey, is3);
+    ObjectInputStream ois = new ObjectInputStream(cis3);
+    Object o = ois.readObject();
+      byte[] b3 = new byte[1024];
+      finishSize = cis3.read(b3);
+    assertEquals("startSize doesn't match finishSize!", startSize, finishSize);
+    System.out.println(startSize + " " + finishSize);
+//      buffsize++;
+//    } while (startSize != finishSize);
   }
 
   protected void setUp() throws Exception {

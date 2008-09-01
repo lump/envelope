@@ -3,12 +3,9 @@ package us.lump.envelope.server.http;
 import org.apache.log4j.Logger;
 import us.lump.envelope.Command;
 import us.lump.envelope.Server;
-import us.lump.envelope.entity.User;
 import us.lump.envelope.server.rmi.Controlled;
 import us.lump.envelope.server.XferFlags;
-import us.lump.envelope.server.security.Credentials;
 import us.lump.envelope.server.dao.Security;
-import us.lump.envelope.server.dao.Generic;
 import us.lump.lib.util.Compression;
 import us.lump.lib.util.Encryption;
 import us.lump.lib.util.Base64;
@@ -54,16 +51,6 @@ public class HttpRequestHandler implements RequestHandler {
 
     bis.mark(MAX_READ);
     byte[] buffer = new byte[1024];
-
-//    while (bis.read(buffer,0,4) > 0
-//           && (0x4e4f4f50 // NOOP
-//               == ((buffer[0] & 0xff << 24)
-//                   | (buffer[1] & 0xff << 16)
-//                   | (buffer[2] & 0xff << 8)
-//                   | (buffer[3] & 0xff)))) {
-//      bis.mark(MAX_READ);
-//    }
-//    bis.reset();
 
     StringBuffer s = new StringBuffer();
     int read = 0;
@@ -136,12 +123,16 @@ public class HttpRequestHandler implements RequestHandler {
               if (flags.hasFlag(XferFlags.ENCRYPT)) {
                 Security security = new Security();
                 // read the session key, ecnrypted for me.
-                String b64encryptedKey =
-                    (String)(new ObjectInputStream(is)).readObject();
+                ObjectInputStream ois = new ObjectInputStream(is);
+                String b64encryptedKey = (String)(ois).readObject();
+
                 byte[] encryptedKey = Base64.base64ToByteArray(b64encryptedKey);
                 is.mark(MAX_READ);
                 sessionKey = (SecretKey)security.unwrapSessionKey(encryptedKey);
-                optionIs = Encryption.decodeSym(sessionKey, optionIs);
+
+                optionIs = new ByteArrayInputStream(
+                    Encryption.decodeSym(sessionKey,
+                                         (String)(ois).readObject()));
               }
               if (flags.hasFlag(XferFlags.COMPRESS))
                 optionIs = new GZIPInputStream(optionIs);
@@ -153,12 +144,12 @@ public class HttpRequestHandler implements RequestHandler {
               logger.info(
                   "["
                   + (flags.hasFlag(XferFlags.ENCRYPT)
-                     ? "encrypted" 
+                     ? "encrypt"
                      : "cleartext")
                   + ","
                   + (flags.hasFlag(XferFlags.COMPRESS)
-                     ? "deflated"
-                     : "inflated")
+                     ? "compress"
+                     : "uncompress")
                   + "] " + command.toString());
 
               Controlled c = new Controlled(null);
@@ -191,10 +182,12 @@ public class HttpRequestHandler implements RequestHandler {
               if (flags.hasFlag(XferFlags.ENCRYPT)) {
                 CipherOutputStream cos = Encryption.encodeSym(sessionKey, os);
                 baos.writeTo(cos);
-                // if we're not on the padding boundary, pad some zeros
-                if (baos.size() % cos.getBlockSize() != 0)
-                  cos.write(new byte[baos.size() % cos.getBlockSize()]);
+                
                 cos.flush();
+                // if we're not on the padding boundary, pad some zeros
+//                if (baos.size() % cos.getBlockSize() != 0)
+//                  cos.write(new byte[baos.size() % cos.getBlockSize()]);
+//                cos.flush();
               }
               else {
                 baos.writeTo(os);

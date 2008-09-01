@@ -1,16 +1,13 @@
 package us.lump.lib.util;
 
 import javax.crypto.Cipher;
-import javax.crypto.NullCipher;
 import javax.crypto.SecretKey;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.spec.PBEParameterSpec;
 import java.io.OutputStream;
 import java.io.IOException;
 import java.io.FilterOutputStream;
 import java.security.NoSuchAlgorithmException;
 import java.security.InvalidKeyException;
-import java.security.spec.AlgorithmParameterSpec;
 
 /**
  * A filtered output stream that transforms data written to it with a {@link
@@ -23,7 +20,7 @@ import java.security.spec.AlgorithmParameterSpec;
 public class CipherOutputStream extends FilterOutputStream {
   /** The underlying cipher. */
   private Cipher cipher;
-  private String keyAlg;
+  private String alg;
   private SecretKey key;
   private boolean valid;
 
@@ -33,15 +30,15 @@ public class CipherOutputStream extends FilterOutputStream {
    *
    * @param out    The sink for transformed data.
    * @param key    they secret key to cipher with.
-   * @param keyAlg the algorithm to use.
+   * @param alg the algorithm to use.
    */
-  public CipherOutputStream(OutputStream out, SecretKey key, String keyAlg)
+  public CipherOutputStream(OutputStream out, SecretKey key, String alg)
       throws
       NoSuchAlgorithmException,
       NoSuchPaddingException,
       InvalidKeyException {
     super(out);
-    this.keyAlg = keyAlg;
+    this.alg = alg;
     this.key = key;
     initCipher();
   }
@@ -52,7 +49,7 @@ public class CipherOutputStream extends FilterOutputStream {
       NoSuchAlgorithmException,
       NoSuchPaddingException {
 
-    cipher = Cipher.getInstance(keyAlg);
+    cipher = Cipher.getInstance(alg);
     cipher.init(Cipher.ENCRYPT_MODE, key);
     valid = true;
   }

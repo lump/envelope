@@ -13,7 +13,7 @@ import java.security.spec.X509EncodedKeySpec;
  * signing and encryption.
  *
  * @author Troy Bowman
- * @version $Id: Encryption.java,v 1.9 2008/09/01 07:00:08 troy Exp $
+ * @version $Id: Encryption.java,v 1.10 2008/09/01 19:18:01 troy Test $
  */
 
 public final class Encryption {
@@ -31,7 +31,8 @@ public final class Encryption {
   // 168 bit triple-des for symmetric encryption
 //  public static final String symAlg = "DESede";
   public static final String symKeyAlg = "DESede";
-  public static final String symAlg = symKeyAlg;// + "/ECB/PKCS5Padding";
+//  public static final String symAlg = symKeyAlg;// + "/ECB/PKCS5Padding";
+  public static final String symAlg = symKeyAlg + "/ECB/PKCS5Padding";
   public static final int symKeyBits = 168;  //112;
 
   private static KeyGenerator keyGenerator = null;
@@ -398,6 +399,23 @@ public final class Encryption {
     sessionEncKeyCipher.init(Cipher.WRAP_MODE, publicKey);
     return sessionEncKeyCipher.wrap(sessionKey);
   }
+
+  public static String encodeSym(SecretKey sessionKey, byte[] bytes)
+      throws IllegalBlockSizeException, BadPaddingException,
+      InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
+    final Cipher c = Cipher.getInstance(symAlg);
+    c.init(Cipher.ENCRYPT_MODE, sessionKey);
+    return Base64.byteArrayToBase64(c.doFinal(bytes));
+  }
+
+  public static byte[] decodeSym(SecretKey sessionKey, String string)
+      throws IllegalBlockSizeException, BadPaddingException,
+      InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
+    final Cipher c = Cipher.getInstance(symAlg);
+    c.init(Cipher.DECRYPT_MODE, sessionKey);
+    return c.doFinal(Base64.base64ToByteArray(string));
+  }
+
 
   public static CipherOutputStream encodeSym(SecretKey sessionKey, OutputStream os)
       throws

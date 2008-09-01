@@ -1,13 +1,15 @@
 package us.lump.envelope.server.security;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 /**
  * Represents credentials provided by the client.  This object is used during a
  * session with a client to simplify authentication for each request.
  *
  * @author Troy Bowman
- * @version $Id: Credentials.java,v 1.5 2008/09/01 07:00:08 troy Exp $
+ * @version $Id: Credentials.java,v 1.6 2008/09/01 19:18:01 troy Test $
  */
 public class Credentials implements Serializable {
   private String username;
@@ -67,6 +69,10 @@ public class Credentials implements Serializable {
    */
   public void setUsername(String username) {
     this.username = username;
+  }
+
+  public String toString() {
+    return SimpleDateFormat.getInstance().format(new Date(stamp));
   }
 
   /**
