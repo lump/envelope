@@ -103,7 +103,7 @@
     </javac>
     <copy todir="${classes}">
       <fileset dir="${src}"
-               includes="**/*.properties, **/*.xml, **/*.policy, **/*.gif"/>
+               includes="**/*.properties, **/*.xml, **/*.policy, **/*.gif, **/*.png"/>
     </copy>
 
     <javac srcdir="${test.src}"

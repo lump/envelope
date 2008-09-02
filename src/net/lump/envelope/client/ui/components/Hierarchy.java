@@ -10,6 +10,7 @@ import us.lump.envelope.client.ui.components.models.TransactionTableModel;
 import us.lump.envelope.client.ui.defs.Colors;
 import us.lump.envelope.client.ui.defs.Fonts;
 import us.lump.envelope.client.ui.defs.Strings;
+import us.lump.envelope.client.ui.images.ImageResource;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Budget;
 import us.lump.envelope.entity.Category;
@@ -38,13 +39,20 @@ import java.util.List;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.6 2008/08/27 01:13:27 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.7 2008/09/02 21:21:36 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
   private final State state = State.getInstance();
   private final DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode();
   TransactionTableModel tm;
+
+  private static final ImageIcon envelopeIcon
+      = new ImageIcon(ImageResource.class.getResource("envelope.png"));
+  private static final ImageIcon budgetIcon
+      = new ImageIcon(ImageResource.class.getResource("budget.png"));
+  private static final ImageIcon accountIcon
+      = new ImageIcon(ImageResource.class.getResource("account.png"));
 
   public static Hierarchy getInstance() {
     if (singleton == null) singleton = new Hierarchy();
@@ -66,6 +74,13 @@ public class Hierarchy extends JTree {
 
     getSelectionModel().setSelectionMode(
         TreeSelectionModel.SINGLE_TREE_SELECTION);
+
+    TreeCellRenderer renderer = new TreeCellRenderer();
+    renderer.setLeafIcon(envelopeIcon);
+    renderer.setOpenIcon(accountIcon);
+    renderer.setClosedIcon(accountIcon);
+    setCellRenderer(renderer);
+
     addTreeSelectionListener(new TreeSelectionListener() {
       public void valueChanged(final TreeSelectionEvent e) {
         final Object o = ((DefaultMutableTreeNode)e.getPath()
@@ -213,6 +228,55 @@ public class Hierarchy extends JTree {
       }
 
       return label;
+    }
+  }
+
+  class TreeCellRenderer extends javax.swing.tree.DefaultTreeCellRenderer {
+
+    public Component getTreeCellRendererComponent(JTree tree, Object value,
+                                                  boolean sel,
+                                                  boolean expanded,
+                                                  boolean leaf, int row,
+                                                  boolean hasFocus) {
+      String stringValue = tree.convertValueToText(value,
+                                                   sel,
+                                                   expanded,
+                                                   leaf,
+                                                   row,
+                                                   hasFocus);
+      this.hasFocus = hasFocus;
+      setText(stringValue);
+      if (sel) setForeground(getTextSelectionColor());
+      else setForeground(getTextNonSelectionColor());
+
+      if (value != null
+          && value instanceof DefaultMutableTreeNode
+          && ((DefaultMutableTreeNode)value).getUserObject() != null
+          && ((DefaultMutableTreeNode)value).getUserObject() instanceof Budget) {
+        setIcon(budgetIcon);
+      } else if (value != null
+                 && value instanceof DefaultMutableTreeNode
+                 && ((DefaultMutableTreeNode)value).getUserObject() != null
+                 && ((DefaultMutableTreeNode)value).getUserObject() instanceof Account) {
+        setIcon(accountIcon);
+      } else if (value != null
+                 && value instanceof DefaultMutableTreeNode
+                 && ((DefaultMutableTreeNode)value).getUserObject() != null
+                 && ((DefaultMutableTreeNode)value).getUserObject() instanceof Category) {
+        setIcon(envelopeIcon);
+      } else if (leaf) {
+        setIcon(getLeafIcon());
+      } else if (expanded) {
+        setIcon(getOpenIcon());
+      } else {
+        setIcon(getClosedIcon());
+      }
+
+      setComponentOrientation(tree.getComponentOrientation());
+
+      selected = sel;
+
+      return this;
     }
   }
 }
