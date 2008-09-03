@@ -2,6 +2,7 @@ package us.lump.envelope.client.ui.components;
 
 import us.lump.envelope.client.ui.defs.Fonts;
 import us.lump.envelope.client.ui.defs.Strings;
+import us.lump.envelope.client.ui.images.ImageResource;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +12,6 @@ import java.util.ResourceBundle;
 
 public class AboutBox extends JFrame implements ActionListener {
   protected JLabel titleLabel, aboutLabel[];
-  protected static int labelCount = 8;
   protected static int aboutTop = 200;
   protected static int aboutLeft = 350;
   protected Font titleFont, bodyFont;
@@ -25,27 +25,30 @@ public class AboutBox extends JFrame implements ActionListener {
     this.addWindowListener(aSymWindow);
 
     this.getContentPane().setLayout(new BorderLayout(15, 15));
+    JLabel image = new JLabel();
+    ImageIcon icon =
+        new ImageIcon(ImageResource.class.getResource("envelope-256.png"));
+    image.setIcon(icon);
 
-    aboutLabel = new JLabel[labelCount];
-    aboutLabel[0] = new JLabel("");
-    aboutLabel[1] = new JLabel(Strings.get("envelope_budget"));
-    aboutLabel[1].setFont(Fonts.getFont("sans14Bold"));
-    aboutLabel[2] = new JLabel(Strings.get("version"));
-    aboutLabel[2].setFont(Fonts.getFont("sans10"));
-    aboutLabel[3] = new JLabel("");
-    aboutLabel[4] = new JLabel("");
-    aboutLabel[5] = new JLabel("JDK " + System.getProperty("java.version"));
-    aboutLabel[5].setFont(Fonts.getFont("sans10"));
-    aboutLabel[6] = new JLabel(Strings.get("copyright"));
-    aboutLabel[7] = new JLabel("");
+    JLabel[] jlabels = new JLabel[]{
+        new JLabel(Strings.get("envelope_budget")),
+        new JLabel(Strings.get("version")),
+        new JLabel(Strings.get("copyright")),
+        new JLabel(),
+        new JLabel("JDK " + System.getProperty("java.version")),
+    };
 
-    Panel textPanel2 = new Panel(new GridLayout(labelCount, 1));
-    for (int i = 0; i < labelCount; i++) {
-      aboutLabel[i].setHorizontalAlignment(JLabel.CENTER);
-      textPanel2.add(aboutLabel[i]);
+    GridLayout gl = new GridLayout(jlabels.length, 1);
+    Panel textPanel = new Panel(gl);
+    for (JLabel c : jlabels) {
+      c.setHorizontalAlignment(JLabel.CENTER);
+      textPanel.add(c);
     }
 
-    this.getContentPane().add(textPanel2, BorderLayout.CENTER);
+    this.getContentPane().add(image, BorderLayout.NORTH);
+    image.setHorizontalAlignment(JLabel.CENTER);
+    this.getContentPane().add(textPanel, BorderLayout.CENTER);
+
     this.pack();
     this.setSize(20 + (int)this.getSize().getWidth(),
                  20 + (int)this.getSize().getHeight());
