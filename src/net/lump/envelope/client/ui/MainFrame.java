@@ -23,7 +23,7 @@ import java.net.URL;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.15 2008/07/21 21:59:18 troy Exp $
+ * @version $Id: MainFrame.java,v 1.16 2008/09/03 05:44:55 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -83,8 +83,6 @@ public class MainFrame extends JFrame {
 
     int shortcutKeyMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
 
-    JMenu fileMenu = new JMenu(Strings.get("file"));
-
     JMenuItem addTransaction = new JMenuItem(Strings.get("new.transaction"));
     addTransaction.addActionListener(new AbstractAction(){
       public void actionPerformed(ActionEvent e) {
@@ -92,16 +90,22 @@ public class MainFrame extends JFrame {
         setContentPane(tf.getTransactionFormPanel());
       }
     });
+
+    JMenu fileMenu = new JMenu(Strings.get("file"));
     fileMenu.add(addTransaction);
+
+    mainMenuBar.add(fileMenu);
+
 
     if (System.getProperty("os.name").toLowerCase()
         .matches("^.*?mac os x.*$")) {
       // the Mac specific code here
       System.getProperties().put("apple.laf.useScreenMenuBar", true);
+      System.getProperties().put("com.apple.macos.useScreenMenuBar", true);
 
-      Application fApplication = Application.getApplication();
-      fApplication.setEnabledPreferencesMenu(true);
-      fApplication.addApplicationListener(
+      Application application = Application.getApplication();
+      application.setEnabledPreferencesMenu(true);
+      application.addApplicationListener(
           new com.apple.eawt.ApplicationAdapter() {
 
             public void handleAbout(ApplicationEvent e) {
@@ -146,7 +150,6 @@ public class MainFrame extends JFrame {
 //        }
       }
 
-
       fileMenu.add(new JMenuItem(new prefsActionClass(
           Strings.get("preferences"), KeyStroke.getKeyStroke(
           KeyEvent.VK_S, shortcutKeyMask)
@@ -164,7 +167,6 @@ public class MainFrame extends JFrame {
           Strings.get("about"))
       ));
 
-      mainMenuBar.add(fileMenu);
       mainMenuBar.add(helpMenu);
     }
 
