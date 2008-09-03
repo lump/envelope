@@ -4,12 +4,15 @@ import us.lump.envelope.Command;
 import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.components.StatusBar;
-import us.lump.envelope.client.ui.prefs.ServerSettings;
-import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.server.rmi.Controller;
+import us.lump.envelope.client.ui.prefs.LoginSettings;
+import us.lump.envelope.client.ui.prefs.ServerSettings;
 import us.lump.envelope.server.XferFlags;
-import us.lump.lib.util.*;
+import us.lump.envelope.server.rmi.Controller;
+import us.lump.lib.util.BackgroundList;
+import us.lump.lib.util.Base64;
+import us.lump.lib.util.Compression;
+import us.lump.lib.util.Encryption;
 
 import javax.crypto.SecretKey;
 import java.io.*;
@@ -23,7 +26,7 @@ import java.util.zip.GZIPInputStream;
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.15 $
+ * @version $Revision: 1.16 $
  */
 
 public class SocketController implements Controller {
@@ -92,7 +95,7 @@ public class SocketController implements Controller {
     socket.setKeepAlive(true);
     socket.setSoLinger(false, 0);
 //    socket.setSoTimeout(10000);
-    socket.setSoTimeout(0);    
+    socket.setSoTimeout(0);
 
     if (s != null) {
       s.busy = true;
@@ -159,7 +162,6 @@ public class SocketController implements Controller {
       }
       os.flush();
 
-
       // prepare inputstream
       final BufferedInputStream b
           = new BufferedInputStream(s.socket.getInputStream());
@@ -191,7 +193,7 @@ public class SocketController implements Controller {
                     this.setStatusMessage(Strings.get("reading") + " " + x);
                     StatusBar.getInstance().updateLabel();
                     bl.add(ois.readObject());
-//                  if (bl.aborted()) break;
+                    if (bl.aborted()) break;
                   }
                 } catch (ClassNotFoundException e) {
                   bl.fireAbort();
@@ -202,11 +204,10 @@ public class SocketController implements Controller {
               }
             });
         return bl;
-      }
-      else { // a list isn't being returned
+      } else { // a list isn't being returned
         retval = (Serializable)ois.readObject();
       }
-      
+
     } catch (IOException e) {
       try {
         s.socket.close();

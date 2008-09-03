@@ -39,7 +39,7 @@ import java.util.List;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.7 2008/09/02 21:21:36 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.8 2008/09/03 02:51:41 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -51,8 +51,12 @@ public class Hierarchy extends JTree {
       = new ImageIcon(ImageResource.class.getResource("envelope.png"));
   private static final ImageIcon budgetIcon
       = new ImageIcon(ImageResource.class.getResource("budget.png"));
+  private static final ImageIcon budgetClosedIcon
+      = new ImageIcon(ImageResource.class.getResource("budget-closed.png"));
   private static final ImageIcon accountIcon
       = new ImageIcon(ImageResource.class.getResource("account.png"));
+  private static final ImageIcon accountClosedIcon
+      = new ImageIcon(ImageResource.class.getResource("account-closed.png"));
 
   public static Hierarchy getInstance() {
     if (singleton == null) singleton = new Hierarchy();
@@ -253,12 +257,15 @@ public class Hierarchy extends JTree {
           && value instanceof DefaultMutableTreeNode
           && ((DefaultMutableTreeNode)value).getUserObject() != null
           && ((DefaultMutableTreeNode)value).getUserObject() instanceof Budget) {
-        setIcon(budgetIcon);
+        if (expanded) setIcon(budgetIcon);
+        else setIcon(budgetClosedIcon);
+
       } else if (value != null
                  && value instanceof DefaultMutableTreeNode
                  && ((DefaultMutableTreeNode)value).getUserObject() != null
                  && ((DefaultMutableTreeNode)value).getUserObject() instanceof Account) {
-        setIcon(accountIcon);
+        if (expanded) setIcon(accountIcon);
+        else setIcon(accountClosedIcon);
       } else if (value != null
                  && value instanceof DefaultMutableTreeNode
                  && ((DefaultMutableTreeNode)value).getUserObject() != null
