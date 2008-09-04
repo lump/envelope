@@ -10,7 +10,7 @@ import us.lump.envelope.client.ui.components.models.TransactionTableModel;
 import us.lump.envelope.client.ui.defs.Colors;
 import us.lump.envelope.client.ui.defs.Fonts;
 import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.client.ui.images.ImageResource;
+import static us.lump.envelope.client.ui.images.ImageResource.icon.*;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Budget;
 import us.lump.envelope.entity.Category;
@@ -37,34 +37,13 @@ import java.util.Date;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.10 2008/09/04 06:46:13 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.11 2008/09/04 23:14:19 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
   private final State state = State.getInstance();
   private final DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode();
   TransactionTableModel tm;
-
-  private static final ImageIcon envelopeIcon
-      = new ImageIcon(ImageResource.class.getResource("envelope.png"));
-  private static final ImageIcon envelopeEmptyIcon
-      = new ImageIcon(ImageResource.class.getResource("envelope-empty.png"));
-  private static final ImageIcon envelopeOneBillIcon
-      = new ImageIcon(ImageResource.class.getResource("envelope-onebill.png"));
-  private static final ImageIcon envelopeFullIcon
-      = new ImageIcon(ImageResource.class.getResource("envelope-full.png"));
-  private static final ImageIcon envelopeOverflowIcon
-      = new ImageIcon(ImageResource.class.getResource("envelope-overflow.png"));
-  private static final ImageIcon envelopeRedIcon
-      = new ImageIcon(ImageResource.class.getResource("envelope-red.png"));
-  private static final ImageIcon budgetIcon
-      = new ImageIcon(ImageResource.class.getResource("budget.png"));
-  private static final ImageIcon budgetClosedIcon
-      = new ImageIcon(ImageResource.class.getResource("budget-closed.png"));
-  private static final ImageIcon accountIcon
-      = new ImageIcon(ImageResource.class.getResource("account.png"));
-  private static final ImageIcon accountClosedIcon
-      = new ImageIcon(ImageResource.class.getResource("account-closed.png"));
 
   public static Hierarchy getInstance() {
     if (singleton == null) singleton = new Hierarchy();
@@ -88,9 +67,9 @@ public class Hierarchy extends JTree {
         TreeSelectionModel.SINGLE_TREE_SELECTION);
 
     TreeCellRenderer renderer = new TreeCellRenderer();
-    renderer.setLeafIcon(envelopeIcon);
-    renderer.setOpenIcon(accountIcon);
-    renderer.setClosedIcon(accountIcon);
+    renderer.setLeafIcon(envelope.get());
+    renderer.setOpenIcon(account.get());
+    renderer.setClosedIcon(account_closed.get());
     setCellRenderer(renderer);
 
     addTreeSelectionListener(new TreeSelectionListener() {
@@ -263,13 +242,13 @@ public class Hierarchy extends JTree {
 
         if (((DefaultMutableTreeNode)value).getUserObject() instanceof Budget) {
           found = true;
-          if (expanded) setIcon(budgetIcon);
-          else setIcon(budgetClosedIcon);
+          if (expanded) setIcon(budget.get());
+          else setIcon(budget_closed.get());
         } else if (((DefaultMutableTreeNode)value).getUserObject()
             instanceof Account) {
           found = true;
-          if (expanded) setIcon(accountIcon);
-          else setIcon(accountClosedIcon);
+          if (expanded) setIcon(account.get());
+          else setIcon(account_closed.get());
         } else if (((DefaultMutableTreeNode)value).getUserObject()
             instanceof CriteriaFactory.CategoryTotal) {
           CriteriaFactory.CategoryTotal ct =
@@ -277,12 +256,12 @@ public class Hierarchy extends JTree {
                   ((DefaultMutableTreeNode)value).getUserObject();
           found = true;
           double total = ct.total.doubleValue();
-          if (total < 0) setIcon(envelopeRedIcon);
-          if (total == 0) setIcon(envelopeEmptyIcon);
-          if (total > 0 && total <= 100) setIcon(envelopeOneBillIcon);
-          if (total > 100 && total <= 500) setIcon(envelopeIcon);
-          if (total > 500 && total <= 1000) setIcon(envelopeFullIcon);
-          if (total > 1000) setIcon(envelopeOverflowIcon);
+          if (total < 0) setIcon(envelope_red.get());
+          if (total == 0) setIcon(envelope_empty.get());
+          if (total > 0 && total <= 100) setIcon(envelope_onebill.get());
+          if (total > 100 && total <= 500) setIcon(envelope.get());
+          if (total > 500 && total <= 1000) setIcon(envelope_full.get());
+          if (total > 1000) setIcon(envelope_overflow.get());
         }
       }
 

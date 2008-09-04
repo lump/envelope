@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- $Id: envelope.svg,v 1.7 2008/09/04 22:52:12 troy Exp $ -->
+<!-- $Id: envelope.svg,v 1.8 2008/09/04 23:14:19 troy Exp $ -->
 <svg
     xmlns:dc="http://purl.org/dc/elements/1.1/"
     xmlns:cc="http://creativecommons.org/ns#"
@@ -856,7 +856,7 @@
       transform="matrix(0.6505057,0.7595014,-0.7595014,0.6505057,0,0)"/>
   <g
       id="g4677"
-      inkscape:export-filename="/home/troy/java/rmi-envelope/src/us/lump/envelope/client/ui/images/envelope-512.png"
+      inkscape:export-filename="/home/troy/java/rmi-envelope/src/us/lump/envelope/client/ui/images/envelope_512.png"
       inkscape:export-xdpi="65.526413"
       inkscape:export-ydpi="65.526413"
       transform="translate(-585.56669,147.07821)">

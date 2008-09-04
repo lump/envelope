@@ -1,6 +1,5 @@
 package us.lump.envelope.client.ui.components;
 
-import us.lump.envelope.client.ui.defs.Fonts;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.images.ImageResource;
 
@@ -26,8 +25,7 @@ public class AboutBox extends JFrame implements ActionListener {
 
     this.getContentPane().setLayout(new BorderLayout(15, 15));
     JLabel image = new JLabel();
-    ImageIcon icon =
-        new ImageIcon(ImageResource.class.getResource("envelope-256.png"));
+    Icon icon = ImageResource.icon.envelope_256.get();
     image.setIcon(icon);
 
     JLabel[] jlabels = new JLabel[]{
