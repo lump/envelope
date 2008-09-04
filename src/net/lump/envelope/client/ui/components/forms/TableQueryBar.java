@@ -78,6 +78,10 @@ public class TableQueryBar {
     titleLabel.setText(title);
   }
 
+  public void setTitleIcon(Icon title) {
+    titleLabel.setIcon(title);
+  }
+
   public JTable getTable() {
     return table;
   }

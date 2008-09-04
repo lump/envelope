@@ -37,7 +37,7 @@ import java.util.Date;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.11 2008/09/04 23:14:19 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.12 2008/09/04 23:32:33 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -74,8 +74,9 @@ public class Hierarchy extends JTree {
 
     addTreeSelectionListener(new TreeSelectionListener() {
       public void valueChanged(final TreeSelectionEvent e) {
-        final Object o = ((DefaultMutableTreeNode)e.getPath()
-            .getLastPathComponent()).getUserObject();
+        DefaultMutableTreeNode node =
+            (DefaultMutableTreeNode)e.getPath().getLastPathComponent();
+        final Object o = node.getUserObject();
 
         if (o instanceof Account
             || o instanceof CriteriaFactory.CategoryTotal) {
@@ -99,11 +100,11 @@ public class Hierarchy extends JTree {
           table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
           table.getTableHeader().setReorderingAllowed(false);
           table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-          tqb.setTitleLabel(
-              i instanceof Account
-              ? ((Account)i).getName()
-              : i instanceof Category
-                ? ((Category)i).getName() : null);
+
+          tqb.setTitleLabel(i instanceof Account
+                            ? ((Account)i).getName()
+                            : ((Category)i).getName());
+          tqb.setTitleIcon(getIconForObject(o, true));
 
           MainFrame.getInstance()
               .setContentPane(tqb.getTableQueryPanel());
@@ -235,37 +236,17 @@ public class Hierarchy extends JTree {
       if (sel) setForeground(getTextSelectionColor());
       else setForeground(getTextNonSelectionColor());
 
-      boolean found = false;
+      Icon icon = null;
       if (value != null
           && value instanceof DefaultMutableTreeNode
           && ((DefaultMutableTreeNode)value).getUserObject() != null) {
-
-        if (((DefaultMutableTreeNode)value).getUserObject() instanceof Budget) {
-          found = true;
-          if (expanded) setIcon(budget.get());
-          else setIcon(budget_closed.get());
-        } else if (((DefaultMutableTreeNode)value).getUserObject()
-            instanceof Account) {
-          found = true;
-          if (expanded) setIcon(account.get());
-          else setIcon(account_closed.get());
-        } else if (((DefaultMutableTreeNode)value).getUserObject()
-            instanceof CriteriaFactory.CategoryTotal) {
-          CriteriaFactory.CategoryTotal ct =
-              (CriteriaFactory.CategoryTotal)
-                  ((DefaultMutableTreeNode)value).getUserObject();
-          found = true;
-          double total = ct.total.doubleValue();
-          if (total < 0) setIcon(envelope_red.get());
-          if (total == 0) setIcon(envelope_empty.get());
-          if (total > 0 && total <= 100) setIcon(envelope_onebill.get());
-          if (total > 100 && total <= 500) setIcon(envelope.get());
-          if (total > 500 && total <= 1000) setIcon(envelope_full.get());
-          if (total > 1000) setIcon(envelope_overflow.get());
-        }
+        icon = getIconForObject(
+            ((DefaultMutableTreeNode)value).getUserObject(), expanded);
       }
 
-      if (!found) {
+      if (icon != null) {
+        setIcon(icon);
+      } else {
         if (leaf) {
           setIcon(getLeafIcon());
         } else if (expanded) {
@@ -275,11 +256,32 @@ public class Hierarchy extends JTree {
         }
       }
 
+
       setComponentOrientation(tree.getComponentOrientation());
 
       selected = sel;
 
       return this;
     }
+  }
+
+  private Icon getIconForObject(Object o, boolean expanded) {
+    if (o instanceof Budget) {
+      if (expanded) return budget.get();
+      else return budget_closed.get();
+    } else if (o instanceof Account) {
+      if (expanded) return account.get();
+      else return account_closed.get();
+    } else if (o instanceof CriteriaFactory.CategoryTotal) {
+      CriteriaFactory.CategoryTotal ct = (CriteriaFactory.CategoryTotal)o;
+      double total = ct.total.doubleValue();
+      if (total < 0) return envelope_red.get();
+      if (total == 0) return envelope_empty.get();
+      if (total > 0 && total <= 100) return envelope_onebill.get();
+      if (total > 100 && total <= 500) return envelope.get();
+      if (total > 500 && total <= 1000) return envelope_full.get();
+      if (total > 1000) return envelope_overflow.get();
+    }
+    return null;
   }
 }
