@@ -116,7 +116,7 @@ public class TransactionTableModel extends AbstractTableModel {
                   "only Account or Budget aceptable as first argument");
 
             beginningBalance = getBeginningBalance(null);
-            beginningReconciledBalance = getBeginningBalance(Boolean.FALSE);
+            beginningReconciledBalance = getBeginningBalance(Boolean.TRUE);
             startDate = System.currentTimeMillis();
 
             CriteriaFactory cf = CriteriaFactory.getInstance();

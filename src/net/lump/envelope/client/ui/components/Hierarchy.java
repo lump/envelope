@@ -37,7 +37,7 @@ import java.util.Date;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.9 2008/09/04 00:57:27 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.10 2008/09/04 06:46:13 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -55,6 +55,8 @@ public class Hierarchy extends JTree {
       = new ImageIcon(ImageResource.class.getResource("envelope-full.png"));
   private static final ImageIcon envelopeOverflowIcon
       = new ImageIcon(ImageResource.class.getResource("envelope-overflow.png"));
+  private static final ImageIcon envelopeRedIcon
+      = new ImageIcon(ImageResource.class.getResource("envelope-red.png"));
   private static final ImageIcon budgetIcon
       = new ImageIcon(ImageResource.class.getResource("budget.png"));
   private static final ImageIcon budgetClosedIcon
@@ -275,7 +277,8 @@ public class Hierarchy extends JTree {
                   ((DefaultMutableTreeNode)value).getUserObject();
           found = true;
           double total = ct.total.doubleValue();
-          if (total <= 0) setIcon(envelopeEmptyIcon);
+          if (total < 0) setIcon(envelopeRedIcon);
+          if (total == 0) setIcon(envelopeEmptyIcon);
           if (total > 0 && total <= 100) setIcon(envelopeOneBillIcon);
           if (total > 100 && total <= 500) setIcon(envelopeIcon);
           if (total > 500 && total <= 1000) setIcon(envelopeFullIcon);

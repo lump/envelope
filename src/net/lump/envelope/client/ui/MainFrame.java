@@ -11,6 +11,7 @@ import us.lump.envelope.client.ui.components.Hierarchy;
 import us.lump.envelope.client.ui.components.AboutBox;
 import us.lump.envelope.client.ui.components.forms.Preferences;
 import us.lump.envelope.client.ui.components.forms.TransactionForm;
+import us.lump.envelope.client.ui.images.ImageResource;
 import us.lump.lib.util.EmacsKeyBindings;
 
 import javax.swing.*;
@@ -23,7 +24,7 @@ import java.net.URL;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.16 2008/09/03 05:44:55 troy Exp $
+ * @version $Id: MainFrame.java,v 1.17 2008/09/04 06:46:13 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -60,13 +61,8 @@ public class MainFrame extends JFrame {
     EmacsKeyBindings.loadEmacsKeyBindings();
 
     this.setTitle(Strings.get("envelope_budget"));
-    try {
-      this.setIconImage(new ImageIcon(new URL("http://"
-                                              + System.getProperty("codebase")
-                                              + "/lib/franklin.png")).getImage());
-    } catch (MalformedURLException e) {
-      e.printStackTrace();
-    }
+    this.setIconImage(new ImageIcon(
+        ImageResource.class.getResource("envelope-16.png")).getImage());
 
     splitPane.setResizeWeight(0);
     splitPane.getLeftComponent().setMinimumSize(new Dimension(100, 0));
