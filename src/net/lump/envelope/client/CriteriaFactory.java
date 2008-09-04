@@ -16,7 +16,7 @@ import java.util.List;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.10 2008/08/29 23:11:58 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.11 2008/09/04 00:57:27 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -61,14 +61,35 @@ public class CriteriaFactory {
     return retval;
   }
 
-  public List<Category> getCategoriesForBudget(Budget budget) {
-    List<Category> retval = new ArrayList<Category>();
+  public static class CategoryTotal {
+    public Category category;
+    public Money total;
+
+    CategoryTotal(Category category, Money total) {
+      this.category = category;
+      this.total = total;
+    }
+
+    public String toString() { return category.toString(); }
+  }
+
+  public List<CategoryTotal> getCategoriesForAccount(Account account) {
+    List<CategoryTotal> retval = new ArrayList<CategoryTotal>();
     try {
-      retval = (List<Category>)(new HibernatePortal()).detachedCriteriaQuery(
-          DetachedCriteria.forClass(Category.class)
-              .setFetchMode("account", FetchMode.JOIN)
-              .createCriteria("account", "a")
-              .add(Restrictions.eq("a.budget", budget)));
+      ProjectionList plist = Projections.projectionList()
+          .add(Projections.groupProperty("category"))
+          .add(Projections.sum("amount"));
+      for (Object[] o :
+          (List<Object[]>)(new HibernatePortal()).detachedCriteriaQuery(
+              DetachedCriteria.forClass(Allocation.class)
+                  .setFetchMode("category", FetchMode.JOIN)
+                  .createAlias("category", "c")
+                  .setFetchMode("account", FetchMode.JOIN)
+                  .add(Restrictions.eq("c.account", account))
+                  .setProjection(plist)
+                  .addOrder(Order.asc("category")))) {
+        retval.add(new CategoryTotal((Category)o[0], (Money)o[1]));
+      }
     } catch (EnvelopeException e) {
       logger.error(e);
     }

@@ -30,16 +30,14 @@ import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Collections;
 import java.util.Date;
-import java.util.List;
 
 
 /**
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.8 2008/09/03 02:51:41 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.9 2008/09/04 00:57:27 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -49,6 +47,14 @@ public class Hierarchy extends JTree {
 
   private static final ImageIcon envelopeIcon
       = new ImageIcon(ImageResource.class.getResource("envelope.png"));
+  private static final ImageIcon envelopeEmptyIcon
+      = new ImageIcon(ImageResource.class.getResource("envelope-empty.png"));
+  private static final ImageIcon envelopeOneBillIcon
+      = new ImageIcon(ImageResource.class.getResource("envelope-onebill.png"));
+  private static final ImageIcon envelopeFullIcon
+      = new ImageIcon(ImageResource.class.getResource("envelope-full.png"));
+  private static final ImageIcon envelopeOverflowIcon
+      = new ImageIcon(ImageResource.class.getResource("envelope-overflow.png"));
   private static final ImageIcon budgetIcon
       = new ImageIcon(ImageResource.class.getResource("budget.png"));
   private static final ImageIcon budgetClosedIcon
@@ -90,14 +96,19 @@ public class Hierarchy extends JTree {
         final Object o = ((DefaultMutableTreeNode)e.getPath()
             .getLastPathComponent()).getUserObject();
 
-        if (o instanceof Account || o instanceof Category) {
+        if (o instanceof Account
+            || o instanceof CriteriaFactory.CategoryTotal) {
+          final Identifiable i = (o instanceof CriteriaFactory.CategoryTotal)
+                                 ? ((CriteriaFactory.CategoryTotal)o).category
+                                 : (Identifiable)o;
+
           final TableQueryBar tqb = TableQueryBar.getInstance();
           sanifyDates(tqb);
 
           if (tm == null) tm = new TransactionTableModel(
-              (Identifiable)o, tqb.getBeginDate(), tqb.getEndDate(),
+              i, tqb.getBeginDate(), tqb.getEndDate(),
               tqb.getTable());
-          else tm.queue((Identifiable)o, tqb.getBeginDate(), tqb.getEndDate());
+          else tm.queue(i, tqb.getBeginDate(), tqb.getEndDate());
 
           JTable table = tqb.getTable();
           table.getTableHeader().setUpdateTableInRealTime(true);
@@ -108,10 +119,10 @@ public class Hierarchy extends JTree {
           table.getTableHeader().setReorderingAllowed(false);
           table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
           tqb.setTitleLabel(
-              o instanceof Account
-              ? ((Account)o).getName()
-              : o instanceof Category
-                ? ((Category)o).getName() : null);
+              i instanceof Account
+              ? ((Account)i).getName()
+              : i instanceof Category
+                ? ((Category)i).getName() : null);
 
           MainFrame.getInstance()
               .setContentPane(tqb.getTableQueryPanel());
@@ -144,7 +155,7 @@ public class Hierarchy extends JTree {
           tqb.getRefreshButton().addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
               sanifyDates(tqb);
-              tm.queue((Identifiable)o, tqb.getBeginDate(), tqb.getEndDate());
+              tm.queue(i, tqb.getBeginDate(), tqb.getEndDate());
             }
           });
         }
@@ -160,24 +171,15 @@ public class Hierarchy extends JTree {
 
     EnvelopeRunnable r = new EnvelopeRunnable(Strings.get("building.tree")) {
       public void run() {
-        for (Account a
-            : CriteriaFactory.getInstance()
+        for (Account a : CriteriaFactory.getInstance()
             .getAccountsForBudget(state.getBudget()))
           state.getAccounts().add(a);
 
-        List<Category> categoryList =
-            CriteriaFactory.getInstance()
-                .getCategoriesForBudget(state.getBudget());
-
-        for (Category c : categoryList) {
-          state.getAccounts().add(c.getAccount());
-        }
-
         for (Account a : state.getAccounts()) {
           DefaultMutableTreeNode thisNode = new DefaultMutableTreeNode(a);
-          Collections.sort(a.getCategories());
-          for (Category c : a.getCategories()) {
-            thisNode.add(new DefaultMutableTreeNode(c));
+          for (CriteriaFactory.CategoryTotal ca :
+              CriteriaFactory.getInstance().getCategoriesForAccount(a)) {
+            thisNode.add(new DefaultMutableTreeNode(ca));
           }
           rootNode.add(thisNode);
         }
@@ -189,7 +191,6 @@ public class Hierarchy extends JTree {
             RepaintManager.currentManager(singleton).paintDirtyRegions();
           }
         });
-
       }
     };
     ThreadPool.getInstance().execute(r);
@@ -253,30 +254,43 @@ public class Hierarchy extends JTree {
       if (sel) setForeground(getTextSelectionColor());
       else setForeground(getTextNonSelectionColor());
 
+      boolean found = false;
       if (value != null
           && value instanceof DefaultMutableTreeNode
-          && ((DefaultMutableTreeNode)value).getUserObject() != null
-          && ((DefaultMutableTreeNode)value).getUserObject() instanceof Budget) {
-        if (expanded) setIcon(budgetIcon);
-        else setIcon(budgetClosedIcon);
+          && ((DefaultMutableTreeNode)value).getUserObject() != null) {
 
-      } else if (value != null
-                 && value instanceof DefaultMutableTreeNode
-                 && ((DefaultMutableTreeNode)value).getUserObject() != null
-                 && ((DefaultMutableTreeNode)value).getUserObject() instanceof Account) {
-        if (expanded) setIcon(accountIcon);
-        else setIcon(accountClosedIcon);
-      } else if (value != null
-                 && value instanceof DefaultMutableTreeNode
-                 && ((DefaultMutableTreeNode)value).getUserObject() != null
-                 && ((DefaultMutableTreeNode)value).getUserObject() instanceof Category) {
-        setIcon(envelopeIcon);
-      } else if (leaf) {
-        setIcon(getLeafIcon());
-      } else if (expanded) {
-        setIcon(getOpenIcon());
-      } else {
-        setIcon(getClosedIcon());
+        if (((DefaultMutableTreeNode)value).getUserObject() instanceof Budget) {
+          found = true;
+          if (expanded) setIcon(budgetIcon);
+          else setIcon(budgetClosedIcon);
+        } else if (((DefaultMutableTreeNode)value).getUserObject()
+            instanceof Account) {
+          found = true;
+          if (expanded) setIcon(accountIcon);
+          else setIcon(accountClosedIcon);
+        } else if (((DefaultMutableTreeNode)value).getUserObject()
+            instanceof CriteriaFactory.CategoryTotal) {
+          CriteriaFactory.CategoryTotal ct =
+              (CriteriaFactory.CategoryTotal)
+                  ((DefaultMutableTreeNode)value).getUserObject();
+          found = true;
+          double total = ct.total.doubleValue();
+          if (total <= 0) setIcon(envelopeEmptyIcon);
+          if (total > 0 && total <= 100) setIcon(envelopeOneBillIcon);
+          if (total > 100 && total <= 500) setIcon(envelopeIcon);
+          if (total > 500 && total <= 1000) setIcon(envelopeFullIcon);
+          if (total > 1000) setIcon(envelopeOverflowIcon);
+        }
+      }
+
+      if (!found) {
+        if (leaf) {
+          setIcon(getLeafIcon());
+        } else if (expanded) {
+          setIcon(getOpenIcon());
+        } else {
+          setIcon(getClosedIcon());
+        }
       }
 
       setComponentOrientation(tree.getComponentOrientation());

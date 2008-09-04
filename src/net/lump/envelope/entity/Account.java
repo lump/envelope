@@ -6,19 +6,19 @@ import us.lump.lib.Money;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.text.MessageFormat;
 import java.util.List;
 
 /**
  * An account object.
  *
  * @author Troy Bowman
- * @version $Id: Account.java,v 1.10 2008/07/17 03:30:40 troy Exp $
+ * @version $Id: Account.java,v 1.11 2008/09/04 00:57:27 troy Test $
  */
 @javax.persistence.Entity
 @Table(name = "accounts")
-public class Account extends Identifiable<Integer, Timestamp> implements Comparable<Account> {
-//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.10 $".replaceAll("\\D", ""));
+public class Account extends Identifiable<Integer, Timestamp>
+    implements Comparable<Account> {
+//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.11 $".replaceAll("\\D", ""));
 
   /** The type of an Account. */
   public static enum AccountType {
@@ -42,10 +42,7 @@ public class Account extends Identifiable<Integer, Timestamp> implements Compara
   private Money limit;
 
   public String toString() {
-    return MessageFormat.format("{0}:{1}@{2}",
-                                name,
-                                type.toString(),
-                                budget.toString());
+    return name;
   }
 
   @Id
@@ -102,7 +99,7 @@ public class Account extends Identifiable<Integer, Timestamp> implements Compara
   }
 
   @OneToMany(mappedBy = "account")
-    public List<Category> getCategories() {
+  public List<Category> getCategories() {
     return this.categories;
   }
 
