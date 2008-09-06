@@ -22,7 +22,7 @@ import java.awt.event.*;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.18 2008/09/04 23:14:19 troy Exp $
+ * @version $Id: MainFrame.java,v 1.19 2008/09/06 05:38:13 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -188,7 +188,7 @@ public class MainFrame extends JFrame {
 
 
     state.setHierarchy(Hierarchy.getInstance());
-    state.getHierarchy().setRootNode(state.getBudget());
+    state.getHierarchy().refreshTree(state.getBudget());
 
     treeScrollPane.setViewportView(state.getHierarchy());
 

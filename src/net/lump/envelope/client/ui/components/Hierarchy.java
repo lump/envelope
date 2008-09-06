@@ -13,8 +13,6 @@ import us.lump.envelope.client.ui.defs.Strings;
 import static us.lump.envelope.client.ui.images.ImageResource.icon.*;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Budget;
-import us.lump.envelope.entity.Category;
-import us.lump.envelope.entity.Identifiable;
 import us.lump.lib.Money;
 
 import javax.swing.*;
@@ -37,7 +35,7 @@ import java.util.Date;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.12 2008/09/04 23:32:33 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.13 2008/09/06 05:38:13 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -74,23 +72,21 @@ public class Hierarchy extends JTree {
 
     addTreeSelectionListener(new TreeSelectionListener() {
       public void valueChanged(final TreeSelectionEvent e) {
+        
         DefaultMutableTreeNode node =
             (DefaultMutableTreeNode)e.getPath().getLastPathComponent();
         final Object o = node.getUserObject();
 
         if (o instanceof Account
             || o instanceof CriteriaFactory.CategoryTotal) {
-          final Identifiable i = (o instanceof CriteriaFactory.CategoryTotal)
-                                 ? ((CriteriaFactory.CategoryTotal)o).category
-                                 : (Identifiable)o;
 
           final TableQueryBar tqb = TableQueryBar.getInstance();
           sanifyDates(tqb);
 
           if (tm == null) tm = new TransactionTableModel(
-              i, tqb.getBeginDate(), tqb.getEndDate(),
+              o, tqb.getBeginDate(), tqb.getEndDate(),
               tqb.getTable());
-          else tm.queue(i, tqb.getBeginDate(), tqb.getEndDate());
+          else tm.queue(o, tqb.getBeginDate(), tqb.getEndDate());
 
           JTable table = tqb.getTable();
           table.getTableHeader().setUpdateTableInRealTime(true);
@@ -101,9 +97,9 @@ public class Hierarchy extends JTree {
           table.getTableHeader().setReorderingAllowed(false);
           table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-          tqb.setTitleLabel(i instanceof Account
-                            ? ((Account)i).getName()
-                            : ((Category)i).getName());
+          tqb.setTitleLabel(o instanceof Account
+                            ? ((Account)o).getName()
+                            : ((CriteriaFactory.CategoryTotal)o).name);
           tqb.setTitleIcon(getIconForObject(o, true));
 
           MainFrame.getInstance()
@@ -137,7 +133,7 @@ public class Hierarchy extends JTree {
           tqb.getRefreshButton().addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
               sanifyDates(tqb);
-              tm.queue(i, tqb.getBeginDate(), tqb.getEndDate());
+              tm.queue(o, tqb.getBeginDate(), tqb.getEndDate());
             }
           });
         }
@@ -148,7 +144,7 @@ public class Hierarchy extends JTree {
     });
   }
 
-  public void setRootNode(Budget budget) {
+  public void refreshTree(Budget budget) {
     rootNode.setUserObject(budget);
 
     EnvelopeRunnable r = new EnvelopeRunnable(Strings.get("building.tree")) {
@@ -225,14 +221,17 @@ public class Hierarchy extends JTree {
                                                   boolean expanded,
                                                   boolean leaf, int row,
                                                   boolean hasFocus) {
-      String stringValue = tree.convertValueToText(value,
-                                                   sel,
-                                                   expanded,
-                                                   leaf,
-                                                   row,
-                                                   hasFocus);
       this.hasFocus = hasFocus;
-      setText(stringValue);
+      String name = tree.convertValueToText(
+          value, sel, expanded, leaf, row, hasFocus);
+      if (value instanceof DefaultMutableTreeNode) {
+        Object o = ((DefaultMutableTreeNode)value).getUserObject();
+        if (o != null) name = o instanceof CriteriaFactory.CategoryTotal
+                              ? ((CriteriaFactory.CategoryTotal)o).name
+                              : o.toString();
+      }
+      setText(name);
+
       if (sel) setForeground(getTextSelectionColor());
       else setForeground(getTextNonSelectionColor());
 
@@ -274,7 +273,7 @@ public class Hierarchy extends JTree {
       else return account_closed.get();
     } else if (o instanceof CriteriaFactory.CategoryTotal) {
       CriteriaFactory.CategoryTotal ct = (CriteriaFactory.CategoryTotal)o;
-      double total = ct.total.doubleValue();
+      double total = ct.balance.doubleValue();
       if (total < 0) return envelope_red.get();
       if (total == 0) return envelope_empty.get();
       if (total > 0 && total <= 100) return envelope_onebill.get();

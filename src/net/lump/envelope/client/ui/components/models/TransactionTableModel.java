@@ -9,7 +9,6 @@ import us.lump.envelope.client.ui.components.StatusBar;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Category;
-import us.lump.envelope.entity.Identifiable;
 import us.lump.lib.Money;
 import us.lump.lib.util.BackgroundList;
 import us.lump.lib.util.BackgroundListEvent;
@@ -39,7 +38,7 @@ public class TransactionTableModel extends AbstractTableModel {
   private boolean isTransaction;
   private Date beginDate;
   private Date endDate;
-  private Identifiable identifiable;
+  private Object thing;
   private JTable table;
   private Integer selectionCache = null;
 
@@ -70,10 +69,10 @@ public class TransactionTableModel extends AbstractTableModel {
 
   private Money getBeginningBalance(Boolean reconciled) {
     CriteriaFactory cf = CriteriaFactory.getInstance();
-    return cf.getBeginningBalance(identifiable, beginDate, reconciled);
+    return cf.getBeginningBalance(thing, beginDate, reconciled);
   }
 
-  public TransactionTableModel(final Identifiable categoryOrAccount,
+  public TransactionTableModel(final Object thing,
                                final Date begin,
                                final Date end,
                                final JTable table) {
@@ -107,11 +106,12 @@ public class TransactionTableModel extends AbstractTableModel {
 
             beginDate = t.begin;
             endDate = t.end;
-            identifiable = t.categoryOrAccount;
-            isTransaction = identifiable instanceof Account;
+            TransactionTableModel.this.thing = t.thing;
+            isTransaction = TransactionTableModel.this.thing instanceof Account;
 
-            if (!(identifiable instanceof Account
-                  || identifiable instanceof Category))
+            if (!(TransactionTableModel.this.thing instanceof Account
+                  || TransactionTableModel.this.thing instanceof
+                CriteriaFactory.CategoryTotal))
               throw new IllegalArgumentException(
                   "only Account or Budget aceptable as first argument");
 
@@ -121,7 +121,7 @@ public class TransactionTableModel extends AbstractTableModel {
 
             CriteriaFactory cf = CriteriaFactory.getInstance();
             final BackgroundList<Object[]> incoming = (BackgroundList<Object[]>)
-                cf.getTransactions(identifiable, beginDate, endDate);
+                cf.getTransactions(TransactionTableModel.this.thing, beginDate, endDate);
 
             // boostrap statusbar
             try {
@@ -193,7 +193,7 @@ public class TransactionTableModel extends AbstractTableModel {
 
     new Thread(r, "Transaction table filler queue").start();
 
-    queue(categoryOrAccount, begin, end);
+    queue(thing, begin, end);
   }
 
   private synchronized void updateTableForRow(int x,
@@ -256,9 +256,9 @@ public class TransactionTableModel extends AbstractTableModel {
   }
 
 
-  public void queue(Identifiable categoryOrAccount, Date begin, Date end) {
+  public void queue(Object thing, Date begin, Date end) {
     try {
-      q.put(new Task(categoryOrAccount, begin, end));
+      q.put(new Task(thing, begin, end));
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
@@ -285,10 +285,10 @@ public class TransactionTableModel extends AbstractTableModel {
     return transactions.get(rowIndex)[columnIndex];
   }
 
-  public void setValueAt(final Object aValue, final int row, final int col) {
+  public void setValueAt(final Object value, final int row, final int col) {
     if (col == COLUMN.C.ordinal()) {
       // update the column
-      transactions.get(row)[col] = aValue;
+      transactions.get(row)[col] = value;
       fireTableCellUpdated(row, col);
 
 // establish the beginning reconciled balance
@@ -311,7 +311,7 @@ public class TransactionTableModel extends AbstractTableModel {
       // update the Transaction
       ThreadPool.getInstance().execute(new EnvelopeRunnable(
           MessageFormat.format("{0} {1} {2}",
-                               ((Boolean)aValue)
+                               ((Boolean)value)
                                ? Strings.get("reconciling")
                                : Strings.get("unreconciling"),
                                Strings.get("transaction").toLowerCase(),
@@ -322,7 +322,7 @@ public class TransactionTableModel extends AbstractTableModel {
           try {
             new TransactionPortal().updateReconciled(
                 (Integer)transactions.get(row)[COLUMN.TransactionID.ordinal()],
-                (Boolean)aValue);
+                (Boolean)value);
           } catch (Exception e) {
             JOptionPane.showMessageDialog(null,
                                           e.getMessage(),
@@ -355,18 +355,18 @@ public class TransactionTableModel extends AbstractTableModel {
   }
 
   class Task {
-    Task(Identifiable categoryOrAccount, Date begin, Date end) {
-      this.categoryOrAccount = categoryOrAccount;
+    Task(Object thing, Date begin, Date end) {
+      this.thing = thing;
       this.begin = begin;
       this.end = end;
-      final String type = categoryOrAccount instanceof Account
+      final String type = thing instanceof Account
                           ? Strings.get("account").toLowerCase()
                           : Strings.get("category").toLowerCase();
       e =
           StatusBar.getInstance().addTask(MessageFormat.format(
               "{0} {1} {2}",
               Strings.get("retrieving"),
-              categoryOrAccount.toString(),
+              thing.toString(),
               type));
     }
 
@@ -375,7 +375,7 @@ public class TransactionTableModel extends AbstractTableModel {
     }
 
     StatusElement e;
-    Identifiable categoryOrAccount;
+    Object thing;
     Date begin;
     Date end;
   }
