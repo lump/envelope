@@ -16,7 +16,7 @@ import java.util.List;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.12 2008/09/06 05:38:13 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.13 2008/09/06 05:49:02 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -72,7 +72,7 @@ public class CriteriaFactory {
       this.balance = balance;
     }
 
-    public String toString() { return id.toString(); }
+    public String toString() { return name; }
   }
 
   public List<CategoryTotal> getCategoriesForAccount(Account account) {

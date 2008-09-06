@@ -35,7 +35,7 @@ import java.util.Date;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.13 2008/09/06 05:38:13 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.14 2008/09/06 05:49:02 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -97,9 +97,7 @@ public class Hierarchy extends JTree {
           table.getTableHeader().setReorderingAllowed(false);
           table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-          tqb.setTitleLabel(o instanceof Account
-                            ? ((Account)o).getName()
-                            : ((CriteriaFactory.CategoryTotal)o).name);
+          tqb.setTitleLabel(o.toString());
           tqb.setTitleIcon(getIconForObject(o, true));
 
           MainFrame.getInstance()
@@ -224,16 +222,10 @@ public class Hierarchy extends JTree {
       this.hasFocus = hasFocus;
       String name = tree.convertValueToText(
           value, sel, expanded, leaf, row, hasFocus);
-      if (value instanceof DefaultMutableTreeNode) {
-        Object o = ((DefaultMutableTreeNode)value).getUserObject();
-        if (o != null) name = o instanceof CriteriaFactory.CategoryTotal
-                              ? ((CriteriaFactory.CategoryTotal)o).name
-                              : o.toString();
-      }
-      setText(name);
 
       if (sel) setForeground(getTextSelectionColor());
       else setForeground(getTextNonSelectionColor());
+      setText(name);
 
       Icon icon = null;
       if (value != null

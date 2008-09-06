@@ -103,7 +103,6 @@ public class TransactionTableModel extends AbstractTableModel {
                   (Integer)transactions.get(selectedRow)[COLUMN.TransactionID
                       .ordinal()];
 
-
             beginDate = t.begin;
             endDate = t.end;
             TransactionTableModel.this.thing = t.thing;
