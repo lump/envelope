@@ -35,7 +35,7 @@ import java.util.Date;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.14 2008/09/06 05:49:02 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.15 2008/09/08 04:20:09 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -78,7 +78,7 @@ public class Hierarchy extends JTree {
         final Object o = node.getUserObject();
 
         if (o instanceof Account
-            || o instanceof CriteriaFactory.CategoryTotal) {
+            || o instanceof CategoryTotal) {
 
           final TableQueryBar tqb = TableQueryBar.getInstance();
           sanifyDates(tqb);
@@ -153,7 +153,7 @@ public class Hierarchy extends JTree {
 
         for (Account a : state.getAccounts()) {
           DefaultMutableTreeNode thisNode = new DefaultMutableTreeNode(a);
-          for (CriteriaFactory.CategoryTotal ca :
+          for (CategoryTotal ca :
               CriteriaFactory.getInstance().getCategoriesForAccount(a)) {
             thisNode.add(new DefaultMutableTreeNode(ca));
           }
@@ -263,8 +263,8 @@ public class Hierarchy extends JTree {
     } else if (o instanceof Account) {
       if (expanded) return account.get();
       else return account_closed.get();
-    } else if (o instanceof CriteriaFactory.CategoryTotal) {
-      CriteriaFactory.CategoryTotal ct = (CriteriaFactory.CategoryTotal)o;
+    } else if (o instanceof CategoryTotal) {
+      CategoryTotal ct = (CategoryTotal)o;
       double total = ct.balance.doubleValue();
       if (total < 0) return envelope_red.get();
       if (total == 0) return envelope_empty.get();
@@ -275,4 +275,19 @@ public class Hierarchy extends JTree {
     }
     return null;
   }
+
+  public static class CategoryTotal {
+    public String name;
+    public Integer id;
+    public Money balance;
+
+    public CategoryTotal(String name, Integer id, Money balance) {
+      this.name = name;
+      this.id = id;
+      this.balance = balance;
+    }
+
+    public String toString() { return name; }
+  }
+
 }

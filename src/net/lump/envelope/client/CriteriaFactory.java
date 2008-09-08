@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import org.hibernate.FetchMode;
 import org.hibernate.criterion.*;
 import us.lump.envelope.client.portal.HibernatePortal;
+import us.lump.envelope.client.ui.components.Hierarchy;
 import us.lump.envelope.entity.*;
 import us.lump.envelope.exception.EnvelopeException;
 import us.lump.lib.Money;
@@ -16,7 +17,7 @@ import java.util.List;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.13 2008/09/06 05:49:02 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.14 2008/09/08 04:20:09 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -61,35 +62,23 @@ public class CriteriaFactory {
     return retval;
   }
 
-  public static class CategoryTotal {
-    public String name;
-    public Integer id;
-    public Money balance;
-
-    CategoryTotal(String name, Integer id, Money balance) {
-      this.name = name;
-      this.id = id;
-      this.balance = balance;
-    }
-
-    public String toString() { return name; }
-  }
-
-  public List<CategoryTotal> getCategoriesForAccount(Account account) {
-    List<CategoryTotal> retval = new ArrayList<CategoryTotal>();
+  public List<Hierarchy.CategoryTotal> getCategoriesForAccount(Account account) {
+    List<Hierarchy.CategoryTotal> retval = new ArrayList<Hierarchy.CategoryTotal>();
     try {
       ProjectionList plist = Projections.projectionList()
           .add(Projections.property("c.name").as("CategoryName"))
           .add(Projections.groupProperty("c.id"))
-          .add(Projections.sum("amount"));
+          .add(Projections.sum("amount"))
+          .add(Projections.max("t.date"));
       for (Object[] o :
           (List<Object[]>)(new HibernatePortal()).detachedCriteriaQuery(
           DetachedCriteria.forClass(Allocation.class)
               .createAlias("category", "c")
               .add(Restrictions.eq("c.account", account))
+              .createAlias("transaction", "t")
               .setProjection(plist)
               .addOrder(Order.asc("CategoryName")))) {
-        retval.add(new CategoryTotal((String)o[0], (Integer)o[1], (Money)o[2]));
+        retval.add(new Hierarchy.CategoryTotal((String)o[0], (Integer)o[1], (Money)o[2]));
       }
     } catch (EnvelopeException e) {
       logger.error(e);
@@ -101,17 +90,17 @@ public class CriteriaFactory {
                                    Date endDate,
                                    Boolean reconciled) {
     Money retval = null;
-    if (!(thing instanceof CategoryTotal
+    if (!(thing instanceof Hierarchy.CategoryTotal
           || thing instanceof Account))
       throw new IllegalArgumentException(
           "first argument must be Cateogry or Budget");
 
     try {
       DetachedCriteria dc;
-      if (thing instanceof CategoryTotal) {
+      if (thing instanceof Hierarchy.CategoryTotal) {
         dc = DetachedCriteria.forClass(Allocation.class)
             .createAlias("transaction", "t")
-            .add(Restrictions.eq("category.id", ((CategoryTotal)thing).id))
+            .add(Restrictions.eq("category.id", ((Hierarchy.CategoryTotal)thing).id))
             .add(Restrictions.lt("t.date", endDate));
         if (reconciled != null)
           dc.add(Restrictions.eq("t.reconciled", reconciled));
@@ -140,7 +129,7 @@ public class CriteriaFactory {
   public List<Object[]> getTransactions(Object thing,
                                         Date beginDate,
                                         Date endDate) {
-    if (!(thing instanceof CategoryTotal
+    if (!(thing instanceof Hierarchy.CategoryTotal
           || thing instanceof Account))
       throw new IllegalArgumentException(
           "first argument must be CategoryTotal or Account");
@@ -181,7 +170,7 @@ public class CriteriaFactory {
             (new HibernatePortal()).detachedCriteriaQuery(
                 DetachedCriteria.forClass(Allocation.class)
                     .createAlias("transaction", "t")
-                    .add(Restrictions.eq("category.id", ((CategoryTotal)thing).id))
+                    .add(Restrictions.eq("category.id", ((Hierarchy.CategoryTotal)thing).id))
                     .add(Restrictions.ge("t.date", beginDate))
                     .add(Restrictions.le("t.date", endDate))
                     .setProjection(plist)

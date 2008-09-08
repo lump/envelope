@@ -6,9 +6,9 @@ import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.thread.StatusElement;
 import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.components.StatusBar;
+import us.lump.envelope.client.ui.components.Hierarchy;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.entity.Account;
-import us.lump.envelope.entity.Category;
 import us.lump.lib.Money;
 import us.lump.lib.util.BackgroundList;
 import us.lump.lib.util.BackgroundListEvent;
@@ -110,7 +110,7 @@ public class TransactionTableModel extends AbstractTableModel {
 
             if (!(TransactionTableModel.this.thing instanceof Account
                   || TransactionTableModel.this.thing instanceof
-                CriteriaFactory.CategoryTotal))
+                Hierarchy.CategoryTotal))
               throw new IllegalArgumentException(
                   "only Account or Budget aceptable as first argument");
 
