@@ -35,13 +35,13 @@ import java.util.Date;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.15 2008/09/08 04:20:09 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.16 2008/09/10 22:29:30 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
   private final State state = State.getInstance();
   private final DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode();
-  TransactionTableModel tm;
+  TransactiwsonTableModel tm;
 
   public static Hierarchy getInstance() {
     if (singleton == null) singleton = new Hierarchy();
