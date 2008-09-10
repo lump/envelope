@@ -5,14 +5,12 @@ import us.lump.envelope.client.ui.components.forms.Preferences;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
+import us.lump.envelope.client.SocketClient;
 import us.lump.envelope.exception.EnvelopeException;
 import us.lump.envelope.exception.SessionException;
 import us.lump.envelope.server.rmi.Controller;
-import us.lump.lib.util.Encryption;
 
 import javax.swing.*;
-import javax.crypto.SecretKey;
-import javax.crypto.KeyGenerator;
 import java.awt.*;
 import java.io.IOException;
 import java.io.InvalidClassException;
@@ -24,7 +22,6 @@ import java.rmi.UnmarshalException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
-import java.security.PublicKey;
 import java.text.MessageFormat;
 
 /**
@@ -32,7 +29,7 @@ import java.text.MessageFormat;
  * exit/entry to the server along with exception handling.
  *
  * @author Troy Bowman
- * @version $Revision: 1.18 $
+ * @version $Revision: 1.19 $
  */
 
 abstract class Portal {
@@ -68,7 +65,7 @@ abstract class Portal {
     this.frame = jframe;
 
     try {
-      return SocketController.getSocket().invoke(command);
+      return SocketClient.getSocket().invoke(command);
 //      return getController().invoke(command);
     } catch (Exception e) {
       handleException(e);

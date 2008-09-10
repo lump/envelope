@@ -1,4 +1,4 @@
-package us.lump.envelope.client.portal;
+package us.lump.envelope.client;
 
 import us.lump.envelope.Command;
 import us.lump.envelope.client.thread.EnvelopeRunnable;
@@ -23,13 +23,14 @@ import java.util.Vector;
 import java.util.zip.GZIPInputStream;
 
 /**
- * .
+ * A class which manages connections from the client, and invokes commands
+ * through said connections..
  *
  * @author Troy Bowman
- * @version $Revision: 1.16 $
+ * @version $Revision: 1.1 $
  */
 
-public class SocketController implements Controller {
+public class SocketClient implements Controller {
   private static final int MAX_READ = 5242880;
   private volatile static Vector<S> socketPool = new Vector<S>();
   private volatile S s;
@@ -37,13 +38,13 @@ public class SocketController implements Controller {
   private static final ServerSettings serverSettings
       = ServerSettings.getInstance();
 
-  private SocketController() {
+  private SocketClient() {
     s = null;
   }
 
   // all socketPool edits happen in here...
-  public static synchronized SocketController getSocket() throws IOException {
-    SocketController sc = new SocketController();
+  public static synchronized SocketClient getSocket() throws IOException {
+    SocketClient sc = new SocketClient();
 
     // remove all stale sockets
     for (S s : socketPool) {
