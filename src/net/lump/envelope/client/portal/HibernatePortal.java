@@ -14,14 +14,7 @@ public class HibernatePortal extends Portal {
 
   public List detachedCriteriaQuery(DetachedCriteria dc)
       throws EnvelopeException {
-    List l = (List)invoke(new Command(Command.Name.detachedCriteriaQuery, dc));
-//    while (l.invalid())
-//      try {
-//        Thread.sleep(10);
-//      } catch (InterruptedException e) {
-//        e.printStackTrace();
-//      }
-    return l;
+    return (List)invoke(new Command(Command.Name.detachedCriteriaQuery, dc));
   }
 
   public <T extends Identifiable> T get(Class<T> i, Serializable id)
