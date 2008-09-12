@@ -20,7 +20,7 @@ import java.io.FileOutputStream;
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.2 $
+ * @version $Id: TestBalance.java,v 1.3 2008/09/12 00:21:06 troy Exp $
  */
 public class TestBalance extends TestCase {
   //http://java.sun.com/developer/technicalArticles/WebServices/jaxb/index.html

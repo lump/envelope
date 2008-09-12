@@ -4,7 +4,7 @@ package us.lump.envelope.client.thread;
  * Status element.
  *
  * @author Troy Bowman
- * @version $Revision: 1.3 $
+ * @version $Id: StatusElement.java,v 1.4 2008/09/12 00:21:06 troy Exp $
  */
 
 public class StatusElement {

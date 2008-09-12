@@ -9,7 +9,7 @@ import java.util.zip.GZIPOutputStream;
  * Compression utility class.
  *
  * @author Troy Bowman
- * @version $Revision: 1.2 $
+ * @version $Id: Compression.java,v 1.3 2008/09/12 00:21:06 troy Exp $
  */
 
 public class Compression {

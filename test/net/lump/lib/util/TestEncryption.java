@@ -19,7 +19,7 @@ import java.util.Arrays;
  * .
  *
  * @author Troy Bowman
- * @version $Revision: 1.5 $
+ * @version $Id: TestEncryption.java,v 1.6 2008/09/12 00:21:06 troy Exp $
  */
 public class TestEncryption extends TestCase {
 
