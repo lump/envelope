@@ -128,12 +128,12 @@
                includes="Envelope.class"/>
       <!--includes="Envelope.class, security.policy"/>-->
       <!--<fileset dir="${classes}"-->
-      <!--includes="-->
-      <!--security.policy,-->
-      <!--Envelope.class,-->
-      <!--us/lump/lib/**/*,-->
-      <!--us/lump/envelope/exception/*-->
-      <!--us/lump/envelope/client/**/*"/>-->
+      <!--includes="security.policy,-->
+                <!--Envelope.class,-->
+                <!--us/lump/lib/**/*,-->
+                <!--us/lump/envelope/exception/*-->
+                <!--us/lump/envelope/Command*-->
+                <!--us/lump/envelope/client/**/*"/>-->
     </copy>
   </target>
 

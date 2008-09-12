@@ -116,7 +116,7 @@ public class HttpRequestHandler implements RequestHandler {
               is.skip(header.length());// - magic.length());
               XferFlags flags = new XferFlags((byte)is.read());
               is.mark(MAX_READ);
-              
+
               InputStream optionIs = is;
 
               SecretKey sessionKey = null;
@@ -182,7 +182,7 @@ public class HttpRequestHandler implements RequestHandler {
               if (flags.hasFlag(XferFlags.ENCRYPT)) {
                 CipherOutputStream cos = Encryption.encodeSym(sessionKey, os);
                 baos.writeTo(cos);
-                
+
                 cos.flush();
                 // if we're not on the padding boundary, pad some zeros
 //                if (baos.size() % cos.getBlockSize() != 0)
@@ -231,10 +231,22 @@ public class HttpRequestHandler implements RequestHandler {
           jnlp = jnlp.replaceAll("\\{description\\}", "An Envelope Budget");
           jnlp = jnlp.replaceAll("\\{icon\\}", "lib/franklin.png");
           jnlp = jnlp.replaceAll("\\{main-class\\}", "Envelope");
+
+//          for (String file : new String[]{"slim-client.jar.pack.gz",
+//                                          "slim-client.jar",
+//                                          "client.jar.pack.gz",
+//                                          "client.jar"}) {
+//            if (ClassLoader.getSystemResource("lib/"+file) != null) {
+//              jnlp =
+//                  jnlp.replaceAll("\\{jars\\}",
+//                                  "<jar href=\"lib/"+file+"\">\n");
+//              break;
+//            }
+//          }
+//
           jnlp =
               jnlp.replaceAll("\\{jars\\}",
                               "<jar href=\"lib/client.jar.pack.gz\">\n");
-
           out.writeBytes("HTTP/1.0 200 OK\r\n");
           out.writeBytes("Content-Type: application/x-java-jnlp-file\r\n");
           out.writeBytes("Content-Disposition: name=envelope.jnlp\r\n");

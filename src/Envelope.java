@@ -10,7 +10,7 @@ import java.rmi.server.RMIClassLoader;
  * The class that starts the client by bootstrapping from RMI.
  *
  * @author Troy Bowman
- * @version $Id: Envelope.java,v 1.8 2008/07/19 05:39:44 troy Exp $
+ * @version $Id: Envelope.java,v 1.9 2008/09/12 04:04:24 troy Exp $
  */
 
 public class Envelope {
@@ -53,7 +53,7 @@ public class Envelope {
                        urlCodebase() + "info/security.policy");
 //      System.setProperty("java.security.policy",
 //                         this.getClass().getResource("security.policy").toString());
-    System.setSecurityManager(new RMISecurityManager());
+//    System.setSecurityManager(new RMISecurityManager());
 //      System.setProperty("java.class.path",
 //                         System.getProperty("java.class.path") + ":" + codebase);
 
@@ -65,14 +65,14 @@ public class Envelope {
       ((Runnable)clientClass.newInstance()).run();
     }
     catch (ClassNotFoundException e) {
-      System.err.println("loading from RMI");
+      System.err.println("loading from server");
       Class clientClass = Class.forName(
           className, true,
           RMIClassLoader.getClassLoader(urlCodebase().toString()));
 //      Class clientClass = Class.forName(
 //          className, true,
 //          new URLClassLoader(new URL[]{urlCodebase()},
-//                             ClassLoader.getSystemClassLoader()));
+//                             Thread.currentThread().getContextClassLoader()));
 
       ((Runnable)clientClass.newInstance()).run();
     }
