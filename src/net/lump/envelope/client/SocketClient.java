@@ -27,7 +27,7 @@ import java.util.zip.GZIPInputStream;
  * through said connections..
  *
  * @author Troy Bowman
- * @version $Id: SocketClient.java,v 1.2 2008/09/12 00:21:06 troy Exp $
+ * @version $Id: SocketClient.java,v 1.3 2008/09/12 00:21:47 troy Exp $
  */
 
 public class SocketClient implements Controller {

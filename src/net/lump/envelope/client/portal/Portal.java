@@ -29,7 +29,7 @@ import java.text.MessageFormat;
  * exit/entry to the server along with exception handling.
  *
  * @author Troy Bowman
- * @version $Id: Portal.java,v 1.20 2008/09/12 00:21:06 troy Exp $
+ * @version $Id: Portal.java,v 1.21 2008/09/12 00:21:47 troy Exp $
  */
 
 abstract class Portal {

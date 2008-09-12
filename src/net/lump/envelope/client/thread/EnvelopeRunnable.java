@@ -4,7 +4,7 @@ package us.lump.envelope.client.thread;
  * A runnable with a status identifier.
  *
  * @author Troy Bowman
- * @version $Id: EnvelopeRunnable.java,v 1.4 2008/09/12 00:21:06 troy Exp $
+ * @version $Id: EnvelopeRunnable.java,v 1.5 2008/09/12 00:21:47 troy Exp $
  */
 public abstract class EnvelopeRunnable implements java.lang.Runnable {
 

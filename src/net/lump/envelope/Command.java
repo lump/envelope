@@ -21,7 +21,7 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Id: Command.java,v 1.14 2008/09/12 00:21:06 troy Exp $
+ * @version $Id: Command.java,v 1.15 2008/09/12 00:21:47 troy Exp $
  */
 public class Command implements Serializable {
   /**
@@ -41,7 +41,7 @@ public class Command implements Serializable {
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Id: Command.java,v 1.14 2008/09/12 00:21:06 troy Exp $
+   * @version $Id: Command.java,v 1.15 2008/09/12 00:21:47 troy Exp $
    */
   public enum Name {
 
