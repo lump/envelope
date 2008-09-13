@@ -1,3 +1,5 @@
+import us.lump.lib.util.ChildFirstClassLoader;
+
 import javax.swing.*;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -10,7 +12,7 @@ import java.rmi.server.RMIClassLoader;
  * The class that starts the client by bootstrapping from RMI.
  *
  * @author Troy Bowman
- * @version $Id: Envelope.java,v 1.9 2008/09/12 04:04:24 troy Exp $
+ * @version $Id: Envelope.java,v 1.10 2008/09/13 00:37:41 troy Exp $
  */
 
 public class Envelope {
@@ -58,24 +60,24 @@ public class Envelope {
 //                         System.getProperty("java.class.path") + ":" + codebase);
 
     // try to load the class normally, else use RMI classloader
-    try {
-      Class clientClass = Class.forName(
-          className, true, Thread.currentThread().getContextClassLoader());
-      System.err.println("loading from local classloader");
-      ((Runnable)clientClass.newInstance()).run();
-    }
-    catch (ClassNotFoundException e) {
+//    try {
+//      Class clientClass = Class.forName(
+//          className, true, Thread.currentThread().getContextClassLoader());
+//      System.err.println("loading from local classloader");
+//      ((Runnable)clientClass.newInstance()).run();
+//    }
+//    catch (ClassNotFoundException e) {
       System.err.println("loading from server");
-      Class clientClass = Class.forName(
-          className, true,
-          RMIClassLoader.getClassLoader(urlCodebase().toString()));
 //      Class clientClass = Class.forName(
 //          className, true,
-//          new URLClassLoader(new URL[]{urlCodebase()},
-//                             Thread.currentThread().getContextClassLoader()));
+//          RMIClassLoader.getClassLoader(urlCodebase().toString()));
+    Class clientClass = Class.forName(
+          className, true,
+          new ChildFirstClassLoader(new URL[]{urlCodebase()},
+                                    Thread.currentThread().getContextClassLoader()));
 
       ((Runnable)clientClass.newInstance()).run();
-    }
+//    }
   }
 
   private URL urlCodebase() throws MalformedURLException {

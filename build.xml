@@ -120,20 +120,25 @@
   <target name="client.dist.prepare" depends="compile">
     <delete dir="${client.classes}"/>
     <mkdir dir="${client.classes}"/>
-    <!--<unzip dest="${client.classes}">-->
-    <!--<fileset dir="${lib}" includes="log4j*.jar, ui.jar, forms_rt.jar"/>-->
-    <!--</unzip>-->
+    <unzip dest="${client.classes}">
+      <fileset dir="${lib}"
+               includes="log4j*.jar,
+                         ui.jar,
+                         forms_rt.jar,
+                         commons*.jar,
+                         hibernate*.jar,
+                         jcalendar*.jar"/>
+    </unzip>
     <copy todir="${client.classes}">
-      <fileset dir="${classes}"
-               includes="Envelope.class"/>
-      <!--includes="Envelope.class, security.policy"/>-->
       <!--<fileset dir="${classes}"-->
-      <!--includes="security.policy,-->
-                <!--Envelope.class,-->
-                <!--us/lump/lib/**/*,-->
-                <!--us/lump/envelope/exception/*-->
-                <!--us/lump/envelope/Command*-->
-                <!--us/lump/envelope/client/**/*"/>-->
+               <!--includes="Envelope.class"/>-->
+      <fileset dir="${classes}"
+      includes="security.policy,
+                Envelope.class,
+                us/lump/lib/**/*,
+                us/lump/envelope/exception/*
+                us/lump/envelope/Command*
+                us/lump/envelope/client/**/*"/>
     </copy>
   </target>
 
