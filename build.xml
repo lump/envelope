@@ -4,17 +4,11 @@
   <tstamp>
     <format property="timestamp" pattern="EEE, d MMM yyyy HH:mm:ss Z (z)"/>
   </tstamp>
-  <!-- if env.USER isn't defined, we must be on windows, set it to ${env.USERNAME} -->
-  <!-- same goes for other properties -->
-  <property name="env.USER" value="${env.USERNAME}"/>
-  <!-- set env.HOSTNAME from env.HOST if env.HOSTNAME isn't already defined. -->
-  <!-- some linux boxes have HOST defined, but not HOSTNAME.  this makes sure we get it. -->
+  <!-- chain of property sets to try to make env.COMPUTERNAME be filled by something -->
+  <!-- if any of them are already set, it's all good -->
+  <exec executable="hostname" outputproperty="env.HOST"/>
   <property name="env.HOSTNAME" value="${env.HOST}"/>
-  <!-- set env.COMPUTERNAME from env.HOSTNAME if it isn't already defined. -->
-  <!-- windows already has env.COMPUTERNAME defined, but unix hosts won't have it. -->
-  <!-- we'll use COMPUTERNAME in this build file, as it should be set now -->
   <property name="env.COMPUTERNAME" value="${env.HOSTNAME}"/>
-  <property name="env.OSTYPE" value="${env.OS}"/>
 
   <property name="client.classes" value="${basedir}/client-classes"/>
   <property name="server.classes" value="${basedir}/server-classes"/>
@@ -129,6 +123,7 @@
                          hibernate*.jar,
                          jcalendar*.jar"/>
     </unzip>
+    <delete dir="${client.classes}/META-INF"/>
     <copy todir="${client.classes}">
       <!--<fileset dir="${classes}"-->
                <!--includes="Envelope.class"/>-->
@@ -147,21 +142,22 @@
   </target>
   <target name="client.jar" depends="client.dist.prepare"
           description="build client jar">
-    <delete file="${lib}/client.jar"/>
-    <jar jarfile="${lib}/client.jar"
+    <delete file="${dist}/client.jar"/>
+    <jar jarfile="${dist}/client.jar"
          compress="${jar.compress}"
          basedir="${client.classes}">
       <manifest>
         <attribute name="Main-Class" value="Envelope"/>
-        <attribute name="Built-By" value="${env.USER}"/>
+        <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Build-Time" value="${timestamp}"/>
-        <attribute name="Built-On-OS" value="${env.OSTYPE}"/>
+        <attribute name="Built-On-OS" value="${os.name} ${os.version} ${os.arch}"/>
+        <attribute name="Built-On-VM" value="${java.version} ${java.vendor}"/>
         <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
         <!--<attribute name="Class-Path" value="http://localhost:7041/"/>-->
       </manifest>
     </jar>
-    <pack200 src="${lib}/client.jar"
-             destfile="${lib}/client.pack200.jar"
+    <pack200 src="${dist}/client.jar"
+             destfile="${dist}/client.pack200.jar"
              repack="true"
              deflatehint="false"
              unknownattribute="error"
@@ -170,26 +166,32 @@
              segmentlimit="-1"
              keepfileorder="true"
              effort="9"
-             gzipoutput="false"
-             verbose="false"/>
+             gzipoutput="false"/>
 
-    <signjar alias="envelope" keystore="security/keystore" storepass="OS.32sf"
+    <move verbose="true"
+          overwrite="true"
+          file="${dist}/client.pack200.jar"
+          tofile="${dist}/client.jar"/>
+
+    <signjar alias="envelope"
+             keystore="security/keystore"
+             storepass="OS.32sf"
+             preservelastmodified="false"
              lazy="true">
-      <fileset dir="${lib}" includes="client.pack200.jar"/>
+      <fileset dir="${dist}" includes="client.jar"/>
     </signjar>
-    <pack200 src="${lib}/client.pack200.jar"
-             destfile="${lib}/client.jar.pack.gz"
+    <pack200 src="${dist}/client.jar"
+             destfile="${dist}/client.jar.pack.gz"
              repack="false"
-             deflatehint="false"
+             deflatehint="true"
              unknownattribute="error"
              stripdebug="true"
-             modificationtime="keep"
+             modificationtime="latest"
              segmentlimit="-1"
-             keepfileorder="true"
+             keepfileorder="false"
              effort="9"
-             gzipoutput="true"
-             verbose="false"/>
-    <delete file="${lib}/client.pack200.jar"/>
+             gzipoutput="true"/>
+    <!--<delete file="${dist}/client.pack200.jar"/>-->
   </target>
 
   <target name="server.jar" depends="compile" description="build server jar">
@@ -197,15 +199,16 @@
       <fileset dir="${classes}"/>
       <!--excludes="us/lump/envelope/client/ui/*, Envelope.class"/>-->
     </copy>
-    <delete file="${dist}/${ant.project.name}-rmi.jar"/>
-    <jar jarfile="${dist}/${ant.project.name}-rmi.jar"
+    <delete file="${dist}/${ant.project.name}-server.jar"/>
+    <jar jarfile="${dist}/${ant.project.name}-server.jar"
          compress="${jar.compress}"
          basedir="${server.classes}">
       <manifest>
         <attribute name="Main-Class" value="us.lump.envelope.Server"/>
-        <attribute name="Built-By" value="${env.USER}"/>
+        <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Build-Time" value="${timestamp}"/>
-        <attribute name="Built-On-OS" value="${env.OSTYPE}"/>
+        <attribute name="Built-On-OS" value="${os.name} ${os.version} ${os.arch}"/>
+        <attribute name="Built-On-VM" value="${java.version} ${java.vendor}"/>
         <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
       </manifest>
     </jar>
@@ -226,12 +229,15 @@
     <mkdir dir="${one.jar.classes}/lib"/>
     <copy todir="${one.jar.classes}/lib">
       <fileset dir="${lib}" includes="*.jar, *.pack.gz *.png"/>
-      <fileset dir="${lib}/jaxb" includes="*.jar"/>
+      <fileset dir="${dist}" includes="client*.jar, client*gz"/>
+      <!--<fileset dir="${lib}/jaxb" includes="*.jar"/>-->
+      <fileset dir="src/us/lump/envelope/client/ui/images"
+               includes="envelope.png" />
     </copy>
 
     <mkdir dir="${one.jar.classes}/main"/>
     <copy tofile="${one.jar.classes}/main/main.jar"
-          file="${dist}/${ant.project.name}-rmi.jar"/>
+          file="${dist}/${ant.project.name}-server.jar"/>
 
     <delete file="${dist}/server.jar"/>
 
@@ -243,9 +249,10 @@
         <!--<attribute name="One-Jar-Expand" value="expand,doc"/>-->
         <!--<attribute name="Version" value="${deploy.version}"/>-->
         <attribute name="Boot-Class" value="us.lump.envelope.Server"/>
-        <attribute name="Built-By" value="${env.USER}"/>
+        <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Build-Time" value="${timestamp}"/>
-        <attribute name="Built-On-OS" value="${env.OSTYPE}"/>
+        <attribute name="Built-On-OS" value="${os.name} ${os.version} ${os.arch}"/>
+        <attribute name="Built-On-VM" value="${java.version} ${java.vendor}"/>
         <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
       </manifest>
     </jar>
