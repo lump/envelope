@@ -246,7 +246,8 @@ public class HttpRequestHandler implements RequestHandler {
 //
           jnlp =
               jnlp.replaceAll("\\{jars\\}",
-                              "<jar href=\"lib/client.jar.pack.gz\">\n");
+                              "<jar href=\"lib/client.jar.pack.gz\">\n"
+              );
           out.writeBytes("HTTP/1.0 200 OK\r\n");
           out.writeBytes("Content-Type: application/x-java-jnlp-file\r\n");
           out.writeBytes("Content-Disposition: name=envelope.jnlp\r\n");

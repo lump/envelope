@@ -1,4 +1,4 @@
-package us.lump.envelope.server.dao;
+package us.lump.envelope.server;
 
 import us.lump.envelope.entity.User;
 
@@ -6,7 +6,7 @@ import us.lump.envelope.entity.User;
  * An attempt at keeping a repository of thread local variables.
  *
  * @author troy
- * @version $Id: ThreadInfo.java,v 1.1 2007/09/09 07:17:55 troy Exp $
+ * @version $Id: ThreadInfo.java,v 1.1 2008/09/13 19:19:30 troy Test $
  */
 public class ThreadInfo {
 

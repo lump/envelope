@@ -16,6 +16,7 @@ import us.lump.envelope.entity.Transaction;
 import us.lump.envelope.exception.DataException;
 import us.lump.envelope.exception.EnvelopeException;
 import us.lump.envelope.server.PrefsConfigurator;
+import us.lump.envelope.server.ThreadInfo;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -26,7 +27,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.19 2008/08/31 00:29:59 troy Exp $
+ * @version $Id: DAO.java,v 1.20 2008/09/13 19:19:30 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;

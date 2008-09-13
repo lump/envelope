@@ -21,7 +21,7 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Id: Command.java,v 1.15 2008/09/12 00:21:47 troy Exp $
+ * @version $Id: Command.java,v 1.16 2008/09/13 19:18:25 troy Exp $
  */
 public class Command implements Serializable {
   /**
@@ -33,15 +33,13 @@ public class Command implements Serializable {
     Generic,
     Security,
     Action,
-    Status,
-    Report
   }
 
   /**
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Id: Command.java,v 1.15 2008/09/12 00:21:47 troy Exp $
+   * @version $Id: Command.java,v 1.16 2008/09/13 19:18:25 troy Exp $
    */
   public enum Name {
 
@@ -55,23 +53,13 @@ public class Command implements Serializable {
     // generic
     detachedCriteriaQuery(Dao.Generic, DetachedCriteria.class),
     get(Dao.Generic, Class.class, Serializable.class),
-    merge(Dao.Generic, Identifiable.class),
-    refresh(Dao.Generic, Identifiable.class),
     save(Dao.Generic, Identifiable.class),
     saveOrUpdate(Dao.Generic, Identifiable.class),
+//    merge(Dao.Generic, Identifiable.class),
+//    refresh(Dao.Generic, Identifiable.class),
 
     // transaction
     updateReconciled(Dao.Action, Integer.class, Boolean.class),
-    listTransactionsInYear(Dao.Action, Integer.class),
-    listTransactionsBetweenDates(Dao.Action, Date.class, Date.class),
-
-    // report
-    getCategory(Dao.Status, String.class),
-    getCategoryBalance(Dao.Status, Category.class, Boolean.class),
-    getCategoryBalances(Dao.Status, Boolean.class),
-    getAccount(Dao.Status, String.class),
-    getAccountBalance(Dao.Status, Account.class, Boolean.class),
-    getAccountBalances(Dao.Status, Boolean.class),
 
     //more command definitions here...
     ;
