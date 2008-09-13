@@ -229,7 +229,7 @@ public class HttpRequestHandler implements RequestHandler {
           jnlp = jnlp.replaceAll("\\{title\\}", "Envelope Java Web Start");
           jnlp = jnlp.replaceAll("\\{vendor\\}", "Lump Software");
           jnlp = jnlp.replaceAll("\\{description\\}", "An Envelope Budget");
-          jnlp = jnlp.replaceAll("\\{icon\\}", "lib/franklin.png");
+          jnlp = jnlp.replaceAll("\\{icon\\}", "lib/envelope.png");
           jnlp = jnlp.replaceAll("\\{main-class\\}", "Envelope");
 
 //          for (String file : new String[]{"slim-client.jar.pack.gz",
