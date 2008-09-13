@@ -165,7 +165,7 @@
              modificationtime="keep"
              segmentlimit="-1"
              keepfileorder="true"
-             effort="9"
+             effort="1"
              gzipoutput="false"/>
 
     <move verbose="true"
@@ -183,13 +183,13 @@
     <pack200 src="${dist}/client.jar"
              destfile="${dist}/client.jar.pack.gz"
              repack="false"
-             deflatehint="true"
+             deflatehint="false"
              unknownattribute="error"
              stripdebug="true"
-             modificationtime="latest"
+             modificationtime="keep"
              segmentlimit="-1"
-             keepfileorder="false"
-             effort="9"
+             keepfileorder="true"
+             effort="1"
              gzipoutput="true"/>
     <!--<delete file="${dist}/client.pack200.jar"/>-->
   </target>
