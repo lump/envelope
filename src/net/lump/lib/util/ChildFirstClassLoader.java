@@ -4,16 +4,14 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 /**
- * An almost trivial no-fuss implementation of a class loader
- * following the child-first delegation model.
+ * A child-first class loader.
  *
- * @author <a href="http://www.qos.ch/log4j/">Ceki Gulcu</a>
  * @author Troy Bowman
- * @version $Revision: 1.1 $
+ * @version $Revision: 1.2 $
  */
 public class ChildFirstClassLoader extends URLClassLoader {
 
-	public ChildFirstClassLoader(URL[] urls) {
+  public ChildFirstClassLoader(URL[] urls) {
     super(urls);
   }
 
@@ -26,17 +24,13 @@ public class ChildFirstClassLoader extends URLClassLoader {
   }
 
   public Class loadClass(String name) throws ClassNotFoundException {
-  	return loadClass(name, false);
+    return loadClass(name, false);
   }
 
-  /**
-   * We override the parent-first behavior established by
-   * java.lang.Classloader.
-   * <p>
-   * The implementation is surprisingly straightforward.
-   */
+  /** Overrides the parent-first behavior established by java.lang.Classloader. */
+  @Override
   protected Class loadClass(String name, boolean resolve)
-    throws ClassNotFoundException {
+      throws ClassNotFoundException {
 
     //System.out.println("ChildFirstClassLoader("+name+", "+resolve+")");
 
@@ -44,16 +38,15 @@ public class ChildFirstClassLoader extends URLClassLoader {
     Class c = findLoadedClass(name);
 
     // if not loaded, search the local (child) resources
-    if (c == null && name.indexOf("us.lump") == 0) {
+    if (c == null && !name.matches("^(?:javax?|sun)\\..*$")) {
     	try {
         c = findClass(name);
-    	} catch(ClassNotFoundException cnfe) {
-    	  // ignore
-    	}
+      } catch (ClassNotFoundException cnfe) {
+        // ignore
+      }
     }
 
     // if we could not find it, delegate to parent
-    // Note that we don't attempt to catch any ClassNotFoundException
     if (c == null) {
       if (getParent() != null) {
         c = getParent().loadClass(name);
@@ -62,9 +55,7 @@ public class ChildFirstClassLoader extends URLClassLoader {
       }
     }
 
-    if (resolve) {
-      resolveClass(c);
-    }
+    if (resolve) resolveClass(c);
 
     return c;
   }
@@ -74,12 +65,12 @@ public class ChildFirstClassLoader extends URLClassLoader {
    * java.lang.Classloader with child-first behavior.
    */
   public URL getResource(String name) {
+
     URL url = findResource(name);
 
-    // if local search failed, delegate to parent
-    if(url == null) {
-      url = getParent().getResource(name);
-    }
+    // if we fail, *then* delegate to parent
+    if (url == null) url = getParent().getResource(name);
+
     return url;
-   }
+  }
 }

@@ -22,7 +22,7 @@ import java.awt.event.*;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.19 2008/09/06 05:38:13 troy Exp $
+ * @version $Id: MainFrame.java,v 1.20 2008/09/13 19:20:24 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -150,7 +150,7 @@ public class MainFrame extends JFrame {
 
       fileMenu.add(new JMenuItem(new exitActionClass(
           Strings.get("exit"),
-          KeyStroke.getKeyStroke(KeyEvent.VK_Q, shortcutKeyMask)
+          KeyStroke.getKeyStroke(KeyEvent.VK_Q, KeyEvent.CTRL_MASK)
       )));
       fileMenu.setEnabled(true);
 

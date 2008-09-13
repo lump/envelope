@@ -1,18 +1,18 @@
 import us.lump.lib.util.ChildFirstClassLoader;
 
 import javax.swing.*;
+import java.io.File;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
-import java.rmi.RMISecurityManager;
-import java.rmi.server.RMIClassLoader;
+import java.util.ArrayList;
+import java.util.StringTokenizer;
 
 /**
  * The class that starts the client by bootstrapping from RMI.
  *
  * @author Troy Bowman
- * @version $Id: Envelope.java,v 1.10 2008/09/13 00:37:41 troy Exp $
+ * @version $Id: Envelope.java,v 1.11 2008/09/13 19:20:24 troy Exp $
  */
 
 public class Envelope {
@@ -73,8 +73,9 @@ public class Envelope {
 //          RMIClassLoader.getClassLoader(urlCodebase().toString()));
     Class clientClass = Class.forName(
           className, true,
-          new ChildFirstClassLoader(new URL[]{urlCodebase()},
-                                    Thread.currentThread().getContextClassLoader()));
+          new ChildFirstClassLoader(
+              urls(),
+              Thread.currentThread().getContextClassLoader()));
 
       ((Runnable)clientClass.newInstance()).run();
 //    }
@@ -82,6 +83,23 @@ public class Envelope {
 
   private URL urlCodebase() throws MalformedURLException {
     return new URL("http://" + System.getProperty("codebase") + "/");
+  }
+
+  private URL[] urls() throws MalformedURLException {
+    ArrayList<URL> urls = new ArrayList<URL>();
+    StringTokenizer st =
+        new StringTokenizer(System.getProperty("java.class.path", ""),
+                            File.pathSeparator);
+
+    while (st.hasMoreTokens()) {
+      String token = st.nextToken();
+      if (!token.equals("")) {
+        File f = new File(token);
+        if (f.exists()) urls.add(f.toURI().toURL());
+      }
+    }
+    urls.add(urlCodebase());
+    return urls.toArray(new URL[]{});
   }
 
   private String join(String delimiter, Object[] array) {

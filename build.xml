@@ -66,8 +66,8 @@
     <delete dir="${one.jar.classes}"/>
   </target>
 
-  <target name="dist" depends="client.jar, server.dist"
-          description="make the distribution">
+  <target name="dist" depends="client.dist, server.dist"
+          description="make the client and server distribution jars">
     <echo message="dist done."/>
   </target>
 
@@ -117,7 +117,6 @@
     <unzip dest="${client.classes}">
       <fileset dir="${lib}"
                includes="log4j*.jar,
-                         ui.jar,
                          forms_rt.jar,
                          commons*.jar,
                          hibernate*.jar,
@@ -133,13 +132,11 @@
                 us/lump/lib/**/*,
                 us/lump/envelope/exception/*
                 us/lump/envelope/Command*
+                us/lump/envelope/server/rmi/Controller*
                 us/lump/envelope/client/**/*"/>
     </copy>
   </target>
 
-  <target name="client.dist">
-    <antcall target="client.jar"/>
-  </target>
   <target name="client.jar" depends="client.dist.prepare"
           description="build client jar">
     <delete file="${dist}/client.jar"/>
@@ -156,6 +153,10 @@
         <!--<attribute name="Class-Path" value="http://localhost:7041/"/>-->
       </manifest>
     </jar>
+  </target>
+
+  <target name="client.dist" depends="client.jar"
+          description="create client distribution jar and sign and pack200 it">
     <pack200 src="${dist}/client.jar"
              destfile="${dist}/client.pack200.jar"
              repack="true"
@@ -197,7 +198,6 @@
   <target name="server.jar" depends="compile" description="build server jar">
     <copy todir="${server.classes}">
       <fileset dir="${classes}"/>
-      <!--excludes="us/lump/envelope/client/ui/*, Envelope.class"/>-->
     </copy>
     <delete file="${dist}/${ant.project.name}-server.jar"/>
     <jar jarfile="${dist}/${ant.project.name}-server.jar"
@@ -229,6 +229,7 @@
     <mkdir dir="${one.jar.classes}/lib"/>
     <copy todir="${one.jar.classes}/lib">
       <fileset dir="${lib}" includes="*.jar, *.pack.gz *.png"/>
+      <!--excludes="ui.jar"/>-->
       <fileset dir="${dist}" includes="client*.jar, client*gz"/>
       <!--<fileset dir="${lib}/jaxb" includes="*.jar"/>-->
       <fileset dir="src/us/lump/envelope/client/ui/images"
