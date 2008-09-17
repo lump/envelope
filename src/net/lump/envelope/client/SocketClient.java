@@ -29,7 +29,7 @@ import java.util.zip.GZIPInputStream;
  * through said connections..
  *
  * @author Troy Bowman
- * @version $Id: SocketClient.java,v 1.4 2008/09/17 05:44:55 troy Exp $
+ * @version $Id: SocketClient.java,v 1.5 2008/09/17 05:54:19 troy Exp $
  */
 
 public class SocketClient implements Controller {
@@ -194,7 +194,8 @@ public class SocketClient implements Controller {
       // read an object...
       if (flag.has(F_LIST_RETURNED)) {
         final Integer size = (Integer)ois.readObject();
-        final BackgroundList bl = new BackgroundList(size);
+        final BackgroundList<Serializable> bl
+            = new BackgroundList<Serializable>(size);
         ThreadPool.getInstance().execute(
             new EnvelopeRunnable(Strings.get("reading")) {
               public synchronized void run() {
@@ -202,7 +203,7 @@ public class SocketClient implements Controller {
                   for (int x = 0; x < size; x++) {
                     this.setStatusMessage(Strings.get("reading") + " " + x);
                     StatusBar.getInstance().updateLabel();
-                    bl.add(ois.readObject());
+                    bl.add((Serializable)ois.readObject());
                     if (bl.aborted()) break;
                   }
                 } catch (ClassNotFoundException e) {

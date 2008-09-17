@@ -20,16 +20,16 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
 
   public BackgroundList() {}
 
+  @SuppressWarnings({"unchecked"})
   public BackgroundList(int size) {
     synchronized (token) {
-      //noinspection unchecked
       list = (E[])new Object[size];
     }
   }
 
+  @SuppressWarnings({"unchecked"})
   public BackgroundList(Collection<E> c) {
     synchronized (token) {
-      //noinspection unchecked
       list = (E[])c.toArray();
       filled = c.size();
     }
