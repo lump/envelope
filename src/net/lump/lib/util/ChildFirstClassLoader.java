@@ -7,7 +7,7 @@ import java.net.URLClassLoader;
  * A child-first class loader.
  *
  * @author Troy Bowman
- * @version $Revision: 1.2 $
+ * @version $Revision: 1.3 $
  */
 public class ChildFirstClassLoader extends URLClassLoader {
 
@@ -38,7 +38,7 @@ public class ChildFirstClassLoader extends URLClassLoader {
     Class c = findLoadedClass(name);
 
     // if not loaded, search the local (child) resources
-    if (c == null && !name.matches("^(?:javax?|sun)\\..*$")) {
+    if (c == null && !name.matches("^(?:javax?|sun|com\\.apple)\\..*$")) {
     	try {
         c = findClass(name);
       } catch (ClassNotFoundException cnfe) {

@@ -3,40 +3,74 @@ package us.lump.envelope.server;
 /**
  * Bitwise flags for transfer options.
  *
- * @version $Id: XferFlags.java,v 1.1 2008/08/30 22:06:34 troy Exp $
+ * @version $Id: XferFlags.java,v 1.2 2008/09/17 05:44:55 troy Exp $
  */
 public class XferFlags {
 
-  public static final byte LIST = 1; // 1
-  public static final byte COMPRESS = (1 << 1) & 0xff; // 2
-  public static final byte ENCRYPT = (1 << 2) & 0xff; // 4
-  private static final byte RESERVED1 = (1 << 3) & 0xff; // 8
-  private static final byte RESERVED2 = (1 << 4) & 0xff; // 16
-  private static final byte RESERVED3 = (1 << 5) & 0xff; // 32
-  private static final byte RESERVED4 = (1 << 6) & 0xff; // 64
-  
-  private byte flags = 0;
+  public enum Flag {
+    F_NONE,
+    F_ENCRYPT,
+    F_COMPRESS,
+    F_OBJECT_RETURNED,
+    F_LIST_RETURNED,
+//    F_RESERVED2,
+//    F_RESERVED3,
+    ;
 
-  public XferFlags() {
-    this((byte)0);
+    private byte flag = 0;
+
+    private Flag() {
+      if (ordinal() > 0) flag = (byte)(1 << (ordinal() - 1));
+    }
+
+    public byte bit() { return flag; }
   }
 
+  private byte flags = Flag.F_NONE.bit();
+
+  /**
+   * Creates a new XferFlags from the list of flags provided.
+   *
+   * @param flags
+   */
+  public XferFlags(Flag... flags) {
+    if (flags.length > 0) add(flags);
+  }
+
+  /**
+   * Creates a new XferFlags from a byte.
+   *
+   * @param flags byte to use
+   */
   public XferFlags(byte flags) {
     this.flags = flags;
   }
 
-
   /**
    * Adds all turned-on bits in the provided byte to this object.
    *
-   * @param permission the flag(s) to add
+   * @param flags the flag(s) to add
    */
-  public void addFlag(byte permission) {
-    this.flags |= permission;
+  public void add(Flag... flags) {
+    if (flags.length == 0) return;
+    this.flags |= addFlagsTogether(flags);
   }
 
   /**
-   * Returns the permissions in this object as a byte.
+   * Or some flags together into a byte;
+   *
+   * @param flags to add together
+   *
+   * @return byte
+   */
+  private static byte addFlagsTogether(Flag... flags) {
+    byte ored = 0;
+    for (Flag f : flags) ored |= f.bit();
+    return ored;
+  }
+
+  /**
+   * Returns the flags in this object as a byte.
    *
    * @return byte
    */
@@ -45,65 +79,89 @@ public class XferFlags {
   }
 
   /**
-   * Checks to see if any of the bits in the provided int exist in this
+   * Checks to see if any of the bits in the provided Flags exist in this
    * object.
    *
-   * @param permission the permission(s) to check
+   * @param flags: one or more flags
    *
    * @return boolean
    */
-  public boolean hasAnyFlag(byte permission) {
-    return (this.flags & permission) > 0;
+  public boolean hasAny(Flag... flags) {
+    if (flags.length == 0) return this.flags == 0;
+    else if ((this.flags & addFlagsTogether(flags)) > 0) return true;
+    return false;
   }
 
   /**
-   * Checks to see if the all of the bits in the provided byte exist in this
+   * Checks to see if the all of the bits in the provided flags exist in this
    * object.
    *
-   * @param permission the permission to check
+   * @param flags the flags to compare
    *
    * @return boolean
    */
-  public boolean hasFlag(byte permission) {
-    return (this.flags & permission) == permission;
+  public boolean has(Flag... flags) {
+    if (flags.length == 0) return this.flags == 0;
+    else {
+      byte they = addFlagsTogether(flags);
+      return ((this.flags & they) == they);
+    }
   }
 
   /**
    * Removes (turns off) all bits in this object that are turned on in the
    * provided byte.
    *
-   * @param permission bits to remove
+   * @param flags to remove
    */
-  public void removeFlag(byte permission) {
-    this.flags &= this.flags ^ permission;
+  public void remove(Flag... flags) {
+    this.flags &= this.flags ^ addFlagsTogether(flags);
   }
 
   /**
    * This basically clones a Flags object.
    *
-   * @param permission the object to clone
+   * @param flags the object to clone
    */
-  public void setFlags(XferFlags permission) {
-    this.flags = permission.flags;
+  public void set(XferFlags flags) {
+    this.flags = flags.flags;
   }
 
   /**
-   * Sets all of the permissions in this object to exactly what is contained in
-   * the byte that is provided.
+   * Sets all of the flags in this object to exactly what is contained in the
+   * byte that is provided.
    *
-   * @param permission to set
+   * @param flags to set
    */
-  public void setFlags(byte permission) {
-    this.flags = permission;
+  public void set(byte flags) {
+    this.flags = flags;
   }
 
   /**
    * Toggles all bits on/off in this object that are turned on in the provided
    * byte.
    *
-   * @param permission to toggle
+   * @param flags to toggle
    */
-  public void toggleFlag(byte permission) {
-    this.flags ^= permission;
+  public void toggle(Flag... flags) {
+    this.flags ^= addFlagsTogether(flags);
+  }
+
+  /**
+   * Returns a comma-delimited list representing the flags of this instance.
+   *
+   * @return String
+   */
+  public String toString() {
+    if (this.flags == 0) return Flag.F_NONE.toString();
+    String out = "";
+    for (Flag f : Flag.values()) {
+      if (f.bit() == 0) continue;
+      if (this.has(f)) {
+        if (out.length() > 0) out += ",";
+        out += f.toString();
+      }
+    }
+    return out;
   }
 }

@@ -8,6 +8,7 @@ import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
 import us.lump.envelope.server.XferFlags;
+import static us.lump.envelope.server.XferFlags.Flag.*;
 import us.lump.envelope.server.rmi.Controller;
 import us.lump.lib.util.BackgroundList;
 import us.lump.lib.util.Base64;
@@ -19,6 +20,7 @@ import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.rmi.RemoteException;
+import java.util.Arrays;
 import java.util.Vector;
 import java.util.zip.GZIPInputStream;
 
@@ -27,7 +29,7 @@ import java.util.zip.GZIPInputStream;
  * through said connections..
  *
  * @author Troy Bowman
- * @version $Id: SocketClient.java,v 1.3 2008/09/12 00:21:47 troy Exp $
+ * @version $Id: SocketClient.java,v 1.4 2008/09/17 05:44:55 troy Exp $
  */
 
 public class SocketClient implements Controller {
@@ -122,7 +124,7 @@ public class SocketClient implements Controller {
 
       // if we're compressing, compress the stream
       if (serverSettings.getCompress()) {
-        flags.addFlag(XferFlags.COMPRESS);
+        flags.add(F_COMPRESS);
         baos = Compression.compress(baos);
       }
 
@@ -133,7 +135,7 @@ public class SocketClient implements Controller {
           && command.getName() != Command.Name.authChallengeResponse
           && command.getName() != Command.Name.getServerPublicKey) {
         // turn on encrypted flag
-        flags.addFlag(XferFlags.ENCRYPT);
+        flags.add(F_ENCRYPT);
         // generate a new session key
         sessionKey = Encryption.generateSymKey();
         // encode the key with server's public key for transfer and base64 it.
@@ -148,7 +150,7 @@ public class SocketClient implements Controller {
       // write the (possibly mangled) command
 
       // if we're encrypted...
-      if (flags.hasFlag(XferFlags.ENCRYPT)
+      if (flags.has(F_ENCRYPT)
           && sessionKey != null
           && encodedKey != null) {
         ObjectOutputStream oos = new ObjectOutputStream(os);
@@ -173,17 +175,24 @@ public class SocketClient implements Controller {
       InputStream i = b;
 
       // if we're encrypted, wrap the InputStream in a CipherInputStream
-      if (flag.hasFlag(XferFlags.ENCRYPT))
+      if (flag.has(F_ENCRYPT))
         i = Encryption.decodeSym(sessionKey, i);
 
       // if we're compressed, wrap the InputStream ina GZIPInputstream
-      if (flag.hasFlag(XferFlags.COMPRESS)) i = new GZIPInputStream(i);
+      if (flag.has(F_COMPRESS)) i = new GZIPInputStream(i);
 
       // finally, create an objectInputStream of the possibly compressed
       // and possibly encrypted stream.
       final ObjectInputStream ois = new ObjectInputStream(i);
 
-      if (flag.hasFlag(XferFlags.LIST)) {
+      // if object retunred is there, read an object first
+      if (flag.has(F_OBJECT_RETURNED)) {
+        retval = (Serializable)ois.readObject();
+      }
+
+      // if list_returned is there, read a list, possibly after already having
+      // read an object...
+      if (flag.has(F_LIST_RETURNED)) {
         final Integer size = (Integer)ois.readObject();
         final BackgroundList bl = new BackgroundList(size);
         ThreadPool.getInstance().execute(
@@ -204,11 +213,11 @@ public class SocketClient implements Controller {
                 s.busy = false;
               }
             });
-        return bl;
-      } else { // a list isn't being returned
-        retval = (Serializable)ois.readObject();
-      }
 
+        // if retval is already defined, return a list with the bl inside
+        if (retval == null) retval = bl;
+        else retval = (Serializable)Arrays.asList(retval, bl);
+      }
     } catch (IOException e) {
       try {
         s.socket.close();
@@ -225,7 +234,8 @@ public class SocketClient implements Controller {
     s.busy = false;
     if (retval instanceof Exception) {
       throw new RemoteException("Remote Exception caught", (Exception)retval);
-    } else return retval;
+    }
+    else return retval;
   }
 
   private class S {

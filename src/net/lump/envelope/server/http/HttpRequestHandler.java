@@ -3,13 +3,14 @@ package us.lump.envelope.server.http;
 import org.apache.log4j.Logger;
 import us.lump.envelope.Command;
 import us.lump.envelope.Server;
-import us.lump.envelope.server.rmi.Controlled;
 import us.lump.envelope.server.XferFlags;
+import static us.lump.envelope.server.XferFlags.Flag.*;
 import us.lump.envelope.server.dao.Security;
-import us.lump.lib.util.Compression;
-import us.lump.lib.util.Encryption;
+import us.lump.envelope.server.rmi.Controlled;
 import us.lump.lib.util.Base64;
 import us.lump.lib.util.CipherOutputStream;
+import us.lump.lib.util.Compression;
+import us.lump.lib.util.Encryption;
 
 import javax.crypto.SecretKey;
 import java.io.*;
@@ -120,7 +121,7 @@ public class HttpRequestHandler implements RequestHandler {
               InputStream optionIs = is;
 
               SecretKey sessionKey = null;
-              if (flags.hasFlag(XferFlags.ENCRYPT)) {
+              if (flags.has(F_ENCRYPT)) {
                 Security security = new Security();
                 // read the session key, ecnrypted for me.
                 ObjectInputStream ois = new ObjectInputStream(is);
@@ -134,23 +135,12 @@ public class HttpRequestHandler implements RequestHandler {
                     Encryption.decodeSym(sessionKey,
                                          (String)(ois).readObject()));
               }
-              if (flags.hasFlag(XferFlags.COMPRESS))
+              if (flags.has(F_COMPRESS))
                 optionIs = new GZIPInputStream(optionIs);
 
               ObjectInputStream ois = new ObjectInputStream(optionIs);
               Command command = (Command)ois.readObject();
               is.mark(MAX_READ); // mark right after object
-
-              logger.info(
-                  "["
-                  + (flags.hasFlag(XferFlags.ENCRYPT)
-                     ? "encrypt"
-                     : "cleartext")
-                  + ","
-                  + (flags.hasFlag(XferFlags.COMPRESS)
-                     ? "compress"
-                     : "uncompress")
-                  + "] " + command.toString());
 
               Controlled c = new Controlled(null);
               Object retval = c.invoke(command);
@@ -161,25 +151,25 @@ public class HttpRequestHandler implements RequestHandler {
               ObjectOutputStream oos = new ObjectOutputStream(baos);
 
               if (retval instanceof List) {
-                flags.addFlag(XferFlags.LIST);
+                flags.add(F_LIST_RETURNED);
                 oos.writeObject(new Integer(((List)retval).size()));
                 for (Object out : (List)retval) oos.writeObject(out);
               } else {
-                flags.removeFlag(XferFlags.LIST); // make sure it's not there.
+                flags.add(F_OBJECT_RETURNED); // make sure it's not there.
                 oos.writeObject(retval);
               }
               oos.flush();
               oos.close();
 
               // if we're asked to compress the output stream...
-              if (flags.hasFlag(XferFlags.COMPRESS))
+              if (flags.has(F_COMPRESS))
                 baos = Compression.compress(baos);
 
               OutputStream os = socket.getOutputStream();
               os.write(flags.getByte());
 
               // if we're asked to encrypt the output stream...
-              if (flags.hasFlag(XferFlags.ENCRYPT)) {
+              if (flags.has(F_ENCRYPT)) {
                 CipherOutputStream cos = Encryption.encodeSym(sessionKey, os);
                 baos.writeTo(cos);
 
@@ -193,6 +183,7 @@ public class HttpRequestHandler implements RequestHandler {
                 baos.writeTo(os);
               }
               os.flush();
+              logger.info("[" + flags + "] " + command.toString());
             }
             catch (EOFException e) {
               loop = false;

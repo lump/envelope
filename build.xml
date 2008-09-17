@@ -124,8 +124,7 @@
     </unzip>
     <delete dir="${client.classes}/META-INF"/>
     <copy todir="${client.classes}">
-      <!--<fileset dir="${classes}"-->
-               <!--includes="Envelope.class"/>-->
+      <!--includes="Envelope.class, us/lump/lib/util/ChildFirstClassLoader.class"/>-->
       <fileset dir="${classes}"
       includes="security.policy,
                 Envelope.class,
