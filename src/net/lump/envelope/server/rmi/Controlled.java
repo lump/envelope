@@ -19,7 +19,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controlled.java,v 1.14 2008/08/30 22:06:34 troy Exp $
+ * @version $Id: Controlled.java,v 1.15 2008/09/18 05:50:07 troy Exp $
  */
 public class Controlled extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -34,19 +34,15 @@ public class Controlled extends UnicastRemoteObject implements Controller {
    */
   public Controlled() throws RemoteException {
     super(0);
-//    super(0, ZipSocket.getClientSocketFactory(),
-//          ZipSocket.getServerSocketFactory());
   }
 
   /**
-   * start a controlled without a socket.
+   * A constructor which doesn't start up UnicastRemoteObject crap.
    *
-   * @param bla
-   *
+   * @param blah
    * @throws RemoteException
    */
-  public Controlled(String bla) throws RemoteException {
-
+  public Controlled(Object blah) throws RemoteException {
   }
 
   /**
@@ -55,10 +51,10 @@ public class Controlled extends UnicastRemoteObject implements Controller {
    * the command, and validate sessions if necessary.  We can also catch errors
    * and handle graceful closing or rollbacks of transactions.
    *
-   * @param command one more more commands
+   * @param command the command
    *
-   * @return Object if there are more than one command, the object will be a
-   *         List of objects.
+   * @return an object which must be Serializable for transfer
+   *
    *
    * @throws RemoteException
    */

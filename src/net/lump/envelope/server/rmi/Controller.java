@@ -15,12 +15,11 @@ public interface Controller extends Remote {
   /**
    * Invoke a command.
    *
-   * @param commands one ore more Command.
+   * @param command to invoke
    *
    * @return an object which contains either the direct result of the command,
-   *         or a list of results if there was more than one command,
    *
-   * @throws RemoteException
+   * @throws RemoteException on failure
    */
-  public Serializable invoke(Command commands) throws RemoteException;
+  public Serializable invoke(Command command) throws RemoteException;
 }
