@@ -1,18 +1,14 @@
 package us.lump.envelope;
 
 import org.hibernate.criterion.DetachedCriteria;
-import us.lump.envelope.entity.Account;
-import us.lump.envelope.entity.Category;
 import us.lump.envelope.entity.Identifiable;
-import us.lump.envelope.entity.Transaction;
 import us.lump.envelope.server.security.Credentials;
-import us.lump.envelope.client.portal.SecurityPortal;
 import us.lump.lib.util.Encryption;
 
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.security.*;
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,7 +17,7 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Id: Command.java,v 1.16 2008/09/13 19:18:25 troy Exp $
+ * @version $Id: Command.java,v 1.17 2008/09/18 05:48:38 troy Exp $
  */
 public class Command implements Serializable {
   /**
@@ -39,7 +35,7 @@ public class Command implements Serializable {
    * A command name.
    *
    * @author Troy Bowman
-   * @version $Id: Command.java,v 1.16 2008/09/13 19:18:25 troy Exp $
+   * @version $Id: Command.java,v 1.17 2008/09/18 05:48:38 troy Exp $
    */
   public enum Name {
 
@@ -64,12 +60,13 @@ public class Command implements Serializable {
     //more command definitions here...
     ;
 
-
+    private final BigInteger bit;
     private final Dao dao;
     private final ArrayList<Class> params = new ArrayList<Class>();
     private final Boolean sessionRequired;
 
     Name(boolean sessionRequired, Dao dao, Class... params) {
+      bit =  BigInteger.ZERO.setBit(ordinal());
       for (Class p : params) this.params.add(p);
       this.dao = dao;
       this.sessionRequired = sessionRequired;
@@ -118,6 +115,26 @@ public class Command implements Serializable {
       return sessionRequired;
     }
 
+    /**
+     * Returns the unique bit, for use in bitwise comparisons.
+     * 
+     * @return BigInteger
+     */
+    public BigInteger bit() {
+      return bit;
+    }
+
+    /**
+     * Returns a bigInteger with the bits set which are commands which
+     * can't be encrypted.
+     * @return
+     */
+    public static BigInteger unEncryptables() {
+      return authChallengeResponse.bit()
+          .or(getServerPublicKey.bit())
+//          .or(....bit());
+          ;
+    }
   }
 
   private final Name name;
