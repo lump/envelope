@@ -184,7 +184,7 @@ public class HttpRequestHandler implements RequestHandler {
               if (outFlags.has(F_OBJECT)) {
                 oos.writeObject(retval);
                 oos.flush();
-                logger.info("response [" + outFlags + "] " + retval );
+                logger.info("object response [" + outFlags + "] " + retval );
               }
 
               // list which is one level deep
