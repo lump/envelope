@@ -117,7 +117,6 @@ public class HttpRequestHandler implements RequestHandler {
               is.skip(header.length());// - magic.length());
               XferFlags outFlags = new XferFlags();
               XferFlags inFlags = new XferFlags((byte)is.read());
-              logger.info("request flags [" + inFlags + "] " );
               is.mark(MAX_READ);
 
               InputStream optionIs = is;
@@ -152,6 +151,7 @@ public class HttpRequestHandler implements RequestHandler {
                 Command command = (Command)ois.readObject();
                 is.mark(MAX_READ);
                 retval = c.invoke(command);
+                logger.info("request [" + inFlags + "] "+command);
                 logger.info(command);
                 if (retval instanceof List) outFlags.add(F_LIST);
                 else outFlags.add(F_OBJECT);
@@ -167,7 +167,9 @@ public class HttpRequestHandler implements RequestHandler {
                   Object out = c.invoke(command);
                   if (out instanceof List) listOfLists = true;
                   list.add(out);
-                  logger.info("["+(x+1)+" of "+size+"] "+command);
+                  logger.info(
+                      "request [" + inFlags + "]"
+                      + "["+(x+1)+" of "+size+"] "+command);
                 }
                 retval = list;
                 if (listOfLists) outFlags.add(F_LISTS);
@@ -178,17 +180,20 @@ public class HttpRequestHandler implements RequestHandler {
               // because gzip outputstream will close the socket when we close.
               ByteArrayOutputStream baos = new ByteArrayOutputStream();
               ObjectOutputStream oos = new ObjectOutputStream(baos);
-              logger.info("response flags [" + outFlags + "] " );
               // just one object
               if (outFlags.has(F_OBJECT)) {
                 oos.writeObject(retval);
                 oos.flush();
+                logger.info("response [" + outFlags + "] " + retval );
               }
 
               // list which is one level deep
               if (outFlags.has(F_LIST)) {
                 oos.writeObject(new Integer(((List)retval).size()));
                 oos.flush();
+                logger.info("response [" + outFlags + "] "
+                            + ((List)retval).size() + "r "
+                            + ((List)retval).get(0).getClass().getSimpleName());
                 for (Object entry : (List)retval) {
                   oos.writeObject(entry);
                   oos.flush();
@@ -198,10 +203,14 @@ public class HttpRequestHandler implements RequestHandler {
               // list which is possibly two levels deep
               if (outFlags.has(F_LISTS)) {
                 oos.writeObject(new Integer(((List)retval).size()));
+                logger.info("response [" + outFlags + "] "
+                            + ((List)retval).size() + "r");
                 for (Object entry : (List)retval) {
                   if (entry instanceof List) {
                     oos.writeObject(new Integer(((List)entry).size()));
                     oos.flush();
+                    logger.info("response [" + outFlags + "] "
+                                + ((List)entry).size() + "r");
                     for (Object sub : (List)entry) {
                       oos.writeObject(sub);
                       oos.flush();

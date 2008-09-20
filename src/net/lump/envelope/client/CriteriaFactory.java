@@ -17,7 +17,7 @@ import java.util.List;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.15 2008/09/20 05:29:59 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.16 2008/09/20 06:08:31 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -71,17 +71,19 @@ public class CriteriaFactory {
           .add(Projections.groupProperty("c.id"))
           .add(Projections.sum("amount"))
           .add(Projections.max("t.date"));
-      for (Object[] o :
+      List<Object[]> list =
           (List<Object[]>)(new HibernatePortal()).detachedCriteriaQuery(
               DetachedCriteria.forClass(Allocation.class)
                   .createAlias("category", "c")
                   .add(Restrictions.eq("c.account", account))
                   .createAlias("transaction", "t")
                   .setProjection(plist)
-                  .addOrder(Order.asc("CategoryName")))) {
-        retval.add(new Hierarchy.CategoryTotal((String)o[0],
-                                               (Integer)o[1],
-                                               (Money)o[2]));
+                  .addOrder(Order.asc("CategoryName")));
+      if (list != null)
+        for (Object[] o : list) {
+          retval.add(new Hierarchy.CategoryTotal((String)o[0],
+                                                 (Integer)o[1],
+                                                 (Money)o[2]));
       }
     } catch (EnvelopeException e) {
       logger.error(e);

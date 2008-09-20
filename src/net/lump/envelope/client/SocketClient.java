@@ -31,7 +31,7 @@ import java.util.zip.GZIPInputStream;
  * through said connections..
  *
  * @author Troy Bowman
- * @version $Id: SocketClient.java,v 1.6 2008/09/20 05:29:59 troy Exp $
+ * @version $Id: SocketClient.java,v 1.7 2008/09/20 06:08:31 troy Exp $
  */
 
 public class SocketClient implements Controller {
@@ -240,7 +240,8 @@ public class SocketClient implements Controller {
                       // since size should never be negative, we're safe.
                       // (1397705797 is "SOLE" in integer form :)
                       if (size == -1397705797) {
-                        this.setStatusMessage(Strings.get("reading") + " " + x);
+                        this.setStatusMessage(
+                            Strings.get("reading") + " " + (x+1));
                         StatusBar.getInstance().updateLabel();
                         bl.add((Serializable)ois.readObject());
                       }
@@ -258,7 +259,7 @@ public class SocketClient implements Controller {
                         // noticed by the listeners who register.
                         for (int y = 0; y < subSize; y++) {
                           this.setStatusMessage(
-                              Strings.get("reading") + " " + x + ":" + y);
+                              Strings.get("reading") + " " + (x+1) + ":" + y);
                           StatusBar.getInstance().updateLabel();
                           subBl.add((Serializable)ois.readObject());
                         }

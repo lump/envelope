@@ -95,9 +95,8 @@ public class TransactionTableModel extends AbstractTableModel {
 
             int selectedRow = table.getSelectedRow();
             if (selectedRow > -1)
-              selectionCache =
-                  (Integer)transactions.get(selectedRow)[COLUMN.TransactionID
-                      .ordinal()];
+              selectionCache = (Integer)transactions
+                  .get(selectedRow)[COLUMN.TransactionID.ordinal()];
 
             beginDate = t.begin;
             endDate = t.end;
@@ -121,14 +120,18 @@ public class TransactionTableModel extends AbstractTableModel {
                     cf.getTransactions(
                         TransactionTableModel.this.thing, beginDate, endDate));
 
-            beginningBalance = results.get(0) != null
-                               && ((List)results.get(0)).size() > 0
-                               ? (Money)((List)results.get(0)).get(0)
-                               : new Money(0);
-            beginningReconciledBalance = results.get(1) != null
-                                         && ((List)results.get(1)).size() > 0
-                                         ? (Money)((List)results.get(1)).get(0)
-                                         : new Money(0);
+            beginningBalance =
+                results.get(0) != null
+                && ((List)results.get(0)).size() > 0
+                && ((List)results.get(0)).get(0) != null
+                ? (Money)((List)results.get(0)).get(0)
+                : new Money(0);
+            beginningReconciledBalance =
+                results.get(1) != null
+                && ((List)results.get(1)).size() > 0
+                && ((List)results.get(1)).get(0) != null
+                ? (Money)((List)results.get(1)).get(0)
+                : new Money(0);
 
             //noinspection unchecked
             final BackgroundList<Object[]> incoming
