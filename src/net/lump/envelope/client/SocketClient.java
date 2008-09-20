@@ -17,10 +17,12 @@ import us.lump.lib.util.Encryption;
 
 import javax.crypto.SecretKey;
 import java.io.*;
+import java.math.BigInteger;
 import java.net.Socket;
 import java.net.SocketException;
 import java.rmi.RemoteException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Vector;
 import java.util.zip.GZIPInputStream;
 
@@ -29,7 +31,7 @@ import java.util.zip.GZIPInputStream;
  * through said connections..
  *
  * @author Troy Bowman
- * @version $Id: SocketClient.java,v 1.5 2008/09/17 05:54:19 troy Exp $
+ * @version $Id: SocketClient.java,v 1.6 2008/09/20 05:29:59 troy Exp $
  */
 
 public class SocketClient implements Controller {
@@ -106,36 +108,68 @@ public class SocketClient implements Controller {
     } else s = new S(socket, true);
   }
 
-  // falsifying busy only happens here.
-  public synchronized Serializable invoke(Command command)
+
+  public Serializable invoke(Command command) throws RemoteException {
+    return invoke(Arrays.asList(command));
+  }
+
+  public synchronized Serializable invoke(List<Command> commands)
       throws RemoteException {
+
+    if (commands.size() == 0)
+      throw new
+          IllegalArgumentException("list must contain one or more commands");
+
     Serializable retval = null;
 
     try {
       // start the command header
-      s.socket.getOutputStream()
-          .write("COMMAND /invoke JOTP/1.0\r\n\r\n".getBytes());
-
-      ByteArrayOutputStream baos = Compression.serializeOnly(command);
-      OutputStream os = s.socket.getOutputStream();
+      s.socket.getOutputStream().write(
+          "COMMAND /invoke JOTP/1.0\r\n\r\n".getBytes());
 
       // new empty transfer flags
-      XferFlags flags = new XferFlags();
+      XferFlags outFlags = new XferFlags();
 
-      // if we're compressing, compress the stream
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+      // depending on list size, set flags and prepare object stream
+      if (commands.size() == 1) {
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        outFlags.add(F_OBJECT);
+        oos.writeObject(commands.get(0));
+        oos.close();
+      }
+      else {
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        outFlags.add(F_LIST);
+        oos.writeObject(new Integer(commands.size()));
+        for (Command c : commands) {
+          // if the command contains any unEncryptables, puke
+          if (Command.Name.unEncryptables().and(c.getName().bit()).compareTo(
+              BigInteger.ZERO) != 0)
+            throw new IllegalArgumentException(
+                c.getName() + "can't be used in multiple list of commands");
+          oos.writeObject(c);
+        }
+        oos.close();
+      }
+
+      OutputStream os = s.socket.getOutputStream();
+
+      // if we're compressing, compress the command(s) object stream
       if (serverSettings.getCompress()) {
-        flags.add(F_COMPRESS);
+        outFlags.add(F_COMPRESS);
         baos = Compression.compress(baos);
       }
 
-      // if we're encrypting, encrypt the (possibly compressed) stream
       SecretKey sessionKey = null;
       String encodedKey = null;
-      if (serverSettings.getEncrypt()
-          && command.getName() != Command.Name.authChallengeResponse
-          && command.getName() != Command.Name.getServerPublicKey) {
+      // if we're encrypting, encrypt the (possibly compressed) stream
+      // except for the unencryptable commands
+      if (serverSettings.getEncrypt() && (Command.Name.unEncryptables().and(
+          commands.get(0).getName().bit()).compareTo(BigInteger.ZERO) == 0)) {
         // turn on encrypted flag
-        flags.add(F_ENCRYPT);
+        outFlags.add(F_ENCRYPT);
         // generate a new session key
         sessionKey = Encryption.generateSymKey();
         // encode the key with server's public key for transfer and base64 it.
@@ -145,17 +179,17 @@ public class SocketClient implements Controller {
                     sessionKey, LoginSettings.getInstance().getServerKey()));
       }
 
-      // write our flags
-      os.write(flags.getByte());
-      // write the (possibly mangled) command
+      // write the xfer flags
+      os.write(outFlags.getByte());
 
+      // write the (possibly mangled) command
       // if we're encrypted...
-      if (flags.has(F_ENCRYPT)
-          && sessionKey != null
-          && encodedKey != null) {
+      if (outFlags.has(F_ENCRYPT) && sessionKey != null && encodedKey != null) {
         ObjectOutputStream oos = new ObjectOutputStream(os);
+        // first write our generated key
         oos.writeObject(encodedKey);
         oos.flush();
+        // then write our encrypted command(s)
         oos.writeObject(Encryption.encodeSym(sessionKey, baos.toByteArray()));
         oos.flush();
       }
@@ -166,33 +200,30 @@ public class SocketClient implements Controller {
       os.flush();
 
       // prepare inputstream
-      final BufferedInputStream b
-          = new BufferedInputStream(s.socket.getInputStream());
+      final BufferedInputStream b =
+          new BufferedInputStream(s.socket.getInputStream());
 
-      XferFlags flag = new XferFlags((byte)b.read());
+      final XferFlags inFlag = new XferFlags((byte)b.read());
       b.mark(MAX_READ);
 
       InputStream i = b;
 
       // if we're encrypted, wrap the InputStream in a CipherInputStream
-      if (flag.has(F_ENCRYPT))
-        i = Encryption.decodeSym(sessionKey, i);
+      if (inFlag.has(F_ENCRYPT)) i = Encryption.decodeSym(sessionKey, i);
 
       // if we're compressed, wrap the InputStream ina GZIPInputstream
-      if (flag.has(F_COMPRESS)) i = new GZIPInputStream(i);
+      if (inFlag.has(F_COMPRESS)) i = new GZIPInputStream(i);
 
       // finally, create an objectInputStream of the possibly compressed
       // and possibly encrypted stream.
       final ObjectInputStream ois = new ObjectInputStream(i);
 
       // if object retunred is there, read an object first
-      if (flag.has(F_OBJECT_RETURNED)) {
-        retval = (Serializable)ois.readObject();
-      }
+      if (inFlag.has(F_OBJECT)) retval = (Serializable)ois.readObject();
 
       // if list_returned is there, read a list, possibly after already having
       // read an object...
-      if (flag.has(F_LIST_RETURNED)) {
+      if (inFlag.hasAny(F_LIST, F_LISTS)) {
         final Integer size = (Integer)ois.readObject();
         final BackgroundList<Serializable> bl
             = new BackgroundList<Serializable>(size);
@@ -201,10 +232,44 @@ public class SocketClient implements Controller {
               public synchronized void run() {
                 try {
                   for (int x = 0; x < size; x++) {
-                    this.setStatusMessage(Strings.get("reading") + " " + x);
-                    StatusBar.getInstance().updateLabel();
-                    bl.add((Serializable)ois.readObject());
-                    if (bl.aborted()) break;
+                    if (inFlag.has(F_LISTS)) {
+                      Integer subSize = (Integer)ois.readObject();
+
+                      // if size is -1397705797, that's code for the size being
+                      // only one, and not being a list with one entry.
+                      // since size should never be negative, we're safe.
+                      // (1397705797 is "SOLE" in integer form :)
+                      if (size == -1397705797) {
+                        this.setStatusMessage(Strings.get("reading") + " " + x);
+                        StatusBar.getInstance().updateLabel();
+                        bl.add((Serializable)ois.readObject());
+                      }
+                      else {
+                        BackgroundList<Serializable> subBl = 
+                            new BackgroundList<Serializable>(subSize);
+                        // add the new sub-backgroundlist now, so that the
+                        // listeners will be notified, and they'll see that it
+                        // is a background list, and they can register
+                        // listeners for the sub list if they want.
+                        bl.add(subBl);
+
+                        // now that the listeners have been notified, each sub-
+                        // sequent add to the child list will probably be
+                        // noticed by the listeners who register.
+                        for (int y = 0; y < subSize; y++) {
+                          this.setStatusMessage(
+                              Strings.get("reading") + " " + x + ":" + y);
+                          StatusBar.getInstance().updateLabel();
+                          subBl.add((Serializable)ois.readObject());
+                        }
+                      }
+                    }
+                    else {
+                      this.setStatusMessage(Strings.get("reading") + " " + x);
+                      StatusBar.getInstance().updateLabel();
+                      bl.add((Serializable)ois.readObject());
+                      if (bl.aborted()) break;
+                    }
                   }
                 } catch (ClassNotFoundException e) {
                   bl.fireAbort();
@@ -221,10 +286,9 @@ public class SocketClient implements Controller {
       }
     } catch (IOException e) {
       try {
+        // throw it away
         s.socket.close();
         s.socket = null;
-        connect();
-        retval = invoke(command);
       } catch (IOException e1) {
         throw new RemoteException("invoke failed", e);
       }

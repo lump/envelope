@@ -3,7 +3,7 @@ package us.lump.envelope.server;
 /**
  * Bitwise flags for transfer options.
  *
- * @version $Id: XferFlags.java,v 1.2 2008/09/17 05:44:55 troy Exp $
+ * @version $Id: XferFlags.java,v 1.3 2008/09/20 05:29:59 troy Exp $
  */
 public class XferFlags {
 
@@ -11,10 +11,11 @@ public class XferFlags {
     F_NONE,
     F_ENCRYPT,
     F_COMPRESS,
-    F_OBJECT_RETURNED,
-    F_LIST_RETURNED,
+    F_OBJECT,
+    F_LIST,
+    F_LISTS,
+//    F_RESERVED1,
 //    F_RESERVED2,
-//    F_RESERVED3,
     ;
 
     private byte flag = 0;
@@ -103,8 +104,8 @@ public class XferFlags {
   public boolean has(Flag... flags) {
     if (flags.length == 0) return this.flags == 0;
     else {
-      byte they = addFlagsTogether(flags);
-      return ((this.flags & they) == they);
+      byte that = addFlagsTogether(flags);
+      return ((this.flags & that) == that);
     }
   }
 

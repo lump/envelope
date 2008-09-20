@@ -499,7 +499,8 @@ public class Preferences extends JDialog {
                                                       false));
     compress = new JCheckBox();
     this.$$$loadButtonText$$$(compress, ResourceBundle.getBundle(
-        "us/lump/envelope/client/ui/defs/Strings").getString("compress"));
+        "us/lump/envelope/client/ui/defs/Strings").getString(
+        "compress.with.blah"));
     serverFormPanel.add(compress, new GridConstraints(1,
                                                       1,
                                                       1,
@@ -518,7 +519,7 @@ public class Preferences extends JDialog {
                                                       false));
     encrypt = new JCheckBox();
     this.$$$loadButtonText$$$(encrypt, ResourceBundle.getBundle(
-        "us/lump/envelope/client/ui/defs/Strings").getString("encrypt"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("encrypt.with.blah"));
     serverFormPanel.add(encrypt, new GridConstraints(2,
                                                      1,
                                                      1,

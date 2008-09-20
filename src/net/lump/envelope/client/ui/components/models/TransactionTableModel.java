@@ -1,12 +1,13 @@
 package us.lump.envelope.client.ui.components.models;
 
 import us.lump.envelope.client.CriteriaFactory;
+import us.lump.envelope.client.portal.HibernatePortal;
 import us.lump.envelope.client.portal.TransactionPortal;
 import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.thread.StatusElement;
 import us.lump.envelope.client.thread.ThreadPool;
-import us.lump.envelope.client.ui.components.StatusBar;
 import us.lump.envelope.client.ui.components.Hierarchy;
+import us.lump.envelope.client.ui.components.StatusBar;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.entity.Account;
 import us.lump.lib.Money;
@@ -67,11 +68,6 @@ public class TransactionTableModel extends AbstractTableModel {
           (Integer)transactions.get(i)[COLUMN.TransactionID.ordinal()];
   }
 
-  private Money getBeginningBalance(Boolean reconciled) {
-    CriteriaFactory cf = CriteriaFactory.getInstance();
-    return cf.getBeginningBalance(thing, beginDate, reconciled);
-  }
-
   public TransactionTableModel(final Object thing,
                                final Date begin,
                                final Date end,
@@ -114,13 +110,29 @@ public class TransactionTableModel extends AbstractTableModel {
               throw new IllegalArgumentException(
                   "only Account or Budget aceptable as first argument");
 
-            beginningBalance = getBeginningBalance(null);
-            beginningReconciledBalance = getBeginningBalance(Boolean.TRUE);
             startDate = System.currentTimeMillis();
 
             CriteriaFactory cf = CriteriaFactory.getInstance();
-            final BackgroundList<Object[]> incoming = (BackgroundList<Object[]>)
-                cf.getTransactions(TransactionTableModel.this.thing, beginDate, endDate);
+            //noinspection unchecked
+            BackgroundList<Object> results =
+                (BackgroundList<Object>)new HibernatePortal().detachedCriteriaQuery(
+                    cf.getBeginningBalance(thing, beginDate, null),
+                    cf.getBeginningBalance(thing, beginDate, Boolean.TRUE),
+                    cf.getTransactions(
+                        TransactionTableModel.this.thing, beginDate, endDate));
+
+            beginningBalance = results.get(0) != null
+                               && ((List)results.get(0)).size() > 0
+                               ? (Money)((List)results.get(0)).get(0)
+                               : new Money(0);
+            beginningReconciledBalance = results.get(1) != null
+                                         && ((List)results.get(1)).size() > 0
+                                         ? (Money)((List)results.get(1)).get(0)
+                                         : new Money(0);
+
+            //noinspection unchecked
+            final BackgroundList<Object[]> incoming
+                = (BackgroundList<Object[]>)results.get(2);
 
             // boostrap statusbar
             try {
@@ -169,8 +181,7 @@ public class TransactionTableModel extends AbstractTableModel {
             // wait until filled (so other things in the queue can't start and conflict)
             try {
               synchronized (incoming) {
-                while (!incoming.filled())
-                  incoming.wait(20000);
+                while (!incoming.filled()) incoming.wait(20000);
               }
             }
             catch (InterruptedException e) {
@@ -225,13 +236,11 @@ public class TransactionTableModel extends AbstractTableModel {
         : (Money)transactions.get(x - 1)[COLUMN.Balance.ordinal()];
 
     // calculate balance column
-    balance = new Money(balance.add(
-        (Money)row[COLUMN.Amount.ordinal()]));
+    balance = new Money(balance.add((Money)row[COLUMN.Amount.ordinal()]));
 
     // only add reconciled balance if it tx is reconciled
     if ((Boolean)row[COLUMN.C.ordinal()]) reconciled =
-        new Money(reconciled.add(
-            (Money)row[COLUMN.Amount.ordinal()]));
+        new Money(reconciled.add((Money)row[COLUMN.Amount.ordinal()]));
 
     // create our new row
     Object[] newRow = new Object[]{

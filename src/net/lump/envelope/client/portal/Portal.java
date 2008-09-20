@@ -1,11 +1,11 @@
 package us.lump.envelope.client.portal;
 
 import us.lump.envelope.Command;
+import us.lump.envelope.client.SocketClient;
 import us.lump.envelope.client.ui.components.forms.Preferences;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
-import us.lump.envelope.client.SocketClient;
 import us.lump.envelope.exception.EnvelopeException;
 import us.lump.envelope.exception.SessionException;
 import us.lump.envelope.server.rmi.Controller;
@@ -29,7 +29,7 @@ import java.text.MessageFormat;
  * exit/entry to the server along with exception handling.
  *
  * @author Troy Bowman
- * @version $Id: Portal.java,v 1.21 2008/09/12 00:21:47 troy Exp $
+ * @version $Id: Portal.java,v 1.22 2008/09/20 05:29:59 troy Exp $
  */
 
 abstract class Portal {
@@ -38,6 +38,10 @@ abstract class Portal {
 
   public Serializable invoke(Command command) throws EnvelopeException {
     return invoke(null, command);
+  }
+  public Serializable invoke(java.util.List<Command> commands)
+      throws EnvelopeException {
+    return invoke(null, commands);
   }
 
   public Serializable invoke(Component frame, Command command)
@@ -52,20 +56,51 @@ abstract class Portal {
     return rawInvoke(frame, command);
   }
 
+  public Serializable invoke(Component frame, java.util.List<Command> commands)
+      throws EnvelopeException {
+    // sign the command before invoking
+    try {
+      LoginSettings ls = LoginSettings.getInstance();
+      for (Command c : commands)
+        c.sign(ls.getUsername(), ls.getKeyPair().getPrivate());
+    } catch (Exception e) {
+      handleException(e);
+    }
+    return rawInvoke(frame, commands);
+  }
 
   public Serializable rawInvoke(Command command)
       throws EnvelopeException {
     return rawInvoke(null, command);
   }
 
+  public Serializable rawInvoke(java.util.List<Command> commands)
+      throws EnvelopeException {
+    return rawInvoke(null, commands);
+  }
+
   // this is the real deal.
   public Serializable rawInvoke(Component jframe, Command command) {
-
     // set instance variables for use if exceptions happen
     this.frame = jframe;
 
     try {
       return SocketClient.getSocket().invoke(command);
+//      return getController().invoke(command);
+    } catch (Exception e) {
+      handleException(e);
+      return null;
+    }
+  }
+
+  // this is the real deal.
+  public Serializable rawInvoke(Component jframe,
+                                java.util.List<Command> commands) {
+    // set instance variables for use if exceptions happen
+    this.frame = jframe;
+
+    try {
+      return SocketClient.getSocket().invoke(commands);
 //      return getController().invoke(command);
     } catch (Exception e) {
       handleException(e);

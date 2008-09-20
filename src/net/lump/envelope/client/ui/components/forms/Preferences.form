@@ -105,7 +105,7 @@
                           <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text resource-bundle="us/lump/envelope/client/ui/defs/Strings" key="compress"/>
+                          <text resource-bundle="us/lump/envelope/client/ui/defs/Strings" key="compress.with.blah"/>
                         </properties>
                       </component>
                       <component id="6f42c" class="javax.swing.JCheckBox" binding="encrypt">
@@ -113,7 +113,7 @@
                           <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
-                          <text resource-bundle="us/lump/envelope/client/ui/defs/Strings" key="encrypt"/>
+                          <text resource-bundle="us/lump/envelope/client/ui/defs/Strings" key="encrypt.with.blah"/>
                         </properties>
                       </component>
                     </children>

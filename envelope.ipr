@@ -74,7 +74,7 @@
         <option name="PARAMETER_ANNOTATION_WRAP" value="5" />
         <option name="VARIABLE_ANNOTATION_WRAP" value="5" />
         <option name="ENUM_CONSTANTS_WRAP" value="5" />
-        <ADDITIONAL_INDENT_OPTIONS fileType="js">
+        <ADDITIONAL_INDENT_OPTIONS fileType="">
           <option name="INDENT_SIZE" value="4" />
           <option name="CONTINUATION_INDENT_SIZE" value="8" />
           <option name="TAB_SIZE" value="4" />
