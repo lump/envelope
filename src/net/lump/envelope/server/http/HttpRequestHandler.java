@@ -191,7 +191,7 @@ public class HttpRequestHandler implements RequestHandler {
               if (outFlags.has(F_LIST)) {
                 oos.writeObject(new Integer(((List)retval).size()));
                 oos.flush();
-                logger.info("response [" + outFlags + "] "
+                logger.info("list response [" + outFlags + "] "
                             + ((List)retval).size() + "r "
                             + ((List)retval).get(0).getClass().getSimpleName());
                 for (Object entry : (List)retval) {
@@ -203,13 +203,13 @@ public class HttpRequestHandler implements RequestHandler {
               // list which is possibly two levels deep
               if (outFlags.has(F_LISTS)) {
                 oos.writeObject(new Integer(((List)retval).size()));
-                logger.info("response [" + outFlags + "] "
+                logger.info("lists response [" + outFlags + "] "
                             + ((List)retval).size() + "r");
                 for (Object entry : (List)retval) {
                   if (entry instanceof List) {
                     oos.writeObject(new Integer(((List)entry).size()));
                     oos.flush();
-                    logger.info("response [" + outFlags + "] "
+                    logger.info("sub-list response [" + outFlags + "] "
                                 + ((List)entry).size() + "r");
                     for (Object sub : (List)entry) {
                       oos.writeObject(sub);
@@ -220,6 +220,8 @@ public class HttpRequestHandler implements RequestHandler {
                     // -1397705797 is secret code for a single object
                     // since size should never be negative, we're safe.
                     // (1397705797 is "SOLE" in integer form)
+                    logger.info("sub-list response [" + outFlags + "] Object "
+                                + entry.getClass().getSimpleName());
                     oos.writeObject(new Integer(-1397705797));
                     oos.writeObject(entry);
                   }
