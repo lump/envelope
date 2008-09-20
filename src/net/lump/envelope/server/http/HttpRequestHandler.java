@@ -7,7 +7,10 @@ import us.lump.envelope.server.XferFlags;
 import static us.lump.envelope.server.XferFlags.Flag.*;
 import us.lump.envelope.server.dao.Security;
 import us.lump.envelope.server.rmi.Controlled;
-import us.lump.lib.util.*;
+import us.lump.lib.util.Base64;
+import us.lump.lib.util.CipherOutputStream;
+import us.lump.lib.util.Compression;
+import us.lump.lib.util.Encryption;
 
 import javax.crypto.SecretKey;
 import java.io.*;
@@ -249,9 +252,9 @@ public class HttpRequestHandler implements RequestHandler {
                 baos.writeTo(os);
               }
               os.flush();
-              logger.info("network transfer time: "
-                          + ((System.currentTimeMillis() - netTransferStart)
-                             / (double)Span.SECOND.millis) + "s");
+//              logger.info("flush to network in "
+//                          + ((System.currentTimeMillis() - netTransferStart)
+//                             / (double)Span.SECOND.millis) + "s");
 
             }
             catch (EOFException e) {
