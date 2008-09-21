@@ -27,7 +27,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.20 2008/09/13 19:19:30 troy Exp $
+ * @version $Id: DAO.java,v 1.21 2008/09/21 01:22:45 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -109,7 +109,7 @@ public abstract class DAO {
    */
   @SuppressWarnings({"unchecked"})
   public List detachedCriteriaQuery(DetachedCriteria dc) {
-    logger.info(dc.toString());
+    logger.debug(dc.toString());
 
     List l = dc.getExecutableCriteria(getCurrentSession())
         .setCacheable(true)

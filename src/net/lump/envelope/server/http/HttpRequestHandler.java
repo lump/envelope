@@ -151,25 +151,31 @@ public class HttpRequestHandler implements RequestHandler {
                 Command command = (Command)ois.readObject();
                 is.mark(MAX_READ);
                 retval = c.invoke(command);
-                logger.info("request [" + inFlags + "] "+command);
-                logger.info(command);
+                logger.info("request [" + inFlags + "] " + command.getName());
+                logger.debug(command);
                 if (retval instanceof List) outFlags.add(F_LIST);
                 else outFlags.add(F_OBJECT);
-              }
-              else if (inFlags.has(F_LIST)) {
+              } else if (inFlags.has(F_LIST)) {
                 Integer size = (Integer)ois.readObject();
                 is.mark(MAX_READ);
                 ArrayList<Object> list = new ArrayList<Object>(size);
                 boolean listOfLists = false;
-                for (int x=0; x< size; x++) {
+                for (int x = 0; x < size; x++) {
                   Command command = (Command)ois.readObject();
                   is.mark(MAX_READ);
                   Object out = c.invoke(command);
                   if (out instanceof List) listOfLists = true;
                   list.add(out);
                   logger.info(
-                      "request [" + inFlags + "]"
-                      + "["+(x+1)+" of "+size+"] "+command);
+                      "request ["
+                      + inFlags
+                      + "]"
+                      + "["
+                      + (x + 1)
+                      + " of "
+                      + size
+                      + "] "
+                      + command.getName());
                 }
                 retval = list;
                 if (listOfLists) outFlags.add(F_LISTS);
@@ -184,7 +190,8 @@ public class HttpRequestHandler implements RequestHandler {
               if (outFlags.has(F_OBJECT)) {
                 oos.writeObject(retval);
                 oos.flush();
-                logger.info("object response [" + outFlags + "] " + retval );
+                logger.info("object response [" + outFlags + "] "
+                            + retval.getClass().getSimpleName());
               }
 
               // list which is one level deep
@@ -215,8 +222,7 @@ public class HttpRequestHandler implements RequestHandler {
                       oos.writeObject(sub);
                       oos.flush();
                     }
-                  }
-                  else {
+                  } else {
                     // -1397705797 is secret code for a single object
                     // since size should never be negative, we're safe.
                     // (1397705797 is "SOLE" in integer form)
@@ -247,8 +253,7 @@ public class HttpRequestHandler implements RequestHandler {
 //                if (baos.size() % cos.getBlockSize() != 0)
 //                  cos.write(new byte[baos.size() % cos.getBlockSize()]);
 //                cos.flush();
-              }
-              else {
+              } else {
                 baos.writeTo(os);
               }
               os.flush();
