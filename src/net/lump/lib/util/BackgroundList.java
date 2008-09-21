@@ -6,9 +6,11 @@ import java.util.AbstractList;
 import java.util.Collection;
 
 /**
- * Makes the downloading of the list returned non-blocking.
+ * A thread safe list which allows loading of the list in the background
+ * along with allowing listeners to register for updates.
  *
  * @author Troy Bowman
+ * @version $Id: BackgroundList.java,v 1.8 2008/09/21 01:23:08 troy Exp $
  */
 public class BackgroundList<E> extends AbstractList<E> implements Serializable {
 
@@ -60,11 +62,14 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
    */
   public E get(final int index) {
     do {
-      if (filled >= index && list.length > index) break;
 
       try {
         if (abort) throw new InterruptedException();
-        synchronized(list) { list.wait(100); }
+        synchronized (token) {
+          if (filled >= index && list.length > index)
+            break;
+          token.wait(250);
+        }
       } catch (InterruptedException e) {
         break;
       }
@@ -80,7 +85,7 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
   public int size() {
     while (list == null && !abort)
       try {
-        synchronized (list) { list.wait(100); }
+        synchronized (token) { token.wait(250); }
       } catch (InterruptedException e) {
         break;
       }
@@ -151,8 +156,8 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
     synchronized (token) {
       list[++filled] = object;
       fire = filled;
+      token.notifyAll();
     }
-    synchronized (list) { list.notifyAll(); }
     fireRowAdded(fire);
     if (fire == (list.length - 1)) fireAllFilled();
     return true;
