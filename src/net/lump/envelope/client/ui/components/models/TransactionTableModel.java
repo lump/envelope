@@ -112,13 +112,14 @@ public class TransactionTableModel extends AbstractTableModel {
             startDate = System.currentTimeMillis();
 
             CriteriaFactory cf = CriteriaFactory.getInstance();
-            //noinspection unchecked
-            BackgroundList<Object> results =
-                (BackgroundList<Object>)new HibernatePortal().detachedCriteriaQuery(
-                    cf.getBeginningBalance(thing, beginDate, null),
-                    cf.getBeginningBalance(thing, beginDate, Boolean.TRUE),
-                    cf.getTransactions(
-                        TransactionTableModel.this.thing, beginDate, endDate));
+
+            BackgroundList<?> results =
+                (BackgroundList<?>)new HibernatePortal()
+                    .detachedCriteriaQuery(
+                        cf.getBeginningBalance(thing, beginDate, null),
+                        cf.getBeginningBalance(thing, beginDate, Boolean.TRUE),
+                        cf.getTransactions(TransactionTableModel.this.thing,
+                                           beginDate, endDate));
 
             beginningBalance =
                 results.get(0) != null
@@ -133,9 +134,8 @@ public class TransactionTableModel extends AbstractTableModel {
                 ? (Money)((List)results.get(1)).get(0)
                 : new Money(0);
 
-            //noinspection unchecked
-            final BackgroundList<Object[]> incoming
-                = (BackgroundList<Object[]>)results.get(2);
+            final BackgroundList<?> incoming
+                = (BackgroundList<?>)results.get(2);
 
             // boostrap statusbar
             try {
@@ -210,7 +210,7 @@ public class TransactionTableModel extends AbstractTableModel {
   }
 
   private synchronized void updateTableForRow(int x,
-                                              BackgroundList<Object[]> incoming) {
+                                              BackgroundList<?> incoming) {
     if (x < 0) return;
     if (x > filled + 1)
       for (int row = filled; row <= x; row++) updateTableFor(row, incoming);
@@ -219,12 +219,12 @@ public class TransactionTableModel extends AbstractTableModel {
   }
 
   private synchronized void updateTableFor(int x,
-                                           BackgroundList<Object[]> incoming) {
+                                           BackgroundList<?> incoming) {
     if (x > filled + 1) {
       System.err.println("gah!");
     }
     filled = x;
-    Object[] row = incoming.get(x);
+    Object[] row = (Object[])incoming.get(x);
 
     if (x != 0 && (x - 1) > (transactions.size() - 1)) {
       System.err.println("blabla");

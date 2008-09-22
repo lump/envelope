@@ -10,29 +10,27 @@ import java.util.Collection;
  * along with allowing listeners to register for updates.
  *
  * @author Troy Bowman
- * @version $Id: BackgroundList.java,v 1.8 2008/09/21 01:23:08 troy Exp $
+ * @version $Id: BackgroundList.java,v 1.9 2008/09/22 23:10:42 troy Exp $
  */
 public class BackgroundList<E> extends AbstractList<E> implements Serializable {
 
   private transient EventListenerList listenerList = new EventListenerList();
-  private transient volatile E[] list = null;
+  private transient volatile Object[] list = null;
   private transient volatile int filled = -1;
   private transient volatile boolean abort = false;
   private static final Object token = new Object();
 
   public BackgroundList() {}
 
-  @SuppressWarnings({"unchecked"})
   public BackgroundList(int size) {
     synchronized (token) {
-      list = (E[])new Object[size];
+      list = new Object[size];
     }
   }
 
-  @SuppressWarnings({"unchecked"})
   public BackgroundList(Collection<E> c) {
     synchronized (token) {
-      list = (E[])c.toArray();
+      list = c.toArray();
       filled = c.size();
     }
   }
@@ -60,6 +58,7 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
    *
    * @return
    */
+  @SuppressWarnings({"unchecked"})
   public E get(final int index) {
     do {
 
@@ -75,7 +74,7 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
       }
     } while (true);
     try {
-      return filled < index ? null : list[index];
+      if (filled >= index) return (E)list[index];
     } catch (ArrayIndexOutOfBoundsException e) {
       System.out.println("gah");
     }

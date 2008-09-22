@@ -31,7 +31,7 @@ import java.util.zip.GZIPInputStream;
  * through said connections..
  *
  * @author Troy Bowman
- * @version $Id: SocketClient.java,v 1.7 2008/09/20 06:08:31 troy Exp $
+ * @version $Id: SocketClient.java,v 1.8 2008/09/22 23:10:42 troy Exp $
  */
 
 public class SocketClient implements Controller {
@@ -238,7 +238,7 @@ public class SocketClient implements Controller {
                       // if size is -1397705797, that's code for the size being
                       // only one, and not being a list with one entry.
                       // since size should never be negative, we're safe.
-                      // (1397705797 is "SOLE" in integer form :)
+                      // (1397705797 is ascii "SOLE" in integer form :)
                       if (size == -1397705797) {
                         this.setStatusMessage(
                             Strings.get("reading") + " " + (x+1));

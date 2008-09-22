@@ -19,7 +19,7 @@ public class HibernatePortal extends Portal {
     if (dcs.length == 0)
       throw new IllegalArgumentException("need one or more arguments");
     if (dcs.length == 1)
-      return (List)invoke(new Command(Command.Name.detachedCriteriaQuery, dcs));
+      return (List)invoke(new Command(Command.Name.detachedCriteriaQuery, dcs[0]));
     else {
       List<Command> dcl = new ArrayList<Command>();
       for (DetachedCriteria dc : dcs)
