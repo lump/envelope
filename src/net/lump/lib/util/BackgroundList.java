@@ -6,16 +6,17 @@ import java.util.AbstractList;
 import java.util.Collection;
 
 /**
- * A thread safe list which allows loading of the list in the background
- * along with allowing listeners to register for updates.
+ * A thread safe list which allows loading of the list in the background along
+ * with allowing listeners to register for updates.
  *
  * @author Troy Bowman
- * @version $Id: BackgroundList.java,v 1.9 2008/09/22 23:10:42 troy Exp $
+ * @version $Id: BackgroundList.java,v 1.10 2008/09/23 14:40:15 troy Exp $
  */
+@SuppressWarnings({"unchecked"})
 public class BackgroundList<E> extends AbstractList<E> implements Serializable {
 
   private transient EventListenerList listenerList = new EventListenerList();
-  private transient volatile Object[] list = null;
+  private transient volatile E[] list = null;
   private transient volatile int filled = -1;
   private transient volatile boolean abort = false;
   private static final Object token = new Object();
@@ -24,13 +25,13 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
 
   public BackgroundList(int size) {
     synchronized (token) {
-      list = new Object[size];
+      list = (E[])(new Object[size]);
     }
   }
 
   public BackgroundList(Collection<E> c) {
     synchronized (token) {
-      list = c.toArray();
+      list = (E[])c.toArray();
       filled = c.size();
     }
   }
@@ -58,27 +59,20 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
    *
    * @return
    */
-  @SuppressWarnings({"unchecked"})
   public E get(final int index) {
     do {
-
       try {
-        if (abort) throw new InterruptedException();
         synchronized (token) {
           if (filled >= index && list.length > index)
             break;
           token.wait(250);
         }
       } catch (InterruptedException e) {
-        break;
+        abort = true;
       }
-    } while (true);
-    try {
-      if (filled >= index) return (E)list[index];
-    } catch (ArrayIndexOutOfBoundsException e) {
-      System.out.println("gah");
-    }
-    return null;
+    } while (!abort);
+
+    return list[index];
   }
 
   public int size() {
