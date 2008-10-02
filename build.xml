@@ -57,6 +57,37 @@
            classname="com.sun.tools.apache.ant.pack200.Unpack200Task"
            classpathref="ant.classpath"/>
 
+  <!--<available file="${ivy.home}/${ivy.distname}" type="dir"-->
+             <!--property="ivy.is.there"/>-->
+
+  <!--<target name="download.ivy" unless="ivy.is.there">-->
+    <!--<mkdir dir="${ivy.home}"/>-->
+    <!--<mkdir dir="${ivy.home}/dist"/>-->
+    <!--<property name="ivy.url" value="http://www.apache.org/dist/ant/ivy"/>-->
+    <!--<property name="dist.suffix" value="-bin-with-deps.zip"/>-->
+
+    <!--<get src="${ivy.url}/${ivy.install.version}/${ivy.distname}${dist.suffix}"-->
+         <!--dest="${ivy.home}/dist/${ivy.distname}${dist.suffix}"-->
+         <!--usetimestamp="true"/>-->
+    <!--<unzip src="${ivy.home}/dist/${ivy.distname}${dist.suffix}"-->
+           <!--dest="${ivy.home}"/>-->
+  <!--</target>-->
+
+  <!--<target name="bootstrap.ivy" depends="download.ivy" unless="ivy.is.loaded">-->
+    <!--<path id="ivy.lib.path">-->
+      <!--<fileset dir="${ivy.home}/${ivy.distname}" includes="*.jar, lib/*.jar"/>-->
+    <!--</path>-->
+    <!--<taskdef resource="org/apache/ivy/ant/antlib.xml"-->
+             <!--uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>-->
+    <!--<property name="ivy.is.loaded" value="true"/>-->
+  <!--</target>-->
+
+   <!--<target name="get.libs"-->
+           <!--description="retrieve library dependencies"-->
+           <!--depends="bootstrap.ivy">-->
+     <!--<ivy:retrieve file="${ivy.home}/ivy.xml"-->
+                  <!--pattern="${ivy.home}/[artifact].[ext]"/>-->
+  <!--</target>-->
 
   <target name="clean.classes" description="clean the classes">
     <delete dir="${classes}"/>
