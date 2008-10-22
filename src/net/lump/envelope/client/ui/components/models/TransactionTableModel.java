@@ -146,21 +146,23 @@ public class TransactionTableModel extends AbstractTableModel {
               e.printStackTrace();
             }
 
-            filled = 0;
-            updateTableForRow(incoming.filledSize(), incoming);
+            filled = -1;
+            updateTableToRow(incoming.filledSize(), incoming);
 
             incoming.addBackgroundListListener(new BackgroundListListener() {
               public void backgroundListEventOccurred(BackgroundListEvent event) {
                 synchronized (incoming) {
+                  updateTableToRow(event.getRow(), incoming);
+
                   if (event.getType() == BackgroundListEvent.Type.filled
                       || event.getType() == BackgroundListEvent.Type.aborted) {
+
                     incoming.notifyAll();
                     StatusBar.getInstance().getProgress().setVisible(false);
                   }
                   if (event.getType() == BackgroundListEvent.Type.added) {
-                    updateTableForRow(event.getRow(), incoming);
-
-                    if (startDate < (System.currentTimeMillis() - 150)) {
+                    if (startDate < (System.currentTimeMillis() - 150)
+                        && !StatusBar.getInstance().getProgress().isVisible()) {
                       StatusBar.getInstance().getProgress().setVisible(true);
                     }
                     if (StatusBar.getInstance().getProgress().isVisible()) {
@@ -209,26 +211,26 @@ public class TransactionTableModel extends AbstractTableModel {
     queue(thing, begin, end);
   }
 
-  private synchronized void updateTableForRow(int x,
+  private synchronized void updateTableToRow(int x,
                                               BackgroundList<?> incoming) {
-    if (x < 0) return;
-    if (x > filled + 1)
-      for (int row = filled; row <= x; row++) updateTableFor(row, incoming);
-    else
-      updateTableFor(x, incoming);
+    if (x < 0 || x <= filled) return;
+    for (int row = filled + 1; row <= x; row++) updateTableFor(row, incoming);
   }
 
   private synchronized void updateTableFor(int x,
                                            BackgroundList<?> incoming) {
-    if (x > filled + 1) {
-      System.err.println("gah!");
-    }
+
+    if (x > filled + 1)
+      System.err.println("NON-SEQUENTIAL " + x + " for " + filled);
     filled = x;
+
     Object[] row = (Object[])incoming.get(x);
 
-    if (x != 0 && (x - 1) > (transactions.size() - 1)) {
-      System.err.println("blabla");
-    }
+    if (x != 0 && ((x - 1) > (transactions.size() - 1)))
+      System.err.println("transactions doesn't have row "
+                         + (x - 1)
+                         +" as transactions is size: "
+                         + (transactions.size()-1));
 
     // refresh our amnesia on the balances
     Money reconciled =

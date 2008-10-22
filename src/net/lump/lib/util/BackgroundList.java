@@ -10,7 +10,7 @@ import java.util.Collection;
  * with allowing listeners to register for updates.
  *
  * @author Troy Bowman
- * @version $Id: BackgroundList.java,v 1.10 2008/09/23 14:40:15 troy Exp $
+ * @version $Id: BackgroundList.java,v 1.11 2008/10/22 01:22:14 troy Test $
  */
 @SuppressWarnings({"unchecked"})
 public class BackgroundList<E> extends AbstractList<E> implements Serializable {
@@ -32,14 +32,14 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
   public BackgroundList(Collection<E> c) {
     synchronized (token) {
       list = (E[])c.toArray();
-      filled = c.size();
+      filled = c.size() - 1;
     }
   }
 
   public BackgroundList(E[] array) {
     synchronized (token) {
       list = array;
-      filled = array.length;
+      filled = array.length -1;
     }
   }
 
@@ -93,7 +93,9 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
     abort = true;
     fireChange(new BackgroundListEvent(
         this,
-        BackgroundListEvent.Type.aborted, BackgroundListEvent.Effect.all, -1));
+        BackgroundListEvent.Type.aborted,
+        BackgroundListEvent.Effect.all,
+        filledSize()));
   }
 
   public void fireRowAdded(int row) {
@@ -121,13 +123,14 @@ public class BackgroundList<E> extends AbstractList<E> implements Serializable {
     fireChange(new BackgroundListEvent(
         this,
         BackgroundListEvent.Type.filled, BackgroundListEvent.Effect.all,
-        -1));
+        filledSize()));
   }
 
   public void fireAllRemoved() {
     fireChange(new BackgroundListEvent(
         this,
-        BackgroundListEvent.Type.deleted, BackgroundListEvent.Effect.all));
+        BackgroundListEvent.Type.deleted, BackgroundListEvent.Effect.all,
+        filledSize()));
   }
 
   public void fireChange(BackgroundListEvent e) {
