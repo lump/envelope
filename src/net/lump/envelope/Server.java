@@ -29,7 +29,7 @@ import java.util.prefs.Preferences;
  * Server Main Code.
  *
  * @author Troy Bowman
- * @version $Id: Server.java,v 1.10 2008/08/08 08:16:35 troy Exp $
+ * @version $Id: Server.java,v 1.11 2008/10/22 01:20:42 troy Exp $
  */
 
 public class Server {
@@ -198,7 +198,7 @@ public class Server {
           String line = s.nextLine();
 //            String line = console.readLine();
           // quit command
-          if (line.matches("^q(?:uit)?$")) {
+          if (line == null || line.matches("^(?:q(?:uit)|exit)$")) {
             System.err.println("Exiting...");
             System.exit(0);
           } else {
