@@ -22,7 +22,7 @@ import java.awt.event.*;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.20 2008/09/13 19:20:24 troy Exp $
+ * @version $Id: MainFrame.java,v 1.21 2008/10/22 04:01:30 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -30,6 +30,7 @@ public class MainFrame extends JFrame {
   private java.util.prefs.Preferences prefs
       = java.util.prefs.Preferences.userNodeForPackage(this.getClass());
   static final JMenuBar mainMenuBar = new JMenuBar();
+  private static MainFrame singleton;
 
   //content
   private JScrollPane treeScrollPane = new JScrollPane();
@@ -46,10 +47,9 @@ public class MainFrame extends JFrame {
 
   private static State state = State.getInstance();
 
-  public static MainFrame getInstance() {
-    if (state.getMainFrame() == null)
-      state.setMainFrame(new MainFrame());
-    return state.getMainFrame();
+  synchronized public static MainFrame getInstance() {
+    if (singleton == null) singleton = new MainFrame();
+    return singleton;
   }
 
   private MainFrame() {
@@ -187,10 +187,9 @@ public class MainFrame extends JFrame {
     }
 
 
-    state.setHierarchy(Hierarchy.getInstance());
-    state.getHierarchy().refreshTree(state.getBudget());
+    Hierarchy.getInstance().refreshTree(state.getBudget());
 
-    treeScrollPane.setViewportView(state.getHierarchy());
+    treeScrollPane.setViewportView(Hierarchy.getInstance());
 
 
     addWindowListener(new WindowListener() {

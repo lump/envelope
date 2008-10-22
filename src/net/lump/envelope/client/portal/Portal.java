@@ -23,13 +23,14 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.text.MessageFormat;
+import java.util.List;
 
 /**
  * All portals should subclass this class, as this provides a single point of
  * exit/entry to the server along with exception handling.
  *
  * @author Troy Bowman
- * @version $Id: Portal.java,v 1.22 2008/09/20 05:29:59 troy Exp $
+ * @version $Id: Portal.java,v 1.23 2008/10/22 04:01:30 troy Exp $
  */
 
 abstract class Portal {
@@ -39,7 +40,7 @@ abstract class Portal {
   public Serializable invoke(Command command) throws EnvelopeException {
     return invoke(null, command);
   }
-  public Serializable invoke(java.util.List<Command> commands)
+  public Serializable invoke(List<Command> commands)
       throws EnvelopeException {
     return invoke(null, commands);
   }
@@ -56,7 +57,7 @@ abstract class Portal {
     return rawInvoke(frame, command);
   }
 
-  public Serializable invoke(Component frame, java.util.List<Command> commands)
+  public Serializable invoke(Component frame, List<Command> commands)
       throws EnvelopeException {
     // sign the command before invoking
     try {
@@ -74,7 +75,7 @@ abstract class Portal {
     return rawInvoke(null, command);
   }
 
-  public Serializable rawInvoke(java.util.List<Command> commands)
+  public Serializable rawInvoke(List<Command> commands)
       throws EnvelopeException {
     return rawInvoke(null, commands);
   }
@@ -95,7 +96,7 @@ abstract class Portal {
 
   // this is the real deal.
   public Serializable rawInvoke(Component jframe,
-                                java.util.List<Command> commands) {
+                                List<Command> commands) {
     // set instance variables for use if exceptions happen
     this.frame = jframe;
 

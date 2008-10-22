@@ -1,21 +1,20 @@
 package us.lump.envelope.client;
 
-import us.lump.envelope.entity.Budget;
-import us.lump.envelope.entity.Account;
-import us.lump.envelope.entity.Category;
 import us.lump.envelope.client.ui.MainFrame;
 import us.lump.envelope.client.ui.components.Hierarchy;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
+import us.lump.envelope.entity.Account;
+import us.lump.envelope.entity.Budget;
+import us.lump.envelope.entity.Category;
 
-import javax.swing.*;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.TreeSet;
 
 /**
  * This is a repository for globally accessed object instances.
  * 
- * @version $Id: State.java,v 1.3 2008/07/21 21:59:18 troy Exp $
+ * @version $Id: State.java,v 1.4 2008/10/22 04:01:30 troy Exp $
  */
 public class State {
 
@@ -43,23 +42,6 @@ public class State {
 
   public void setBudget(Budget budget) {
     this.budget = budget;
-  }
-
-  public MainFrame getMainFrame() {
-    return mainFrame;
-  }
-
-  public void setMainFrame(MainFrame mainFrame) {
-    this.mainFrame = mainFrame;
-  }
-
-  public Hierarchy getHierarchy() {
-    return hierarchy;
-  }
-
-  public JTree setHierarchy(Hierarchy hierarchy) {
-    this.hierarchy = hierarchy;
-    return this.hierarchy;
   }
 
   public TreeSet<Account> getAccounts() {

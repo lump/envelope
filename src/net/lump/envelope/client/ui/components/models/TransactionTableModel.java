@@ -192,6 +192,9 @@ public class TransactionTableModel extends AbstractTableModel {
             catch (InterruptedException e) {
               // KTHXBYE
             }
+
+            // make sure table is updated.
+            updateTableToRow(incoming.filledSize(), incoming);
           }
           catch (InterruptedException e) {
             break;
@@ -212,33 +215,33 @@ public class TransactionTableModel extends AbstractTableModel {
   }
 
   private synchronized void updateTableToRow(int x,
-                                              BackgroundList<?> incoming) {
+                                             BackgroundList<?> incoming) {
     if (x < 0 || x <= filled) return;
     for (int row = filled + 1; row <= x; row++) updateTableFor(row, incoming);
   }
 
-  private synchronized void updateTableFor(int x,
-                                           BackgroundList<?> incoming) {
+  private synchronized void updateTableFor(final int rowNumber,
+                                           BackgroundList<?> list) {
 
-    if (x > filled + 1)
-      System.err.println("NON-SEQUENTIAL " + x + " for " + filled);
-    filled = x;
+    if (rowNumber > filled + 1)
+      System.err.println("NON-SEQUENTIAL " + rowNumber + " for " + filled);
+    filled = rowNumber;
 
-    Object[] row = (Object[])incoming.get(x);
+    Object[] row = (Object[])list.get(rowNumber);
 
-    if (x != 0 && ((x - 1) > (transactions.size() - 1)))
+    if (rowNumber != 0 && ((rowNumber - 1) > (transactions.size() - 1)))
       System.err.println("transactions doesn't have row "
-                         + (x - 1)
-                         +" as transactions is size: "
-                         + (transactions.size()-1));
+                         + (rowNumber - 1)
+                         + " as transactions is size: "
+                         + (transactions.size() - 1));
 
     // refresh our amnesia on the balances
     Money reconciled =
-        x == 0 ? beginningBalance
-        : (Money)transactions.get(x - 1)[COLUMN.Reconciled.ordinal()];
+        rowNumber == 0 ? beginningBalance
+        : (Money)transactions.get(rowNumber - 1)[COLUMN.Reconciled.ordinal()];
     Money balance =
-        x == 0 ? beginningReconciledBalance
-        : (Money)transactions.get(x - 1)[COLUMN.Balance.ordinal()];
+        rowNumber == 0 ? beginningReconciledBalance
+        : (Money)transactions.get(rowNumber - 1)[COLUMN.Balance.ordinal()];
 
     // calculate balance column
     balance = new Money(balance.add((Money)row[COLUMN.Amount.ordinal()]));
@@ -248,24 +251,33 @@ public class TransactionTableModel extends AbstractTableModel {
         new Money(reconciled.add((Money)row[COLUMN.Amount.ordinal()]));
 
     // create our new row
-    Object[] newRow = new Object[]{
+    final Object[] newRow = new Object[]{
         row[0], row[1], row[2], new Money(balance),
         new Money(reconciled), row[3], row[4], row[5]};
 
-    if (x < transactions.size()) {
-      transactions.set(x, newRow);
-      fireTableRowsUpdated(x, x);
+    if (rowNumber < transactions.size()) {
+      transactions.set(rowNumber, newRow);
     } else {
-      transactions.add(x, newRow);
-      fireTableRowsInserted(x, x);
+      transactions.add(rowNumber, newRow);
     }
 
-    if (selectionCache != null
-        && newRow[COLUMN.TransactionID.ordinal()]
-        .equals(selectionCache)) {
-      table.getSelectionModel().clearSelection();
-      table.changeSelection(x, 0, false, false);
-    }
+    final boolean reselect =
+        (selectionCache != null
+         && newRow[COLUMN.TransactionID.ordinal()].equals(selectionCache));
+    // make sure table updates happen on swing thread to avoid deadlocks
+    SwingUtilities.invokeLater(new Runnable() {
+      public void run() {
+        fireTableRowsInserted(rowNumber, rowNumber);
+        if (reselect) {
+          table.getSelectionModel().clearSelection();
+          table.changeSelection(rowNumber, 0, false, false);
+        }
+        Thread.yield();
+      }
+    });
+
+    // let other threads go.
+    Thread.yield();
   }
 
 
