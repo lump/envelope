@@ -42,6 +42,7 @@ public class TransactionTableModel extends AbstractTableModel {
   private Object thing;
   private JTable table;
   private Integer selectionCache = null;
+  BackgroundList<?> incomingList = null;
 
   private int filled = -1;
   private long startDate = -1;
@@ -134,30 +135,30 @@ public class TransactionTableModel extends AbstractTableModel {
                 ? (Money)((List)results.get(1)).get(0)
                 : new Money(0);
 
-            final BackgroundList<?> incoming
-                = (BackgroundList<?>)results.get(2);
+            incomingList = (BackgroundList<?>)results.get(2);
+
 
             // boostrap statusbar
             try {
               StatusBar.getInstance().getProgress().setMinimum(0);
-              StatusBar.getInstance().getProgress().setMaximum(incoming.size());
+              StatusBar.getInstance().getProgress().setMaximum(incomingList.size());
             }
             catch (NullPointerException e) {
               e.printStackTrace();
             }
 
             filled = -1;
-            updateTableToRow(incoming.filledSize(), incoming);
+            updateTableToRow(incomingList.filledSize(), incomingList);
 
-            incoming.addBackgroundListListener(new BackgroundListListener() {
+            incomingList.addBackgroundListListener(new BackgroundListListener() {
               public void backgroundListEventOccurred(BackgroundListEvent event) {
-                synchronized (incoming) {
-                  updateTableToRow(event.getRow(), incoming);
+                synchronized (incomingList) {
+                  updateTableToRow(event.getRow(), incomingList);
 
                   if (event.getType() == BackgroundListEvent.Type.filled
                       || event.getType() == BackgroundListEvent.Type.aborted) {
 
-                    incoming.notifyAll();
+                    if (incomingList != null) incomingList.notifyAll();
                     StatusBar.getInstance().getProgress().setVisible(false);
                   }
                   if (event.getType() == BackgroundListEvent.Type.added) {
@@ -174,10 +175,10 @@ public class TransactionTableModel extends AbstractTableModel {
             });
 
             // nuke any rows not needed in the table
-            if (incoming.size() < transactions.size()) {
+            if (incomingList.size() < transactions.size()) {
               int oldSize = transactions.size();
-              transactions.setSize(incoming.size());
-              fireTableRowsDeleted(incoming.size(), oldSize - 1);
+              transactions.setSize(incomingList.size());
+              fireTableRowsDeleted(incomingList.size(), oldSize - 1);
             }
 
             t.finish();
@@ -185,8 +186,9 @@ public class TransactionTableModel extends AbstractTableModel {
 
             // wait until filled (so other things in the queue can't start and conflict)
             try {
-              synchronized (incoming) {
-                while (!incoming.filled()) incoming.wait(20000);
+              synchronized (incomingList) {
+                while (!incomingList.filled() && !incomingList.aborted())
+                  incomingList.wait(20000);
               }
             }
             catch (InterruptedException e) {
@@ -194,7 +196,7 @@ public class TransactionTableModel extends AbstractTableModel {
             }
 
             // make sure table is updated.
-            updateTableToRow(incoming.filledSize(), incoming);
+            updateTableToRow(incomingList.filledSize(), incomingList);
           }
           catch (InterruptedException e) {
             break;
@@ -204,6 +206,7 @@ public class TransactionTableModel extends AbstractTableModel {
           }
           finally {
             if (t != null) t.finish();
+            incomingList = null;
           }
         }
       }
@@ -217,7 +220,8 @@ public class TransactionTableModel extends AbstractTableModel {
   private synchronized void updateTableToRow(int x,
                                              BackgroundList<?> incoming) {
     if (x < 0 || x <= filled) return;
-    for (int row = filled + 1; row <= x; row++) updateTableFor(row, incoming);
+    for (int row = filled + 1; row <= x && !incoming.aborted(); row++)
+      updateTableFor(row, incoming);
   }
 
   private synchronized void updateTableFor(final int rowNumber,
@@ -283,6 +287,8 @@ public class TransactionTableModel extends AbstractTableModel {
 
   public void queue(Object thing, Date begin, Date end) {
     try {
+      if (incomingList != null)
+        incomingList.fireAbort();
       q.put(new Task(thing, begin, end));
     } catch (InterruptedException e) {
       e.printStackTrace();

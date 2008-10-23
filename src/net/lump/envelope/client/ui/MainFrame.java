@@ -22,7 +22,7 @@ import java.awt.event.*;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.21 2008/10/22 04:01:30 troy Exp $
+ * @version $Id: MainFrame.java,v 1.22 2008/10/23 05:46:45 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -89,11 +89,11 @@ public class MainFrame extends JFrame {
     mainMenuBar.add(fileMenu);
 
 
-    if (System.getProperty("os.name").toLowerCase()
-        .matches("^.*?mac os x.*$")) {
+    if (System.getProperty("mrj.version") != null) {
       // the Mac specific code here
-      System.getProperties().put("apple.laf.useScreenMenuBar", true);
-      System.getProperties().put("com.apple.macos.useScreenMenuBar", true);
+//      System.getProperties().put("apple.laf.useScreenMenuBar", true);
+      System.setProperty("com.apple.macos.useScreenMenuBar","true");
+//      System.getProperties().put("com.apple.macos.useScreenMenuBar", true);
 
       Application application = Application.getApplication();
       application.setEnabledPreferencesMenu(true);
@@ -129,7 +129,7 @@ public class MainFrame extends JFrame {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
       } catch (Exception e) { /* bah, nevermind */ }
       else {
-        shortcutKeyMask = Event.ALT_MASK | Event.SHIFT_MASK;
+//        shortcutKeyMask = Event.ALT_MASK | Event.SHIFT_MASK;
 
 //        try {
 //          UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");

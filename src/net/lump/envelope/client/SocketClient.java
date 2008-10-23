@@ -31,7 +31,7 @@ import java.util.zip.GZIPInputStream;
  * through said connections..
  *
  * @author Troy Bowman
- * @version $Id: SocketClient.java,v 1.8 2008/09/22 23:10:42 troy Exp $
+ * @version $Id: SocketClient.java,v 1.9 2008/10/23 05:46:45 troy Exp $
  */
 
 public class SocketClient implements Controller {
@@ -227,6 +227,7 @@ public class SocketClient implements Controller {
         final Integer size = (Integer)ois.readObject();
         final BackgroundList<Serializable> bl
             = new BackgroundList<Serializable>(size);
+
         ThreadPool.getInstance().execute(
             new EnvelopeRunnable(Strings.get("reading")) {
               public synchronized void run() {
@@ -262,6 +263,10 @@ public class SocketClient implements Controller {
                               Strings.get("reading") + " " + (x+1) + ":" + y);
                           StatusBar.getInstance().updateLabel();
                           subBl.add((Serializable)ois.readObject());
+                          if (subBl.aborted()) {
+                            s.abort = true;
+                            break;
+                          }
                         }
                       }
                     }
@@ -269,12 +274,20 @@ public class SocketClient implements Controller {
                       this.setStatusMessage(Strings.get("reading") + " " + x);
                       StatusBar.getInstance().updateLabel();
                       bl.add((Serializable)ois.readObject());
-                      if (bl.aborted()) break;
+                      if (bl.aborted() || s.abort) {
+                        s.abort = true;
+                        break;
+                      }
                     }
                   }
+
+                  if (s.abort) s.socket.close();
+
                 } catch (ClassNotFoundException e) {
+                  s.abort = true;
                   bl.fireAbort();
                 } catch (IOException e) {
+                  s.abort = true;
                   bl.fireAbort();
                 }
                 s.busy = false;
@@ -285,6 +298,8 @@ public class SocketClient implements Controller {
         if (retval == null) retval = bl;
         else retval = (Serializable)Arrays.asList(retval, bl);
       }
+      
+      if (s.abort && !s.socket.isClosed()) s.socket.close();
     } catch (IOException e) {
       try {
         // throw it away
@@ -307,6 +322,7 @@ public class SocketClient implements Controller {
   private class S {
     public Socket socket;
     public boolean busy;
+    public boolean abort = false;
 
     private S(Socket socket, boolean busy) {
       this.socket = socket;
