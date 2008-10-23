@@ -116,8 +116,8 @@ public class TransactionTableModel extends AbstractTableModel {
             BackgroundList<?> results =
                 (BackgroundList<?>)new HibernatePortal()
                     .detachedCriteriaQuery(
-                        cf.getBeginningBalance(thing, beginDate, null),
-                        cf.getBeginningBalance(thing, beginDate, Boolean.TRUE),
+                        cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, null),
+                        cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, Boolean.TRUE),
                         cf.getTransactions(TransactionTableModel.this.thing,
                                            beginDate, endDate));
 
