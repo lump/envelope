@@ -31,7 +31,7 @@ import java.util.zip.GZIPInputStream;
  * through said connections..
  *
  * @author Troy Bowman
- * @version $Id: SocketClient.java,v 1.9 2008/10/23 05:46:45 troy Exp $
+ * @version $Id: SocketClient.java,v 1.10 2008/10/24 06:24:06 troy Exp $
  */
 
 public class SocketClient implements Controller {
@@ -53,7 +53,8 @@ public class SocketClient implements Controller {
     // remove all stale sockets
     for (S s : socketPool) {
       if (s.busy) continue;
-      if (s.socket == null || s.socket.isClosed() || !s.socket.isConnected()
+      if (s.socket == null || s.abort
+          || s.socket.isClosed() || !s.socket.isConnected()
           || s.socket.isInputShutdown() || s.socket.isOutputShutdown()
           || !s.socket.isBound()) {
         socketPool.removeElement(s);

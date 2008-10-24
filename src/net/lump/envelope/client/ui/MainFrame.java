@@ -22,7 +22,7 @@ import java.awt.event.*;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.23 2008/10/24 01:54:43 troy Exp $
+ * @version $Id: MainFrame.java,v 1.24 2008/10/24 06:24:06 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -190,6 +190,8 @@ public class MainFrame extends JFrame {
     Hierarchy.getInstance().refreshTree(state.getBudget());
 
     treeScrollPane.setViewportView(Hierarchy.getInstance());
+    treeScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+//    treeScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
 
 
     addWindowListener(new WindowListener() {

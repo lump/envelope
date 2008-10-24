@@ -30,13 +30,14 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.util.Date;
+import java.util.HashMap;
 
 
 /**
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.19 2008/10/24 01:54:43 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.20 2008/10/24 06:24:06 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -423,11 +424,12 @@ public class Hierarchy extends JTree {
   }
 
   public class WideTreeUI extends BasicTreeUI {
+    HashMap<Integer,Integer> cachedwidth = new HashMap<Integer,Integer>();
+
     public WideTreeUI() {
       super();
 
     }
-
 
     public void configureLayoutCache() {
       super.configureLayoutCache();
@@ -444,10 +446,13 @@ public class Hierarchy extends JTree {
     }
 
 
-    public void paint(Graphics g, JComponent c) {
-      configureLayoutCache();
-      super.paint(g, c);
-    }
+//    public void paint(Graphics g, JComponent c) {
+//      configureLayoutCache();
+//      if (c instanceof Hierarchy && c.getParent().getParent() instanceof JScrollPane) {
+//        System.out.println("hello");
+//      }
+//      super.paint(g, c);
+//    }
 
     @Override
     protected AbstractLayoutCache.NodeDimensions createNodeDimensions() {
@@ -489,18 +494,35 @@ public class Hierarchy extends JTree {
               rendererPane.add(aComponent);
               aComponent.validate();
             }
+
             Dimension prefSize = aComponent.getPreferredSize();
 
             JScrollPane sp = getScrollPane();
 
+            int targetWidth;
+            if (sp == null) targetWidth = prefSize.width;
+            else {
+              int cellwidth =
+                  sp.getViewportBorderBounds().width - getRowX(row, depth);
 
-            int targetWidth = sp == null ? prefSize.width
-                              : Math.max(
-                                  sp.getViewportBorderBounds()
-                                      .width
-                                  - getRowX(row, depth),
-                                  prefSize.width
-                              );
+              if (!cachedwidth.containsKey(depth)) cachedwidth.put(depth, cellwidth);
+              else {
+                if (cachedwidth.get(depth) != cellwidth) {
+                  RepaintManager.currentManager(sp).addDirtyRegion(sp,0,0,sp.getWidth(),sp.getHeight());
+                  cachedwidth.put(depth, cellwidth);
+                }
+              }
+              targetWidth = cellwidth;
+            }
+
+
+//            int targetWidth = sp == null ? prefSize.width
+//                              : Math.max(
+//                                  sp.getViewportBorderBounds()
+//                                      .width
+//                                  - getRowX(row, depth),
+//                                  prefSize.width
+//                              );
 
             if (size != null) {
               size.x = getRowX(row, depth);
