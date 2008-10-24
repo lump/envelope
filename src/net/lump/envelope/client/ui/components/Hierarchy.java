@@ -13,6 +13,7 @@ import us.lump.envelope.client.ui.defs.Strings;
 import static us.lump.envelope.client.ui.images.ImageResource.icon.*;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Budget;
+import us.lump.envelope.entity.Category;
 import us.lump.lib.Money;
 
 import javax.swing.*;
@@ -28,21 +29,22 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.*;
+import java.util.List;
 
 
 /**
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.22 2008/10/24 19:23:07 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.23 2008/10/24 22:52:57 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
   private final State state = State.getInstance();
   private final DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode();
   TransactionTableModel tm;
+  private static DefaultTreeModel treeModel;
   final WideTreeUI wtui = new WideTreeUI();
 
   public static Hierarchy getInstance() {
@@ -81,7 +83,8 @@ public class Hierarchy extends JTree {
       public void componentHidden(ComponentEvent e) {}
     });
 
-    setModel(new DefaultTreeModel(rootNode, false));
+    treeModel = new DefaultTreeModel(rootNode, false);
+    setModel(treeModel);
 //    setRootVisible(false);
 
     getSelectionModel().setSelectionMode(
@@ -154,6 +157,7 @@ public class Hierarchy extends JTree {
             public void actionPerformed(ActionEvent e) {
               sanifyDates(tqb);
               tm.queue(o, tqb.getBeginDate(), tqb.getEndDate());
+              refreshTree(State.getInstance().getBudget());
             }
           });
         }
@@ -167,25 +171,78 @@ public class Hierarchy extends JTree {
   public void refreshTree(Budget budget) {
     rootNode.setUserObject(budget);
 
-    EnvelopeRunnable r = new EnvelopeRunnable(Strings.get("building.tree")) {
-      public void run() {
-        for (AccountTotal l : CriteriaFactory.getInstance()
-            .getAccountTotals(state.getBudget())) {
-          DefaultMutableTreeNode thisNode = new DefaultMutableTreeNode(l);
-          for (CategoryTotal ca :
-              CriteriaFactory.getInstance().getCategoriesForAccount(l.account)) {
-            thisNode.add(new DefaultMutableTreeNode(ca));
-          }
-          rootNode.add(thisNode);
-        }
 
-        SwingUtilities.invokeLater(new Runnable() {
-          public void run() {
-            singleton.expandPath(new TreePath(rootNode));
-            singleton.repaint();
-            RepaintManager.currentManager(singleton).paintDirtyRegions();
+    EnvelopeRunnable r = new EnvelopeRunnable(Strings.get("updating.tree")) {
+
+      Object selectedObject = null;
+
+      private List getListFor(DefaultMutableTreeNode dmtn) {
+        Object o = dmtn.getUserObject();
+
+        if (o instanceof Budget)
+          return CriteriaFactory.getInstance().getAccountTotals((Budget)o);
+        if (o instanceof AccountTotal)
+          return CriteriaFactory.getInstance().getCategoriesForAccount(((AccountTotal)o).account);
+        if (o instanceof Category)
+          return null;
+        else return null;
+      }
+
+      public void updateChildren(DefaultMutableTreeNode node) {
+        List children = getListFor(node);
+        if (children == null || children.size() == 0) return;
+
+        // nuke any number of children that in indexes creater than new list
+        for (int x = children.size(); x < node.getChildCount(); x++)
+          node.remove(x);
+
+        for (int x = 0; x < children.size(); x++) {
+          DefaultMutableTreeNode dmtn = null;
+          if (x < node.getChildCount()) {
+            dmtn = ((DefaultMutableTreeNode)node.getChildAt(x));
+            dmtn.setUserObject(children.get(x));
+            treeModel.nodeChanged(dmtn);
           }
-        });
+          if (x >= node.getChildCount()) {
+            dmtn = new DefaultMutableTreeNode(children.get(x));
+            node.add(dmtn);
+            treeModel.nodesWereInserted(node, new int[]{x});
+          }
+          if (dmtn != null) {
+            if (selectedObject != null
+                && dmtn.getUserObject().equals(
+                ((DefaultMutableTreeNode)selectedObject).getUserObject()))
+              singleton.setSelectionPath(new TreePath(dmtn.getPath()));
+
+            updateChildren(dmtn);
+          }
+        }
+      }
+
+      public void run() {
+
+        synchronized(rootNode) {
+
+        // get the selected node, if any
+        selectedObject = singleton.getLastSelectedPathComponent();
+        
+//        JScrollPane sp = getScrollPane();
+        // get the view if any
+//        viewPoint = sp == null ? null : sp.getViewport().getViewPosition();
+
+        updateChildren(rootNode);
+        treeModel.nodeChanged(rootNode);
+        RepaintManager.currentManager(singleton).isCompletelyDirty(singleton);
+        
+        if (!singleton.isExpanded(new TreePath(rootNode)))
+          SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+              singleton.expandPath(new TreePath(rootNode));
+              singleton.repaint();
+              RepaintManager.currentManager(singleton).paintDirtyRegions();
+            }
+          });
+        }
       }
     };
     ThreadPool.getInstance().execute(r);
@@ -231,6 +288,13 @@ public class Hierarchy extends JTree {
     }
   }
 
+  protected JScrollPane getScrollPane() {
+    Component c = singleton;
+
+    while (c != null && !(c instanceof JScrollPane)) c = c.getParent();
+    if (c != null) return (JScrollPane)c;
+    return null;
+  }
 
   class EnvelopeTreeCellRenderer extends JComponent
       implements javax.swing.tree.TreeCellRenderer {
@@ -420,6 +484,12 @@ public class Hierarchy extends JTree {
       super(name, id, balance);
       this.account = account;
     }
+
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (!(o instanceof AccountTotal)) return false;
+      return super.equals(o);
+    }
   }
   public static class CategoryTotal {
     public String name;
@@ -430,6 +500,14 @@ public class Hierarchy extends JTree {
       this.name = name;
       this.id = id;
       this.balance = balance;
+    }
+
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+      CategoryTotal that = (CategoryTotal)o;
+      if (id != null ? !id.equals(that.id) : that.id != null) return false;
+      return true;
     }
 
     public String toString() { return name; }
@@ -447,24 +525,12 @@ public class Hierarchy extends JTree {
       super.configureLayoutCache();
     }
 
-    protected JScrollPane getScrollPane() {
-      Component c = tree.getParent();
-
-      while (c != null && !(c instanceof JScrollPane))
-        c = c.getParent();
-      if (c instanceof JScrollPane)
-        return (JScrollPane)c;
-      return null;
+    protected void installDefaults() {
+      super.installDefaults();
+      // make the indexes more space efficient
+      setRightChildIndent(Math.min(7,getRightChildIndent()));
+      setLeftChildIndent(Math.min(5,getLeftChildIndent()));
     }
-
-//    public void paint(Graphics g, JComponent c) {
-//      configureLayoutCache();
-//      if (c instanceof Hierarchy && c.getParent().getParent() instanceof JScrollPane) {
-//        System.out.println("hello");
-//      }
-//      super.paint(g, c);
-//    }
-
     @Override
     protected AbstractLayoutCache.NodeDimensions createNodeDimensions() {
       return new NodeDimensionsHandler() {
@@ -528,11 +594,11 @@ public class Hierarchy extends JTree {
             if (size != null) {
               size.x = getRowX(row, depth);
               size.width = targetWidth;
-              size.height = prefSize.height + 2;
+              size.height = prefSize.height;
             } else {
               size = new Rectangle(
                   size.width = getRowX(row, depth), 0,
-                  targetWidth, prefSize.height + 2);
+                  targetWidth, prefSize.height);
             }
 
             return size;
