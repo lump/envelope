@@ -17,12 +17,14 @@ import us.lump.lib.util.EmacsKeyBindings;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.24 2008/10/24 06:24:06 troy Exp $
+ * @version $Id: MainFrame.java,v 1.25 2008/10/24 17:53:29 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -36,11 +38,12 @@ public class MainFrame extends JFrame {
   private JScrollPane treeScrollPane = new JScrollPane();
   private JPanel contentPane = new JPanel(new BorderLayout());
   private JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                                                treeScrollPane, null);
+                                                treeScrollPane,
+                                                Box.createHorizontalGlue());
 
   public void setContentPane(JPanel p) {
     splitPane.setRightComponent(p);
-    splitPane.getRightComponent().setMinimumSize(new Dimension(300, 0));
+    splitPane.getRightComponent().setMinimumSize(new Dimension(500, 0));
   }
 
   private StatusBar status = StatusBar.getInstance();
@@ -191,6 +194,15 @@ public class MainFrame extends JFrame {
 
     treeScrollPane.setViewportView(Hierarchy.getInstance());
     treeScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+
+    // hack to get stupid tree to resize width
+    splitPane.addPropertyChangeListener(new PropertyChangeListener(){
+      public void propertyChange(PropertyChangeEvent evt) {
+        if (evt.getPropertyName().equals(JSplitPane.DIVIDER_LOCATION_PROPERTY)){
+          Hierarchy.getInstance().configureLayoutCache();
+        }
+      }
+    });
 //    treeScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
 
 

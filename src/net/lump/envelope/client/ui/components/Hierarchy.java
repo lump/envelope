@@ -18,7 +18,6 @@ import us.lump.lib.Money;
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.BevelBorder;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.plaf.basic.BasicTreeUI;
@@ -37,13 +36,14 @@ import java.util.HashMap;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.20 2008/10/24 06:24:06 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.21 2008/10/24 17:53:29 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
   private final State state = State.getInstance();
   private final DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode();
   TransactionTableModel tm;
+  final WideTreeUI wtui = new WideTreeUI();
 
   public static Hierarchy getInstance() {
     if (singleton == null) singleton = new Hierarchy();
@@ -58,23 +58,24 @@ public class Hierarchy extends JTree {
     }
   }
 
+  public void configureLayoutCache() {
+    wtui.configureLayoutCache();
+  }
+
   private Hierarchy() {
     super();
 
-    final WideTreeUI wtui = new WideTreeUI();
     setUI(wtui);
     addComponentListener(new ComponentListener() {
 
       public void componentResized(ComponentEvent e) {
-        wtui.configureLayoutCache();
+        configureLayoutCache();
       }
 
       public void componentMoved(ComponentEvent e) {
-        wtui.configureLayoutCache();
       }
 
       public void componentShown(ComponentEvent e) {
-        wtui.configureLayoutCache();
       }
 
       public void componentHidden(ComponentEvent e) {}
@@ -253,7 +254,7 @@ public class Hierarchy extends JTree {
       this.setLayout(layout);
       balanceLabel.setHorizontalAlignment(JLabel.RIGHT);
       this.add(mainLabel);
-      this.add(new Box.Filler(new Dimension(5,0), new Dimension(5,0),
+      this.add(new Box.Filler(new Dimension(5, 0), new Dimension(5, 0),
                               new Dimension(Short.MAX_VALUE, 0)));
       this.add(balanceLabel);
 //      this.setBorder(BorderFactory.createLineBorder(Color.BLACK));
@@ -276,12 +277,16 @@ public class Hierarchy extends JTree {
 
     protected void paintComponent(Graphics g) {
       if (ui != null) {
-          // On the off chance some one created a UI, honor it
-          super.paintComponent(g);
+        // On the off chance some one created a UI, honor it
+        super.paintComponent(g);
       } else if (isOpaque()) {
-          g.setColor(getBackground());
-          g.fillRect(0, 0, getWidth(), getHeight());
+        g.setColor(getBackground());
+        g.fillRect(0, 0, getWidth(), getHeight());
       }
+    }
+
+    public JLabel getMainLabel() {
+      return mainLabel;
     }
 
     public Component getTreeCellRendererComponent(JTree tree,
@@ -424,7 +429,7 @@ public class Hierarchy extends JTree {
   }
 
   public class WideTreeUI extends BasicTreeUI {
-    HashMap<Integer,Integer> cachedwidth = new HashMap<Integer,Integer>();
+    HashMap<Integer, Integer> cachedwidth = new HashMap<Integer, Integer>();
 
     public WideTreeUI() {
       super();
@@ -444,7 +449,6 @@ public class Hierarchy extends JTree {
         return (JScrollPane)c;
       return null;
     }
-
 
 //    public void paint(Graphics g, JComponent c) {
 //      configureLayoutCache();
@@ -502,27 +506,25 @@ public class Hierarchy extends JTree {
             int targetWidth;
             if (sp == null) targetWidth = prefSize.width;
             else {
-              int cellwidth =
+              int targetCellWidth =
                   sp.getViewportBorderBounds().width - getRowX(row, depth);
 
-              if (!cachedwidth.containsKey(depth)) cachedwidth.put(depth, cellwidth);
+              if (targetCellWidth < prefSize.width && aComponent instanceof EnvelopeTreeCellRenderer) {
+                JLabel l = ((EnvelopeTreeCellRenderer)aComponent).getMainLabel();
+                Dimension d = l.getPreferredSize();
+                d.width = d.width - (prefSize.width - targetCellWidth);
+                l.setMaximumSize(d);
+              }
+
+              if (!cachedwidth.containsKey(depth))
+                cachedwidth.put(depth, targetCellWidth);
               else {
-                if (cachedwidth.get(depth) != cellwidth) {
-                  RepaintManager.currentManager(sp).addDirtyRegion(sp,0,0,sp.getWidth(),sp.getHeight());
-                  cachedwidth.put(depth, cellwidth);
+                if (cachedwidth.get(depth) != targetCellWidth) {
+                  cachedwidth.put(depth, targetCellWidth);
                 }
               }
-              targetWidth = cellwidth;
+              targetWidth = targetCellWidth;
             }
-
-
-//            int targetWidth = sp == null ? prefSize.width
-//                              : Math.max(
-//                                  sp.getViewportBorderBounds()
-//                                      .width
-//                                  - getRowX(row, depth),
-//                                  prefSize.width
-//                              );
 
             if (size != null) {
               size.x = getRowX(row, depth);
