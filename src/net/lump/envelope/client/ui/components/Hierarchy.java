@@ -18,16 +18,17 @@ import us.lump.lib.Money;
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.BevelBorder;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
+import javax.swing.plaf.basic.BasicTreeUI;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeSelectionModel;
+import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
 import java.util.Date;
 
 
@@ -35,7 +36,7 @@ import java.util.Date;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.18 2008/10/23 04:30:21 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.19 2008/10/24 01:54:43 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -59,20 +60,39 @@ public class Hierarchy extends JTree {
   private Hierarchy() {
     super();
 
+    final WideTreeUI wtui = new WideTreeUI();
+    setUI(wtui);
+    addComponentListener(new ComponentListener() {
+
+      public void componentResized(ComponentEvent e) {
+        wtui.configureLayoutCache();
+      }
+
+      public void componentMoved(ComponentEvent e) {
+        wtui.configureLayoutCache();
+      }
+
+      public void componentShown(ComponentEvent e) {
+        wtui.configureLayoutCache();
+      }
+
+      public void componentHidden(ComponentEvent e) {}
+    });
+
     setModel(new DefaultTreeModel(rootNode, false));
 
     getSelectionModel().setSelectionMode(
         TreeSelectionModel.SINGLE_TREE_SELECTION);
 
-    TreeCellRenderer renderer = new TreeCellRenderer();
-    renderer.setLeafIcon(envelope.get());
-    renderer.setOpenIcon(account.get());
-    renderer.setClosedIcon(account_closed.get());
+    EnvelopeTreeCellRenderer renderer = new EnvelopeTreeCellRenderer();
+//    renderer.setLeafIcon(envelope.get());
+//    renderer.setOpenIcon(account.get());
+//    renderer.setClosedIcon(account_closed.get());
     setCellRenderer(renderer);
 
     addTreeSelectionListener(new TreeSelectionListener() {
       public void valueChanged(final TreeSelectionEvent e) {
-        
+
         DefaultMutableTreeNode node =
             (DefaultMutableTreeNode)e.getPath().getLastPathComponent();
         final Object o = node.getUserObject();
@@ -212,65 +232,161 @@ public class Hierarchy extends JTree {
     }
   }
 
-  class TreeCellRenderer extends javax.swing.tree.DefaultTreeCellRenderer {
 
-    public Component getTreeCellRendererComponent(JTree tree, Object value,
-                                                  boolean sel,
+  class EnvelopeTreeCellRenderer extends JComponent
+      implements javax.swing.tree.TreeCellRenderer {
+    BoxLayout layout = new BoxLayout(this, BoxLayout.X_AXIS);
+    JLabel mainLabel = new JLabel();
+    JLabel balanceLabel = new JLabel();
+
+    Color textSelectionColor = UIManager.getColor("Tree.selectionForeground");
+    Color textNonSelectionColor = UIManager.getColor("Tree.textForeground");
+    Color backgroundSelectionColor =
+        UIManager.getColor("Tree.selectionBackground");
+    Color backgroundNonSelectionColor =
+        UIManager.getColor("Tree.textBackground");
+    Color borderSelectionColor =
+        UIManager.getColor("Tree.selectionBorderColor");
+
+    public EnvelopeTreeCellRenderer() {
+      this.setLayout(layout);
+      balanceLabel.setHorizontalAlignment(JLabel.RIGHT);
+      this.add(mainLabel);
+      this.add(new Box.Filler(new Dimension(5,0), new Dimension(5,0),
+                              new Dimension(Short.MAX_VALUE, 0)));
+      this.add(balanceLabel);
+//      this.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+//      balanceLabel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
+//      mainLabel.setBorder(BorderFactory.createLineBorder(Color.RED));
+    }
+
+    public Dimension getPreferredSize() {
+      Dimension parent = super.getPreferredSize();
+
+      Dimension mlpf = mainLabel.getPreferredSize();
+      Dimension blpf = balanceLabel.getPreferredSize();
+
+      Dimension out = new Dimension(
+          Math.max(parent.width, mlpf.width + blpf.width),
+          Math.max(parent.height, Math.max(mlpf.height, blpf.height)));
+
+      return out;
+    }
+
+    protected void paintComponent(Graphics g) {
+      if (ui != null) {
+          // On the off chance some one created a UI, honor it
+          super.paintComponent(g);
+      } else if (isOpaque()) {
+          g.setColor(getBackground());
+          g.fillRect(0, 0, getWidth(), getHeight());
+      }
+    }
+
+    public Component getTreeCellRendererComponent(JTree tree,
+                                                  Object value,
+                                                  boolean selected,
                                                   boolean expanded,
-                                                  boolean leaf, int row,
+                                                  boolean leaf,
+                                                  int row,
                                                   boolean hasFocus) {
-      this.hasFocus = hasFocus;
 
-      String name = "";
-      if (value != null) {
-        if (value instanceof DefaultMutableTreeNode) {
-          Object userObj = ((DefaultMutableTreeNode)value).getUserObject();
-          if (userObj instanceof CategoryTotal)
-            name =
-                ((CategoryTotal)userObj).name
-                + " "
-                + ((CategoryTotal)userObj).balance.toFormattedString();
-          else
-            name = value.toString();
-        }
-        else name = value.toString();
+//      this.setSize(tree.getWidth(), this.getHeight());
+      mainLabel.setFont(tree.getFont());
+      balanceLabel.setFont(tree.getFont());
+      if (selected || hasFocus) {
+        this.setOpaque(true);
+        this.setBackground(backgroundSelectionColor);
+        mainLabel.setForeground(textSelectionColor);
+        balanceLabel.setForeground(textSelectionColor);
+      } else {
+        this.setOpaque(false);
+        this.setBackground(backgroundNonSelectionColor);
+        mainLabel.setForeground(textNonSelectionColor);
+        balanceLabel.setForeground(textNonSelectionColor);
       }
 
-//      String name = tree.convertValueToText(
-//          value, sel, expanded, leaf, row, hasFocus);
-
-      if (sel) setForeground(getTextSelectionColor());
-      else setForeground(getTextNonSelectionColor());
-      setText(name);
-
-      Icon icon = null;
       if (value != null
           && value instanceof DefaultMutableTreeNode
           && ((DefaultMutableTreeNode)value).getUserObject() != null) {
-        icon = getIconForObject(
-            ((DefaultMutableTreeNode)value).getUserObject(), expanded);
-      }
 
-      if (icon != null) {
-        setIcon(icon);
-      } else {
-        if (leaf) {
-          setIcon(getLeafIcon());
-        } else if (expanded) {
-          setIcon(getOpenIcon());
-        } else {
-          setIcon(getClosedIcon());
+        Object o = ((DefaultMutableTreeNode)value).getUserObject();
+        if (o instanceof Budget) {
+          if (expanded) mainLabel.setIcon(budget.get());
+          else mainLabel.setIcon(budget_closed.get());
+          mainLabel.setText(((Budget)o).getName());
+          balanceLabel.setText("");
+        } else if (o instanceof Account) {
+          if (expanded) mainLabel.setIcon(account.get());
+          else mainLabel.setIcon(account_closed.get());
+          mainLabel.setText(((Account)o).getName());
+          balanceLabel.setText("");
+        } else if (o instanceof CategoryTotal) {
+          CategoryTotal ct = (CategoryTotal)o;
+
+          double total = ct.balance.doubleValue();
+          if (total < 0) mainLabel.setIcon(envelope_red.get());
+          if (total == 0) mainLabel.setIcon(envelope_empty.get());
+          if (total > 0 && total <= 100)
+            mainLabel.setIcon(envelope_onebill.get());
+          if (total > 100 && total <= 500) mainLabel.setIcon(envelope.get());
+          if (total > 500 && total <= 1000)
+            mainLabel.setIcon(envelope_full.get());
+          if (total > 1000) mainLabel.setIcon(envelope_overflow.get());
+          mainLabel.setText(((CategoryTotal)o).name);
+          balanceLabel.setText(((CategoryTotal)o).balance.toFormattedString());
+          if (((CategoryTotal)o).balance.floatValue() < 0)
+            balanceLabel.setForeground(Colors.getColor("red"));
         }
       }
-
-
-      setComponentOrientation(tree.getComponentOrientation());
-
-      selected = sel;
 
       return this;
     }
   }
+
+//  class TreeCellRenderer extends javax.swing.tree.DefaultTreeCellRenderer {
+//
+//    public Component getTreeCellRendererComponent(JTree tree, Object value,
+//                                                  boolean sel,
+//                                                  boolean expanded,
+//                                                  boolean leaf, int row,
+//                                                  boolean hasFocus) {
+//      this.hasFocus = hasFocus;
+//      String name = tree.convertValueToText(
+//          value, sel, expanded, leaf, row, hasFocus);
+//
+//      if (sel) setForeground(getTextSelectionColor());
+//      else setForeground(getTextNonSelectionColor());
+//      setText(name);
+//
+//      Icon icon = null;
+//      if (value != null
+//          && value instanceof DefaultMutableTreeNode
+//          && ((DefaultMutableTreeNode)value).getUserObject() != null) {
+//        icon = getIconForObject(
+//            ((DefaultMutableTreeNode)value).getUserObject(), expanded);
+//      }
+//
+//      if (icon != null) {
+//        setIcon(icon);
+//      } else {
+//        if (leaf) {
+//          setIcon(getLeafIcon());
+//        } else if (expanded) {
+//          setIcon(getOpenIcon());
+//        } else {
+//          setIcon(getClosedIcon());
+//        }
+//      }
+//
+//
+//      setComponentOrientation(tree.getComponentOrientation());
+//
+//      selected = sel;
+//
+//      return this;
+//    }
+//  }
 
   private Icon getIconForObject(Object o, boolean expanded) {
     if (o instanceof Budget) {
@@ -304,6 +420,105 @@ public class Hierarchy extends JTree {
     }
 
     public String toString() { return name; }
+  }
+
+  public class WideTreeUI extends BasicTreeUI {
+    public WideTreeUI() {
+      super();
+
+    }
+
+
+    public void configureLayoutCache() {
+      super.configureLayoutCache();
+    }
+
+    protected JScrollPane getScrollPane() {
+      Component c = tree.getParent();
+
+      while (c != null && !(c instanceof JScrollPane))
+        c = c.getParent();
+      if (c instanceof JScrollPane)
+        return (JScrollPane)c;
+      return null;
+    }
+
+
+    public void paint(Graphics g, JComponent c) {
+      configureLayoutCache();
+      super.paint(g, c);
+    }
+
+    @Override
+    protected AbstractLayoutCache.NodeDimensions createNodeDimensions() {
+      return new NodeDimensionsHandler() {
+        @Override
+        public Rectangle getNodeDimensions(Object value, int row,
+                                           int depth, boolean expanded,
+                                           Rectangle size) {
+
+          // Return size of editing component, if editing and asking
+          // for editing row.
+          if (editingComponent != null && editingRow == row) {
+            Dimension prefSize = editingComponent.
+                getPreferredSize();
+            int rh = getRowHeight();
+
+            if (rh > 0 && rh != prefSize.height)
+              prefSize.height = rh;
+            if (size != null) {
+              size.x = getRowX(row, depth);
+              size.width = prefSize.width;
+              size.height = prefSize.height;
+            } else {
+              size = new Rectangle(getRowX(row, depth), 0,
+                                   prefSize.width, prefSize.height);
+            }
+            return size;
+          }
+          // Not editing, use renderer.
+          if (currentCellRenderer != null) {
+            Component aComponent;
+
+            aComponent = currentCellRenderer.getTreeCellRendererComponent
+                (tree, value, tree.isRowSelected(row),
+                 expanded, treeModel.isLeaf(value), row,
+                 false);
+            if (tree != null) {
+              // Only ever removed when UI changes, this is OK!
+              rendererPane.add(aComponent);
+              aComponent.validate();
+            }
+            Dimension prefSize = aComponent.getPreferredSize();
+
+            JScrollPane sp = getScrollPane();
+
+
+            int targetWidth = sp == null ? prefSize.width
+                              : Math.max(
+                                  sp.getViewportBorderBounds()
+                                      .width
+                                  - getRowX(row, depth),
+                                  prefSize.width
+                              );
+
+            if (size != null) {
+              size.x = getRowX(row, depth);
+              size.width = targetWidth;
+              size.height = prefSize.height;
+            } else {
+              size = new Rectangle(
+                  size.width = getRowX(row, depth), 0,
+                  targetWidth, prefSize.height);
+            }
+
+            return size;
+          }
+          return null;
+
+        }
+      };
+    }
   }
 
 }

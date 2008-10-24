@@ -22,7 +22,7 @@ import java.awt.event.*;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.22 2008/10/23 05:46:45 troy Exp $
+ * @version $Id: MainFrame.java,v 1.23 2008/10/24 01:54:43 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -62,7 +62,7 @@ public class MainFrame extends JFrame {
     this.setIconImage(ImageResource.icon.envelope.getImage());
 
     splitPane.setResizeWeight(0);
-    splitPane.getLeftComponent().setMinimumSize(new Dimension(100, 0));
+    splitPane.getLeftComponent().setMinimumSize(new Dimension(200, 0));
     splitPane.setContinuousLayout(true);
     splitPane.setOneTouchExpandable(true);
 
