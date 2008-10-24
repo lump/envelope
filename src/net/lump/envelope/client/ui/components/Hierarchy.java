@@ -36,7 +36,7 @@ import java.util.HashMap;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.21 2008/10/24 17:53:29 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.22 2008/10/24 19:23:07 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -82,6 +82,7 @@ public class Hierarchy extends JTree {
     });
 
     setModel(new DefaultTreeModel(rootNode, false));
+//    setRootVisible(false);
 
     getSelectionModel().setSelectionMode(
         TreeSelectionModel.SINGLE_TREE_SELECTION);
@@ -99,8 +100,7 @@ public class Hierarchy extends JTree {
             (DefaultMutableTreeNode)e.getPath().getLastPathComponent();
         final Object o = node.getUserObject();
 
-        if (o instanceof Account
-            || o instanceof CategoryTotal) {
+        if (o instanceof CategoryTotal) {
 
           final TableQueryBar tqb = TableQueryBar.getInstance();
           sanifyDates(tqb);
@@ -169,14 +169,11 @@ public class Hierarchy extends JTree {
 
     EnvelopeRunnable r = new EnvelopeRunnable(Strings.get("building.tree")) {
       public void run() {
-        for (Account a : CriteriaFactory.getInstance()
-            .getAccountsForBudget(state.getBudget()))
-          state.getAccounts().add(a);
-
-        for (Account a : state.getAccounts()) {
-          DefaultMutableTreeNode thisNode = new DefaultMutableTreeNode(a);
+        for (AccountTotal l : CriteriaFactory.getInstance()
+            .getAccountTotals(state.getBudget())) {
+          DefaultMutableTreeNode thisNode = new DefaultMutableTreeNode(l);
           for (CategoryTotal ca :
-              CriteriaFactory.getInstance().getCategoriesForAccount(a)) {
+              CriteriaFactory.getInstance().getCategoriesForAccount(l.account)) {
             thisNode.add(new DefaultMutableTreeNode(ca));
           }
           rootNode.add(thisNode);
@@ -322,23 +319,25 @@ public class Hierarchy extends JTree {
           else mainLabel.setIcon(budget_closed.get());
           mainLabel.setText(((Budget)o).getName());
           balanceLabel.setText("");
-        } else if (o instanceof Account) {
-          if (expanded) mainLabel.setIcon(account.get());
-          else mainLabel.setIcon(account_closed.get());
-          mainLabel.setText(((Account)o).getName());
-          balanceLabel.setText("");
         } else if (o instanceof CategoryTotal) {
-          CategoryTotal ct = (CategoryTotal)o;
+          if (o instanceof AccountTotal) {
+            if (expanded) mainLabel.setIcon(account.get());
+            else mainLabel.setIcon(account_closed.get());
+            mainLabel.setText(((AccountTotal)o).name);
+            balanceLabel.setText("");
+          } else {
+            CategoryTotal ct = (CategoryTotal)o;
 
-          double total = ct.balance.doubleValue();
-          if (total < 0) mainLabel.setIcon(envelope_red.get());
-          if (total == 0) mainLabel.setIcon(envelope_empty.get());
-          if (total > 0 && total <= 100)
-            mainLabel.setIcon(envelope_onebill.get());
-          if (total > 100 && total <= 500) mainLabel.setIcon(envelope.get());
-          if (total > 500 && total <= 1000)
-            mainLabel.setIcon(envelope_full.get());
-          if (total > 1000) mainLabel.setIcon(envelope_overflow.get());
+            double total = ct.balance.doubleValue();
+            if (total < 0) mainLabel.setIcon(envelope_red.get());
+            if (total == 0) mainLabel.setIcon(envelope_empty.get());
+            if (total > 0 && total <= 100)
+              mainLabel.setIcon(envelope_onebill.get());
+            if (total > 100 && total <= 500) mainLabel.setIcon(envelope.get());
+            if (total > 500 && total <= 1000)
+              mainLabel.setIcon(envelope_full.get());
+            if (total > 1000) mainLabel.setIcon(envelope_overflow.get());
+          }
           mainLabel.setText(((CategoryTotal)o).name);
           balanceLabel.setText(((CategoryTotal)o).balance.toFormattedString());
           if (((CategoryTotal)o).balance.floatValue() < 0)
@@ -414,6 +413,14 @@ public class Hierarchy extends JTree {
     return null;
   }
 
+  public static class AccountTotal extends CategoryTotal {
+    public Account account;
+
+    public AccountTotal(Account account, String name, Integer id, Money balance) {
+      super(name, id, balance);
+      this.account = account;
+    }
+  }
   public static class CategoryTotal {
     public String name;
     public Integer id;
@@ -508,14 +515,6 @@ public class Hierarchy extends JTree {
             else {
               int targetCellWidth =
                   sp.getViewportBorderBounds().width - getRowX(row, depth);
-
-              if (targetCellWidth < prefSize.width && aComponent instanceof EnvelopeTreeCellRenderer) {
-                JLabel l = ((EnvelopeTreeCellRenderer)aComponent).getMainLabel();
-                Dimension d = l.getPreferredSize();
-                d.width = d.width - (prefSize.width - targetCellWidth);
-                l.setMaximumSize(d);
-              }
-
               if (!cachedwidth.containsKey(depth))
                 cachedwidth.put(depth, targetCellWidth);
               else {
@@ -529,11 +528,11 @@ public class Hierarchy extends JTree {
             if (size != null) {
               size.x = getRowX(row, depth);
               size.width = targetWidth;
-              size.height = prefSize.height;
+              size.height = prefSize.height + 2;
             } else {
               size = new Rectangle(
                   size.width = getRowX(row, depth), 0,
-                  targetWidth, prefSize.height);
+                  targetWidth, prefSize.height + 2);
             }
 
             return size;

@@ -102,13 +102,12 @@ public class TransactionTableModel extends AbstractTableModel {
             beginDate = t.begin;
             endDate = t.end;
             TransactionTableModel.this.thing = t.thing;
-            isTransaction = TransactionTableModel.this.thing instanceof Account;
+            isTransaction = TransactionTableModel.this.thing instanceof Hierarchy.AccountTotal;
 
-            if (!(TransactionTableModel.this.thing instanceof Account
-                  || TransactionTableModel.this.thing instanceof
-                Hierarchy.CategoryTotal))
+            if (!(TransactionTableModel.this.thing instanceof Hierarchy.AccountTotal
+                  || TransactionTableModel.this.thing instanceof Hierarchy.CategoryTotal))
               throw new IllegalArgumentException(
-                  "only Account or Budget aceptable as first argument");
+                  "only AccountTotal or CategoryTotal aceptable as first argument");
 
             startDate = System.currentTimeMillis();
 
@@ -390,7 +389,7 @@ public class TransactionTableModel extends AbstractTableModel {
       this.thing = thing;
       this.begin = begin;
       this.end = end;
-      final String type = thing instanceof Account
+      final String type = thing instanceof Hierarchy.AccountTotal
                           ? Strings.get("account").toLowerCase()
                           : Strings.get("category").toLowerCase();
       e =
