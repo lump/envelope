@@ -17,7 +17,7 @@ import java.util.List;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.17 2008/10/24 19:23:07 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.18 2008/10/25 21:47:13 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -47,6 +47,7 @@ public class CriteriaFactory {
     }
     return retval;
   }
+
 
   public List<Hierarchy.AccountTotal> getAccountTotals(Budget budget) {
     List<Hierarchy.AccountTotal> retval =

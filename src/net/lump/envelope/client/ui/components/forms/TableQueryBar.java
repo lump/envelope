@@ -11,6 +11,8 @@ import java.awt.*;
 import java.util.Date;
 import java.util.ResourceBundle;
 
+import us.lump.lib.Money;
+
 /**
  * Created by IntelliJ IDEA. User: troy Date: Jul 7, 2008 Time: 10:39:36 PM To
  * change this template use File | Settings | File Templates.
@@ -29,8 +31,15 @@ public class TableQueryBar {
   private static TableQueryBar singleton;
 
   public TableQueryBar() {
+
     $$$setupUI$$$();
 
+    table.getTableHeader().setUpdateTableInRealTime(true);
+    tableQueryPanel.setMinimumSize(new Dimension(500, 100));
+    table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
+    table.getTableHeader().setReorderingAllowed(false);
+    table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    
 //    table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
 //      public void valueChanged(ListSelectionEvent e) {
 //        if (!e.getValueIsAdjusting()) {

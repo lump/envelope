@@ -37,7 +37,7 @@ import java.util.List;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.23 2008/10/24 22:52:57 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.24 2008/10/25 21:47:13 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -105,29 +105,23 @@ public class Hierarchy extends JTree {
 
         if (o instanceof CategoryTotal) {
 
+//          MainFrame.getInstance().setDetailPane(null);
+
           final TableQueryBar tqb = TableQueryBar.getInstance();
           sanifyDates(tqb);
 
-          if (tm == null) tm = new TransactionTableModel(
+          JTable table = tqb.getTable();
+          if (tm == null) {
+            tm = new TransactionTableModel(
               o, tqb.getBeginDate(), tqb.getEndDate(),
               tqb.getTable());
+          }
           else tm.queue(o, tqb.getBeginDate(), tqb.getEndDate());
-
-          JTable table = tqb.getTable();
-          table.getTableHeader().setUpdateTableInRealTime(true);
-          table.setModel(tm);
+          if (!table.getModel().equals(tm)) table.setModel(tm);
 
           table.setDefaultRenderer(Money.class, new MoneyRenderer());
-          table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-          table.getTableHeader().setReorderingAllowed(false);
-          table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
           tqb.setTitleLabel(o.toString());
           tqb.setTitleIcon(getIconForObject(o, true));
-
-          MainFrame.getInstance()
-              .setContentPane(tqb.getTableQueryPanel());
-          tqb.setViewportView(table);
 
           Dimension checkWidth = new JCheckBox().getPreferredSize();
           int dateWidth =
@@ -162,7 +156,7 @@ public class Hierarchy extends JTree {
           });
         }
 //        else {
-//          MainFrame.getInstance().setContentPane(null);
+//          MainFrame.getInstance().setTablePane(null);
 //        }
       }
     });
@@ -232,14 +226,15 @@ public class Hierarchy extends JTree {
 
         updateChildren(rootNode);
         treeModel.nodeChanged(rootNode);
-        RepaintManager.currentManager(singleton).isCompletelyDirty(singleton);
+//        RepaintManager.currentManager(singleton).isCompletelyDirty(singleton);
         
         if (!singleton.isExpanded(new TreePath(rootNode)))
           SwingUtilities.invokeLater(new Runnable() {
             public void run() {
               singleton.expandPath(new TreePath(rootNode));
-              singleton.repaint();
-              RepaintManager.currentManager(singleton).paintDirtyRegions();
+//              RepaintManager.currentManager(singleton).isCompletelyDirty(singleton);
+//              singleton.repaint();
+//              RepaintManager.currentManager(singleton).paintDirtyRegions();
             }
           });
         }

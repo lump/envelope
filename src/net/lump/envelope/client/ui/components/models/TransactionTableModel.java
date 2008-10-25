@@ -98,6 +98,7 @@ public class TransactionTableModel extends AbstractTableModel {
             if (selectedRow > -1)
               selectionCache = (Integer)transactions
                   .get(selectedRow)[COLUMN.TransactionID.ordinal()];
+            table.clearSelection();
 
             beginDate = t.begin;
             endDate = t.end;
@@ -286,8 +287,9 @@ public class TransactionTableModel extends AbstractTableModel {
 
   public void queue(Object thing, Date begin, Date end) {
     try {
-      if (incomingList != null)
-        incomingList.fireAbort();
+//this doesn't work yet
+//      if (incomingList != null)
+//        incomingList.fireAbort();
       q.put(new Task(thing, begin, end));
     } catch (InterruptedException e) {
       e.printStackTrace();
@@ -382,6 +384,10 @@ public class TransactionTableModel extends AbstractTableModel {
 
   public boolean isCellEditable(int rowIndex, int columnIndex) {
     return columnIndex == 0 && isTransaction;
+  }
+
+  public Integer getTransactionId(Integer row) {
+    return (Integer)transactions.get(row)[COLUMN.TransactionID.ordinal()];
   }
 
   class Task {
