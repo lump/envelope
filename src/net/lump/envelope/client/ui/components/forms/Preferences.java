@@ -266,7 +266,7 @@ public class Preferences extends JDialog {
 
   public boolean isModified(ServerSettings data) {
     if (hostName.getText() != null ? !hostName.getText()
-      .equals(data.getHostName()) : data.getHostName() != null)
+        .equals(data.getHostName()) : data.getHostName() != null)
       return true;
     return false;
   }
@@ -302,9 +302,9 @@ public class Preferences extends JDialog {
                                                      GridConstraints.ANCHOR_CENTER,
                                                      GridConstraints.FILL_BOTH,
                                                      GridConstraints
-                                                       .SIZEPOLICY_CAN_SHRINK
+                                                         .SIZEPOLICY_CAN_SHRINK
                                                      | GridConstraints
-                                                       .SIZEPOLICY_CAN_GROW,
+                                                         .SIZEPOLICY_CAN_GROW,
                                                      1,
                                                      null,
                                                      null,
@@ -338,13 +338,13 @@ public class Preferences extends JDialog {
                                                          GridConstraints.ANCHOR_CENTER,
                                                          GridConstraints.FILL_BOTH,
                                                          GridConstraints
-                                                           .SIZEPOLICY_CAN_SHRINK
+                                                             .SIZEPOLICY_CAN_SHRINK
                                                          | GridConstraints
-                                                           .SIZEPOLICY_CAN_GROW,
+                                                             .SIZEPOLICY_CAN_GROW,
                                                          GridConstraints
-                                                           .SIZEPOLICY_CAN_SHRINK
+                                                             .SIZEPOLICY_CAN_SHRINK
                                                          | GridConstraints
-                                                           .SIZEPOLICY_CAN_GROW,
+                                                             .SIZEPOLICY_CAN_GROW,
                                                          null,
                                                          null,
                                                          null,
@@ -352,7 +352,7 @@ public class Preferences extends JDialog {
                                                          false));
     ok = new JButton();
     this.$$$loadButtonText$$$(ok, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("ok"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("ok"));
     okCancelGroup.add(ok, new GridConstraints(0,
                                               0,
                                               1,
@@ -360,9 +360,9 @@ public class Preferences extends JDialog {
                                               GridConstraints.ANCHOR_CENTER,
                                               GridConstraints.FILL_HORIZONTAL,
                                               GridConstraints
-                                                .SIZEPOLICY_CAN_SHRINK
+                                                  .SIZEPOLICY_CAN_SHRINK
                                               | GridConstraints
-                                                .SIZEPOLICY_CAN_GROW,
+                                                  .SIZEPOLICY_CAN_GROW,
                                               GridConstraints.SIZEPOLICY_FIXED,
                                               null,
                                               null,
@@ -371,7 +371,7 @@ public class Preferences extends JDialog {
                                               false));
     cancelButton = new JButton();
     this.$$$loadButtonText$$$(cancelButton, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("cancel"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("cancel"));
     okCancelPanel.add(cancelButton, new GridConstraints(0,
                                                         1,
                                                         1,
@@ -379,9 +379,9 @@ public class Preferences extends JDialog {
                                                         GridConstraints.ANCHOR_CENTER,
                                                         GridConstraints.FILL_HORIZONTAL,
                                                         GridConstraints
-                                                          .SIZEPOLICY_CAN_SHRINK
+                                                            .SIZEPOLICY_CAN_SHRINK
                                                         | GridConstraints
-                                                          .SIZEPOLICY_CAN_GROW,
+                                                            .SIZEPOLICY_CAN_GROW,
                                                         GridConstraints.SIZEPOLICY_FIXED,
                                                         null,
                                                         null,
@@ -401,13 +401,13 @@ public class Preferences extends JDialog {
                                                 GridConstraints.ANCHOR_CENTER,
                                                 GridConstraints.FILL_BOTH,
                                                 GridConstraints
-                                                  .SIZEPOLICY_CAN_SHRINK
+                                                    .SIZEPOLICY_CAN_SHRINK
                                                 | GridConstraints
-                                                  .SIZEPOLICY_CAN_GROW,
+                                                    .SIZEPOLICY_CAN_GROW,
                                                 GridConstraints
-                                                  .SIZEPOLICY_CAN_SHRINK
+                                                    .SIZEPOLICY_CAN_SHRINK
                                                 | GridConstraints
-                                                  .SIZEPOLICY_CAN_GROW,
+                                                    .SIZEPOLICY_CAN_GROW,
                                                 null,
                                                 null,
                                                 null,
@@ -421,13 +421,13 @@ public class Preferences extends JDialog {
                                                 GridConstraints.ANCHOR_CENTER,
                                                 GridConstraints.FILL_BOTH,
                                                 GridConstraints
-                                                  .SIZEPOLICY_CAN_SHRINK
+                                                    .SIZEPOLICY_CAN_SHRINK
                                                 | GridConstraints
-                                                  .SIZEPOLICY_CAN_GROW,
+                                                    .SIZEPOLICY_CAN_GROW,
                                                 GridConstraints
-                                                  .SIZEPOLICY_CAN_SHRINK
+                                                    .SIZEPOLICY_CAN_SHRINK
                                                 | GridConstraints
-                                                  .SIZEPOLICY_CAN_GROW,
+                                                    .SIZEPOLICY_CAN_GROW,
                                                 null,
                                                 new Dimension(200, 200),
                                                 null,
@@ -440,7 +440,7 @@ public class Preferences extends JDialog {
                                               -1,
                                               -1));
     prefsTabs.addTab(ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("server"),
+        "us/lump/envelope/client/ui/defs/Strings").getString("server"),
                      serverTab);
     serverFormPanel = new JPanel();
     serverFormPanel.setLayout(new GridLayoutManager(3,
@@ -455,13 +455,13 @@ public class Preferences extends JDialog {
                                                        GridConstraints.ANCHOR_CENTER,
                                                        GridConstraints.FILL_BOTH,
                                                        GridConstraints
-                                                         .SIZEPOLICY_CAN_SHRINK
+                                                           .SIZEPOLICY_CAN_SHRINK
                                                        | GridConstraints
-                                                         .SIZEPOLICY_CAN_GROW,
+                                                           .SIZEPOLICY_CAN_GROW,
                                                        GridConstraints
-                                                         .SIZEPOLICY_CAN_SHRINK
+                                                           .SIZEPOLICY_CAN_SHRINK
                                                        | GridConstraints
-                                                         .SIZEPOLICY_CAN_GROW,
+                                                           .SIZEPOLICY_CAN_GROW,
                                                        null,
                                                        null,
                                                        null,
@@ -469,7 +469,7 @@ public class Preferences extends JDialog {
                                                        false));
     hostNameLabel = new JLabel();
     this.$$$loadLabelText$$$(hostNameLabel, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("hostname"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("hostname"));
     serverFormPanel.add(hostNameLabel, new GridConstraints(0,
                                                            0,
                                                            1,
@@ -499,7 +499,8 @@ public class Preferences extends JDialog {
                                                       false));
     compress = new JCheckBox();
     this.$$$loadButtonText$$$(compress, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("compress.with.blah"));
+        "us/lump/envelope/client/ui/defs/Strings").getString(
+        "compress.with.blah"));
     serverFormPanel.add(compress, new GridConstraints(1,
                                                       1,
                                                       1,
@@ -507,9 +508,9 @@ public class Preferences extends JDialog {
                                                       GridConstraints.ANCHOR_WEST,
                                                       GridConstraints.FILL_NONE,
                                                       GridConstraints
-                                                        .SIZEPOLICY_CAN_SHRINK
+                                                          .SIZEPOLICY_CAN_SHRINK
                                                       | GridConstraints
-                                                        .SIZEPOLICY_CAN_GROW,
+                                                          .SIZEPOLICY_CAN_GROW,
                                                       GridConstraints.SIZEPOLICY_FIXED,
                                                       null,
                                                       null,
@@ -518,7 +519,7 @@ public class Preferences extends JDialog {
                                                       false));
     encrypt = new JCheckBox();
     this.$$$loadButtonText$$$(encrypt, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("encrypt.with.blah"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("encrypt.with.blah"));
     serverFormPanel.add(encrypt, new GridConstraints(2,
                                                      1,
                                                      1,
@@ -526,9 +527,9 @@ public class Preferences extends JDialog {
                                                      GridConstraints.ANCHOR_WEST,
                                                      GridConstraints.FILL_NONE,
                                                      GridConstraints
-                                                       .SIZEPOLICY_CAN_SHRINK
+                                                         .SIZEPOLICY_CAN_SHRINK
                                                      | GridConstraints
-                                                       .SIZEPOLICY_CAN_GROW,
+                                                         .SIZEPOLICY_CAN_GROW,
                                                      GridConstraints.SIZEPOLICY_FIXED,
                                                      null,
                                                      null,
@@ -551,29 +552,29 @@ public class Preferences extends JDialog {
                                                               GridConstraints.ANCHOR_CENTER,
                                                               GridConstraints.FILL_BOTH,
                                                               GridConstraints
-                                                                .SIZEPOLICY_CAN_SHRINK
+                                                                  .SIZEPOLICY_CAN_SHRINK
                                                               | GridConstraints
-                                                                .SIZEPOLICY_CAN_GROW,
+                                                                  .SIZEPOLICY_CAN_GROW,
                                                               GridConstraints
-                                                                .SIZEPOLICY_CAN_SHRINK
+                                                                  .SIZEPOLICY_CAN_SHRINK
                                                               | GridConstraints
-                                                                .SIZEPOLICY_WANT_GROW,
+                                                                  .SIZEPOLICY_WANT_GROW,
                                                               null,
                                                               null,
                                                               null,
                                                               0,
                                                               false));
     classServerStatusPanel.setBorder(BorderFactory.createTitledBorder(
-      BorderFactory.createEtchedBorder(),
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString(
-        "class_server_status")));
+        BorderFactory.createEtchedBorder(),
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString(
+            "class_server_status")));
     classStatusMessage = new JTextPane();
     classStatusMessage.setBackground(UIManager.getColor("Label.background"));
     classStatusMessage.setEditable(false);
     classStatusMessage.setForeground(UIManager.getColor("Label.foreground"));
     classStatusMessage.setText(ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString(
-      "test_not_performed_yet"));
+        "us/lump/envelope/client/ui/defs/Strings").getString(
+        "test_not_performed_yet"));
     classServerStatusPanel.add(classStatusMessage, new GridConstraints(0,
                                                                        0,
                                                                        1,
@@ -581,17 +582,17 @@ public class Preferences extends JDialog {
                                                                        GridConstraints.ANCHOR_NORTH,
                                                                        GridConstraints.FILL_HORIZONTAL,
                                                                        GridConstraints
-                                                                         .SIZEPOLICY_CAN_SHRINK
+                                                                           .SIZEPOLICY_CAN_SHRINK
                                                                        | GridConstraints
-                                                                         .SIZEPOLICY_WANT_GROW,
+                                                                           .SIZEPOLICY_WANT_GROW,
                                                                        GridConstraints
-                                                                         .SIZEPOLICY_CAN_SHRINK
+                                                                           .SIZEPOLICY_CAN_SHRINK
                                                                        | GridConstraints
-                                                                         .SIZEPOLICY_WANT_GROW,
+                                                                           .SIZEPOLICY_WANT_GROW,
                                                                        null,
                                                                        new Dimension(
-                                                                         150,
-                                                                         -1),
+                                                                           150,
+                                                                           -1),
                                                                        null,
                                                                        0,
                                                                        false));
@@ -608,29 +609,29 @@ public class Preferences extends JDialog {
                                                             GridConstraints.ANCHOR_CENTER,
                                                             GridConstraints.FILL_BOTH,
                                                             GridConstraints
-                                                              .SIZEPOLICY_CAN_SHRINK
+                                                                .SIZEPOLICY_CAN_SHRINK
                                                             | GridConstraints
-                                                              .SIZEPOLICY_CAN_GROW,
+                                                                .SIZEPOLICY_CAN_GROW,
                                                             GridConstraints
-                                                              .SIZEPOLICY_CAN_SHRINK
+                                                                .SIZEPOLICY_CAN_SHRINK
                                                             | GridConstraints
-                                                              .SIZEPOLICY_WANT_GROW,
+                                                                .SIZEPOLICY_WANT_GROW,
                                                             null,
                                                             null,
                                                             null,
                                                             0,
                                                             false));
     rmiServerStatusPanel.setBorder(BorderFactory.createTitledBorder(
-      BorderFactory.createEtchedBorder(),
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString(
-        "rmi_server_status")));
+        BorderFactory.createEtchedBorder(),
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString(
+            "rmi_server_status")));
     rmiStatusMessage = new JTextPane();
     rmiStatusMessage.setBackground(UIManager.getColor("Label.background"));
     rmiStatusMessage.setEditable(false);
     rmiStatusMessage.setForeground(UIManager.getColor("Label.foreground"));
     rmiStatusMessage.setText(ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString(
-      "test_not_performed_yet"));
+        "us/lump/envelope/client/ui/defs/Strings").getString(
+        "test_not_performed_yet"));
     rmiServerStatusPanel.add(rmiStatusMessage, new GridConstraints(0,
                                                                    0,
                                                                    1,
@@ -638,17 +639,17 @@ public class Preferences extends JDialog {
                                                                    GridConstraints.ANCHOR_NORTH,
                                                                    GridConstraints.FILL_HORIZONTAL,
                                                                    GridConstraints
-                                                                     .SIZEPOLICY_CAN_SHRINK
+                                                                       .SIZEPOLICY_CAN_SHRINK
                                                                    | GridConstraints
-                                                                     .SIZEPOLICY_WANT_GROW,
+                                                                       .SIZEPOLICY_WANT_GROW,
                                                                    GridConstraints
-                                                                     .SIZEPOLICY_CAN_SHRINK
+                                                                       .SIZEPOLICY_CAN_SHRINK
                                                                    | GridConstraints
-                                                                     .SIZEPOLICY_WANT_GROW,
+                                                                       .SIZEPOLICY_WANT_GROW,
                                                                    null,
                                                                    new Dimension(
-                                                                     150,
-                                                                     -1),
+                                                                       150,
+                                                                       -1),
                                                                    null,
                                                                    0,
                                                                    false));
@@ -665,13 +666,13 @@ public class Preferences extends JDialog {
                                                        GridConstraints.ANCHOR_CENTER,
                                                        GridConstraints.FILL_BOTH,
                                                        GridConstraints
-                                                         .SIZEPOLICY_CAN_SHRINK
+                                                           .SIZEPOLICY_CAN_SHRINK
                                                        | GridConstraints
-                                                         .SIZEPOLICY_CAN_GROW,
+                                                           .SIZEPOLICY_CAN_GROW,
                                                        GridConstraints
-                                                         .SIZEPOLICY_CAN_SHRINK
+                                                           .SIZEPOLICY_CAN_SHRINK
                                                        | GridConstraints
-                                                         .SIZEPOLICY_CAN_GROW,
+                                                           .SIZEPOLICY_CAN_GROW,
                                                        null,
                                                        null,
                                                        null,
@@ -679,7 +680,7 @@ public class Preferences extends JDialog {
                                                        false));
     testButton = new JButton();
     this.$$$loadButtonText$$$(testButton, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("test_settings"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("test_settings"));
     testButtonPanel.add(testButton, new GridConstraints(0,
                                                         0,
                                                         1,
@@ -714,7 +715,8 @@ public class Preferences extends JDialog {
                                              -1,
                                              -1));
     prefsTabs.addTab(ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("login"), loginTab);
+        "us/lump/envelope/client/ui/defs/Strings").getString("login"),
+                     loginTab);
     loginPanel = new JPanel();
     loginPanel.setLayout(new GridLayoutManager(5,
                                                2,
@@ -728,13 +730,13 @@ public class Preferences extends JDialog {
                                                  GridConstraints.ANCHOR_CENTER,
                                                  GridConstraints.FILL_BOTH,
                                                  GridConstraints
-                                                   .SIZEPOLICY_CAN_SHRINK
+                                                     .SIZEPOLICY_CAN_SHRINK
                                                  | GridConstraints
-                                                   .SIZEPOLICY_CAN_GROW,
+                                                     .SIZEPOLICY_CAN_GROW,
                                                  GridConstraints
-                                                   .SIZEPOLICY_CAN_SHRINK
+                                                     .SIZEPOLICY_CAN_SHRINK
                                                  | GridConstraints
-                                                   .SIZEPOLICY_CAN_GROW,
+                                                     .SIZEPOLICY_CAN_GROW,
                                                  null,
                                                  null,
                                                  null,
@@ -744,7 +746,7 @@ public class Preferences extends JDialog {
     userNameLabel.setHorizontalAlignment(11);
     userNameLabel.setHorizontalTextPosition(0);
     this.$$$loadLabelText$$$(userNameLabel, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("username"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("username"));
     loginPanel.add(userNameLabel, new GridConstraints(0,
                                                       0,
                                                       1,
@@ -775,7 +777,7 @@ public class Preferences extends JDialog {
     passwordLabel = new JLabel();
     passwordLabel.setHorizontalAlignment(11);
     this.$$$loadLabelText$$$(passwordLabel, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("password"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("password"));
     loginPanel.add(passwordLabel, new GridConstraints(1,
                                                       0,
                                                       1,
@@ -806,8 +808,8 @@ public class Preferences extends JDialog {
     rememberPasswordCheckBox = new JCheckBox();
     this.$$$loadButtonText$$$(rememberPasswordCheckBox,
                               ResourceBundle.getBundle(
-                                "us/lump/envelope/client/ui/defs/Strings").getString(
-                                "remember.password"));
+                                  "us/lump/envelope/client/ui/defs/Strings").getString(
+                                  "remember.password"));
     loginPanel.add(rememberPasswordCheckBox, new GridConstraints(2,
                                                                  1,
                                                                  1,
@@ -815,9 +817,9 @@ public class Preferences extends JDialog {
                                                                  GridConstraints.ANCHOR_WEST,
                                                                  GridConstraints.FILL_NONE,
                                                                  GridConstraints
-                                                                   .SIZEPOLICY_CAN_SHRINK
+                                                                     .SIZEPOLICY_CAN_SHRINK
                                                                  | GridConstraints
-                                                                   .SIZEPOLICY_CAN_GROW,
+                                                                     .SIZEPOLICY_CAN_GROW,
                                                                  GridConstraints.SIZEPOLICY_FIXED,
                                                                  null,
                                                                  null,
@@ -827,7 +829,7 @@ public class Preferences extends JDialog {
     sessionStateLabel = new JLabel();
     sessionStateLabel.setHorizontalAlignment(11);
     this.$$$loadLabelText$$$(sessionStateLabel, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("session.state"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("session.state"));
     loginPanel.add(sessionStateLabel, new GridConstraints(3,
                                                           0,
                                                           1,
@@ -843,7 +845,7 @@ public class Preferences extends JDialog {
                                                           false));
     sessionState = new JLabel();
     this.$$$loadLabelText$$$(sessionState, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("unknown"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("unknown"));
     loginPanel.add(sessionState, new GridConstraints(3,
                                                      1,
                                                      1,
@@ -859,7 +861,7 @@ public class Preferences extends JDialog {
                                                      false));
     logInButton = new JButton();
     this.$$$loadButtonText$$$(logInButton, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("log.in"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("log.in"));
     loginPanel.add(logInButton, new GridConstraints(4,
                                                     1,
                                                     1,
@@ -867,9 +869,9 @@ public class Preferences extends JDialog {
                                                     GridConstraints.ANCHOR_CENTER,
                                                     GridConstraints.FILL_HORIZONTAL,
                                                     GridConstraints
-                                                      .SIZEPOLICY_CAN_SHRINK
+                                                        .SIZEPOLICY_CAN_SHRINK
                                                     | GridConstraints
-                                                      .SIZEPOLICY_CAN_GROW,
+                                                        .SIZEPOLICY_CAN_GROW,
                                                     GridConstraints.SIZEPOLICY_FIXED,
                                                     null,
                                                     null,

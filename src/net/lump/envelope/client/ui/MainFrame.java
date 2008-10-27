@@ -9,24 +9,23 @@ import us.lump.envelope.client.ui.components.AboutBox;
 import us.lump.envelope.client.ui.components.Hierarchy;
 import us.lump.envelope.client.ui.components.StatusBar;
 import us.lump.envelope.client.ui.components.forms.Preferences;
-import us.lump.envelope.client.ui.components.forms.TransactionForm;
 import us.lump.envelope.client.ui.components.forms.TableQueryBar;
+import us.lump.envelope.client.ui.components.forms.TransactionForm;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.images.ImageResource;
 import us.lump.lib.util.EmacsKeyBindings;
 
 import javax.swing.*;
-import javax.swing.plaf.basic.BasicSplitPaneUI;
 import java.awt.*;
 import java.awt.event.*;
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 /**
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.26 2008/10/25 21:47:13 troy Exp $
+ * @version $Id: MainFrame.java,v 1.27 2008/10/27 04:41:22 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -42,16 +41,28 @@ public class MainFrame extends JFrame {
   //content
   private JScrollPane treeScrollPane = new JScrollPane();
   private JPanel contentPane = new JPanel(new BorderLayout());
-  private JSplitPane tableContentSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
-                                                Box.createVerticalGlue(),
-                                                null);
-  private JSplitPane treeContentSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                                                treeScrollPane,
-                                                tableContentSplitPane);
+  private JSplitPane tableContentSplitPane =
+      new JSplitPane(JSplitPane.VERTICAL_SPLIT,
+                     Box.createVerticalGlue(),
+                     null);
+  private JSplitPane treeContentSplitPane =
+      new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+                     treeScrollPane,
+                     tableContentSplitPane);
 
 
   public void setTablePane(JPanel p) {
     tableContentSplitPane.setTopComponent(p);
+  }
+
+  public boolean isTransactionViewShowing() {
+    return viewTransaction.isSelected();
+  }
+
+  public void setTransactionViewShowing(boolean showing) {
+    if (showing == isTransactionViewShowing()) return;
+    viewTransaction.setSelected(showing);
+    doViewTransaction();
   }
 
 //  public void setDetailPane(JPanel p) {
@@ -78,7 +89,8 @@ public class MainFrame extends JFrame {
     this.setIconImage(ImageResource.icon.envelope.getImage());
 
     treeContentSplitPane.setResizeWeight(0);
-    treeContentSplitPane.getLeftComponent().setMinimumSize(new Dimension(200, 0));
+    treeContentSplitPane.getLeftComponent()
+        .setMinimumSize(new Dimension(200, 0));
     treeContentSplitPane.setContinuousLayout(true);
     treeContentSplitPane.setOneTouchExpandable(true);
 
@@ -103,16 +115,7 @@ public class MainFrame extends JFrame {
 
     viewTransaction.addActionListener(new AbstractAction() {
       public void actionPerformed(ActionEvent e) {
-        if (viewTransaction.isSelected()) {
-          tableContentSplitPane.setDividerLocation(savedTransactionFormSplitterLocation == 0 ? -1 : savedTransactionFormSplitterLocation);
-          tableContentSplitPane.setDividerSize((Integer)UIManager.get("SplitPane.dividerSize"));
-          transactionForm.getTransactionFormPanel().setVisible(true);
-        }
-        else {
-          savedTransactionFormSplitterLocation = tableContentSplitPane.getDividerLocation();
-          tableContentSplitPane.setDividerSize(0);
-          transactionForm.getTransactionFormPanel().setVisible(false);
-        }
+        doViewTransaction();
       }
     });
 
@@ -124,10 +127,11 @@ public class MainFrame extends JFrame {
     mainMenuBar.add(viewMenu);
 
 
+
     if (System.getProperty("mrj.version") != null) {
       // the Mac specific code here
 //      System.getProperties().put("apple.laf.useScreenMenuBar", true);
-      System.setProperty("com.apple.macos.useScreenMenuBar","true");
+      System.setProperty("com.apple.macos.useScreenMenuBar", "true");
 //      System.getProperties().put("com.apple.macos.useScreenMenuBar", true);
 
       Application application = Application.getApplication();
@@ -228,9 +232,10 @@ public class MainFrame extends JFrame {
     treeScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
     // hack to get stupid tree to resize width
-    treeContentSplitPane.addPropertyChangeListener(new PropertyChangeListener(){
+    treeContentSplitPane.addPropertyChangeListener(new PropertyChangeListener() {
       public void propertyChange(PropertyChangeEvent evt) {
-        if (evt.getPropertyName().equals(JSplitPane.DIVIDER_LOCATION_PROPERTY)){
+        if (evt.getPropertyName()
+            .equals(JSplitPane.DIVIDER_LOCATION_PROPERTY)) {
           Hierarchy.getInstance().configureLayoutCache();
         }
       }
@@ -280,13 +285,30 @@ public class MainFrame extends JFrame {
     setSize(new Dimension(prefs.getInt("windowSizeX", 640),
                           prefs.getInt("windowSizeY", 480)));
     treeContentSplitPane.setDividerLocation(prefs.getInt("splitPaneLocation",
-                                              treeContentSplitPane.getDividerLocation()));
+                                                         treeContentSplitPane.getDividerLocation()));
     setVisible(true);
     status.removeTask(initStatus);
   }
 
   public Preferences getPreferences() {
     return appPrefs;
+  }
+
+  public void doViewTransaction() {
+    if (viewTransaction.isSelected()) {
+      tableContentSplitPane.setDividerLocation(
+          savedTransactionFormSplitterLocation == 0
+          ? -1
+          : savedTransactionFormSplitterLocation);
+      tableContentSplitPane.setDividerSize((Integer)UIManager.get(
+          "SplitPane.dividerSize"));
+      transactionForm.getTransactionFormPanel().setVisible(true);
+    } else {
+      savedTransactionFormSplitterLocation =
+          tableContentSplitPane.getDividerLocation();
+      tableContentSplitPane.setDividerSize(0);
+      transactionForm.getTransactionFormPanel().setVisible(false);
+    }
   }
 
 
@@ -343,7 +365,8 @@ public class MainFrame extends JFrame {
   }
 
   void exit(int value) {
-    prefs.putInt("splitPaneLocation", treeContentSplitPane.getDividerLocation());
+    prefs.putInt("splitPaneLocation",
+                 treeContentSplitPane.getDividerLocation());
     prefs.putInt("windowSizeX", getWidth());
     prefs.putInt("windowSizeY", getHeight());
     System.exit(value);

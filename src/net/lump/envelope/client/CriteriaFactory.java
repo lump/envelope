@@ -1,7 +1,6 @@
 package us.lump.envelope.client;
 
 import org.apache.log4j.Logger;
-import org.hibernate.FetchMode;
 import org.hibernate.criterion.*;
 import us.lump.envelope.client.portal.HibernatePortal;
 import us.lump.envelope.client.ui.components.Hierarchy;
@@ -17,7 +16,7 @@ import java.util.List;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.18 2008/10/25 21:47:13 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.19 2008/10/27 04:41:22 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -48,6 +47,31 @@ public class CriteriaFactory {
     return retval;
   }
 
+  public List<String> getEntitiesforBudget(Budget budget)
+      throws EnvelopeException {
+    List<String> list =
+        (List<String>)(new HibernatePortal()).detachedCriteriaQuery(
+            DetachedCriteria.forClass(Transaction.class)
+                .createAlias("allocations", "a")
+                .createAlias("a.category", "c")
+                .createAlias("c.account", "acc")
+                .add(Restrictions.eq("acc.budget", budget))
+                .add(Restrictions.not(Restrictions.eq("entity", "")))
+                .setProjection(Projections.distinct(Projections.property(
+                    "entity")))
+                .addOrder(Order.asc("entity")));
+
+    return list;
+  }
+//  public List<Entity> getEntitiesforBudget(Budget budget)
+//      throws EnvelopeException {
+//    List<Entity> list =
+//        (List<Entity>)(new HibernatePortal()).detachedCriteriaQuery(
+//            DetachedCriteria.forClass(Entity.class)
+//                .add(Restrictions.eq("budget", budget))
+//                .addOrder(Order.asc("name")));
+//    return list;
+//  }
 
   public List<Hierarchy.AccountTotal> getAccountTotals(Budget budget) {
     List<Hierarchy.AccountTotal> retval =
@@ -122,13 +146,13 @@ public class CriteriaFactory {
       dc = DetachedCriteria.forClass(Transaction.class)
           .createAlias("allocations", "a")
           .createAlias("a.category", "c")
-          .add(Restrictions.eq("c.account", ((Hierarchy.AccountTotal)thing).account))
+          .add(Restrictions.eq("c.account",
+                               ((Hierarchy.AccountTotal)thing).account))
           .add(Restrictions.lt("date", endDate));
       if (reconciled != null)
         dc.add(Restrictions.eq("reconciled", reconciled));
       dc.setProjection(Projections.sum("a.amount"));
-    }
-    else {
+    } else {
       dc = DetachedCriteria.forClass(Allocation.class)
           .createAlias("transaction", "t")
           .add(Restrictions.eq("category.id",
@@ -164,7 +188,8 @@ public class CriteriaFactory {
       dc = DetachedCriteria.forClass(Transaction.class)
           .createAlias("allocations", "a")
           .createAlias("a.category", "c")
-          .add(Restrictions.eq("c.account", ((Hierarchy.AccountTotal)thing).account))
+          .add(Restrictions.eq("c.account",
+                               ((Hierarchy.AccountTotal)thing).account))
           .add(Restrictions.ge("date", beginDate))
           .add(Restrictions.le("date", endDate))
           .setProjection(plist)

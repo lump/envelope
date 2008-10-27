@@ -5,18 +5,25 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
+import us.lump.envelope.client.CriteriaFactory;
+import us.lump.envelope.client.State;
+import us.lump.envelope.client.portal.HibernatePortal;
+import us.lump.envelope.client.ui.MainFrame;
 import us.lump.envelope.client.ui.components.MoneyTextField;
 import us.lump.envelope.client.ui.components.models.TransactionTableModel;
 import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.client.portal.HibernatePortal;
 import us.lump.envelope.entity.Transaction;
 import us.lump.envelope.exception.EnvelopeException;
+import us.lump.lib.Money;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.Date;
 import java.util.ResourceBundle;
 
@@ -24,7 +31,7 @@ import java.util.ResourceBundle;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.3 2008/10/25 21:47:13 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.4 2008/10/27 04:41:22 troy Exp $
  */
 public class TransactionForm {
   private JButton saveButton;
@@ -56,14 +63,17 @@ public class TransactionForm {
   private JDateChooser transactionDate;
   private MoneyTextField amount;
   private JButton newButton;
+  private JButton closeButton;
+
+  private Transaction transaction;
 
   public TransactionForm() {
     $$$setupUI$$$();
     transactionAllocationSplit.setResizeWeight(0.5);
     transactionAllocationSplit.getLeftComponent()
-      .setMinimumSize(new Dimension(200, 0));
+        .setMinimumSize(new Dimension(200, 0));
     transactionAllocationSplit.getRightComponent()
-      .setMinimumSize(new Dimension(200, 0));
+        .setMinimumSize(new Dimension(200, 0));
     transactionAllocationSplit.setContinuousLayout(true);
     transactionAllocationSplit.setOneTouchExpandable(false);
 
@@ -73,16 +83,12 @@ public class TransactionForm {
 
     Action expenseRadioAction = new AbstractAction(Strings.get("expense")) {
       public void actionPerformed(ActionEvent e) {
-        allocationSettingsPanel.setVisible(false);
-        entityLabel.setText(Strings.get("paid.to"));
-        amountLabel.setText(Strings.get("total.amount"));
+        setExpenseView();
       }
     };
     Action incomeRadioAction = new AbstractAction(Strings.get("income")) {
       public void actionPerformed(ActionEvent e) {
-        allocationSettingsPanel.setVisible(true);
-        entityLabel.setText(Strings.get("received.from"));
-        amountLabel.setText(Strings.get("gross.amount"));
+        setIncomeView();
       }
     };
 
@@ -116,24 +122,108 @@ public class TransactionForm {
 //    splitpaneAndButtonsPanel.setMinimumSize(new Dimension(0, 300));
     splitpaneAndButtonsPanel.setMinimumSize(new Dimension(0, 300));
 
+
     final JTable table = TableQueryBar.getInstance().getTable();
     table.getSelectionModel().addListSelectionListener(
-      new ListSelectionListener() {
-        public void valueChanged(ListSelectionEvent e) {
-           if (e.getValueIsAdjusting()) return;
-
-          Integer id = ((TransactionTableModel)table.getModel()).getTransactionId(e.getLastIndex());
-          Transaction t = null;
-          try {
-            t = new HibernatePortal().get(Transaction.class, id);
-          } catch (EnvelopeException e1) {
-            e1.printStackTrace();
+        new ListSelectionListener() {
+          public void valueChanged(ListSelectionEvent e) {
+            if (e.getValueIsAdjusting()) return;
+            if (table.getSelectedRow() < 0) return;
+            loadTransactionForId(
+                ((TransactionTableModel)table
+                    .getModel()).getTransactionId(table.getSelectedRow()));
           }
+        });
 
-          System.out.println(t);
+    table.addMouseListener(new MouseListener() {
+      public void mouseClicked(MouseEvent e) {
+        if (e.getClickCount() == 2) {
+          MainFrame.getInstance().setTransactionViewShowing(true);
+          loadTransactionForId(
+              ((TransactionTableModel)table
+                  .getModel())
+                  .getTransactionId(table.getSelectedRow()));
+
         }
-      });
+      }
 
+      public void mousePressed(MouseEvent e) {}
+
+      public void mouseReleased(MouseEvent e) {}
+
+      public void mouseEntered(MouseEvent e) {}
+
+      public void mouseExited(MouseEvent e) {}
+    });
+
+    closeButton.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        MainFrame.getInstance().setTransactionViewShowing(false);
+        MainFrame.getInstance().doViewTransaction();
+      }
+    });
+  }
+
+  public void setIncomeView() {
+    allocationSettingsPanel.setVisible(true);
+    typeExpenseRadio.setSelected(false);
+    typeIncomeRadio.setSelected(true);
+    entityLabel.setText(Strings.get("received.from"));
+    amountLabel.setText(Strings.get("gross.amount"));
+  }
+
+  public void setExpenseView() {
+    allocationSettingsPanel.setVisible(false);
+    typeExpenseRadio.setSelected(true);
+    typeIncomeRadio.setSelected(false);
+    entityLabel.setText(Strings.get("paid.to"));
+    amountLabel.setText(Strings.get("total.amount"));
+  }
+
+  public void loadTransactionForId(int id) {
+    if (!MainFrame.getInstance().isTransactionViewShowing()) return;
+    if (transaction == null || !transaction.getId().equals(id)) {
+      try {
+        transaction = new HibernatePortal().get(Transaction.class, id);
+
+        if (transaction.getAmount().doubleValue() > 0) {
+          setIncomeView();
+        } else {
+          setExpenseView();
+        }
+
+        amount.setText(
+            typeExpenseRadio.isSelected()
+            ? new Money(transaction.getAmount()
+                .multiply(new Money("-1"))).toFormattedString()
+            : transaction.getAmount().toFormattedString());
+
+        transactionDate.setDate(transaction.getDate());
+        description.setText(transaction.getDescription());
+
+        refreshEntities();
+
+        entity.setSelectedItem(transaction.getEntity());
+
+
+      } catch (EnvelopeException e1) {
+        e1.printStackTrace();
+      }
+    }
+    System.out.println(transaction);
+  }
+
+  public void refreshEntities() {
+    java.util.List<String> entities;
+    try {
+      entities = CriteriaFactory.getInstance()
+          .getEntitiesforBudget(State.getInstance().getBudget());
+      for (String e : entities) {
+        entity.addItem(e);
+      }
+    } catch (EnvelopeException e) {
+      e.printStackTrace();
+    }
   }
 
   public JPanel getTransactionFormPanel() {
@@ -149,8 +239,8 @@ public class TransactionForm {
                                        new JTextFieldDateEditor());
 
     transactionDate.setPreferredSize(new Dimension(
-      transactionDate.getPreferredSize().width + 30,
-      transactionDate.getPreferredSize().height));
+        transactionDate.getPreferredSize().width + 30,
+        transactionDate.getPreferredSize().height));
 
     referencePaydate = new JDateChooser(null, "MMM d, yyyy",
                                         new JTextFieldDateEditor());
@@ -165,7 +255,7 @@ public class TransactionForm {
     createUIComponents();
     transactionFormPanel = new JPanel();
     transactionFormPanel.setLayout(new GridLayoutManager(2,
-                                                         3,
+                                                         4,
                                                          new Insets(0, 0, 0, 0),
                                                          -1,
                                                          -1));
@@ -173,17 +263,17 @@ public class TransactionForm {
     transactionFormPanel.add(scrollPane1, new GridConstraints(0,
                                                               0,
                                                               1,
-                                                              3,
+                                                              4,
                                                               GridConstraints.ANCHOR_CENTER,
                                                               GridConstraints.FILL_BOTH,
                                                               GridConstraints
-                                                                .SIZEPOLICY_CAN_SHRINK
+                                                                  .SIZEPOLICY_CAN_SHRINK
                                                               | GridConstraints
-                                                                .SIZEPOLICY_WANT_GROW,
+                                                                  .SIZEPOLICY_WANT_GROW,
                                                               GridConstraints
-                                                                .SIZEPOLICY_CAN_SHRINK
+                                                                  .SIZEPOLICY_CAN_SHRINK
                                                               | GridConstraints
-                                                                .SIZEPOLICY_WANT_GROW,
+                                                                  .SIZEPOLICY_WANT_GROW,
                                                               null,
                                                               null,
                                                               null,
@@ -208,13 +298,13 @@ public class TransactionForm {
                                                      GridConstraints.ANCHOR_CENTER,
                                                      GridConstraints.FILL_BOTH,
                                                      GridConstraints
-                                                       .SIZEPOLICY_CAN_SHRINK
+                                                         .SIZEPOLICY_CAN_SHRINK
                                                      | GridConstraints
-                                                       .SIZEPOLICY_CAN_GROW,
+                                                         .SIZEPOLICY_CAN_GROW,
                                                      GridConstraints
-                                                       .SIZEPOLICY_CAN_SHRINK
+                                                         .SIZEPOLICY_CAN_SHRINK
                                                      | GridConstraints
-                                                       .SIZEPOLICY_CAN_GROW,
+                                                         .SIZEPOLICY_CAN_GROW,
                                                      null,
                                                      new Dimension(200, 200),
                                                      null,
@@ -228,11 +318,11 @@ public class TransactionForm {
                                                          -1));
     transactionAllocationSplit.setLeftComponent(transactionInfoPanel);
     transactionInfoPanel.setBorder(BorderFactory.createTitledBorder(
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString(
-        "transaction")));
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString(
+            "transaction")));
     dateLabel = new JLabel();
     this.$$$loadLabelText$$$(dateLabel, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("date"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("date"));
     transactionInfoPanel.add(dateLabel, new GridConstraints(1,
                                                             0,
                                                             1,
@@ -248,7 +338,7 @@ public class TransactionForm {
                                                             false));
     entityLabel = new JLabel();
     this.$$$loadLabelText$$$(entityLabel, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("paid.to"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("paid.to"));
     transactionInfoPanel.add(entityLabel, new GridConstraints(2,
                                                               0,
                                                               1,
@@ -279,7 +369,7 @@ public class TransactionForm {
                                                          false));
     descriptionLabel = new JLabel();
     this.$$$loadLabelText$$$(descriptionLabel, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("description"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("description"));
     transactionInfoPanel.add(descriptionLabel, new GridConstraints(3,
                                                                    0,
                                                                    1,
@@ -340,7 +430,7 @@ public class TransactionForm {
                                                             false));
     typeExpenseRadio = new JRadioButton();
     this.$$$loadButtonText$$$(typeExpenseRadio, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("expense"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("expense"));
     transactionInfoPanel.add(typeExpenseRadio, new GridConstraints(0,
                                                                    1,
                                                                    1,
@@ -348,9 +438,9 @@ public class TransactionForm {
                                                                    GridConstraints.ANCHOR_WEST,
                                                                    GridConstraints.FILL_NONE,
                                                                    GridConstraints
-                                                                     .SIZEPOLICY_CAN_SHRINK
+                                                                       .SIZEPOLICY_CAN_SHRINK
                                                                    | GridConstraints
-                                                                     .SIZEPOLICY_CAN_GROW,
+                                                                       .SIZEPOLICY_CAN_GROW,
                                                                    GridConstraints.SIZEPOLICY_FIXED,
                                                                    null,
                                                                    null,
@@ -359,7 +449,7 @@ public class TransactionForm {
                                                                    false));
     typeIncomeRadio = new JRadioButton();
     this.$$$loadButtonText$$$(typeIncomeRadio, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("expense"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("expense"));
     transactionInfoPanel.add(typeIncomeRadio, new GridConstraints(0,
                                                                   2,
                                                                   1,
@@ -367,9 +457,9 @@ public class TransactionForm {
                                                                   GridConstraints.ANCHOR_WEST,
                                                                   GridConstraints.FILL_NONE,
                                                                   GridConstraints
-                                                                    .SIZEPOLICY_CAN_SHRINK
+                                                                      .SIZEPOLICY_CAN_SHRINK
                                                                   | GridConstraints
-                                                                    .SIZEPOLICY_CAN_GROW,
+                                                                      .SIZEPOLICY_CAN_GROW,
                                                                   GridConstraints.SIZEPOLICY_FIXED,
                                                                   null,
                                                                   null,
@@ -406,20 +496,20 @@ public class TransactionForm {
                                                                           GridConstraints.ANCHOR_CENTER,
                                                                           GridConstraints.FILL_BOTH,
                                                                           GridConstraints
-                                                                            .SIZEPOLICY_CAN_SHRINK
+                                                                              .SIZEPOLICY_CAN_SHRINK
                                                                           | GridConstraints
-                                                                            .SIZEPOLICY_CAN_GROW,
+                                                                              .SIZEPOLICY_CAN_GROW,
                                                                           GridConstraints
-                                                                            .SIZEPOLICY_CAN_SHRINK
+                                                                              .SIZEPOLICY_CAN_SHRINK
                                                                           | GridConstraints
-                                                                            .SIZEPOLICY_CAN_GROW,
+                                                                              .SIZEPOLICY_CAN_GROW,
                                                                           null,
                                                                           null,
                                                                           null,
                                                                           0,
                                                                           false));
     allocationSettingsPanel.setBorder(BorderFactory.createTitledBorder(
-      "Allocation Settings"));
+        "Allocation Settings"));
     incomeType = new JComboBox();
     allocationSettingsPanel.add(incomeType, new GridConstraints(0,
                                                                 1,
@@ -441,9 +531,9 @@ public class TransactionForm {
                                                                       GridConstraints.ANCHOR_WEST,
                                                                       GridConstraints.FILL_NONE,
                                                                       GridConstraints
-                                                                        .SIZEPOLICY_CAN_SHRINK
+                                                                          .SIZEPOLICY_CAN_SHRINK
                                                                       | GridConstraints
-                                                                        .SIZEPOLICY_CAN_GROW,
+                                                                          .SIZEPOLICY_CAN_GROW,
                                                                       1,
                                                                       null,
                                                                       null,
@@ -452,7 +542,7 @@ public class TransactionForm {
                                                                       false));
     incomeTypeLabel = new JLabel();
     this.$$$loadLabelText$$$(incomeTypeLabel, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("income.type"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("income.type"));
     allocationSettingsPanel.add(incomeTypeLabel, new GridConstraints(0,
                                                                      0,
                                                                      1,
@@ -468,7 +558,7 @@ public class TransactionForm {
                                                                      false));
     referencePaydateLabel = new JLabel();
     this.$$$loadLabelText$$$(referencePaydateLabel, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("reference.paydate"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("reference.paydate"));
     allocationSettingsPanel.add(referencePaydateLabel, new GridConstraints(1,
                                                                            0,
                                                                            1,
@@ -485,8 +575,8 @@ public class TransactionForm {
     saveEachAllocationChangeCheckBox = new JCheckBox();
     this.$$$loadButtonText$$$(saveEachAllocationChangeCheckBox,
                               ResourceBundle.getBundle(
-                                "us/lump/envelope/client/ui/defs/Strings").getString(
-                                "save.allocation.changes"));
+                                  "us/lump/envelope/client/ui/defs/Strings").getString(
+                                  "save.allocation.changes"));
     allocationSettingsPanel.add(saveEachAllocationChangeCheckBox,
                                 new GridConstraints(2,
                                                     0,
@@ -495,9 +585,9 @@ public class TransactionForm {
                                                     GridConstraints.ANCHOR_WEST,
                                                     GridConstraints.FILL_NONE,
                                                     GridConstraints
-                                                      .SIZEPOLICY_CAN_SHRINK
+                                                        .SIZEPOLICY_CAN_SHRINK
                                                     | GridConstraints
-                                                      .SIZEPOLICY_CAN_GROW,
+                                                        .SIZEPOLICY_CAN_GROW,
                                                     GridConstraints.SIZEPOLICY_FIXED,
                                                     null,
                                                     null,
@@ -517,20 +607,20 @@ public class TransactionForm {
                                                               GridConstraints.ANCHOR_CENTER,
                                                               GridConstraints.FILL_BOTH,
                                                               GridConstraints
-                                                                .SIZEPOLICY_CAN_SHRINK
+                                                                  .SIZEPOLICY_CAN_SHRINK
                                                               | GridConstraints
-                                                                .SIZEPOLICY_CAN_GROW,
+                                                                  .SIZEPOLICY_CAN_GROW,
                                                               GridConstraints
-                                                                .SIZEPOLICY_CAN_SHRINK
+                                                                  .SIZEPOLICY_CAN_SHRINK
                                                               | GridConstraints
-                                                                .SIZEPOLICY_CAN_GROW,
+                                                                  .SIZEPOLICY_CAN_GROW,
                                                               null,
                                                               null,
                                                               null,
                                                               0,
                                                               false));
     totalsPanel.setBorder(BorderFactory.createTitledBorder(ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("totals")));
+        "us/lump/envelope/client/ui/defs/Strings").getString("totals")));
     totalsScrollPane = new JScrollPane();
     totalsPanel.add(totalsScrollPane, new GridConstraints(0,
                                                           0,
@@ -539,13 +629,13 @@ public class TransactionForm {
                                                           GridConstraints.ANCHOR_CENTER,
                                                           GridConstraints.FILL_BOTH,
                                                           GridConstraints
-                                                            .SIZEPOLICY_CAN_SHRINK
+                                                              .SIZEPOLICY_CAN_SHRINK
                                                           | GridConstraints
-                                                            .SIZEPOLICY_WANT_GROW,
+                                                              .SIZEPOLICY_WANT_GROW,
                                                           GridConstraints
-                                                            .SIZEPOLICY_CAN_SHRINK
+                                                              .SIZEPOLICY_CAN_SHRINK
                                                           | GridConstraints
-                                                            .SIZEPOLICY_WANT_GROW,
+                                                              .SIZEPOLICY_WANT_GROW,
                                                           null,
                                                           null,
                                                           null,
@@ -562,13 +652,13 @@ public class TransactionForm {
                                                          GridConstraints.ANCHOR_WEST,
                                                          GridConstraints.FILL_NONE,
                                                          GridConstraints
-                                                           .SIZEPOLICY_CAN_SHRINK
+                                                             .SIZEPOLICY_CAN_SHRINK
                                                          | GridConstraints
-                                                           .SIZEPOLICY_CAN_GROW,
+                                                             .SIZEPOLICY_CAN_GROW,
                                                          GridConstraints
-                                                           .SIZEPOLICY_CAN_SHRINK
+                                                             .SIZEPOLICY_CAN_SHRINK
                                                          | GridConstraints
-                                                           .SIZEPOLICY_CAN_GROW,
+                                                             .SIZEPOLICY_CAN_GROW,
                                                          null,
                                                          null,
                                                          null,
@@ -581,13 +671,13 @@ public class TransactionForm {
                                                                   GridConstraints.ANCHOR_WEST,
                                                                   GridConstraints.FILL_NONE,
                                                                   GridConstraints
-                                                                    .SIZEPOLICY_CAN_SHRINK
+                                                                      .SIZEPOLICY_CAN_SHRINK
                                                                   | GridConstraints
-                                                                    .SIZEPOLICY_CAN_GROW,
+                                                                      .SIZEPOLICY_CAN_GROW,
                                                                   GridConstraints
-                                                                    .SIZEPOLICY_CAN_SHRINK
+                                                                      .SIZEPOLICY_CAN_SHRINK
                                                                   | GridConstraints
-                                                                    .SIZEPOLICY_CAN_GROW,
+                                                                      .SIZEPOLICY_CAN_GROW,
                                                                   null,
                                                                   null,
                                                                   null,
@@ -615,7 +705,7 @@ public class TransactionForm {
                                                      -1));
     transactionAllocationSplit.setRightComponent(allocationsPanel);
     allocationsPanel.setBorder(BorderFactory.createTitledBorder(ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("allocations")));
+        "us/lump/envelope/client/ui/defs/Strings").getString("allocations")));
     allocationsScrollPane = new JScrollPane();
     allocationsPanel.add(allocationsScrollPane, new GridConstraints(0,
                                                                     0,
@@ -624,13 +714,13 @@ public class TransactionForm {
                                                                     GridConstraints.ANCHOR_CENTER,
                                                                     GridConstraints.FILL_BOTH,
                                                                     GridConstraints
-                                                                      .SIZEPOLICY_CAN_SHRINK
+                                                                        .SIZEPOLICY_CAN_SHRINK
                                                                     | GridConstraints
-                                                                      .SIZEPOLICY_WANT_GROW,
+                                                                        .SIZEPOLICY_WANT_GROW,
                                                                     GridConstraints
-                                                                      .SIZEPOLICY_CAN_SHRINK
+                                                                        .SIZEPOLICY_CAN_SHRINK
                                                                     | GridConstraints
-                                                                      .SIZEPOLICY_WANT_GROW,
+                                                                        .SIZEPOLICY_WANT_GROW,
                                                                     null,
                                                                     null,
                                                                     null,
@@ -656,15 +746,15 @@ public class TransactionForm {
     saveButton.setEnabled(false);
     saveButton.setText("Save");
     transactionFormPanel.add(saveButton, new GridConstraints(1,
-                                                             2,
+                                                             3,
                                                              1,
                                                              1,
                                                              GridConstraints.ANCHOR_CENTER,
                                                              GridConstraints.FILL_HORIZONTAL,
                                                              GridConstraints
-                                                               .SIZEPOLICY_CAN_SHRINK
+                                                                 .SIZEPOLICY_CAN_SHRINK
                                                              | GridConstraints
-                                                               .SIZEPOLICY_CAN_GROW,
+                                                                 .SIZEPOLICY_CAN_GROW,
                                                              GridConstraints.SIZEPOLICY_FIXED,
                                                              null,
                                                              null,
@@ -674,23 +764,42 @@ public class TransactionForm {
     newButton = new JButton();
     newButton.setEnabled(false);
     this.$$$loadButtonText$$$(newButton, ResourceBundle.getBundle(
-      "us/lump/envelope/client/ui/defs/Strings").getString("new"));
+        "us/lump/envelope/client/ui/defs/Strings").getString("new"));
     transactionFormPanel.add(newButton, new GridConstraints(1,
-                                                            1,
+                                                            2,
                                                             1,
                                                             1,
                                                             GridConstraints.ANCHOR_CENTER,
                                                             GridConstraints.FILL_HORIZONTAL,
                                                             GridConstraints
-                                                              .SIZEPOLICY_CAN_SHRINK
+                                                                .SIZEPOLICY_CAN_SHRINK
                                                             | GridConstraints
-                                                              .SIZEPOLICY_CAN_GROW,
+                                                                .SIZEPOLICY_CAN_GROW,
                                                             GridConstraints.SIZEPOLICY_FIXED,
                                                             null,
                                                             null,
                                                             null,
                                                             0,
                                                             false));
+    closeButton = new JButton();
+    this.$$$loadButtonText$$$(closeButton, ResourceBundle.getBundle(
+        "us/lump/envelope/client/ui/defs/Strings").getString("close"));
+    transactionFormPanel.add(closeButton, new GridConstraints(1,
+                                                              1,
+                                                              1,
+                                                              1,
+                                                              GridConstraints.ANCHOR_CENTER,
+                                                              GridConstraints.FILL_HORIZONTAL,
+                                                              GridConstraints
+                                                                  .SIZEPOLICY_CAN_SHRINK
+                                                              | GridConstraints
+                                                                  .SIZEPOLICY_CAN_GROW,
+                                                              GridConstraints.SIZEPOLICY_FIXED,
+                                                              null,
+                                                              null,
+                                                              null,
+                                                              0,
+                                                              false));
   }
 
   /** @noinspection ALL */

@@ -9,7 +9,6 @@ import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.components.Hierarchy;
 import us.lump.envelope.client.ui.components.StatusBar;
 import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.entity.Account;
 import us.lump.lib.Money;
 import us.lump.lib.util.BackgroundList;
 import us.lump.lib.util.BackgroundListEvent;
@@ -94,11 +93,20 @@ public class TransactionTableModel extends AbstractTableModel {
             // take the next
             t = q.take();
 
+
+
             int selectedRow = table.getSelectedRow();
             if (selectedRow > -1)
               selectionCache = (Integer)transactions
                   .get(selectedRow)[COLUMN.TransactionID.ordinal()];
-            table.clearSelection();
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+              public void run() {
+                table.clearSelection();
+              }
+            });
+
+
 
             beginDate = t.begin;
             endDate = t.end;
@@ -273,7 +281,6 @@ public class TransactionTableModel extends AbstractTableModel {
       public void run() {
         fireTableRowsInserted(rowNumber, rowNumber);
         if (reselect) {
-          table.getSelectionModel().clearSelection();
           table.changeSelection(rowNumber, 0, false, false);
         }
         Thread.yield();
