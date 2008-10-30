@@ -10,7 +10,7 @@ import java.text.ParseException;
  * Utility class for enum access to cvs variables for this file.
  *
  * @author Troy Bowman
- * @version $Id: Revision.java,v 1.3 2008/10/30 23:00:11 troy Exp $
+ * @version $Id: Revision.java,v 1.4 2008/10/30 23:11:02 troy Exp $
  */
 public enum Revision {
 
@@ -27,8 +27,8 @@ public enum Revision {
   private final String[] REVS = new String[]{
       "$Name:  $",
       "$State: Exp $",
-      "$Revision: 1.3 $",
-      "$Date: 2008/10/30 23:00:11 $",
+      "$Revision: 1.4 $",
+      "$Date: 2008/10/30 23:11:02 $",
       "$Author: troy $"
   };
 
@@ -88,7 +88,21 @@ public enum Revision {
     return value;
   }
 
+  /**
+   * Return the value with the underscores removed.
+   *
+   * @return String
+   */
   public String prettyValue() {
-    return value.replaceAll("_", " ");
+    if (value == null) return null;
+    String out = value;
+
+    // replace underscores between numbers with a dot.
+    while (out.matches(".*\\d_\\d.*"))
+      out = out.replaceAll("(\\d)_(\\d)", "$1.$2");
+
+    // replace all other ounderscores with a space.
+    out = out.replaceAll("_", " ");
+    return out;
   }
 }
