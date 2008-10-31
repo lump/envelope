@@ -4,7 +4,6 @@ import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.State;
 import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.thread.ThreadPool;
-import us.lump.envelope.client.ui.MainFrame;
 import us.lump.envelope.client.ui.components.forms.TableQueryBar;
 import us.lump.envelope.client.ui.components.models.TransactionTableModel;
 import us.lump.envelope.client.ui.defs.Colors;
@@ -29,7 +28,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -37,7 +37,7 @@ import java.util.List;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.24 2008/10/25 21:47:13 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.25 2008/10/31 22:43:18 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -182,7 +182,7 @@ public class Hierarchy extends JTree {
         else return null;
       }
 
-      public void updateChildren(DefaultMutableTreeNode node) {
+      public void updateChildren(final DefaultMutableTreeNode node) {
         List children = getListFor(node);
         if (children == null || children.size() == 0) return;
 
@@ -195,12 +195,18 @@ public class Hierarchy extends JTree {
           if (x < node.getChildCount()) {
             dmtn = ((DefaultMutableTreeNode)node.getChildAt(x));
             dmtn.setUserObject(children.get(x));
-            treeModel.nodeChanged(dmtn);
+            final DefaultMutableTreeNode fdmtn = dmtn;
+            SwingUtilities.invokeLater(new Runnable() {
+              public void run() { treeModel.nodeChanged(fdmtn); }
+            });
           }
           if (x >= node.getChildCount()) {
             dmtn = new DefaultMutableTreeNode(children.get(x));
             node.add(dmtn);
-            treeModel.nodesWereInserted(node, new int[]{x});
+            final int[] fx = new int[]{x};
+            SwingUtilities.invokeLater(new Runnable() {
+              public void run() { treeModel.nodesWereInserted(node, fx); }
+            });
           }
           if (dmtn != null) {
             if (selectedObject != null
