@@ -10,7 +10,7 @@ import java.text.ParseException;
  * Utility class for enum access to cvs variables for this file.
  *
  * @author Troy Bowman
- * @version $Id: Revision.java,v 1.4 2008/10/30 23:11:02 troy Exp $
+ * @version $Id: Revision.java,v 1.5 2008/10/31 19:10:09 troy Test $
  */
 public enum Revision {
 
@@ -26,9 +26,9 @@ public enum Revision {
   // get CVS to fill in the values in strings
   private final String[] REVS = new String[]{
       "$Name:  $",
-      "$State: Exp $",
-      "$Revision: 1.4 $",
-      "$Date: 2008/10/30 23:11:02 $",
+      "$State: Test $",
+      "$Revision: 1.5 $",
+      "$Date: 2008/10/31 19:10:09 $",
       "$Author: troy $"
   };
 
@@ -88,6 +88,16 @@ public enum Revision {
     return value;
   }
 
+  /**
+   * Return a prettyValue of name, or if it's null, the value of state.
+   * @return String
+   */
+  public static String nameOrState() {
+    return Name.value() != null
+    ? Name.prettyValue()
+    : State.value();
+  }
+  
   /**
    * Return the value with the underscores removed.
    *

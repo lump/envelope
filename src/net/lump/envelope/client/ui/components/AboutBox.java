@@ -2,6 +2,7 @@ package us.lump.envelope.client.ui.components;
 
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.images.ImageResource;
+import us.lump.lib.util.Revision;
 
 import javax.swing.*;
 import java.awt.*;
@@ -30,7 +31,7 @@ public class AboutBox extends JFrame implements ActionListener {
 
     JLabel[] jlabels = new JLabel[]{
         new JLabel(Strings.get("envelope_budget")),
-        new JLabel(Strings.get("version")),
+        new JLabel(Revision.nameOrState()),
         new JLabel(Strings.get("copyright")),
         new JLabel(),
         new JLabel("JDK " + System.getProperty("java.version")),

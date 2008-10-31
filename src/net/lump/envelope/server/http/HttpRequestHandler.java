@@ -7,10 +7,7 @@ import us.lump.envelope.server.XferFlags;
 import static us.lump.envelope.server.XferFlags.Flag.*;
 import us.lump.envelope.server.dao.Security;
 import us.lump.envelope.server.rmi.Controlled;
-import us.lump.lib.util.Base64;
-import us.lump.lib.util.CipherOutputStream;
-import us.lump.lib.util.Compression;
-import us.lump.lib.util.Encryption;
+import us.lump.lib.util.*;
 
 import javax.crypto.SecretKey;
 import java.io.*;
@@ -294,7 +291,7 @@ public class HttpRequestHandler implements RequestHandler {
                                  socket.getLocalAddress().getCanonicalHostName());
           jnlp = jnlp.replaceAll("\\{port\\}",
                                  String.valueOf(socket.getLocalPort()));
-          jnlp = jnlp.replaceAll("\\{title\\}", "Envelope Java Web Start");
+          jnlp = jnlp.replaceAll("\\{title\\}", "Envelope " + Revision.nameOrState());
           jnlp = jnlp.replaceAll("\\{vendor\\}", "Lump Software");
           jnlp = jnlp.replaceAll("\\{description\\}", "An Envelope Budget");
           jnlp = jnlp.replaceAll("\\{icon\\}", "lib/envelope.png");
