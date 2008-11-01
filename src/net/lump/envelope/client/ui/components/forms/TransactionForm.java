@@ -5,7 +5,6 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
-import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.State;
 import us.lump.envelope.client.portal.HibernatePortal;
 import us.lump.envelope.client.ui.MainFrame;
@@ -31,7 +30,7 @@ import java.util.ResourceBundle;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.4 2008/10/27 04:41:22 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.5 2008/11/01 00:53:02 troy Exp $
  */
 public class TransactionForm {
   private JButton saveButton;
@@ -214,15 +213,9 @@ public class TransactionForm {
   }
 
   public void refreshEntities() {
-    java.util.List<String> entities;
-    try {
-      entities = CriteriaFactory.getInstance()
-          .getEntitiesforBudget(State.getInstance().getBudget());
-      for (String e : entities) {
-        entity.addItem(e);
-      }
-    } catch (EnvelopeException e) {
-      e.printStackTrace();
+    entity.removeAllItems();
+    for (String e : State.getInstance().entities()) {
+      entity.addItem(e);
     }
   }
 
