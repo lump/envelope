@@ -30,7 +30,7 @@ import java.util.ResourceBundle;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.5 2008/11/01 00:53:02 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.6 2008/11/01 16:57:15 troy Exp $
  */
 public class TransactionForm {
   private JButton saveButton;
@@ -76,6 +76,8 @@ public class TransactionForm {
     transactionAllocationSplit.setContinuousLayout(true);
     transactionAllocationSplit.setOneTouchExpandable(false);
 
+    entity.setFont(entity.getFont().deriveFont(Font.PLAIN));
+
     ButtonGroup transactionTypeButtonGroup = new ButtonGroup();
     transactionTypeButtonGroup.add(typeExpenseRadio);
     transactionTypeButtonGroup.add(typeIncomeRadio);
@@ -90,6 +92,9 @@ public class TransactionForm {
         setIncomeView();
       }
     };
+
+    typeExpenseRadio.setFont(typeExpenseRadio.getFont().deriveFont(Font.PLAIN));
+    typeIncomeRadio.setFont(typeExpenseRadio.getFont().deriveFont(Font.PLAIN));
 
     typeExpenseRadio.setAction(expenseRadioAction);
     typeIncomeRadio.setAction(incomeRadioAction);
@@ -225,7 +230,7 @@ public class TransactionForm {
 
   private void createUIComponents() {
     Long today = System.currentTimeMillis();
-    today = ((today - (today % 86400000)) + 86400000);
+    today = today - (today % 86400000);
 
     transactionDate = new JDateChooser(new Date(today),
                                        "MMM d, yyyy",
