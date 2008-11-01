@@ -28,9 +28,9 @@ public class HibernatePortal extends Portal {
     }
   }
 
-  public <T extends Identifiable> T get(Class<T> i, Serializable id)
+  public <T extends Identifiable> T get(Class<T> cless, Serializable id)
       throws EnvelopeException {
-    return (T)invoke(new Command(Command.Name.get, i, id));
+    return (T)invoke(new Command(Command.Name.get, cless, id));
   }
 
 }
