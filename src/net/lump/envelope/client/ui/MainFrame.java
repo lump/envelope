@@ -25,7 +25,7 @@ import java.beans.PropertyChangeListener;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.27 2008/10/27 04:41:22 troy Exp $
+ * @version $Id: MainFrame.java,v 1.28 2008/11/04 05:53:23 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -164,22 +164,22 @@ public class MainFrame extends JFrame {
     } else {
       // try for windows look for m$ losers (as they have a cow if things
       // look different...)
-      if (System.getProperty("os.name").matches("^.*?Windows.*$")) try {
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-      } catch (Exception e) { /* bah, nevermind */ }
-      else {
+//      if (System.getProperty("os.name").matches("^.*?Windows.*$")) try {
+//        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+//      } catch (Exception e) { /* bah, nevermind */ }
+//      else {
 //        shortcutKeyMask = Event.ALT_MASK | Event.SHIFT_MASK;
 
-//        try {
-//          UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
-//        }
-//        catch (Exception e) {
-//          try {
-//            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-//          }
-//          catch (Exception ex) { }
-//        }
-      }
+        try {
+          UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+        }
+        catch (Exception e) {
+          try {
+            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+          }
+          catch (Exception ex) { }
+        }
+//      }
 
       fileMenu.add(new JMenuItem(new prefsActionClass(
           Strings.get("preferences"), KeyStroke.getKeyStroke(
@@ -296,10 +296,13 @@ public class MainFrame extends JFrame {
 
   public void doViewTransaction() {
     if (viewTransaction.isSelected()) {
-      tableContentSplitPane.setDividerLocation(
-          savedTransactionFormSplitterLocation == 0
-          ? -1
-          : savedTransactionFormSplitterLocation);
+      
+      if (savedTransactionFormSplitterLocation == 0)
+        tableContentSplitPane.setDividerLocation(0.4);
+      else
+      tableContentSplitPane
+          .setDividerLocation(savedTransactionFormSplitterLocation);
+
       tableContentSplitPane.setDividerSize((Integer)UIManager.get(
           "SplitPane.dividerSize"));
       transactionForm.getTransactionFormPanel().setVisible(true);
