@@ -4,11 +4,14 @@ import us.lump.envelope.client.ui.MainFrame;
 
 import javax.swing.*;
 
+import com.incors.plaf.alloy.themes.CustomFontTheme;
+import com.incors.plaf.alloy.themes.bedouin.BedouinTheme;
+
 /**
  * Main class.
  *
  * @author troy
- * @version $Id: Main.java,v 1.9 2008/11/05 00:48:25 troy Exp $
+ * @version $Id: Main.java,v 1.10 2008/11/05 01:03:57 troy Exp $
  */
 public class Main implements Runnable {
   private static Main singleton;
@@ -28,7 +31,7 @@ public class Main implements Runnable {
       com.incors.plaf.alloy.AlloyLookAndFeel
           .setProperty("alloy.licenseCode", "4#JetBrains#1ou2uex#6920nk");
       javax.swing.LookAndFeel alloyLnF =
-          new com.incors.plaf.alloy.AlloyLookAndFeel();
+          new com.incors.plaf.alloy.AlloyLookAndFeel(new BedouinTheme());
       alloyLnF.initialize();
       javax.swing.UIManager.setLookAndFeel(alloyLnF);
     }
