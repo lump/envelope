@@ -25,7 +25,7 @@ import java.beans.PropertyChangeListener;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.28 2008/11/04 05:53:23 troy Exp $
+ * @version $Id: MainFrame.java,v 1.29 2008/11/05 01:00:32 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -80,6 +80,7 @@ public class MainFrame extends JFrame {
   }
 
   private MainFrame() {
+
     StatusElement initStatus = status.addTask(Strings.get("initializing"));
 
     BasicConfigurator.configure();
@@ -170,15 +171,20 @@ public class MainFrame extends JFrame {
 //      else {
 //        shortcutKeyMask = Event.ALT_MASK | Event.SHIFT_MASK;
 
-        try {
-          UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
-        }
-        catch (Exception e) {
-          try {
-            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-          }
-          catch (Exception ex) { }
-        }
+//      try {
+//          UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+//        com.incors.plaf.alloy.AlloyLookAndFeel.setProperty("alloy.licenseCode", "4#JetBrains#1ou2uex#6920nk");
+//        javax.swing.LookAndFeel alloyLnF = new com.incors.plaf.alloy.AlloyLookAndFeel();
+//        alloyLnF.initialize();
+//          javax.swing.LookAndFeel alloyLnF = new com.incors.plaf.alloy.themes.bedouin.BedouinTheme();
+//        javax.swing.UIManager.setLookAndFeel(alloyLnF);
+//      }
+//      catch (Exception e) {
+//        try {
+//          UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+//        }
+//        catch (Exception ex) { }
+//      }
 //      }
 
       fileMenu.add(new JMenuItem(new prefsActionClass(
