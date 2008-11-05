@@ -150,6 +150,8 @@
                includes="log4j*.jar,
                          forms_rt.jar,
                          commons*.jar,
+                         ehcache*.jar,
+                         alloy.jar,
                          hibernate*.jar,
                          jcalendar*.jar"/>
     </unzip>
