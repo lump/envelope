@@ -11,7 +11,7 @@ import com.incors.plaf.alloy.themes.bedouin.BedouinTheme;
  * Main class.
  *
  * @author troy
- * @version $Id: Main.java,v 1.10 2008/11/05 01:03:57 troy Exp $
+ * @version $Id: Main.java,v 1.11 2008/11/05 06:15:04 troy Exp $
  */
 public class Main implements Runnable {
   private static Main singleton;
@@ -25,21 +25,28 @@ public class Main implements Runnable {
 
   private Main() {
     try {
-//          UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
-
-      // borrow the jetbrains license for now, until we get serious
-      com.incors.plaf.alloy.AlloyLookAndFeel
-          .setProperty("alloy.licenseCode", "4#JetBrains#1ou2uex#6920nk");
-      javax.swing.LookAndFeel alloyLnF =
-          new com.incors.plaf.alloy.AlloyLookAndFeel(new BedouinTheme());
-      alloyLnF.initialize();
-      javax.swing.UIManager.setLookAndFeel(alloyLnF);
+      // try nimbus first, since it's the coolest
+      UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
     }
     catch (Exception e) {
       try {
-        UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+        // try alloy next, since it is clean and nice
+        // borrow the jetbrains license for now, until we get serious
+        com.incors.plaf.alloy.AlloyLookAndFeel
+            .setProperty("alloy.licenseCode", "4#JetBrains#1ou2uex#6920nk");
+        javax.swing.LookAndFeel alloyLnF =
+            new com.incors.plaf.alloy.AlloyLookAndFeel(new BedouinTheme());
+        alloyLnF.initialize();
+        javax.swing.UIManager.setLookAndFeel(alloyLnF);
       }
-      catch (Exception ex) { }
+      catch (Exception ex) {
+        try {
+          // oh well, let's just use ye olde metal
+          UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+        } catch (Exception e1) {
+          // nevermind
+        }
+      }
     }
   }
 

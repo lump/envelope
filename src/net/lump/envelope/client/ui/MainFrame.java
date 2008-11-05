@@ -25,7 +25,7 @@ import java.beans.PropertyChangeListener;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.29 2008/11/05 01:00:32 troy Exp $
+ * @version $Id: MainFrame.java,v 1.30 2008/11/05 06:15:04 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -163,30 +163,6 @@ public class MainFrame extends JFrame {
             }
           });
     } else {
-      // try for windows look for m$ losers (as they have a cow if things
-      // look different...)
-//      if (System.getProperty("os.name").matches("^.*?Windows.*$")) try {
-//        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-//      } catch (Exception e) { /* bah, nevermind */ }
-//      else {
-//        shortcutKeyMask = Event.ALT_MASK | Event.SHIFT_MASK;
-
-//      try {
-//          UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
-//        com.incors.plaf.alloy.AlloyLookAndFeel.setProperty("alloy.licenseCode", "4#JetBrains#1ou2uex#6920nk");
-//        javax.swing.LookAndFeel alloyLnF = new com.incors.plaf.alloy.AlloyLookAndFeel();
-//        alloyLnF.initialize();
-//          javax.swing.LookAndFeel alloyLnF = new com.incors.plaf.alloy.themes.bedouin.BedouinTheme();
-//        javax.swing.UIManager.setLookAndFeel(alloyLnF);
-//      }
-//      catch (Exception e) {
-//        try {
-//          UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-//        }
-//        catch (Exception ex) { }
-//      }
-//      }
-
       fileMenu.add(new JMenuItem(new prefsActionClass(
           Strings.get("preferences"), KeyStroke.getKeyStroke(
           KeyEvent.VK_S, shortcutKeyMask)

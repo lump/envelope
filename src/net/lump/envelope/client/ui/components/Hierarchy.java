@@ -32,12 +32,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
+import sun.swing.DefaultLookup;
+
 
 /**
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.25 2008/10/31 22:43:18 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.26 2008/11/05 06:15:04 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -274,6 +276,22 @@ public class Hierarchy extends JTree {
 //      else
 //        label.setForeground(Colors.getColor("green"));
 
+      Color original = label.getBackground();
+
+      // this is for Nimbus's alternate row color, shouldn't affect other stuff
+      if (original == null || original instanceof javax.swing.plaf.UIResource) {
+        Color alternateColor = DefaultLookup.getColor(this, ui, "Table.alternateRowColor");
+        if (alternateColor != null && row % 2 == 0) {
+          label.setBackground(alternateColor);
+          label.setOpaque(true);
+        }
+        else {
+          label.setBackground(original);
+          label.setOpaque(false);
+        }
+
+      }
+
       if (isSelected) {
         label.setBackground(table.getSelectionBackground());
         label.setForeground(table.getSelectionForeground());
@@ -369,7 +387,7 @@ public class Hierarchy extends JTree {
         balanceLabel.setForeground(textSelectionColor);
       } else {
         this.setOpaque(false);
-        this.setBackground(backgroundNonSelectionColor);
+//        this.setBackground(backgroundNonSelectionColor);
         mainLabel.setForeground(textNonSelectionColor);
         balanceLabel.setForeground(textNonSelectionColor);
       }
