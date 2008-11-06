@@ -7,12 +7,13 @@ import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
 import us.lump.envelope.client.State;
 import us.lump.envelope.client.portal.HibernatePortal;
+import us.lump.envelope.client.thread.EnvelopeRunnable;
+import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.MainFrame;
 import us.lump.envelope.client.ui.components.MoneyTextField;
 import us.lump.envelope.client.ui.components.models.TransactionTableModel;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.entity.Transaction;
-import us.lump.envelope.exception.EnvelopeException;
 import us.lump.lib.Money;
 
 import javax.swing.*;
@@ -23,6 +24,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.text.MessageFormat;
 import java.util.Date;
 import java.util.ResourceBundle;
 
@@ -30,7 +32,7 @@ import java.util.ResourceBundle;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.6 2008/11/01 16:57:15 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.7 2008/11/06 06:37:28 troy Exp $
  */
 public class TransactionForm {
   private JButton saveButton;
@@ -184,37 +186,48 @@ public class TransactionForm {
     amountLabel.setText(Strings.get("total.amount"));
   }
 
-  public void loadTransactionForId(int id) {
+  public void loadTransactionForId(final int id) {
     if (!MainFrame.getInstance().isTransactionViewShowing()) return;
     if (transaction == null || !transaction.getId().equals(id)) {
-      try {
-        transaction = new HibernatePortal().get(Transaction.class, id);
+      EnvelopeRunnable r = new EnvelopeRunnable(
+          MessageFormat.format(Strings.get("retrieving.transaction"), id)) {
+        public void run() {
 
-        if (transaction.getAmount().doubleValue() > 0) {
-          setIncomeView();
-        } else {
-          setExpenseView();
+          try {
+            transaction = new HibernatePortal().get(Transaction.class, id);
+
+            SwingUtilities.invokeLater(new Runnable() {
+              public void run() {
+                if (transaction.getAmount().doubleValue() > 0) {
+                  setIncomeView();
+                } else {
+                  setExpenseView();
+                }
+
+                amount.setText(
+                    typeExpenseRadio.isSelected()
+                    ? new Money(transaction.getAmount()
+                        .multiply(new Money("-1"))).toFormattedString()
+                    : transaction.getAmount().toFormattedString());
+
+                transactionDate.setDate(transaction.getDate());
+                description.setText(transaction.getDescription());
+
+                refreshEntities();
+
+                entity.setSelectedItem(transaction.getEntity());
+                System.out.println(transaction);
+              }
+            });
+          }
+          catch (Exception e) {
+
+          }
+
         }
-
-        amount.setText(
-            typeExpenseRadio.isSelected()
-            ? new Money(transaction.getAmount()
-                .multiply(new Money("-1"))).toFormattedString()
-            : transaction.getAmount().toFormattedString());
-
-        transactionDate.setDate(transaction.getDate());
-        description.setText(transaction.getDescription());
-
-        refreshEntities();
-
-        entity.setSelectedItem(transaction.getEntity());
-
-
-      } catch (EnvelopeException e1) {
-        e1.printStackTrace();
-      }
+      };
+      ThreadPool.getInstance().execute(r);
     }
-    System.out.println(transaction);
   }
 
   public void refreshEntities() {

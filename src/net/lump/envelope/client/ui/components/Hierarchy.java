@@ -1,5 +1,6 @@
 package us.lump.envelope.client.ui.components;
 
+import sun.swing.DefaultLookup;
 import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.State;
 import us.lump.envelope.client.thread.EnvelopeRunnable;
@@ -32,14 +33,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import sun.swing.DefaultLookup;
-
 
 /**
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.26 2008/11/05 06:15:04 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.27 2008/11/06 06:37:27 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -279,8 +278,10 @@ public class Hierarchy extends JTree {
       Color original = label.getBackground();
 
       // this is for Nimbus's alternate row color, shouldn't affect other stuff
-      if (original == null || original instanceof javax.swing.plaf.UIResource) {
-        Color alternateColor = DefaultLookup.getColor(this, ui, "Table.alternateRowColor");
+      if (UIManager.getLookAndFeel().getID().equals("Nimbus") &&
+          (original == null || original instanceof javax.swing.plaf.UIResource)) {
+        Color alternateColor =
+            DefaultLookup.getColor(this, ui, "Table.alternateRowColor", null);
         if (alternateColor != null && row % 2 == 0) {
           label.setBackground(alternateColor);
           label.setOpaque(true);
