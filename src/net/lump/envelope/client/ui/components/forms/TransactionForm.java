@@ -11,6 +11,7 @@ import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.MainFrame;
 import us.lump.envelope.client.ui.components.MoneyTextField;
+import us.lump.envelope.client.ui.components.models.AllocationFormTableModel;
 import us.lump.envelope.client.ui.components.models.TransactionTableModel;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.entity.Transaction;
@@ -32,7 +33,7 @@ import java.util.ResourceBundle;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.7 2008/11/06 06:37:28 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.8 2008/11/06 07:10:41 troy Exp $
  */
 public class TransactionForm {
   private JButton saveButton;
@@ -66,10 +67,15 @@ public class TransactionForm {
   private JButton newButton;
   private JButton closeButton;
 
+  private AllocationFormTableModel tableModel;
+
   private Transaction transaction;
 
   public TransactionForm() {
     $$$setupUI$$$();
+
+    tableModel = new AllocationFormTableModel();
+    allocationsTable.setModel(tableModel);
     transactionAllocationSplit.setResizeWeight(0.5);
     transactionAllocationSplit.getLeftComponent()
         .setMinimumSize(new Dimension(200, 0));
@@ -216,6 +222,8 @@ public class TransactionForm {
                 refreshEntities();
 
                 entity.setSelectedItem(transaction.getEntity());
+
+                tableModel.setAllocations(transaction.getAllocations());
                 System.out.println(transaction);
               }
             });
