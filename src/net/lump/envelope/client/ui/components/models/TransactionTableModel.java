@@ -3,8 +3,8 @@ package us.lump.envelope.client.ui.components.models;
 import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.portal.HibernatePortal;
 import us.lump.envelope.client.portal.TransactionPortal;
-import us.lump.envelope.client.thread.EnvelopeRunnable;
 import us.lump.envelope.client.thread.StatusElement;
+import us.lump.envelope.client.thread.StatusRunnable;
 import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.components.Hierarchy;
 import us.lump.envelope.client.ui.components.StatusBar;
@@ -348,7 +348,7 @@ public class TransactionTableModel extends AbstractTableModel {
       }
 
       // update the Transaction
-      ThreadPool.getInstance().execute(new EnvelopeRunnable(
+      ThreadPool.getInstance().execute(new StatusRunnable(
           MessageFormat.format("{0} {1} {2}",
                                ((Boolean)value)
                                ? Strings.get("reconciling")

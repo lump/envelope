@@ -31,7 +31,7 @@ import java.security.MessageDigest;
  * A static DES and MD5 password encryption library.
  *
  * @author Troy Bowman
- * @version $Id: Crypt.java,v 1.2 2007/08/18 23:20:11 troy Exp $
+ * @version $Id: Crypt.java,v 1.3 2008/11/07 23:31:06 troy Test $
  */
 
 public final class Crypt {

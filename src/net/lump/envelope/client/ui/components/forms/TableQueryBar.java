@@ -11,8 +11,6 @@ import java.awt.*;
 import java.util.Date;
 import java.util.ResourceBundle;
 
-import us.lump.lib.Money;
-
 /**
  * Created by IntelliJ IDEA. User: troy Date: Jul 7, 2008 Time: 10:39:36 PM To
  * change this template use File | Settings | File Templates.
@@ -39,7 +37,7 @@ public class TableQueryBar {
     table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
     table.getTableHeader().setReorderingAllowed(false);
     table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-    
+
 //    table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
 //      public void valueChanged(ListSelectionEvent e) {
 //        if (!e.getValueIsAdjusting()) {
@@ -129,108 +127,106 @@ public class TableQueryBar {
                                                2,
                                                2));
     tableQueryPanel.add(queryPanel, BorderLayout.NORTH);
-    queryPanel.add(beginDate, new GridConstraints(0,
-                                                  2,
-                                                  1,
-                                                  1,
-                                                  GridConstraints.ANCHOR_CENTER,
-                                                  GridConstraints.FILL_NONE,
-                                                  GridConstraints
-                                                      .SIZEPOLICY_CAN_SHRINK
-                                                  | GridConstraints
-                                                      .SIZEPOLICY_CAN_GROW,
-                                                  1,
-                                                  null,
-                                                  null,
-                                                  null,
-                                                  0,
-                                                  false));
+    queryPanel.add(beginDate,
+                   new GridConstraints(0,
+                                       2,
+                                       1,
+                                       1,
+                                       GridConstraints.ANCHOR_CENTER,
+                                       GridConstraints.FILL_NONE,
+                                       GridConstraints.SIZEPOLICY_CAN_SHRINK
+                                       | GridConstraints.SIZEPOLICY_CAN_GROW,
+                                       1,
+                                       null,
+                                       null,
+                                       null,
+                                       0,
+                                       false));
     endDateLabel = new JLabel();
     endDateLabel.setHorizontalAlignment(4);
     endDateLabel.setHorizontalTextPosition(4);
     this.$$$loadLabelText$$$(endDateLabel, ResourceBundle.getBundle(
         "us/lump/envelope/client/ui/defs/Strings").getString("to"));
-    queryPanel.add(endDateLabel, new GridConstraints(0,
-                                                     3,
-                                                     1,
-                                                     1,
-                                                     GridConstraints.ANCHOR_CENTER,
-                                                     GridConstraints.FILL_NONE,
-                                                     1,
-                                                     1,
-                                                     null,
-                                                     null,
-                                                     null,
-                                                     0,
-                                                     false));
-    queryPanel.add(endDate, new GridConstraints(0,
-                                                4,
-                                                1,
-                                                1,
-                                                GridConstraints.ANCHOR_CENTER,
-                                                GridConstraints.FILL_NONE,
-                                                GridConstraints
-                                                    .SIZEPOLICY_CAN_SHRINK
-                                                | GridConstraints
-                                                    .SIZEPOLICY_CAN_GROW,
-                                                1,
-                                                null,
-                                                null,
-                                                null,
-                                                0,
-                                                false));
+    queryPanel.add(endDateLabel,
+                   new GridConstraints(0,
+                                       3,
+                                       1,
+                                       1,
+                                       GridConstraints.ANCHOR_CENTER,
+                                       GridConstraints.FILL_NONE,
+                                       1,
+                                       1,
+                                       null,
+                                       null,
+                                       null,
+                                       0,
+                                       false));
+    queryPanel.add(endDate,
+                   new GridConstraints(0,
+                                       4,
+                                       1,
+                                       1,
+                                       GridConstraints.ANCHOR_CENTER,
+                                       GridConstraints.FILL_NONE,
+                                       GridConstraints.SIZEPOLICY_CAN_SHRINK
+                                       | GridConstraints.SIZEPOLICY_CAN_GROW,
+                                       1,
+                                       null,
+                                       null,
+                                       null,
+                                       0,
+                                       false));
     refreshButton = new JButton();
     this.$$$loadButtonText$$$(refreshButton, ResourceBundle.getBundle(
         "us/lump/envelope/client/ui/defs/Strings").getString("refresh"));
-    queryPanel.add(refreshButton, new GridConstraints(0,
-                                                      5,
-                                                      1,
-                                                      1,
-                                                      GridConstraints.ANCHOR_CENTER,
-                                                      GridConstraints.FILL_HORIZONTAL,
-                                                      GridConstraints
-                                                          .SIZEPOLICY_CAN_SHRINK
-                                                      | GridConstraints
-                                                          .SIZEPOLICY_CAN_GROW,
-                                                      GridConstraints.SIZEPOLICY_FIXED,
-                                                      null,
-                                                      null,
-                                                      null,
-                                                      0,
-                                                      false));
+    queryPanel.add(refreshButton,
+                   new GridConstraints(0,
+                                       5,
+                                       1,
+                                       1,
+                                       GridConstraints.ANCHOR_CENTER,
+                                       GridConstraints.FILL_HORIZONTAL,
+                                       GridConstraints.SIZEPOLICY_CAN_SHRINK
+                                       | GridConstraints.SIZEPOLICY_CAN_GROW,
+                                       GridConstraints.SIZEPOLICY_FIXED,
+                                       null,
+                                       null,
+                                       null,
+                                       0,
+                                       false));
     titleLabel = new JLabel();
     titleLabel.setFont(new Font("Dialog", Font.BOLD, 16));
     titleLabel.setText("");
-    queryPanel.add(titleLabel, new GridConstraints(0,
-                                                   0,
-                                                   1,
-                                                   1,
-                                                   GridConstraints.ANCHOR_WEST,
-                                                   GridConstraints.FILL_NONE,
-                                                   GridConstraints
-                                                       .SIZEPOLICY_CAN_SHRINK
-                                                   | GridConstraints
-                                                       .SIZEPOLICY_CAN_GROW,
-                                                   GridConstraints.SIZEPOLICY_FIXED,
-                                                   null,
-                                                   null,
-                                                   null,
-                                                   0,
-                                                   false));
+    queryPanel.add(titleLabel,
+                   new GridConstraints(0,
+                                       0,
+                                       1,
+                                       1,
+                                       GridConstraints.ANCHOR_WEST,
+                                       GridConstraints.FILL_NONE,
+                                       GridConstraints.SIZEPOLICY_CAN_SHRINK
+                                       | GridConstraints.SIZEPOLICY_CAN_GROW,
+                                       GridConstraints.SIZEPOLICY_FIXED,
+                                       null,
+                                       null,
+                                       null,
+                                       0,
+                                       false));
     final Spacer spacer1 = new Spacer();
-    queryPanel.add(spacer1, new GridConstraints(0,
-                                                1,
-                                                1,
-                                                1,
-                                                GridConstraints.ANCHOR_CENTER,
-                                                GridConstraints.FILL_HORIZONTAL,
-                                                GridConstraints.SIZEPOLICY_WANT_GROW,
-                                                1,
-                                                null,
-                                                null,
-                                                null,
-                                                0,
-                                                false));
+    queryPanel.add(spacer1,
+                   new GridConstraints(0,
+                                       1,
+                                       1,
+                                       1,
+                                       GridConstraints.ANCHOR_CENTER,
+                                       GridConstraints.FILL_HORIZONTAL,
+                                       GridConstraints.SIZEPOLICY_WANT_GROW,
+                                       1,
+                                       null,
+                                       null,
+                                       null,
+                                       0,
+                                       false));
     tableScrollPane = new JScrollPane();
     tableQueryPanel.add(tableScrollPane, BorderLayout.CENTER);
     table = new JTable();

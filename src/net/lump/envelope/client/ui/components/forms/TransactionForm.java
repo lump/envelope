@@ -7,7 +7,7 @@ import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
 import us.lump.envelope.client.State;
 import us.lump.envelope.client.portal.HibernatePortal;
-import us.lump.envelope.client.thread.EnvelopeRunnable;
+import us.lump.envelope.client.thread.StatusRunnable;
 import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.MainFrame;
 import us.lump.envelope.client.ui.components.MoneyTextField;
@@ -33,7 +33,7 @@ import java.util.ResourceBundle;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.9 2008/11/07 02:23:25 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.10 2008/11/07 23:31:06 troy Exp $
  */
 public class TransactionForm {
   private JButton saveButton;
@@ -195,7 +195,7 @@ public class TransactionForm {
   public void loadTransactionForId(final int id) {
     if (!MainFrame.getInstance().isTransactionViewShowing()) return;
     if (transaction == null || !transaction.getId().equals(id)) {
-      EnvelopeRunnable r = new EnvelopeRunnable(
+      StatusRunnable r = new StatusRunnable(
           MessageFormat.format(Strings.get("retrieving.transaction"), id)) {
         public void run() {
 

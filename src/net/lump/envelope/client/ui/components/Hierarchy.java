@@ -3,7 +3,7 @@ package us.lump.envelope.client.ui.components;
 import sun.swing.DefaultLookup;
 import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.State;
-import us.lump.envelope.client.thread.EnvelopeRunnable;
+import us.lump.envelope.client.thread.StatusRunnable;
 import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.components.forms.TableQueryBar;
 import us.lump.envelope.client.ui.components.models.TransactionTableModel;
@@ -38,7 +38,7 @@ import java.util.List;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.27 2008/11/06 06:37:27 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.28 2008/11/07 23:31:06 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -167,7 +167,7 @@ public class Hierarchy extends JTree {
     rootNode.setUserObject(budget);
 
 
-    EnvelopeRunnable r = new EnvelopeRunnable(Strings.get("updating.tree")) {
+    StatusRunnable r = new StatusRunnable(Strings.get("updating.tree")) {
 
       Object selectedObject = null;
 

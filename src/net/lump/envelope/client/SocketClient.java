@@ -1,7 +1,7 @@
 package us.lump.envelope.client;
 
 import us.lump.envelope.Command;
-import us.lump.envelope.client.thread.EnvelopeRunnable;
+import us.lump.envelope.client.thread.StatusRunnable;
 import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.components.StatusBar;
 import us.lump.envelope.client.ui.defs.Strings;
@@ -31,7 +31,7 @@ import java.util.zip.GZIPInputStream;
  * through said connections..
  *
  * @author Troy Bowman
- * @version $Id: SocketClient.java,v 1.10 2008/10/24 06:24:06 troy Exp $
+ * @version $Id: SocketClient.java,v 1.11 2008/11/07 23:31:06 troy Exp $
  */
 
 public class SocketClient implements Controller {
@@ -230,7 +230,7 @@ public class SocketClient implements Controller {
             = new BackgroundList<Serializable>(size);
 
         ThreadPool.getInstance().execute(
-            new EnvelopeRunnable(Strings.get("reading")) {
+            new StatusRunnable(Strings.get("reading")) {
               public synchronized void run() {
                 try {
                   for (int x = 0; x < size; x++) {

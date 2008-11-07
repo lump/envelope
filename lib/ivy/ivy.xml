@@ -1,5 +1,5 @@
 <ivy-module version="2.0">
-  <!-- $Id: ivy.xml,v 1.1 2008/10/02 22:15:53 troy Exp $ -->
+  <!-- $Id: ivy.xml,v 1.2 2008/11/07 23:31:06 troy Exp $ -->
   <info organisation="lump" module="envelope"/>
   <dependencies>
     <dependency org="mysql" name="mysql-connector-java" rev="5.1.5"/>

@@ -2,14 +2,16 @@ package us.lump.envelope.client.thread;
 
 import us.lump.envelope.client.ui.components.StatusBar;
 
-import java.util.concurrent.*;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A threadpool that accepts EnvelopeRunnables, which allow the status bar
  * to be updated with what the threadpool is doing.
  *
  * @author Troy Bowman
- * @version $Id: ThreadPool.java,v 1.6 2008/09/12 00:21:47 troy Exp $
+ * @version $Id: ThreadPool.java,v 1.7 2008/11/07 23:31:06 troy Test $
  */
 
 public class ThreadPool extends ThreadPoolExecutor {
@@ -36,8 +38,8 @@ public class ThreadPool extends ThreadPoolExecutor {
     super.beforeExecute(t, r);
 
     // add a status bar message
-    if (r instanceof EnvelopeRunnable)
-      StatusBar.getInstance().addTask(((EnvelopeRunnable)r).getElement());
+    if (r instanceof StatusRunnable)
+      StatusBar.getInstance().addTask(((StatusRunnable)r).getElement());
     else {
       StatusBar.getInstance().addTask(new StatusElement(t));
     }
@@ -47,8 +49,8 @@ public class ThreadPool extends ThreadPoolExecutor {
     super.afterExecute(r, t);
 
     // add a status bar message
-    if (r instanceof EnvelopeRunnable)
-      StatusBar.getInstance().removeTask(((EnvelopeRunnable)r).getElement());
+    if (r instanceof StatusRunnable)
+      StatusBar.getInstance().removeTask(((StatusRunnable)r).getElement());
     else {
       StatusBar.getInstance().removeTask(t);
     }
