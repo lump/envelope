@@ -2,8 +2,9 @@ package us.lump.envelope.client.ui.images;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
 
-/** Empty class for imges anchor. */
+/** Image resource. */
 public class ImageResource {
   public static enum icon {
     envelope,
@@ -25,17 +26,40 @@ public class ImageResource {
     account,
     account_closed;
 
-    ImageIcon icon;
+    public static final String png = "png";
+    public static final String ico = "ico";
+    public static final String jpg = "jpg";
+    public static final String svg = "svg";
+    public static final String icns = "icns";
 
-    icon() {
-      icon =
-          new ImageIcon(ImageResource.class.getResource(this.name() + ".png"));
+    public Icon get() { return get(png); }
+
+    public Icon get(String ext) {
+      return new ImageIcon(
+          ImageResource.class.getResource(this.name() + "." + ext));
     }
 
-    public Icon get() { return icon; }
+    public Image getImage() {
+      return getImage(png);
+    }
 
-    public Image getImage() { return icon.getImage(); }
+    public Image getImage(String ext) {
+      return ((ImageIcon)get(ext)).getImage();
+    }
   }
 
   private ImageResource() {}
+
+  public static java.util.List<Image> getFrameList() {
+    ArrayList<Image> list = new ArrayList();
+    list.add(icon.envelope_512.getImage());
+    list.add(icon.envelope_256.getImage());
+    list.add(icon.envelope_128.getImage());
+    list.add(icon.envelope_96.getImage());
+    list.add(icon.envelope_64.getImage());
+    list.add(icon.envelope_48.getImage());
+    list.add(icon.envelope_32.getImage());
+    list.add(icon.envelope_16.getImage());
+    return list;
+  }
 }

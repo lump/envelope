@@ -128,7 +128,7 @@
     </javac>
     <copy todir="${classes}">
       <fileset dir="${src}"
-               includes="**/*.properties, **/*.xml, **/*.policy, **/*.gif, **/*.png"/>
+               includes="**/*.properties, **/*.xml, **/*.policy, **/*.gif, **/*.png, **/*.ico, **/*.icns"/>
     </copy>
 
     <javac srcdir="${test.src}"
@@ -152,6 +152,7 @@
                          commons*.jar,
                          ehcache*.jar,
                          alloy.jar,
+                         ui.jar,
                          hibernate*.jar,
                          jcalendar*.jar"/>
     </unzip>

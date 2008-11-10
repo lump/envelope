@@ -25,7 +25,7 @@ import java.beans.PropertyChangeListener;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.30 2008/11/05 06:15:04 troy Exp $
+ * @version $Id: MainFrame.java,v 1.31 2008/11/10 19:42:33 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -87,7 +87,7 @@ public class MainFrame extends JFrame {
     EmacsKeyBindings.loadEmacsKeyBindings();
 
     this.setTitle(Strings.get("envelope_budget"));
-    this.setIconImage(ImageResource.icon.envelope.getImage());
+    this.setIconImages(ImageResource.getFrameList());
 
     treeContentSplitPane.setResizeWeight(0);
     treeContentSplitPane.getLeftComponent()
