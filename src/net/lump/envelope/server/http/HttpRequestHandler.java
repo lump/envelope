@@ -283,7 +283,7 @@ public class HttpRequestHandler implements RequestHandler {
         DataOutputStream out =
             new DataOutputStream(socket.getOutputStream());
 
-        if (path == null || path.equals("")) {
+        if (path == null || path.equals("") || path.equals("envelope.jnlp")) {
           byte[] bjnlp =
               slurpInputSteam(this.getClass().getResourceAsStream("jnlp.xml"));
           String jnlp = new String(bjnlp);
@@ -294,7 +294,7 @@ public class HttpRequestHandler implements RequestHandler {
           jnlp = jnlp.replaceAll("\\{title\\}", "Envelope " + Revision.nameOrState());
           jnlp = jnlp.replaceAll("\\{vendor\\}", "Lump Software");
           jnlp = jnlp.replaceAll("\\{description\\}", "An Envelope Budget");
-          jnlp = jnlp.replaceAll("\\{icon\\}", "lib/envelope.png");
+          jnlp = jnlp.replaceAll("\\{icon\\}", "lib/envelope_32.png");
           jnlp = jnlp.replaceAll("\\{main-class\\}", "Envelope");
 
 //          for (String file : new String[]{"slim-client.jar.pack.gz",

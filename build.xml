@@ -266,7 +266,7 @@
       <fileset dir="${dist}" includes="client*.jar, client*gz"/>
       <!--<fileset dir="${lib}/jaxb" includes="*.jar"/>-->
       <fileset dir="src/us/lump/envelope/client/ui/images"
-               includes="envelope.png" />
+               includes="envelope_32.png, envelope.ico, envelope.icns" />
     </copy>
 
     <mkdir dir="${one.jar.classes}/main"/>

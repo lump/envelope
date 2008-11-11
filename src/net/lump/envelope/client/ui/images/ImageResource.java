@@ -3,6 +3,7 @@ package us.lump.envelope.client.ui.images;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /** Image resource. */
 public class ImageResource {
@@ -32,11 +33,19 @@ public class ImageResource {
     public static final String svg = "svg";
     public static final String icns = "icns";
 
+    private static HashMap<String, Icon> icons = new HashMap<String, Icon>();
+
     public Icon get() { return get(png); }
 
     public Icon get(String ext) {
-      return new ImageIcon(
-          ImageResource.class.getResource(this.name() + "." + ext));
+      String fn = this.name() + "." + ext;
+      if (icons.containsKey(fn)) return icons.get(fn);
+      else {
+        ImageIcon ii = new ImageIcon(
+            ImageResource.class.getResource(this.name() + "." + ext));
+        icons.put(fn, ii);
+        return ii;
+      }
     }
 
     public Image getImage() {

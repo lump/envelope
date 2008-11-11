@@ -1,17 +1,15 @@
 package us.lump.envelope.client;
 
+import com.incors.plaf.alloy.themes.bedouin.BedouinTheme;
 import us.lump.envelope.client.ui.MainFrame;
 
 import javax.swing.*;
-
-import com.incors.plaf.alloy.themes.CustomFontTheme;
-import com.incors.plaf.alloy.themes.bedouin.BedouinTheme;
 
 /**
  * Main class.
  *
  * @author troy
- * @version $Id: Main.java,v 1.11 2008/11/05 06:15:04 troy Exp $
+ * @version $Id: Main.java,v 1.12 2008/11/11 01:07:12 troy Exp $
  */
 public class Main implements Runnable {
   private static Main singleton;
