@@ -3,7 +3,7 @@ package us.lump.envelope.server;
 /**
  * Bitwise flags for transfer options.
  *
- * @version $Id: XferFlags.java,v 1.3 2008/09/20 05:29:59 troy Exp $
+ * @version $Id: XferFlags.java,v 1.4 2008/11/12 18:15:17 troy Exp $
  */
 public class XferFlags {
 
@@ -32,7 +32,7 @@ public class XferFlags {
   /**
    * Creates a new XferFlags from the list of flags provided.
    *
-   * @param flags
+   * @param flags to use
    */
   public XferFlags(Flag... flags) {
     if (flags.length > 0) add(flags);
@@ -48,7 +48,7 @@ public class XferFlags {
   }
 
   /**
-   * Adds all turned-on bits in the provided byte to this object.
+   * ORs all turned-on bits in the provided flags to this object.
    *
    * @param flags the flag(s) to add
    */
@@ -58,7 +58,7 @@ public class XferFlags {
   }
 
   /**
-   * Or some flags together into a byte;
+   * OR some Flags together into a byte;
    *
    * @param flags to add together
    *
