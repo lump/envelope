@@ -25,7 +25,7 @@ import java.beans.PropertyChangeListener;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.32 2008/11/11 01:07:12 troy Exp $
+ * @version $Id: MainFrame.java,v 1.33 2008/11/14 07:48:49 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -138,6 +138,8 @@ public class MainFrame extends JFrame {
 
       Application application = Application.getApplication();
       application.setEnabledPreferencesMenu(true);
+//      application.setDockIconBadge("Hi");
+      application.setDockIconImage(ImageResource.icon.envelope_256.getImage());
       application.addApplicationListener(
           new com.apple.eawt.ApplicationAdapter() {
 

@@ -291,7 +291,8 @@ public class HttpRequestHandler implements RequestHandler {
                                  socket.getLocalAddress().getCanonicalHostName());
           jnlp = jnlp.replaceAll("\\{port\\}",
                                  String.valueOf(socket.getLocalPort()));
-          jnlp = jnlp.replaceAll("\\{title\\}", "Envelope " + Revision.nameOrState());
+          jnlp = jnlp.replaceAll("\\{title\\}", "Envelope");
+          jnlp = jnlp.replaceAll("\\{revision\\}", Revision.nameOrState());
           jnlp = jnlp.replaceAll("\\{vendor\\}", "Lump Software");
           jnlp = jnlp.replaceAll("\\{description\\}", "An Envelope Budget");
           jnlp = jnlp.replaceAll("\\{icon\\}", "lib/envelope_32.png");

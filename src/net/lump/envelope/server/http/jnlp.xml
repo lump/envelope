@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<jnlp spec="1.0+" codebase="http://{host}:{port}/" href="envelope.jnlp">
+<jnlp spec="1.0" codebase="http://{host}:{port}/" href="envelope.jnlp">
   <information>
     <title>{title}</title>
     <vendor>{vendor}</vendor>
-    <description>{description}</description>
+    <description>{description} (version {revision})</description>
     <icon href="{icon}"/>
   </information>
   <security>
