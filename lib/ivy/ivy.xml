@@ -1,9 +1,0 @@
-<ivy-module version="2.0">
-  <!-- $Id: ivy.xml,v 1.2 2008/11/07 23:31:06 troy Exp $ -->
-  <info organisation="lump" module="envelope"/>
-  <dependencies>
-    <dependency org="mysql" name="mysql-connector-java" rev="5.1.5"/>
-    <dependency org="org.hibernate" name="hibernate" rev="3.2.6.ga"/>
-  </dependencies>
-</ivy-module>
-
