@@ -1,17 +1,30 @@
 <ivysettings>
-  <!-- $Id: ivysettings.xml,v 1.1 2008/11/21 01:11:23 troy Exp $ -->
-  <settings defaultResolver="public">
+  <!-- $Id: ivysettings.xml,v 1.2 2008/11/21 02:05:58 troy Test $ -->
+  <settings defaultResolver="chained">
     <caches default="envelope" repositoryCacheDir="${ivy.basedir}/lib/ivy">
       <cache name="envelope"
              ivyPattern=".ivy/[organization]-[module]-[artifact]-[revision].xml"
+             dataFilePattern=".ivy/[organization]-[module]-[artifact]-[revision].properties"
              artifactPattern="[type]/[organization]-[module]-[artifact]-[revision].[ext]"
              lockStrategy="no-lock"
              defaultTTL="1s">
       </cache>
-     </caches>
-     <resolvers>
-       <ibiblio name="public" m2compatible="true"/>
-     </resolvers>
-   </settings>
+    </caches>
+    <resolvers>
+      <chain name="chained" returnFirst="true">
+        <ibiblio name="ibiblio" m2compatible="true"/>
+        <ibiblio name="java-net-maven1" root="http://download.java.net/maven/1"
+                 pattern="[organisation]/jars/[module]-[revision].[ext]" m2compatible="false"/>
+        <ibiblio name="java-net-maven2" root="http://download.java.net/maven/2/"
+                 m2compatible="true"/>
+        <!--<url name="sourceforge">-->
+          <!--<artifact-->
+              <!--pattern="http://easynews.dl.sourceforge.net/sourceforge/[organization]/[module]_[revision].zip"/>-->
+          <!--<artifact-->
+              <!--pattern="http://easynews.dl.sourceforge.net/sourceforge/[organization]/[module]-[revision].zip"/>-->
+        <!--</url>-->
+      </chain>
+    </resolvers>
+  </settings>
 </ivysettings>
 

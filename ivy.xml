@@ -1,9 +1,9 @@
 <ivy-module version="2.0">
-  <!-- $Id: ivy.xml,v 1.1 2008/11/21 01:11:23 troy Exp $ -->
+  <!-- $Id: ivy.xml,v 1.2 2008/11/21 02:05:58 troy Test $ -->
   <info organisation="us.lump" module="envelope"/>
   <dependencies>
     <dependency org="mysql" name="mysql-connector-java" rev="5.1.5"/>
-    <dependency org="org.hibernate" name="hibernate" rev="3.2.6.ga" conf="runtime, standalone -> runtime(*)"/>
+    <dependency org="org.hibernate" name="hibernate" rev="3.2.6.ga"/>
   </dependencies>
 </ivy-module>
 

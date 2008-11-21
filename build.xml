@@ -1,5 +1,5 @@
 <project name="envelope" basedir="." default="dist">
-
+         <!--xmlns:ivy="antlib:org.apache.ivy.ant">-->
   <property environment="env"/>
   <tstamp>
     <format property="timestamp" pattern="EEE, d MMM yyyy HH:mm:ss Z (z)"/>
@@ -20,6 +20,9 @@
   <property name="lib" value="${basedir}/lib"/>
   <property name="sql" value="${basedir}/sql"/>
   <property name="dist" value="${basedir}/"/>
+  <property name="ivy.install.version" value="2.0.0-beta2"/>
+  <property name="ivy.jars.dir" value="${basedir}/lib/ivy"/>
+  <property name="ivy.jar.file" value="ivy-${ivy.install.version}.jar"/>
 
   <property name="one.jar" value="${basedir}/one-jar"/>
   <property name="one.jar.classes" value="${dist}/build"/>
@@ -57,36 +60,33 @@
            classname="com.sun.tools.apache.ant.pack200.Unpack200Task"
            classpathref="ant.classpath"/>
 
-  <!--<available file="${ivy.home}/${ivy.distname}" type="dir"-->
-             <!--property="ivy.is.there"/>-->
+  <!--<available file="${lib}/${ivy.jar.file}"-->
+             <!--type="file" property="ivy.is.there"/>-->
 
   <!--<target name="download.ivy" unless="ivy.is.there">-->
-    <!--<mkdir dir="${ivy.home}"/>-->
-    <!--<mkdir dir="${ivy.home}/dist"/>-->
-    <!--<property name="ivy.url" value="http://www.apache.org/dist/ant/ivy"/>-->
-    <!--<property name="dist.suffix" value="-bin-with-deps.zip"/>-->
-
-    <!--<get src="${ivy.url}/${ivy.install.version}/${ivy.distname}${dist.suffix}"-->
-         <!--dest="${ivy.home}/dist/${ivy.distname}${dist.suffix}"-->
-         <!--usetimestamp="true"/>-->
-    <!--<unzip src="${ivy.home}/dist/${ivy.distname}${dist.suffix}"-->
-           <!--dest="${ivy.home}"/>-->
+    <!--<echo message="installing ivy..."/>-->
+    <!--<get-->
+        <!--src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar"-->
+        <!--dest="${lib}/${ivy.jar.file}"-->
+        <!--usetimestamp="true"/>-->
+    <!--<echo message="downloaded ${ivy.jar.file}"/>-->
   <!--</target>-->
 
   <!--<target name="bootstrap.ivy" depends="download.ivy" unless="ivy.is.loaded">-->
     <!--<path id="ivy.lib.path">-->
-      <!--<fileset dir="${ivy.home}/${ivy.distname}" includes="*.jar, lib/*.jar"/>-->
+      <!--<fileset dir="${lib}" includes="${ivy.jar.file}"/>-->
     <!--</path>-->
     <!--<taskdef resource="org/apache/ivy/ant/antlib.xml"-->
              <!--uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>-->
     <!--<property name="ivy.is.loaded" value="true"/>-->
-  <!--</target>-->
+    <!--<echo message="loaded ${ivy.jar.file}"/>-->
 
-   <!--<target name="get.libs"-->
-           <!--description="retrieve library dependencies"-->
-           <!--depends="bootstrap.ivy">-->
-     <!--<ivy:retrieve file="${ivy.home}/ivy.xml"-->
-                  <!--pattern="${ivy.home}/[artifact].[ext]"/>-->
+    <!--<mkdir dir="${ivy.jars.dir}"/>-->
+
+    <!--<property name="ivy.instance" value="${ant.project.name}"/>-->
+    <!--<ivy:settings file="${basedir}/ivysettings.xml"/>-->
+    <!--<ivy:resolve file="${basedir}/ivy.xml"/>-->
+    <!--<ivy:cachepath pathid="ivy.lib.path"/>-->
   <!--</target>-->
 
   <target name="clean.classes" description="clean the classes">
@@ -116,6 +116,7 @@
 
   <!--target name="compile" depends="prepare,generate-ofx"
           description="compile sources"-->
+  <!--<target name="compile" depends="prepare,bootstrap.ivy"-->
   <target name="compile" depends="prepare"
           description="compile sources">
     <javac srcdir="${src}"
@@ -125,6 +126,7 @@
            optimize="${compile.optimize}">
       <compilerarg value="-Xlint:unchecked"/>
       <classpath refid="compile.classpath"/>
+      <!--<classpath refid="ivy.lib.path"/>-->
     </javac>
     <copy todir="${classes}">
       <fileset dir="${src}"
@@ -160,7 +162,7 @@
     <copy todir="${client.classes}">
       <!--includes="Envelope.class, us/lump/lib/util/ChildFirstClassLoader.class"/>-->
       <fileset dir="${classes}"
-      includes="security.policy,
+               includes="security.policy,
                 Envelope.class,
                 us/lump/lib/**/*,
                 us/lump/envelope/exception/*
@@ -180,7 +182,8 @@
         <attribute name="Main-Class" value="Envelope"/>
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Build-Time" value="${timestamp}"/>
-        <attribute name="Built-On-OS" value="${os.name} ${os.version} ${os.arch}"/>
+        <attribute name="Built-On-OS"
+                   value="${os.name} ${os.version} ${os.arch}"/>
         <attribute name="Built-On-VM" value="${java.version} ${java.vendor}"/>
         <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
         <!--<attribute name="Class-Path" value="http://localhost:7041/"/>-->
@@ -240,7 +243,8 @@
         <attribute name="Main-Class" value="us.lump.envelope.Server"/>
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Build-Time" value="${timestamp}"/>
-        <attribute name="Built-On-OS" value="${os.name} ${os.version} ${os.arch}"/>
+        <attribute name="Built-On-OS"
+                   value="${os.name} ${os.version} ${os.arch}"/>
         <attribute name="Built-On-VM" value="${java.version} ${java.vendor}"/>
         <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
       </manifest>
@@ -266,7 +270,7 @@
       <fileset dir="${dist}" includes="client*.jar, client*gz"/>
       <!--<fileset dir="${lib}/jaxb" includes="*.jar"/>-->
       <fileset dir="src/us/lump/envelope/client/ui/images"
-               includes="envelope_32.png, envelope.ico, envelope.icns" />
+               includes="envelope_32.png, envelope.ico, envelope.icns"/>
     </copy>
 
     <mkdir dir="${one.jar.classes}/main"/>
@@ -285,7 +289,8 @@
         <attribute name="Boot-Class" value="us.lump.envelope.Server"/>
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Build-Time" value="${timestamp}"/>
-        <attribute name="Built-On-OS" value="${os.name} ${os.version} ${os.arch}"/>
+        <attribute name="Built-On-OS"
+                   value="${os.name} ${os.version} ${os.arch}"/>
         <attribute name="Built-On-VM" value="${java.version} ${java.vendor}"/>
         <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
       </manifest>
