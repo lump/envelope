@@ -20,12 +20,14 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.33 2008/11/14 07:48:49 troy Exp $
+ * @version $Id: MainFrame.java,v 1.34 2008/12/05 00:14:30 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -128,19 +130,35 @@ public class MainFrame extends JFrame {
     mainMenuBar.add(fileMenu);
     mainMenuBar.add(viewMenu);
 
-
+    boolean mac = false;
 
     if (System.getProperty("mrj.version") != null) {
+      mac = true;
       // the Mac specific code here
 //      System.getProperties().put("apple.laf.useScreenMenuBar", true);
       System.setProperty("com.apple.macos.useScreenMenuBar", "true");
 //      System.getProperties().put("com.apple.macos.useScreenMenuBar", true);
 
-      Application application = Application.getApplication();
-      application.setEnabledPreferencesMenu(true);
+//      Application application = Application.getApplication();
+//      application.setEnabledPreferencesMenu(true);
 //      application.setDockIconBadge("Hi");
-      application.setDockIconImage(ImageResource.icon.envelope_256.getImage());
-      application.addApplicationListener(
+      try {
+        Class appClass = Class.forName("com.apple.eawt.Application");
+        Object application =
+            appClass.getMethod("getApplication", appClass).invoke(null);
+
+        Object.class
+            .getMethod("setEnabledPreferencesMenu",
+                       Application.class, boolean.class)
+            .invoke(application, true);
+        
+        Method m = Object.class.getMethod("setDockIconImage",
+                                          Application.class, Image.class);
+        m.invoke(application, ImageResource.icon.envelope_256.getImage());
+
+//        Class.forName("com.apple.eawt.ApplicationListener").
+
+      ((Application)application).addApplicationListener(
           new com.apple.eawt.ApplicationAdapter() {
 
             public void handleAbout(ApplicationEvent e) {
@@ -165,10 +183,21 @@ public class MainFrame extends JFrame {
               exit(0);
             }
           });
-    } else {
+
+      } catch (NoSuchMethodException e) {
+        mac = false;
+      } catch (InvocationTargetException e) {
+        mac = false;
+      } catch (IllegalAccessException e) {
+        mac = false;
+      } catch (ClassNotFoundException e) {
+        mac = false;
+      }
+    }
+    if (!mac) {
       fileMenu.add(new JMenuItem(new prefsActionClass(
           Strings.get("preferences"), KeyStroke.getKeyStroke(
-          KeyEvent.VK_S, shortcutKeyMask)
+              KeyEvent.VK_S, shortcutKeyMask)
       )));
       fileMenu.add(new JSeparator());
 
@@ -281,12 +310,12 @@ public class MainFrame extends JFrame {
 
   public void doViewTransaction() {
     if (viewTransaction.isSelected()) {
-      
+
       if (savedTransactionFormSplitterLocation == 0)
         tableContentSplitPane.setDividerLocation(0.4);
       else
-      tableContentSplitPane
-          .setDividerLocation(savedTransactionFormSplitterLocation);
+        tableContentSplitPane
+            .setDividerLocation(savedTransactionFormSplitterLocation);
 
       tableContentSplitPane.setDividerSize((Integer)UIManager.get(
           "SplitPane.dividerSize"));
