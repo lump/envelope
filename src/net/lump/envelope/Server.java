@@ -8,7 +8,7 @@ import us.lump.envelope.server.http.ClassServer;
 import us.lump.envelope.server.log.Logging;
 import us.lump.envelope.server.rmi.Controlled;
 import us.lump.envelope.server.rmi.Controller;
-import us.lump.lib.util.Span;
+import us.lump.lib.util.Interval;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -29,7 +29,7 @@ import java.util.prefs.Preferences;
  * Server Main Code.
  *
  * @author Troy Bowman
- * @version $Id: Server.java,v 1.12 2008/10/23 04:29:17 troy Exp $
+ * @version $Id: Server.java,v 1.13 2008/12/08 17:51:24 troy Exp $
  */
 
 public class Server {
@@ -232,6 +232,6 @@ public class Server {
   }
 
   public static String uptime() {
-    return Span.interval(START_TIME, System.currentTimeMillis());
+    return Interval.span(START_TIME, System.currentTimeMillis());
   }
 }

@@ -7,7 +7,7 @@ import us.lump.envelope.exception.EnvelopeException;
 import us.lump.envelope.exception.SessionException;
 import us.lump.envelope.server.dao.DAO;
 import us.lump.envelope.server.dao.Security;
-import us.lump.lib.util.Span;
+import us.lump.lib.util.Interval;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
@@ -19,7 +19,7 @@ import java.util.ArrayList;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controlled.java,v 1.15 2008/09/18 05:50:07 troy Exp $
+ * @version $Id: Controlled.java,v 1.16 2008/12/08 17:51:24 troy Exp $
  */
 public class Controlled extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -170,8 +170,7 @@ public class Controlled extends UnicastRemoteObject implements Controller {
            ? command.getCredentials().getUsername()
            : "no-session")
           + SPACE + command.getName().name() + SPACE
-          + ((System.currentTimeMillis() - start)
-             / (double)Span.SECOND.millis) + "s");
+          + Interval.span(start, System.currentTimeMillis()));
     }
   }
 }

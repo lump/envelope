@@ -256,7 +256,7 @@ public class HttpRequestHandler implements RequestHandler {
               os.flush();
 //              logger.info("flush to network in "
 //                          + ((System.currentTimeMillis() - netTransferStart)
-//                             / (double)Span.SECOND.millis) + "s");
+//                             / (double)Interval.SECOND.millis) + "s");
 
             }
             catch (EOFException e) {
