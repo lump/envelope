@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.16 2008/08/27 03:27:51 troy Exp $
+# $Id: migrate.pl,v 1.17 2009/01/01 18:27:19 troy Test $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -180,7 +180,7 @@ my $last = {};
 my $last_id = undef;
 print "Inserting transactions(X) and allocations(a) tag(t) (skipping beginning balance(-))";
 while (my $row = $sth->fetchrow_hashref()) {
-  if ($row->{date} =~ /^200[45678]-01-01$/ and $row->{subcategory} eq "Beginning Balance") {
+  if ($row->{date} =~ /^200[456789]-01-01$/ and $row->{subcategory} eq "Beginning Balance") {
     print "-";
     next;
   }
