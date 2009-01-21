@@ -30,7 +30,7 @@ public class AboutBox extends JFrame implements ActionListener {
     image.setIcon(icon);
 
     JLabel[] jlabels = new JLabel[]{
-        new JLabel(Strings.get("envelope_budget")),
+        new JLabel(Strings.get("envelope.budget")),
         new JLabel(Revision.nameOrState()),
         new JLabel(Strings.get("copyright")),
         new JLabel(),

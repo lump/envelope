@@ -12,7 +12,7 @@ import java.util.StringTokenizer;
  * The class that starts the client by bootstrapping from RMI.
  *
  * @author Troy Bowman
- * @version $Id: Envelope.java,v 1.11 2008/09/13 19:20:24 troy Exp $
+ * @version $Id: Envelope.java,v 1.12 2009/01/21 06:52:29 troy Test $
  */
 
 public class Envelope {

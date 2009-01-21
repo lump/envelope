@@ -2,6 +2,7 @@ package us.lump.envelope.client;
 
 import com.incors.plaf.alloy.themes.bedouin.BedouinTheme;
 import us.lump.envelope.client.ui.MainFrame;
+import us.lump.envelope.client.ui.defs.Strings;
 
 import javax.swing.*;
 
@@ -9,7 +10,7 @@ import javax.swing.*;
  * Main class.
  *
  * @author troy
- * @version $Id: Main.java,v 1.13 2008/11/14 07:48:49 troy Exp $
+ * @version $Id: Main.java,v 1.14 2009/01/21 06:52:29 troy Exp $
  */
 public class Main implements Runnable {
   private static Main singleton;
@@ -22,6 +23,11 @@ public class Main implements Runnable {
   }
 
   private Main() {
+
+    System.setProperty("com.apple.mrj.application.apple.menu.about.name",
+                       Strings.get("envelope.budget"));
+
+//    if (System.getProperty("mrj.version") != null) return;
     try {
       // try nimbus first, since it's the coolest
       UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
