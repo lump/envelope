@@ -15,7 +15,7 @@ public class AppleStuff {
 
 
   AppleStuff() {
-    System.setProperty("com.apple.macos.useScreenMenuBar", "true");
+
     application = Application.getApplication();
     application.setEnabledPreferencesMenu(true);
     application.setDockIconBadge("Hi");

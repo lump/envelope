@@ -10,7 +10,7 @@ import javax.swing.*;
  * Main class.
  *
  * @author troy
- * @version $Id: Main.java,v 1.14 2009/01/21 06:52:29 troy Exp $
+ * @version $Id: Main.java,v 1.15 2009/01/21 07:26:44 troy Exp $
  */
 public class Main implements Runnable {
   private static Main singleton;
@@ -24,10 +24,16 @@ public class Main implements Runnable {
 
   private Main() {
 
-    System.setProperty("com.apple.mrj.application.apple.menu.about.name",
-                       Strings.get("envelope.budget"));
+    if (System.getProperty("mrj.version") != null) {
+      System.setProperty("com.apple.macos.useScreenMenuBar", "true");
+      System.setProperty("apple.laf.useScreenMenuBar", "true");
+      System.setProperty("com.apple.mrj.application.apple.menu.about.name",
+                         Strings.get("envelope.budget"));
+      // don't fuss with LAF
+      return;
+    }
 
-//    if (System.getProperty("mrj.version") != null) return;
+
     try {
       // try nimbus first, since it's the coolest
       UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");

@@ -23,7 +23,7 @@ import java.beans.PropertyChangeListener;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.35 2009/01/21 06:52:29 troy Exp $
+ * @version $Id: MainFrame.java,v 1.36 2009/01/21 07:26:44 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
