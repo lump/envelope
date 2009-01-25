@@ -10,7 +10,7 @@ import javax.swing.*;
  * Main class.
  *
  * @author troy
- * @version $Id: Main.java,v 1.15 2009/01/21 07:26:44 troy Exp $
+ * @version $Id: Main.java,v 1.16 2009/01/25 23:00:15 troy Exp $
  */
 public class Main implements Runnable {
   private static Main singleton;

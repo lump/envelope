@@ -3,19 +3,27 @@ package us.lump.envelope.server;
 /**
  * Bitwise flags for transfer options.
  *
- * @version $Id: XferFlags.java,v 1.4 2008/11/12 18:15:17 troy Exp $
+ * @version $Id: XferFlags.java,v 1.5 2009/01/25 23:00:15 troy Alpha $
  */
 public class XferFlags {
 
   public enum Flag {
-    F_NONE,
-    F_ENCRYPT,
-    F_COMPRESS,
-    F_OBJECT,
-    F_LIST,
-    F_LISTS,
-//    F_RESERVED1,
-//    F_RESERVED2,
+    /** No flag */
+    NONE,
+    /** Encrypt flag */
+    CRYP,
+    /** Compress flag */
+    GZIP,
+    /** One object flag */
+    OBJ,
+    /** List of objects flag */
+    LIST,
+    /** Lists of objects flag */
+    LISTS,
+    /** Reserved */
+    F_RESV1,
+    /** Reserved */
+    F_RESV2,
     ;
 
     private byte flag = 0;
@@ -27,7 +35,7 @@ public class XferFlags {
     public byte bit() { return flag; }
   }
 
-  private byte flags = Flag.F_NONE.bit();
+  private byte flags = Flag.NONE.bit();
 
   /**
    * Creates a new XferFlags from the list of flags provided.
@@ -154,7 +162,7 @@ public class XferFlags {
    * @return String
    */
   public String toString() {
-    if (this.flags == 0) return Flag.F_NONE.toString();
+    if (this.flags == 0) return Flag.NONE.toString();
     String out = "";
     for (Flag f : Flag.values()) {
       if (f.bit() == 0) continue;

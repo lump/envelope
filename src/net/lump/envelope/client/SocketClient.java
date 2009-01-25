@@ -31,7 +31,7 @@ import java.util.zip.GZIPInputStream;
  * through said connections..
  *
  * @author Troy Bowman
- * @version $Id: SocketClient.java,v 1.11 2008/11/07 23:31:06 troy Exp $
+ * @version $Id: SocketClient.java,v 1.12 2009/01/25 23:00:15 troy Exp $
  */
 
 public class SocketClient implements Controller {
@@ -136,13 +136,13 @@ public class SocketClient implements Controller {
       // depending on list size, set flags and prepare object stream
       if (commands.size() == 1) {
         ObjectOutputStream oos = new ObjectOutputStream(baos);
-        outFlags.add(F_OBJECT);
+        outFlags.add(OBJ);
         oos.writeObject(commands.get(0));
         oos.close();
       }
       else {
         ObjectOutputStream oos = new ObjectOutputStream(baos);
-        outFlags.add(F_LIST);
+        outFlags.add(LIST);
         oos.writeObject(new Integer(commands.size()));
         for (Command c : commands) {
           // if the command contains any unEncryptables, puke
@@ -159,7 +159,7 @@ public class SocketClient implements Controller {
 
       // if we're compressing, compress the command(s) object stream
       if (serverSettings.getCompress()) {
-        outFlags.add(F_COMPRESS);
+        outFlags.add(GZIP);
         baos = Compression.compress(baos);
       }
 
@@ -170,7 +170,7 @@ public class SocketClient implements Controller {
       if (serverSettings.getEncrypt() && (Command.Name.unEncryptables().and(
           commands.get(0).getName().bit()).compareTo(BigInteger.ZERO) == 0)) {
         // turn on encrypted flag
-        outFlags.add(F_ENCRYPT);
+        outFlags.add(CRYP);
         // generate a new session key
         sessionKey = Encryption.generateSymKey();
         // encode the key with server's public key for transfer and base64 it.
@@ -185,7 +185,7 @@ public class SocketClient implements Controller {
 
       // write the (possibly mangled) command
       // if we're encrypted...
-      if (outFlags.has(F_ENCRYPT) && sessionKey != null && encodedKey != null) {
+      if (outFlags.has(CRYP) && sessionKey != null && encodedKey != null) {
         ObjectOutputStream oos = new ObjectOutputStream(os);
         // first write our generated key
         oos.writeObject(encodedKey);
@@ -210,21 +210,21 @@ public class SocketClient implements Controller {
       InputStream i = b;
 
       // if we're encrypted, wrap the InputStream in a CipherInputStream
-      if (inFlag.has(F_ENCRYPT)) i = Encryption.decodeSym(sessionKey, i);
+      if (inFlag.has(CRYP)) i = Encryption.decodeSym(sessionKey, i);
 
       // if we're compressed, wrap the InputStream ina GZIPInputstream
-      if (inFlag.has(F_COMPRESS)) i = new GZIPInputStream(i);
+      if (inFlag.has(GZIP)) i = new GZIPInputStream(i);
 
       // finally, create an objectInputStream of the possibly compressed
       // and possibly encrypted stream.
       final ObjectInputStream ois = new ObjectInputStream(i);
 
       // if object retunred is there, read an object first
-      if (inFlag.has(F_OBJECT)) retval = (Serializable)ois.readObject();
+      if (inFlag.has(OBJ)) retval = (Serializable)ois.readObject();
 
       // if list_returned is there, read a list, possibly after already having
       // read an object...
-      if (inFlag.hasAny(F_LIST, F_LISTS)) {
+      if (inFlag.hasAny(LIST, LISTS)) {
         final Integer size = (Integer)ois.readObject();
         final BackgroundList<Serializable> bl
             = new BackgroundList<Serializable>(size);
@@ -234,7 +234,7 @@ public class SocketClient implements Controller {
               public synchronized void run() {
                 try {
                   for (int x = 0; x < size; x++) {
-                    if (inFlag.has(F_LISTS)) {
+                    if (inFlag.has(LISTS)) {
                       Integer subSize = (Integer)ois.readObject();
 
                       // if size is -1397705797, that's code for the size being

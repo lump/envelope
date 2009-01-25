@@ -119,7 +119,7 @@ public class HttpRequestHandler implements RequestHandler {
               InputStream optionIs = is;
 
               SecretKey sessionKey = null;
-              if (inFlags.has(F_ENCRYPT)) {
+              if (inFlags.has(CRYP)) {
                 Security security = new Security();
                 // read the session key, ecnrypted for me.
                 ObjectInputStream ois = new ObjectInputStream(is);
@@ -132,11 +132,11 @@ public class HttpRequestHandler implements RequestHandler {
                 optionIs = new ByteArrayInputStream(
                     Encryption.decodeSym(sessionKey,
                                          (String)(ois).readObject()));
-                outFlags.add(F_ENCRYPT);
+                outFlags.add(CRYP);
               }
-              if (inFlags.has(F_COMPRESS)) {
+              if (inFlags.has(GZIP)) {
                 optionIs = new GZIPInputStream(optionIs);
-                outFlags.add(F_COMPRESS);
+                outFlags.add(GZIP);
               }
 
               Controlled c = new Controlled(null);
@@ -144,15 +144,15 @@ public class HttpRequestHandler implements RequestHandler {
               Object retval = null;
 
               // execute commands and catalog their listiness
-              if (inFlags.has(F_OBJECT)) {
+              if (inFlags.has(OBJ)) {
                 Command command = (Command)ois.readObject();
                 is.mark(MAX_READ);
                 retval = c.invoke(command);
                 logger.info("request [" + inFlags + "] " + command.getName());
                 logger.debug(command);
-                if (retval instanceof List) outFlags.add(F_LIST);
-                else outFlags.add(F_OBJECT);
-              } else if (inFlags.has(F_LIST)) {
+                if (retval instanceof List) outFlags.add(LIST);
+                else outFlags.add(OBJ);
+              } else if (inFlags.has(LIST)) {
                 Integer size = (Integer)ois.readObject();
                 is.mark(MAX_READ);
                 ArrayList<Object> list = new ArrayList<Object>(size);
@@ -175,8 +175,8 @@ public class HttpRequestHandler implements RequestHandler {
                       + command.getName());
                 }
                 retval = list;
-                if (listOfLists) outFlags.add(F_LISTS);
-                else outFlags.add(F_LIST);
+                if (listOfLists) outFlags.add(LISTS);
+                else outFlags.add(LIST);
               }
 
               // create a oos from a baos to hold our stream of objects
@@ -184,7 +184,7 @@ public class HttpRequestHandler implements RequestHandler {
               ByteArrayOutputStream baos = new ByteArrayOutputStream();
               ObjectOutputStream oos = new ObjectOutputStream(baos);
               // just one object
-              if (outFlags.has(F_OBJECT)) {
+              if (outFlags.has(OBJ)) {
                 oos.writeObject(retval);
                 oos.flush();
                 logger.info("object response [" + outFlags + "] "
@@ -192,7 +192,7 @@ public class HttpRequestHandler implements RequestHandler {
               }
 
               // list which is one level deep
-              if (outFlags.has(F_LIST)) {
+              if (outFlags.has(LIST)) {
                 oos.writeObject(new Integer(((List)retval).size()));
                 oos.flush();
                 logger.info("list response [" + outFlags + "] "
@@ -205,7 +205,7 @@ public class HttpRequestHandler implements RequestHandler {
               }
 
               // list which is possibly two levels deep
-              if (outFlags.has(F_LISTS)) {
+              if (outFlags.has(LISTS)) {
                 oos.writeObject(new Integer(((List)retval).size()));
                 logger.info("lists response [" + outFlags + "] "
                             + ((List)retval).size() + "r");
@@ -234,14 +234,14 @@ public class HttpRequestHandler implements RequestHandler {
               oos.close();
 
               // if we're asked to compress the output stream...
-              if (outFlags.has(F_COMPRESS)) baos = Compression.compress(baos);
+              if (outFlags.has(GZIP)) baos = Compression.compress(baos);
 
               long netTransferStart = System.currentTimeMillis();
               OutputStream os = socket.getOutputStream();
               os.write(outFlags.getByte());
 
               // if we're asked to encrypt the output stream...
-              if (outFlags.has(F_ENCRYPT)) {
+              if (outFlags.has(CRYP)) {
                 CipherOutputStream cos = Encryption.encodeSym(sessionKey, os);
                 baos.writeTo(cos);
 
