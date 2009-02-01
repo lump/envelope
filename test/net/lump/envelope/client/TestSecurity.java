@@ -17,7 +17,7 @@ public class TestSecurity extends TestCase {
   public void testLogin() throws Exception {
     SecurityPortal sp = new SecurityPortal();
     Boolean authed = sp.auth(
-        TestSuite.loginSettings.challengeResponse(sp.getChallenge()));
+        TestSuite.LOGINSETTINGS.challengeResponse(sp.getChallenge()));
 
     assertTrue("User does not auth", authed);
 

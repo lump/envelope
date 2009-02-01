@@ -8,6 +8,7 @@ import us.lump.envelope.client.TestSecurity;
 import us.lump.envelope.client.portal.SecurityPortal;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
+import us.lump.envelope.exception.AbortException;
 import us.lump.envelope.server.PrefsConfigurator;
 import us.lump.envelope.server.rmi.Controller;
 import us.lump.lib.TestMoney;
@@ -30,19 +31,17 @@ import java.util.Properties;
  * A JUnit class which runs all tests.
  *
  * @author Troy Bowman
- * @version $Id: TestSuite.java,v 1.9 2008/07/06 04:14:24 troy Exp $
+ * @version $Id: TestSuite.java,v 1.10 2009/02/01 02:33:42 troy Test $
  */
 public class TestSuite extends TestCase {
-  public static int DEFAULT_SERVER_HTTP_PORT = 7041;
-  public static final String HOST_NAME_PROPERTY = "server";
-  public static final String RMI_PORT_PROPERTY = "server.rmi.port";
-  public static final String HTTP_PORT_PROPERTY = "server.http.port";
-  public static String SERVER_HOST_NAME = "localhost"
-                                          +DEFAULT_SERVER_HTTP_PORT;
+  public static int DEFAULT_SERVER_PORT = 7041;
+  public static final String HOST_PROPERTY = "server";
+    public static final String PORT_PROPERTY = "server.port";
+  public static String SERVER_HOST = "localhost" + DEFAULT_SERVER_PORT;
 
   public static final String USER = "bowmantest";
   public static final String PASSWORD = "guest";
-  public static final LoginSettings loginSettings = LoginSettings.getInstance();
+  public static final LoginSettings LOGINSETTINGS = LoginSettings.getInstance();
   private static Boolean authed = null;
 
   static {
@@ -53,23 +52,18 @@ public class TestSuite extends TestCase {
     try {
       ServerSettings ss = ServerSettings.getInstance();
 
-      if (system.containsKey(HOST_NAME_PROPERTY)) {
-        ss.setHostName(system.getProperty(HOST_NAME_PROPERTY));
-        ss.setClassPort(system.containsKey(HTTP_PORT_PROPERTY)
-                        ? system.getProperty(HTTP_PORT_PROPERTY)
-                        : String.valueOf(DEFAULT_SERVER_HTTP_PORT));
-        ss.setRmiPort();
+      if (system.containsKey(HOST_PROPERTY)) {
+        ss.setHostName(system.getProperty(HOST_PROPERTY));
+        ss.setPort(system.containsKey(PORT_PROPERTY)
+                        ? system.getProperty(PORT_PROPERTY)
+                        : String.valueOf(DEFAULT_SERVER_PORT));
       } else {
         Properties serverConfig = PrefsConfigurator.configure(Server.class);
-        ss.setHostName(localHost() +":" + DEFAULT_SERVER_HTTP_PORT);
-        ss.setRmiPort();
+        ss.setHostName(localHost() +":" + DEFAULT_SERVER_PORT);
       }
 
-      system.put("java.rmi.server.codebase", ss.getCodeBase());
-      system.put("java.rmi.server.rminode", ss.rmiNode());
-
-      loginSettings.setUsername(USER);
-      loginSettings.setPassword(PASSWORD);
+      LOGINSETTINGS.setUsername(USER);
+      LOGINSETTINGS.setPassword(PASSWORD);
 
       assertTrue("not authed", authed());
 
@@ -86,10 +80,10 @@ public class TestSuite extends TestCase {
       IOException,
       IllegalBlockSizeException,
       InvalidKeyException,
-      NoSuchPaddingException {
+      NoSuchPaddingException, AbortException {
     if (authed == null) {
       SecurityPortal sp = new SecurityPortal();
-      authed = sp.auth(loginSettings.challengeResponse(sp.getChallenge()));
+      authed = sp.auth(LOGINSETTINGS.challengeResponse(sp.getChallenge()));
     }
     return authed;
   }

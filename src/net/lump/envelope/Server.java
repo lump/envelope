@@ -4,21 +4,14 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import us.lump.envelope.server.PrefsConfigurator;
 import us.lump.envelope.server.dao.DAO;
-import us.lump.envelope.server.http.ClassServer;
+import us.lump.envelope.server.http.SocketServer;
 import us.lump.envelope.server.log.Logging;
-import us.lump.envelope.server.rmi.Controlled;
-import us.lump.envelope.server.rmi.Controller;
 import us.lump.lib.util.Interval;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RMISecurityManager;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
 import java.text.MessageFormat;
 import java.util.Properties;
 import java.util.Scanner;
@@ -29,7 +22,7 @@ import java.util.prefs.Preferences;
  * Server Main Code.
  *
  * @author Troy Bowman
- * @version $Id: Server.java,v 1.13 2008/12/08 17:51:24 troy Exp $
+ * @version $Id: Server.java,v 1.14 2009/02/01 02:33:42 troy Test $
  */
 
 public class Server {
@@ -38,9 +31,7 @@ public class Server {
   private static String LOCAL_HOST = "localhost";
   private static final long START_TIME = System.currentTimeMillis();
 
-  public static final String PROPERTY_RMI_PORT = "server.rmi.port";
-  public static final String PROPERTY_CLASSLOADER_PORT =
-      "server.http.classloader.port";
+  public static final String SERVER_PORT_PROPERTY = "server.port";
 
   static {
     final java.net.InetAddress localMachine;
@@ -59,36 +50,21 @@ public class Server {
   }
 
   // Constructor
-  private Server()
-      throws RemoteException,
-      MalformedURLException,
-      NotBoundException {
+  private Server() {
 
-    System.getProperties().put(
-        "java.rmi.server.codebase",
-        "http://" + LOCAL_HOST + ":"
-        + serverConfig.getProperty(PROPERTY_RMI_PORT) + "/");
+    // start the socket server
+    try {
+      new SocketServer(Integer.parseInt(
+          serverConfig.getProperty(SERVER_PORT_PROPERTY))).startServer();
+      logger.info(MessageFormat.format(
+          "Server started on port {0}",
+          serverConfig.getProperty(SERVER_PORT_PROPERTY)));
+    }
+    catch (IOException e) {
+      logger.error("Unable to start SocketServer: " + e.getMessage());
+      e.printStackTrace();
+    }
 
-    Controller controller = new Controlled();
-    logger.info("Remote Controller implementation object created");
-
-    LocateRegistry.createRegistry(
-        Integer.parseInt(serverConfig.getProperty(PROPERTY_RMI_PORT)));
-
-    Naming.rebind("//"
-                  + LOCAL_HOST
-                  + ":"
-                  + serverConfig.getProperty(PROPERTY_RMI_PORT)
-                  + "/Controller", controller);
-
-
-    logger.info(MessageFormat.format(
-        "Registry created on host computer {0} on port {1}",
-        LOCAL_HOST,
-        serverConfig.getProperty(PROPERTY_RMI_PORT))
-    );
-
-    logger.info("Bindings Finished, waiting for client requests.");
   }
 
   /**
@@ -143,14 +119,14 @@ public class Server {
         .get("log4j.rootLogger", null);
     if (null != rootlogger) {
       if (fg && !rootlogger.matches("^.*?console.*$"))
-        Preferences.userNodeForPackage(Logging.class).put("log4j.rootLogger",
-                                                          rootlogger
-                                                          + ", console");
+        Preferences
+            .userNodeForPackage(Logging.class)
+            .put("log4j.rootLogger", rootlogger + ", console");
       else if (!fg && rootlogger.matches("^.*?console.*$"))
-        Preferences.userNodeForPackage(Logging.class).put("log4j.rootLogger",
-                                                          rootlogger.replaceAll(
-                                                              "^(.*?),?\\s+console(.*)$",
-                                                              "$1$2"));
+        Preferences
+            .userNodeForPackage(Logging.class)
+            .put("log4j.rootLogger",
+                 rootlogger.replaceAll("^(.*?),?\\s+console(.*)$","$1$2"));
     }
 
     // initialize the server config
@@ -171,63 +147,30 @@ public class Server {
     // initialize hibernate
     DAO.initialize();
 
-    // start the HTTP class server
-    try {
-      new ClassServer(Integer.parseInt(serverConfig.getProperty(
-          PROPERTY_CLASSLOADER_PORT))).startServer();
-      logger.info(MessageFormat.format(
-          "ClassServer started on port {0}",
-          serverConfig.getProperty(PROPERTY_CLASSLOADER_PORT)));
-    }
-    catch (IOException e) {
-      logger.error("Unable to start ClassServer: " + e.getMessage());
-      e.printStackTrace();
-    }
+    // server
+    new Server();
 
-    // start the RMI server
-    try {
-      new Server();
-
-      // if we're in the foreground, listen for commands on the console
-      if (fg) {
-        Scanner s = new Scanner(System.in);
+    // if we're in the foreground, listen for commands on the console
+    if (fg) {
+      Scanner s = new Scanner(System.in);
 // Java 6 console
 //        Console console = System.console();
 //        if (console != null)
-        while (true) {
-          String line = s.nextLine();
+      while (true) {
+        String line = s.nextLine();
 //            String line = console.readLine();
-          // quit command
-          if (line == null || line.matches("^(?:q(?:uit)?|exit)$")) {
-            System.err.println("Exiting...");
-            System.exit(0);
-          } else {
-            // default will print uptime
-            System.out
-                .println(MessageFormat.format(
-                    "uptime: {0} since: {1,date,full} {1,time,full}",
-                    uptime(), START_TIME));
-          }
+        // quit command
+        if (line == null || line.matches("^(?:q(?:uit)?|exit)$")) {
+          System.err.println("Exiting...");
+          System.exit(0);
+        } else {
+          // default will print uptime
+          System.out
+              .println(MessageFormat.format(
+                  "uptime: {0} since: {1,date,full} {1,time,full}",
+                  uptime(), START_TIME));
         }
       }
-    }
-    catch (java.rmi.UnknownHostException uhe) {
-      logger.error(
-          MessageFormat.format(
-              "The host computer name you have specified, {0} does not match your real computer name.",
-              LOCAL_HOST)
-      );
-    }
-    catch (RemoteException re) {
-      logger.error("Error starting service");
-      System.out.println("" + re);
-    }
-    catch (MalformedURLException mURLe) {
-      logger.error("Internal error" + mURLe);
-    }
-    catch (NotBoundException nbe) {
-      logger.error("Not Bound");
-      System.out.println("" + nbe);
     }
   }
 

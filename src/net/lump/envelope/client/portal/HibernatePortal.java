@@ -3,7 +3,7 @@ package us.lump.envelope.client.portal;
 import org.hibernate.criterion.DetachedCriteria;
 import us.lump.envelope.Command;
 import us.lump.envelope.entity.Identifiable;
-import us.lump.envelope.exception.EnvelopeException;
+import us.lump.envelope.exception.AbortException;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.List;
 public class HibernatePortal extends Portal {
 
   public List detachedCriteriaQuery(DetachedCriteria... dcs)
-      throws EnvelopeException {
+      throws AbortException {
 
     if (dcs.length == 0)
       throw new IllegalArgumentException("need one or more arguments");
@@ -29,7 +29,7 @@ public class HibernatePortal extends Portal {
   }
 
   public <T extends Identifiable> T get(Class<T> cless, Serializable id)
-      throws EnvelopeException {
+      throws AbortException {
     return (T)invoke(new Command(Command.Name.get, cless, id));
   }
 

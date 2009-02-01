@@ -6,14 +6,19 @@ import us.lump.envelope.Server;
 import us.lump.envelope.server.XferFlags;
 import static us.lump.envelope.server.XferFlags.Flag.*;
 import us.lump.envelope.server.dao.Security;
+import us.lump.envelope.server.http.jnlp.Jnlp;
 import us.lump.envelope.server.rmi.Controlled;
-import us.lump.lib.util.*;
+import us.lump.lib.util.Base64;
+import us.lump.lib.util.CipherOutputStream;
+import us.lump.lib.util.Compression;
+import us.lump.lib.util.Encryption;
 
 import javax.crypto.SecretKey;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.rmi.RemoteException;
 import java.security.AccessControlException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -26,10 +31,9 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * Created by IntelliJ IDEA. User: troy Date: Jul 13, 2008 Time: 3:19:44 PM To
- * change this template use File | Settings | File Templates.
+ * Handle incoming sockets.
  */
-public class HttpRequestHandler implements RequestHandler {
+public class SocketRequestHandler implements RequestHandler {
 
   private static final int MAX_READ = 5242880;
 
@@ -42,7 +46,7 @@ public class HttpRequestHandler implements RequestHandler {
       "us/lump/envelope/Server.class"
   };
 
-  private static final Logger logger = Logger.getLogger(ClassServer.class);
+  private static final Logger logger = Logger.getLogger(SocketServer.class);
 
 
   public String readTo(BufferedInputStream bis, String search)
@@ -103,14 +107,15 @@ public class HttpRequestHandler implements RequestHandler {
         }
 
         if (httpcommand.equals("COMMAND") && path.equals("invoke")) {
-          String magic =
-              new String(new byte[]{(byte)0xac, (byte)0xed, 0x00, 0x05});
+//          String magic =
+//              new String(new byte[]{(byte)0xac, (byte)0xed, 0x00, 0x05});
 
           boolean loop = true;
           while (loop) {
 
             try {
               header = readTo(is, "JOTP/1.0\r\n\r\n");// + magic);
+              //noinspection ResultOfMethodCallIgnored
               is.skip(header.length());// - magic.length());
               XferFlags outFlags = new XferFlags();
               XferFlags inFlags = new XferFlags((byte)is.read());
@@ -143,6 +148,7 @@ public class HttpRequestHandler implements RequestHandler {
               ObjectInputStream ois = new ObjectInputStream(optionIs);
               Object retval = null;
 
+              try {
               // execute commands and catalog their listiness
               if (inFlags.has(OBJ)) {
                 Command command = (Command)ois.readObject();
@@ -177,6 +183,12 @@ public class HttpRequestHandler implements RequestHandler {
                 retval = list;
                 if (listOfLists) outFlags.add(LISTS);
                 else outFlags.add(LIST);
+              }
+              } catch (RemoteException re) {
+                outFlags = new XferFlags(inFlags.getByte());
+                outFlags.remove(XferFlags.Flag.LIST, XferFlags.Flag.LISTS);
+                outFlags.add(XferFlags.Flag.OBJ);
+                retval = re;
               }
 
               // create a oos from a baos to hold our stream of objects
@@ -236,7 +248,6 @@ public class HttpRequestHandler implements RequestHandler {
               // if we're asked to compress the output stream...
               if (outFlags.has(GZIP)) baos = Compression.compress(baos);
 
-              long netTransferStart = System.currentTimeMillis();
               OutputStream os = socket.getOutputStream();
               os.write(outFlags.getByte());
 
@@ -254,10 +265,6 @@ public class HttpRequestHandler implements RequestHandler {
                 baos.writeTo(os);
               }
               os.flush();
-//              logger.info("flush to network in "
-//                          + ((System.currentTimeMillis() - netTransferStart)
-//                             / (double)Interval.SECOND.millis) + "s");
-
             }
             catch (EOFException e) {
               loop = false;
@@ -265,9 +272,6 @@ public class HttpRequestHandler implements RequestHandler {
             catch (SocketException e) {
               loop = false;
             }
-//            catch (IOException e) {
-//              loop = false;
-//            }
             catch (Exception e) {
               socket.getOutputStream().write(0);
               ObjectOutputStream oos =
@@ -284,36 +288,9 @@ public class HttpRequestHandler implements RequestHandler {
             new DataOutputStream(socket.getOutputStream());
 
         if (path == null || path.equals("") || path.equals("envelope.jnlp")) {
-          byte[] bjnlp =
-              slurpInputSteam(this.getClass().getResourceAsStream("jnlp.xml"));
-          String jnlp = new String(bjnlp);
-          jnlp = jnlp.replaceAll("\\{host\\}",
-                                 socket.getLocalAddress().getCanonicalHostName());
-          jnlp = jnlp.replaceAll("\\{port\\}",
-                                 String.valueOf(socket.getLocalPort()));
-          jnlp = jnlp.replaceAll("\\{title\\}", "Envelope");
-          jnlp = jnlp.replaceAll("\\{revision\\}", Revision.nameOrState());
-          jnlp = jnlp.replaceAll("\\{vendor\\}", "Lump Software");
-          jnlp = jnlp.replaceAll("\\{description\\}", "An Envelope Budget");
-          jnlp = jnlp.replaceAll("\\{icon\\}", "lib/envelope_32.png");
-          jnlp = jnlp.replaceAll("\\{main-class\\}", "Envelope");
+          String jnlp = new Jnlp(socket.getLocalAddress().getCanonicalHostName(),
+                               socket.getLocalPort()).toString();
 
-//          for (String file : new String[]{"slim-client.jar.pack.gz",
-//                                          "slim-client.jar",
-//                                          "client.jar.pack.gz",
-//                                          "client.jar"}) {
-//            if (ClassLoader.getSystemResource("lib/"+file) != null) {
-//              jnlp =
-//                  jnlp.replaceAll("\\{jars\\}",
-//                                  "<jar href=\"lib/"+file+"\">\n");
-//              break;
-//            }
-//          }
-//
-          jnlp =
-              jnlp.replaceAll("\\{jars\\}",
-                              "<jar href=\"lib/client.jar.pack.gz\">\n"
-              );
           out.writeBytes("HTTP/1.0 200 OK\r\n");
           out.writeBytes("Content-Type: application/x-java-jnlp-file\r\n");
           out.writeBytes("Content-Disposition: name=envelope.jnlp\r\n");
@@ -325,6 +302,7 @@ public class HttpRequestHandler implements RequestHandler {
         }
 
         is.reset();
+        //noinspection ResultOfMethodCallIgnored
         is.skip(line.length());
         BufferedReader in = new BufferedReader(
             new InputStreamReader(is));
@@ -356,10 +334,8 @@ public class HttpRequestHandler implements RequestHandler {
             Pattern.compile("^(info/.*|log4j.properties|)$").matcher(path);
         if (infoMatcher.matches() && infoMatcher.group(1) != null) {
           String query = infoMatcher.group(1);
-          String returnValue = "";
+          String returnValue;
           if (query.matches("^info/ping$")) returnValue = "pong";
-          else if (query.matches("^info/port/rmi$"))
-            returnValue = Server.getConfig(Server.PROPERTY_RMI_PORT);
           else if (query.matches("^info/uptime$"))
             returnValue = Server.uptime();
           else if (query.matches("^info/security.policy$"))

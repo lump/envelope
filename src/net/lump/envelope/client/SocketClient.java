@@ -31,7 +31,7 @@ import java.util.zip.GZIPInputStream;
  * through said connections..
  *
  * @author Troy Bowman
- * @version $Id: SocketClient.java,v 1.12 2009/01/25 23:00:15 troy Exp $
+ * @version $Id: SocketClient.java,v 1.13 2009/02/01 02:33:42 troy Alpha $
  */
 
 public class SocketClient implements Controller {
@@ -72,6 +72,7 @@ public class SocketClient implements Controller {
           int available = i.available();
           if (available > 0) {
             byte[] buffer = new byte[available];
+            //noinspection ResultOfMethodCallIgnored
             i.read(buffer, 0, available);
           }
         }
@@ -97,7 +98,7 @@ public class SocketClient implements Controller {
   private synchronized void connect() throws IOException {
     Socket socket = new Socket(
         serverSettings.getHostName(),
-        Integer.parseInt(serverSettings.getClassPort()));
+        Integer.parseInt(serverSettings.getPort()));
     socket.setKeepAlive(true);
     socket.setSoLinger(false, 0);
 //    socket.setSoTimeout(10000);
@@ -114,6 +115,7 @@ public class SocketClient implements Controller {
     return invoke(Arrays.asList(command));
   }
 
+  @SuppressWarnings({"ConstantConditions"})
   public synchronized Serializable invoke(List<Command> commands)
       throws RemoteException {
 
@@ -314,8 +316,8 @@ public class SocketClient implements Controller {
     }
 
     s.busy = false;
-    if (retval instanceof Exception) {
-      throw new RemoteException("Remote Exception caught", (Exception)retval);
+    if (retval instanceof RemoteException) {
+      throw((RemoteException)retval);
     }
     else return retval;
   }

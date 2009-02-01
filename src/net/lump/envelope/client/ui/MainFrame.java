@@ -11,6 +11,7 @@ import us.lump.envelope.client.ui.components.forms.TableQueryBar;
 import us.lump.envelope.client.ui.components.forms.TransactionForm;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.images.ImageResource;
+import us.lump.envelope.exception.AbortException;
 import us.lump.lib.util.EmacsKeyBindings;
 
 import javax.swing.*;
@@ -23,7 +24,7 @@ import java.beans.PropertyChangeListener;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.36 2009/01/21 07:26:44 troy Exp $
+ * @version $Id: MainFrame.java,v 1.37 2009/02/01 02:33:42 troy Test $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -159,9 +160,6 @@ public class MainFrame extends JFrame {
     bounds.setSize(getSize());
     setBounds(bounds);
 
-//    System.setProperty("sun.rmi.loader.logLevel", "VERBOSE");
-    System.setProperty("java.rmi.server.useCodebaseOnly", "true");
-
     appPrefs = Preferences.getInstance();
     appPrefs.setTitle(Strings.get("preferences"));
 
@@ -177,7 +175,10 @@ public class MainFrame extends JFrame {
     }
 
 
-    Hierarchy.getInstance().refreshTree(state.getBudget());
+    try {
+      Hierarchy.getInstance().refreshTree(state.getBudget());
+    } catch (AbortException ignore) {}
+
 
     treeScrollPane.setViewportView(Hierarchy.getInstance());
     treeScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);

@@ -13,7 +13,6 @@ import org.hibernate.criterion.Restrictions;
 import org.hibernate.impl.SessionImpl;
 import us.lump.envelope.entity.*;
 import us.lump.envelope.entity.Transaction;
-import us.lump.envelope.exception.DataException;
 import us.lump.envelope.exception.EnvelopeException;
 import us.lump.envelope.server.PrefsConfigurator;
 import us.lump.envelope.server.ThreadInfo;
@@ -27,7 +26,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.22 2008/11/01 00:53:02 troy Exp $
+ * @version $Id: DAO.java,v 1.23 2009/02/01 02:33:42 troy Test $
  */
 public abstract class DAO {
   final Logger logger;
@@ -284,7 +283,7 @@ public abstract class DAO {
     for (T o : os) update(o);
   }
 
-  public User getUser(String username) throws DataException {
+  public User getUser(String username) throws EnvelopeException {
     User user;
 
     // if we've already retrieved the user for this thread, just use that.
@@ -303,7 +302,7 @@ public abstract class DAO {
       List<User> users = list(User.class, Restrictions.eq("name", username));
 
       if (users.isEmpty())
-        throw new DataException(EnvelopeException.Type.Invalid_User,
+        throw new EnvelopeException(EnvelopeException.Name.Invalid_User,
                                 "User " + username + " is invalid.");
       user = users.get(0);
       cache.get(USER).put(new Element(username, user));

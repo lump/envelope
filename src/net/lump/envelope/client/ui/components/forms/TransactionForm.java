@@ -15,6 +15,7 @@ import us.lump.envelope.client.ui.components.models.AllocationFormTableModel;
 import us.lump.envelope.client.ui.components.models.TransactionTableModel;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.entity.Transaction;
+import us.lump.envelope.exception.AbortException;
 import us.lump.lib.Money;
 
 import javax.swing.*;
@@ -33,7 +34,7 @@ import java.util.ResourceBundle;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.11 2009/01/25 23:00:15 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.12 2009/02/01 02:33:42 troy Exp $
  */
 public class TransactionForm {
   private JButton saveButton;
@@ -204,6 +205,7 @@ public class TransactionForm {
 
             SwingUtilities.invokeLater(new Runnable() {
               public void run() {
+                try {
                 if (transaction.getAmount().doubleValue() > 0) {
                   setIncomeView();
                 } else {
@@ -225,12 +227,11 @@ public class TransactionForm {
 
                 tableModel.setAllocations(transaction.getAllocations());
                 System.out.println(transaction);
+              } catch (AbortException ignore) {}
               }
             });
           }
-          catch (Exception e) {
-
-          }
+          catch (AbortException ignore) {}
 
         }
       };
@@ -238,7 +239,7 @@ public class TransactionForm {
     }
   }
 
-  public synchronized void refreshEntities() {
+  public synchronized void refreshEntities() throws AbortException {
     entity.removeAllItems();
     for (String e : State.getInstance().entities()) {
       entity.addItem(e);

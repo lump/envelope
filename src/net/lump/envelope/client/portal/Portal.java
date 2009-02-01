@@ -5,9 +5,8 @@ import us.lump.envelope.client.SocketClient;
 import us.lump.envelope.client.ui.components.forms.Preferences;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
-import us.lump.envelope.client.ui.prefs.ServerSettings;
+import us.lump.envelope.exception.AbortException;
 import us.lump.envelope.exception.EnvelopeException;
-import us.lump.envelope.exception.SessionException;
 import us.lump.envelope.server.rmi.Controller;
 
 import javax.swing.*;
@@ -16,7 +15,6 @@ import java.io.IOException;
 import java.io.InvalidClassException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
-import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.UnmarshalException;
 import java.security.InvalidKeyException;
@@ -30,23 +28,21 @@ import java.util.List;
  * exit/entry to the server along with exception handling.
  *
  * @author Troy Bowman
- * @version $Id: Portal.java,v 1.23 2008/10/22 04:01:30 troy Exp $
+ * @version $Id: Portal.java,v 1.24 2009/02/01 02:33:42 troy Alpha $
  */
 
 abstract class Portal {
   private Controller controller;
   Component frame;
 
-  public Serializable invoke(Command command) throws EnvelopeException {
+  public Serializable invoke(Command command) throws AbortException {
     return invoke(null, command);
   }
-  public Serializable invoke(List<Command> commands)
-      throws EnvelopeException {
+  public Serializable invoke(List<Command> commands) throws AbortException {
     return invoke(null, commands);
   }
 
-  public Serializable invoke(Component frame, Command command)
-      throws EnvelopeException {
+  public Serializable invoke(Component frame, Command command) throws AbortException {
     // sign the command before invoking
     try {
       LoginSettings ls = LoginSettings.getInstance();
@@ -57,8 +53,7 @@ abstract class Portal {
     return rawInvoke(frame, command);
   }
 
-  public Serializable invoke(Component frame, List<Command> commands)
-      throws EnvelopeException {
+  public Serializable invoke(Component frame, List<Command> commands) throws AbortException {
     // sign the command before invoking
     try {
       LoginSettings ls = LoginSettings.getInstance();
@@ -70,18 +65,16 @@ abstract class Portal {
     return rawInvoke(frame, commands);
   }
 
-  public Serializable rawInvoke(Command command)
-      throws EnvelopeException {
+  public Serializable rawInvoke(Command command) throws AbortException {
     return rawInvoke(null, command);
   }
 
-  public Serializable rawInvoke(List<Command> commands)
-      throws EnvelopeException {
+  public Serializable rawInvoke(List<Command> commands) throws AbortException {
     return rawInvoke(null, commands);
   }
 
   // this is the real deal.
-  public Serializable rawInvoke(Component jframe, Command command) {
+  public Serializable rawInvoke(Component jframe, Command command) throws AbortException {
     // set instance variables for use if exceptions happen
     this.frame = jframe;
 
@@ -96,7 +89,7 @@ abstract class Portal {
 
   // this is the real deal.
   public Serializable rawInvoke(Component jframe,
-                                List<Command> commands) {
+                                List<Command> commands) throws AbortException {
     // set instance variables for use if exceptions happen
     this.frame = jframe;
 
@@ -109,15 +102,8 @@ abstract class Portal {
     }
   }
 
-  private Controller getController()
-      throws IOException, NotBoundException {
-    if (controller == null)
-      controller = (Controller)Naming.lookup(
-          ServerSettings.getInstance().rmiController());
-    return controller;
-  }
-
-  private void handleException(Exception incomingException) {
+  private void handleException(Exception incomingException)
+      throws AbortException {
 
     //try to find a nested envelope exception first...
     Throwable cause = incomingException;
@@ -125,21 +111,13 @@ abstract class Portal {
     while (cause != null && !found) {
       if (cause instanceof EnvelopeException) {
         found = true;
-        SessionException e = (SessionException)cause;
-        switch (e.getType()) {
-          case Invalid_Credentials:
-            checkSettings(e);
-            break;
-          case Invalid_Session:
-            fatalError(e);
-            break;
-          case Invalid_User:
-            checkSettings(e);
-            break;
-          default:
-            error(incomingException);
+        EnvelopeException e = (EnvelopeException)cause;
+        if (e.getType() == EnvelopeException.Type.Session) {
+          checkSettings(e);
         }
-        break;
+        else {
+          error(incomingException);
+        }
       }
       if (cause instanceof UnmarshalException
           && cause.getCause() instanceof InvalidClassException
@@ -185,11 +163,11 @@ abstract class Portal {
       }
   }
 
-  private void error(Exception e) {
+  private void error(Exception e) throws AbortException {
     error(e, null);
   }
 
-  private void error(Exception e, String message) {
+  private void error(Exception e, String message) throws AbortException {
     if (message == null)
       message = e.getClass().getSimpleName() + ": " + e.getLocalizedMessage();
     e.printStackTrace();
@@ -198,6 +176,7 @@ abstract class Portal {
         message,
         Strings.get("error"),
         JOptionPane.ERROR_MESSAGE);
+    throw new AbortException((Throwable)e);
   }
 
   private void fatalError(Exception e) {
@@ -216,15 +195,26 @@ abstract class Portal {
     System.exit(1);
   }
 
-  private void checkSettings(Exception e) {
+  private void checkSettings(Exception e) throws AbortException {
     Preferences appPrefs = Preferences.getInstance();
 
-    if (!appPrefs.areServerSettingsOk()) {
-      appPrefs.selectTab(Strings.get("server"));
-      appPrefs.setVisible(true);
-    } else if (!appPrefs.areLoginSettingsOk()) {
+    if (e instanceof EnvelopeException) {
+      appPrefs.setSessionState(
+          Preferences.State.bad,
+          ((EnvelopeException)e).getName().toString().replaceAll("_"," "));
       appPrefs.selectTab(Strings.get("login"));
       appPrefs.setVisible(true);
+      throw new AbortException(e);
+    }
+    else if (!appPrefs.areServerSettingsOk()) {
+      appPrefs.selectTab(Strings.get("server"));
+      appPrefs.setVisible(true);
+      throw new AbortException(e);
+    }
+    else if (!appPrefs.areLoginSettingsOk()) {
+      appPrefs.selectTab(Strings.get("login"));
+      appPrefs.setVisible(true);
+      throw new AbortException(e);
     } else {
       error(e);
     }

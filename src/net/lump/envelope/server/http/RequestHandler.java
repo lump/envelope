@@ -2,8 +2,8 @@ package us.lump.envelope.server.http;
 
 import java.net.Socket;
 
-/** RequestHandler interface */
-public interface RequestHandler<T> {
+/** RequestHandler interface. */
+public interface RequestHandler {
 
   /**
    * Handles the incoming request

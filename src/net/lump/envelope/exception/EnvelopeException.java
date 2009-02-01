@@ -6,21 +6,41 @@ import java.rmi.RemoteException;
  * An exception for the Envelope application.
  *
  * @author Troy Bowman
- * @version $Id: EnvelopeException.java,v 1.2 2008/08/09 03:31:02 troy Exp $
+ * @version $Id: EnvelopeException.java,v 1.3 2009/02/01 02:33:42 troy Test $
  */
-abstract public class EnvelopeException extends RemoteException {
+public class EnvelopeException extends RemoteException {
+
   public enum Type {
-    Undefined,
-    Invalid_Credentials,
-    Invalid_Session,
-    Invalid_User,
-    Invalid_Command
+    Generic,
+    Data,
+    Session,
+    Command,
+    Server,
   }
 
-  private Type type = Type.Undefined;
+  public enum Name {
+    Generic(Type.Generic),
+    Invalid_Credentials(Type.Session),
+    Invalid_Session(Type.Session),
+    Invalid_User(Type.Session),
+    Internal_Server_Error(Type.Server),
+    Invalid_Command(Type.Command);
+
+    private Type type;
+    private Name(Type type) {
+      this.type = type;
+    }
+    public Type getType() { return type; }
+  }
+
+  private Name name = Name.Generic;
 
   public Type getType() {
-    return type;
+    return name.getType();
+  }
+
+  public Name getName() {
+    return name;
   }
 
   public EnvelopeException() {
@@ -32,26 +52,26 @@ abstract public class EnvelopeException extends RemoteException {
   }
 
   public EnvelopeException(String message, Throwable cause) {
-    super(message, cause);
+    this(Name.Generic, message, cause);
   }
 
-  public EnvelopeException(Type type, String message, Throwable cause) {
+  public EnvelopeException(Name name, String message, Throwable cause) {
     super(message, cause);
-    this.type = type;
+    this.name = name;
   }
 
-  public EnvelopeException(Type type, String message) {
+  public EnvelopeException(Name name, String message) {
     super(message);
-    this.type = type;
+    this.name = name;
   }
 
-  public EnvelopeException(Type type, Throwable cause) {
-    super(type.toString(), cause);
-    this.type = type;
+  public EnvelopeException(Name name, Throwable cause) {
+    super(name.toString(), cause);
+    this.name = name;
   }
 
-  public EnvelopeException(Type type) {
-    super(type.toString());
-    this.type = type;
+  public EnvelopeException(Name name) {
+    super(name.toString());
+    this.name = name;
   }
 }

@@ -1,16 +1,10 @@
 package us.lump.envelope.server.http;
 
-/**
- * Created by IntelliJ IDEA. User: troy Date: Jul 13, 2008 Time: 2:00:39 PM To
- * change this template use File | Settings | File Templates.
- */
-
 import org.apache.log4j.Logger;
 
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -25,12 +19,13 @@ public class RequestQueue {
   /** The maximum length that the queue can grow to */
   private int maxQueueLength;
 
-  /** The minimum number of threads in this queue?s associated thread pool */
+  /** The minimum number of threads in this queue's associated thread pool */
+  @SuppressWarnings({"FieldCanBeLocal"})
   private int minThreads;
 
   /**
-   * The maximum number of threads that can be in this queue?s associated thread
-   * pool
+   * The maximum number of threads that can be in this queue's associated thread
+   * pool.
    */
   private int maxThreads;
 
@@ -47,7 +42,17 @@ public class RequestQueue {
 
   private boolean running = true;
 
-  /** Creates a new RequestQueue */
+  /**
+   * Creates a new RequestQueue.
+   *
+   * @param requestHandler The name of the request handler implementation
+   *                       class.
+   * @param maxQueueLength The maximum length that the queue can grow to.
+   * @param minThreads     The maximum number of threads that can be in this
+   *                       queue's associated thread pool.
+   * @param maxThreads     The minimum number of threads in this queue's
+   *                       associated thread pool.
+   */
   public RequestQueue(Class requestHandler,
                       int maxQueueLength,
                       int minThreads,
@@ -68,7 +73,11 @@ public class RequestQueue {
     }
   }
 
-  /** Returns the name of the RequestHandler implementation class */
+  /**
+   * Returns the name of the RequestHandler implementation class .
+   *
+   * @return Class
+   */
   public Class getRequestHandler() {
     return this.requestHandler;
   }
@@ -77,6 +86,7 @@ public class RequestQueue {
    * Adds a new object to the end of the queue
    *
    * @param socket Adds the specified object to the Request Queue
+   * @throws RuntimeException -
    */
   public synchronized void add(Socket socket) throws RuntimeException {
     // Validate that we have room of the object before we add it to the queue
@@ -86,8 +96,8 @@ public class RequestQueue {
     }
 
     // Log some debugging information
-    if (socket instanceof Socket) {
-      InetAddress addr = ((Socket)socket).getInetAddress();
+    if (socket != null) {
+      InetAddress addr = socket.getInetAddress();
       logger.debug("Received a new connection from ("
                    + addr.getHostAddress() + "): " + addr.getHostName());
     }
@@ -97,8 +107,8 @@ public class RequestQueue {
 
     // See if we have an available thread to process the request
     boolean availableThread = false;
-    for (Iterator i = this.threadPool.iterator(); i.hasNext();) {
-      RequestThread rt = (RequestThread)i.next();
+    for (Object thread : this.threadPool) {
+      RequestThread rt = (RequestThread)thread;
       if (!rt.isProcessing()) {
         logger.debug("Found an available thread");
         availableThread = true;
@@ -118,7 +128,7 @@ public class RequestQueue {
         this.threadPool.add(thread);
       } else {
         logger.debug(
-            "Whoops, can?t grow the thread pool, guess you have to wait");
+            "Whoops, can't grow the thread pool, guess you have to wait");
       }
     }
 
@@ -126,7 +136,10 @@ public class RequestQueue {
     notifyAll();
   }
 
-  /** Returns the first object in the queue */
+  /**
+   * Returns the first object in the queue.
+   * @return Socket
+   */
   public synchronized Socket getNext() {
     // Setup waiting on the Request Queue
     while (queue.isEmpty()) {
@@ -137,7 +150,7 @@ public class RequestQueue {
         }
         wait();
       }
-      catch (InterruptedException ie) {}
+      catch (InterruptedException ignore) {}
     }
 
     // Return the item at the head of the queue
@@ -152,8 +165,8 @@ public class RequestQueue {
     this.running = false;
 
     // Tell each thread to kill itself
-    for (Iterator i = this.threadPool.iterator(); i.hasNext();) {
-      RequestThread rt = (RequestThread)i.next();
+    for (Object thread : this.threadPool) {
+      RequestThread rt = (RequestThread)thread;
       rt.killThread();
     }
 

@@ -2,24 +2,29 @@ package us.lump.envelope.server.rmi;
 
 import org.apache.log4j.Logger;
 import us.lump.envelope.Command;
-import us.lump.envelope.exception.DataException;
 import us.lump.envelope.exception.EnvelopeException;
-import us.lump.envelope.exception.SessionException;
+import static us.lump.envelope.exception.EnvelopeException.Name;
+import static us.lump.envelope.exception.EnvelopeException.Name.Invalid_Session;
 import us.lump.envelope.server.dao.DAO;
 import us.lump.envelope.server.dao.Security;
 import us.lump.lib.util.Interval;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 
 /**
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controlled.java,v 1.16 2008/12/08 17:51:24 troy Exp $
+ * @version $Id: Controlled.java,v 1.17 2009/02/01 02:33:42 troy Alpha $
  */
 public class Controlled extends UnicastRemoteObject implements Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -69,17 +74,25 @@ public class Controlled extends UnicastRemoteObject implements Controller {
     try {
       // if a session is required, force check authorization first
       if (command.getName().isSessionRequired()
-          && !(new Security()).validateSession(command))
-        throw new SessionException(SessionException.Type.Invalid_Session);
-    } catch (Exception e) {
-      if (e instanceof DataException &&
-          ((DataException)e).getType() == EnvelopeException.Type.Invalid_User
-          ) {
-        throw new SessionException(SessionException.Type.Invalid_Credentials);
-      } else {
-        logger.warn("error in session validation", e);
-        throw new SessionException(SessionException.Type.Invalid_Session);
+          && !(new Security()).validateSession(command)) {
+        throw new EnvelopeException(Invalid_Session);
       }
+    } catch (IOException e) {
+      if (e instanceof RemoteException) throw (RemoteException)e;
+      logger.error(e);
+      throw new EnvelopeException(Name.Internal_Server_Error, e);
+    } catch (SignatureException e) {
+      logger.error(e);
+      throw new EnvelopeException(Name.Internal_Server_Error, e);
+    } catch (InvalidKeyException e) {
+      logger.error(e);
+      throw new EnvelopeException(Name.Internal_Server_Error, e);
+    } catch (InvalidKeySpecException e) {
+      logger.error(e);
+      throw new EnvelopeException(Name.Internal_Server_Error, e);
+    } catch (NoSuchAlgorithmException e) {
+      logger.error(e);
+      throw new EnvelopeException(Name.Internal_Server_Error, e);
     }
 
     // session management should be done now, so we can now dispatch and return
@@ -111,12 +124,21 @@ public class Controlled extends UnicastRemoteObject implements Controller {
       dao = (DAO)Class.forName(
           DAO_PATH + command.getName().getFacet().name()).newInstance();
 
+      Object returnValue = null;
+      try {
       // invoke the method and reap the return value.
-      Object returnValue =
+      returnValue =
           // get the method from the command name and parameter names
           dao.getClass().getMethod(command.getName().name(), paramNames)
               // invoke the method on a new instance of the class with the arguments
               .invoke(dao, args);
+      } catch (InvocationTargetException ite) {
+        Throwable cause = ite.getCause();
+        if (cause instanceof RemoteException && returnValue == null) {
+          throw (RemoteException)cause;
+        }
+        else throw ite;
+      }
 
       // make sure the return value is Serializable.
       if (returnValue instanceof Serializable || returnValue == null)

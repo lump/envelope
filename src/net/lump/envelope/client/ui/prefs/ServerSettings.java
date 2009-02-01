@@ -1,14 +1,10 @@
 package us.lump.envelope.client.ui.prefs;
 
 import us.lump.envelope.client.ui.defs.Strings;
-import static us.lump.envelope.client.ui.prefs.ServerSettings.fields.*;
+import static us.lump.envelope.client.ui.prefs.ServerSettings.Field.*;
 
 import java.io.*;
 import java.net.*;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
-import java.rmi.server.RMIClassLoader;
 import java.text.MessageFormat;
 import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
@@ -18,20 +14,15 @@ public class ServerSettings {
   private static ServerSettings singleton;
   Preferences prefs = Preferences.userNodeForPackage(this.getClass());
 
-  private static ValidCache classServerValidated = new ValidCache();
-  private static ValidCache rmiServerValidated = new ValidCache();
+  private static ValidCache socketServerValidated = new ValidCache();
 
   public static final String CONTROLLER = "Controller";
   public static final String DEFAULT_CLASS_PORT = "7041";
-  public static final String CODEBASE = "java.rmi.server.codebase";
-  public static final String RMINODE = "java.rmi.server.rminode";
   public static final String PING = "/ping";
-  public static final String RMI_PORT = "/port/rmi";
 
-  enum fields {
-    host_name,
-    rmi_port,
-    class_port,
+  enum Field {
+    host,
+    port,
     encrypt,
     compress
   }
@@ -44,17 +35,17 @@ public class ServerSettings {
   }
 
   public String getHostName() {
-    return prefs.get(host_name.name(), "localhost");
+    return prefs.get(host.name(), "localhost");
   }
 
   public void setHostName(final String hostName) {
-    // class server test
+    // socket server test
     Matcher hostParser = Pattern.compile("^(.*?)(?:\\:(\\d+))?$")
         .matcher(hostName);
     if (hostParser.matches() && hostParser.group(1) != null) {
-      prefs.put(host_name.name(), hostParser.group(1));
-      //setClassPort handles a null group 2 gracefully
-      setClassPort(hostParser.group(2));
+      prefs.put(host.name(), hostParser.group(1));
+      //setPort handles a null group 2 gracefully
+      setPort(hostParser.group(2));
     }
   }
 
@@ -82,26 +73,13 @@ public class ServerSettings {
     return output;
   }
 
-  public String getRmiPort() throws IOException {
-    String rmiPort = prefs.get(rmi_port.name(), null);
-    if (rmiPort == null) {
-      rmiPort = infoQuery(RMI_PORT);
-      prefs.put(rmi_port.name(), rmiPort);
-    }
-    return rmiPort;
+  public String getPort() {
+    return prefs.get(port.name(), DEFAULT_CLASS_PORT);
   }
 
-  public void setRmiPort() throws IOException {
-    prefs.put(rmi_port.name(), infoQuery(RMI_PORT));
-  }
-
-  public String getClassPort() {
-    return prefs.get(class_port.name(), DEFAULT_CLASS_PORT);
-  }
-
-  public void setClassPort(String classPort) {
-    if (classPort == null) classPort = DEFAULT_CLASS_PORT;
-    prefs.put(class_port.name(), classPort);
+  public void setPort(String port) {
+    if (port == null) port = DEFAULT_CLASS_PORT;
+    prefs.put(Field.port.name(), port);
   }
 
   public boolean getEncrypt() {
@@ -115,96 +93,54 @@ public class ServerSettings {
   public boolean getCompress() {
     return prefs.getBoolean(compress.name(), false);
   }
+
   public void setCompress(boolean flag) {
     if (!flag && getEncrypt()) setEncrypt(flag);
     prefs.putBoolean(compress.name(), flag);
   }
   
   public URL getCodeBase() throws MalformedURLException {
-    URL url = new URL("http://" + getHostName() + ":" + getClassPort() + "/");
-    if (System.getProperties().get(CODEBASE) == null
-        || !System.getProperties().get(CODEBASE).equals(url.toString()))
-      System.getProperties().put(CODEBASE, url.toString());
-    return url;
+    return new URL("http://" + getHostName() + ":" + getPort() + "/");
   }
 
-  public String rmiNode() throws IOException {
-    String url = "rmi://" + getHostName() + ":" + getRmiPort() + "/";
-    if (System.getProperties().get(RMINODE) == null
-        || !System.getProperties().get(RMINODE).equals(url))
-      System.getProperties().put(RMINODE, url);
-    return url;
-  }
-
-  public String rmiController() throws IOException {
-    return rmiNode() + CONTROLLER;
-  }
-
-  public String testClassServer() {
+  public String testSocketServer() {
     String message = Strings.get("ok");
-    if (classServerValidated.isValid()) return message;
+    if (socketServerValidated.isValid()) return message;
 
     try {
       InetAddress ia = InetAddress.getByName(getHostName());
 
       if (!ia.isReachable(2000))
         message = MessageFormat.format(
-            Strings.get("error.server_not_reachable"), this.getHostName());
+            Strings.get("error.server.not.reachable"), this.getHostName());
       else {
         if (infoQuery(PING).matches("^pong")) {
-          setRmiPort();
-          classServerValidated.setValid(true);
+          socketServerValidated.setValid(true);
         } else
           message = MessageFormat.format(
-              Strings.get("error.verify_class_server"), this.getHostName());
+              Strings.get("error.verify.server"), this.getHostName());
       }
     }
     catch (FileNotFoundException fnfe) {
       message = MessageFormat.format(
-          Strings.get("error.verify_class_server"), this.getHostName());
+          Strings.get("error.verify.server"), this.getHostName());
     }
     catch (UnknownHostException uhe) {
       message = MessageFormat.format(
-          Strings.get("error.unknown_host"), this.getHostName());
+          Strings.get("error.unknown.host"), this.getHostName());
     }
     catch (ConnectException ce) {
       message = MessageFormat.format(
-          Strings.get("error.could_not_connect_on_port"),
-          this.getHostName(), this.getClassPort(), ce.getMessage());
+          Strings.get("error.could.not.connect.on.port"),
+          this.getHostName(), this.getPort(), ce.getMessage());
     } catch (Exception e) {
       message = e.getClass().getSimpleName() + ": " + e.getMessage();
     }
-    return message;
-  }
-
-  public String testRmiServer() {
-    String message = Strings.get("ok");
-    if (rmiServerValidated.isValid()) return message;
-    String url = "";
-    try {
-      url = rmiController();
-      Thread.currentThread().setContextClassLoader(
-          RMIClassLoader.getClassLoader(getCodeBase().toString()));
-      Naming.lookup(url);
-    } catch (MalformedURLException e) {
-      message = MessageFormat.format(Strings.get("error.bad_url"), url);
-    } catch (NotBoundException e) {
-      message = MessageFormat.format(Strings.get("error.bad_rmi_name"),
-                                     CONTROLLER);
-    } catch (RemoteException e) {
-      message = MessageFormat.format(Strings.get("error.remote_exception"),
-                                     e.getMessage());
-    } catch (Exception e) {
-      message = e.getClass().getSimpleName() + ": " + e.getMessage();
-    }
-
-    if (message.equals(Strings.get("ok"))) rmiServerValidated.setValid(true);
     return message;
   }
 
   public void resetCache() {
-    classServerValidated.setValid(false);
-    rmiServerValidated.setValid(false);
+    socketServerValidated.setValid(false);
   }
 
   // small object to maintain a cache of server validation

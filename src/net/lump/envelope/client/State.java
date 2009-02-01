@@ -9,7 +9,7 @@ import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Budget;
 import us.lump.envelope.entity.Category;
-import us.lump.envelope.exception.EnvelopeException;
+import us.lump.envelope.exception.AbortException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -17,8 +17,8 @@ import java.util.TreeSet;
 
 /**
  * This is a repository for globally accessed object instances.
- * 
- * @version $Id: State.java,v 1.5 2008/11/01 00:53:02 troy Exp $
+ *
+ * @version $Id: State.java,v 1.6 2009/02/01 02:33:42 troy Test $
  */
 public class State {
 
@@ -38,7 +38,8 @@ public class State {
   Cache entityCache;
 
   private State() {
-    entityCache = new Cache(ENTITIES, cacheSize, false, false, cacheTtl, cacheTti);
+    entityCache =
+        new Cache(ENTITIES, cacheSize, false, false, cacheTtl, cacheTti);
     CacheManager.getInstance().addCache(entityCache);
   }
 
@@ -47,7 +48,7 @@ public class State {
     return singleton;
   }
 
-  public Budget getBudget() {
+  public Budget getBudget() throws AbortException {
     if (budget == null)
       budget = CriteriaFactory.getInstance().getBudgetForUser(
           LoginSettings.getInstance().getUsername());
@@ -74,21 +75,16 @@ public class State {
     this.categories = categories;
   }
 
-  public List<String> entities() {
+  public List<String> entities() throws AbortException {
     Element element = entityCache.get(ENTITIES);
     if (element != null) //noinspection unchecked
       return (List<String>)element.getValue();
     else {
       java.util.List<String> entities;
-      try {
-        entities = CriteriaFactory.getInstance()
-            .getEntitiesforBudget(State.getInstance().getBudget());
-        entityCache.put(new Element(ENTITIES, entities));
-        return entities;
-      } catch (EnvelopeException e) {
-        e.printStackTrace();
-        return null;
-      }
+      entities = CriteriaFactory.getInstance()
+          .getEntitiesforBudget(State.getInstance().getBudget());
+      entityCache.put(new Element(ENTITIES, entities));
+      return entities;
     }
   }
 }

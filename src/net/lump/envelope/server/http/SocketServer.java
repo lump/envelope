@@ -6,9 +6,9 @@ import java.io.IOException;
  * Create a class server which can serve classes, jars, files...
  *
  * @author Troy Bowman
- * @version $Id: ClassServer.java,v 1.9 2008/08/29 03:10:28 troy Exp $
+ * @version $Id: SocketServer.java,v 1.1 2009/02/01 02:33:42 troy Test $
  */
-public class ClassServer extends AbstractServer {
+public class SocketServer extends AbstractServer {
 
   /**
    * Constructs a ClassServer that listens on <b>port</b> and obtains a class's
@@ -18,7 +18,7 @@ public class ClassServer extends AbstractServer {
    *
    * @throws java.io.IOException
    */
-  public ClassServer(int port) throws IOException {
-    super(port, 100, HttpRequestHandler.class, 2000, 10, 2000);
+  public SocketServer(int port) throws IOException {
+    super(port, 100, SocketRequestHandler.class, 2000, 10, 2000);
   }
 }

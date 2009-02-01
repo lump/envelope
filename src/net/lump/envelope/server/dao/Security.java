@@ -3,18 +3,19 @@ package us.lump.envelope.server.dao;
 import net.sf.ehcache.Element;
 import us.lump.envelope.Command;
 import us.lump.envelope.entity.User;
-import us.lump.envelope.exception.SessionException;
-import us.lump.envelope.exception.DataException;
+import us.lump.envelope.exception.EnvelopeException;
+import static us.lump.envelope.exception.EnvelopeException.Name.Invalid_Credentials;
 import us.lump.envelope.server.security.Challenge;
 import us.lump.envelope.server.security.Credentials;
 import us.lump.envelope.server.security.Crypt;
 import us.lump.lib.util.Encryption;
 
-import javax.crypto.*;
-import java.io.IOException;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.*;
 import java.security.spec.InvalidKeySpecException;
 import java.util.prefs.Preferences;
@@ -23,7 +24,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.15 2008/09/01 07:00:08 troy Exp $
+ * @version $Id: Security.java,v 1.16 2009/02/01 02:33:42 troy Alpha $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption
@@ -71,12 +72,7 @@ public class Security extends DAO {
       IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException {
     Boolean authed;
 
-    User user = null;
-    try {
-      user = getUser(username);
-    } catch (DataException e) {
-      throw new SessionException(SessionException.Type.Invalid_User, e);
-    }
+    User user = getUser(username);
 
     String hash = new String(
         Encryption.decodeAsym(serverKeyPair.getPrivate(), challengeResponse),
@@ -91,7 +87,7 @@ public class Security extends DAO {
       logger.info("password for \"" + username + "\" successfully verfied");
     } else {
       logger.warn("password for \"" + username + "\" FAILED");
-      throw new SessionException(SessionException.Type.Invalid_Credentials);
+      throw new EnvelopeException(Invalid_Credentials);
     }
 
     
@@ -104,15 +100,10 @@ public class Security extends DAO {
       SignatureException, InvalidKeyException {
     Credentials credentials = c.getCredentials();
 
-    User user = null;
-    try {
-      user = getUser(credentials.getUsername());
-    } catch (DataException e) {
-      throw new SessionException(SessionException.Type.Invalid_User, e);
-    }
+    User user = getUser(credentials.getUsername());
 
-    boolean authed = c.verify(user.getPublicKey());
-    if (authed) {
+    boolean valid = c.verify(user.getPublicKey());
+    if (valid) {
       logger.debug("signature for \""
                    + credentials.getUsername()
                    + "\" successfully verfied");
@@ -120,11 +111,9 @@ public class Security extends DAO {
       logger.error("signature for \""
                    + credentials.getUsername()
                    + "\" FAILED");
-      throw new RuntimeException(new SessionException(
-          SessionException.Type.Invalid_Session));
     }
 
-    return authed;
+    return valid;
   }
 
   public Challenge getChallenge(String username, PublicKey publicKey)
@@ -132,12 +121,9 @@ public class Security extends DAO {
       BadPaddingException, IllegalBlockSizeException, InvalidKeyException,
       NoSuchPaddingException {
     logger.debug("challenge asked for \"" + username + "\"");
-    User user = null;
-    try {
-      user = getUser(username);
-    } catch (DataException e) {
-      throw new SessionException(SessionException.Type.Invalid_User, e);
-    }
+
+    User user = getUser(username);
+    
     // set the new public key
     user.setPublicKey(publicKey);
 

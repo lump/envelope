@@ -1,12 +1,12 @@
 package us.lump.envelope.client.ui.prefs;
 
-import us.lump.envelope.exception.SessionException;
+import us.lump.envelope.client.portal.SecurityPortal;
+import us.lump.envelope.client.ui.defs.Strings;
+import us.lump.envelope.exception.AbortException;
 import us.lump.envelope.exception.EnvelopeException;
+import static us.lump.envelope.exception.EnvelopeException.Name.Invalid_Credentials;
 import us.lump.envelope.server.security.Challenge;
 import us.lump.envelope.server.security.Crypt;
-import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.client.portal.SecurityPortal;
-import us.lump.envelope.Command;
 import us.lump.lib.util.Encryption;
 
 import javax.crypto.BadPaddingException;
@@ -25,7 +25,7 @@ import java.util.prefs.Preferences;
  * and password.
  *
  * @author Troy Bowman
- * @version $Id: LoginSettings.java,v 1.14 2008/09/01 07:00:08 troy Exp $
+ * @version $Id: LoginSettings.java,v 1.15 2009/02/01 02:33:42 troy Test $
  */
 public class LoginSettings {
 
@@ -189,7 +189,7 @@ public class LoginSettings {
           ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName(),
           new byte[]{});
       if (response.length == 0)
-        throw new SessionException(SessionException.Type.Invalid_Credentials);
+        throw new EnvelopeException(Invalid_Credentials);
       else return response;
     }
 
@@ -224,7 +224,7 @@ public class LoginSettings {
     return response;
   }
 
-  public PublicKey getServerKey() throws EnvelopeException {
+  public PublicKey getServerKey() throws AbortException {
     // if we don't have the serverKey saved already (from a challenge or this)
     if (serverKey == null)
       setServerKey((new SecurityPortal()).getServerPublicKey());

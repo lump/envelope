@@ -14,6 +14,7 @@ import static us.lump.envelope.client.ui.images.ImageResource.icon.*;
 import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Budget;
 import us.lump.envelope.entity.Category;
+import us.lump.envelope.exception.AbortException;
 import us.lump.lib.Money;
 
 import javax.swing.*;
@@ -38,7 +39,7 @@ import java.util.List;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.28 2008/11/07 23:31:06 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.29 2009/02/01 02:33:42 troy Test $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -114,10 +115,9 @@ public class Hierarchy extends JTree {
           JTable table = tqb.getTable();
           if (tm == null) {
             tm = new TransactionTableModel(
-              o, tqb.getBeginDate(), tqb.getEndDate(),
-              tqb.getTable());
-          }
-          else tm.queue(o, tqb.getBeginDate(), tqb.getEndDate());
+                o, tqb.getBeginDate(), tqb.getEndDate(),
+                tqb.getTable());
+          } else tm.queue(o, tqb.getBeginDate(), tqb.getEndDate());
           if (!table.getModel().equals(tm)) table.setModel(tm);
 
           table.setDefaultRenderer(Money.class, new MoneyRenderer());
@@ -152,7 +152,9 @@ public class Hierarchy extends JTree {
             public void actionPerformed(ActionEvent e) {
               sanifyDates(tqb);
               tm.queue(o, tqb.getBeginDate(), tqb.getEndDate());
-              refreshTree(State.getInstance().getBudget());
+              try {
+                refreshTree(State.getInstance().getBudget());
+              } catch (AbortException ignore) {}
             }
           });
         }
@@ -171,19 +173,22 @@ public class Hierarchy extends JTree {
 
       Object selectedObject = null;
 
-      private List getListFor(DefaultMutableTreeNode dmtn) {
+      private List getListFor(DefaultMutableTreeNode dmtn)
+          throws AbortException {
         Object o = dmtn.getUserObject();
 
         if (o instanceof Budget)
           return CriteriaFactory.getInstance().getAccountTotals((Budget)o);
         if (o instanceof AccountTotal)
-          return CriteriaFactory.getInstance().getCategoriesForAccount(((AccountTotal)o).account);
+          return CriteriaFactory.getInstance()
+              .getCategoriesForAccount(((AccountTotal)o).account);
         if (o instanceof Category)
           return null;
         else return null;
       }
 
-      public void updateChildren(final DefaultMutableTreeNode node) {
+      public void updateChildren(final DefaultMutableTreeNode node)
+          throws AbortException {
         List children = getListFor(node);
         if (children == null || children.size() == 0) return;
 
@@ -222,28 +227,30 @@ public class Hierarchy extends JTree {
 
       public void run() {
 
-        synchronized(rootNode) {
+        synchronized (rootNode) {
+          try {
+            // get the selected node, if any
+            selectedObject = singleton.getLastSelectedPathComponent();
 
-        // get the selected node, if any
-        selectedObject = singleton.getLastSelectedPathComponent();
-        
 //        JScrollPane sp = getScrollPane();
-        // get the view if any
+            // get the view if any
 //        viewPoint = sp == null ? null : sp.getViewport().getViewPosition();
 
-        updateChildren(rootNode);
-        treeModel.nodeChanged(rootNode);
+
+            updateChildren(rootNode);
+            treeModel.nodeChanged(rootNode);
 //        RepaintManager.currentManager(singleton).isCompletelyDirty(singleton);
-        
-        if (!singleton.isExpanded(new TreePath(rootNode)))
-          SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-              singleton.expandPath(new TreePath(rootNode));
+
+            if (!singleton.isExpanded(new TreePath(rootNode)))
+              SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                  singleton.expandPath(new TreePath(rootNode));
 //              RepaintManager.currentManager(singleton).isCompletelyDirty(singleton);
 //              singleton.repaint();
 //              RepaintManager.currentManager(singleton).paintDirtyRegions();
-            }
-          });
+                }
+              });
+          } catch (AbortException ignore) {}
         }
       }
     };
@@ -279,14 +286,14 @@ public class Hierarchy extends JTree {
 
       // this is for Nimbus's alternate row color, shouldn't affect other stuff
       if (UIManager.getLookAndFeel().getID().equals("Nimbus") &&
-          (original == null || original instanceof javax.swing.plaf.UIResource)) {
+          (original == null
+           || original instanceof javax.swing.plaf.UIResource)) {
         Color alternateColor =
             DefaultLookup.getColor(this, ui, "Table.alternateRowColor", null);
         if (alternateColor != null && row % 2 == 0) {
           label.setBackground(alternateColor);
           label.setOpaque(true);
-        }
-        else {
+        } else {
           label.setBackground(original);
           label.setOpaque(false);
         }
@@ -500,7 +507,10 @@ public class Hierarchy extends JTree {
   public static class AccountTotal extends CategoryTotal {
     public Account account;
 
-    public AccountTotal(Account account, String name, Integer id, Money balance) {
+    public AccountTotal(Account account,
+                        String name,
+                        Integer id,
+                        Money balance) {
       super(name, id, balance);
       this.account = account;
     }
@@ -511,6 +521,7 @@ public class Hierarchy extends JTree {
       return super.equals(o);
     }
   }
+
   public static class CategoryTotal {
     public String name;
     public Integer id;
@@ -548,9 +559,10 @@ public class Hierarchy extends JTree {
     protected void installDefaults() {
       super.installDefaults();
       // make the indexes more space efficient
-      setRightChildIndent(Math.min(7,getRightChildIndent()));
-      setLeftChildIndent(Math.min(5,getLeftChildIndent()));
+      setRightChildIndent(Math.min(7, getRightChildIndent()));
+      setLeftChildIndent(Math.min(5, getLeftChildIndent()));
     }
+
     @Override
     protected AbstractLayoutCache.NodeDimensions createNodeDimensions() {
       return new NodeDimensionsHandler() {

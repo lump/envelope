@@ -23,11 +23,11 @@ public class RequestThread extends Thread {
 
   private static final Logger logger = Logger.getLogger(RequestThread.class);
 
+
   /**
-   * Creates a new Request Thread
-   *
    * @param queue        The queue that we are associated with
    * @param threadNumber Our thread number
+   * @param handler      The class which will handle incoming requests.
    */
   public RequestThread(RequestQueue queue,
                        int threadNumber,
@@ -43,7 +43,10 @@ public class RequestThread extends Thread {
     }
   }
 
-  /** Returns true if we are currently processing a request, false otherwise */
+  /**
+   * Returns true if we are currently processing a request, false otherwise.
+   * @return boolean
+   */
   public boolean isProcessing() {
     return this.processing;
   }
@@ -71,7 +74,7 @@ public class RequestThread extends Thread {
           // Handle the request
           this.requestHandler.handleRequest(socket);
 
-          // We?ve finished processing, so make ourselves available for the next request
+          // We've finished processing, so make ourselves available for the next request
           this.processing = false;
           logger.debug("["
                        + threadNumber

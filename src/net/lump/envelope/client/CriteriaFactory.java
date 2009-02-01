@@ -5,6 +5,7 @@ import org.hibernate.criterion.*;
 import us.lump.envelope.client.portal.HibernatePortal;
 import us.lump.envelope.client.ui.components.Hierarchy;
 import us.lump.envelope.entity.*;
+import us.lump.envelope.exception.AbortException;
 import us.lump.envelope.exception.EnvelopeException;
 import us.lump.lib.Money;
 
@@ -16,7 +17,7 @@ import java.util.List;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.19 2008/10/27 04:41:22 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.20 2009/02/01 02:33:42 troy Test $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -32,23 +33,19 @@ public class CriteriaFactory {
     return singleton;
   }
 
-  public Budget getBudgetForUser(String user) {
+  public Budget getBudgetForUser(String user) throws AbortException {
     Budget retval = null;
     List l = null;
-    try {
-      l = (new HibernatePortal()).detachedCriteriaQuery(
-          DetachedCriteria.forClass(User.class)
-              .add(Restrictions.eq("name", user))
-              .setProjection(Projections.property("budget")));
-      if (l.size() > 0) retval = (Budget)l.get(0);
-    } catch (EnvelopeException e) {
-      logger.error(e);
-    }
+    l = (new HibernatePortal()).detachedCriteriaQuery(
+        DetachedCriteria.forClass(User.class)
+            .add(Restrictions.eq("name", user))
+            .setProjection(Projections.property("budget")));
+    if (l.size() > 0) retval = (Budget)l.get(0);
     return retval;
   }
 
   public List<String> getEntitiesforBudget(Budget budget)
-      throws EnvelopeException {
+      throws AbortException {
     List<String> list =
         (List<String>)(new HibernatePortal()).detachedCriteriaQuery(
             DetachedCriteria.forClass(Transaction.class)
@@ -63,73 +60,59 @@ public class CriteriaFactory {
 
     return list;
   }
-//  public List<Entity> getEntitiesforBudget(Budget budget)
-//      throws EnvelopeException {
-//    List<Entity> list =
-//        (List<Entity>)(new HibernatePortal()).detachedCriteriaQuery(
-//            DetachedCriteria.forClass(Entity.class)
-//                .add(Restrictions.eq("budget", budget))
-//                .addOrder(Order.asc("name")));
-//    return list;
-//  }
 
-  public List<Hierarchy.AccountTotal> getAccountTotals(Budget budget) {
+  public List<Hierarchy.AccountTotal> getAccountTotals(Budget budget)
+      throws AbortException {
     List<Hierarchy.AccountTotal> retval =
         new ArrayList<Hierarchy.AccountTotal>();
-    try {
-      ProjectionList plist = Projections.projectionList()
-          .add(Projections.property("c.account"))
-          .add(Projections.property("a.name").as("AccountName"))
-          .add(Projections.groupProperty("a.id"))
-          .add(Projections.sum("amount"));
-//        .add(Projections.max("t.date"));
-      List<Object[]> list =
-          (List<Object[]>)(new HibernatePortal()).detachedCriteriaQuery(
-              DetachedCriteria.forClass(Allocation.class)
-                  .createAlias("category", "c")
-                  .createAlias("c.account", "a")
-                  .add(Restrictions.eq("a.budget", budget))
-                  .setProjection(plist)
-//                .createAlias("transaction","t")
-                  .addOrder(Order.asc("AccountName")));
-      if (list != null)
-        for (Object[] o : list) {
-          retval.add(new Hierarchy.AccountTotal(
-              (Account)o[0], (String)o[1], (Integer)o[2], (Money)o[3]));
-        }
 
-    } catch (EnvelopeException r) {
-      logger.error(r);
-    }
+    ProjectionList plist = Projections.projectionList()
+        .add(Projections.property("c.account"))
+        .add(Projections.property("a.name").as("AccountName"))
+        .add(Projections.groupProperty("a.id"))
+        .add(Projections.sum("amount"));
+//        .add(Projections.max("t.date"));
+    List<Object[]> list =
+        (List<Object[]>)(new HibernatePortal()).detachedCriteriaQuery(
+            DetachedCriteria.forClass(Allocation.class)
+                .createAlias("category", "c")
+                .createAlias("c.account", "a")
+                .add(Restrictions.eq("a.budget", budget))
+                .setProjection(plist)
+//                .createAlias("transaction","t")
+                .addOrder(Order.asc("AccountName")));
+    if (list != null)
+      for (Object[] o : list) {
+        retval.add(new Hierarchy.AccountTotal(
+            (Account)o[0], (String)o[1], (Integer)o[2], (Money)o[3]));
+      }
+
     return retval;
   }
 
-  public List<Hierarchy.CategoryTotal> getCategoriesForAccount(Account account) {
+  public List<Hierarchy.CategoryTotal> getCategoriesForAccount(Account account)
+      throws AbortException {
     List<Hierarchy.CategoryTotal> retval =
         new ArrayList<Hierarchy.CategoryTotal>();
-    try {
-      ProjectionList plist = Projections.projectionList()
-          .add(Projections.property("c.name").as("CategoryName"))
-          .add(Projections.groupProperty("c.id"))
-          .add(Projections.sum("amount"))
-          .add(Projections.max("t.date"));
-      List<Object[]> list =
-          (List<Object[]>)(new HibernatePortal()).detachedCriteriaQuery(
-              DetachedCriteria.forClass(Allocation.class)
-                  .createAlias("category", "c")
-                  .add(Restrictions.eq("c.account", account))
-                  .createAlias("transaction", "t")
-                  .setProjection(plist)
-                  .addOrder(Order.asc("CategoryName")));
-      if (list != null)
-        for (Object[] o : list) {
-          retval.add(new Hierarchy.CategoryTotal((String)o[0],
-                                                 (Integer)o[1],
-                                                 (Money)o[2]));
-        }
-    } catch (EnvelopeException e) {
-      logger.error(e);
-    }
+    ProjectionList plist = Projections.projectionList()
+        .add(Projections.property("c.name").as("CategoryName"))
+        .add(Projections.groupProperty("c.id"))
+        .add(Projections.sum("amount"))
+        .add(Projections.max("t.date"));
+    List<Object[]> list =
+        (List<Object[]>)(new HibernatePortal()).detachedCriteriaQuery(
+            DetachedCriteria.forClass(Allocation.class)
+                .createAlias("category", "c")
+                .add(Restrictions.eq("c.account", account))
+                .createAlias("transaction", "t")
+                .setProjection(plist)
+                .addOrder(Order.asc("CategoryName")));
+    if (list != null)
+      for (Object[] o : list) {
+        retval.add(new Hierarchy.CategoryTotal((String)o[0],
+                                               (Integer)o[1],
+                                               (Money)o[2]));
+      }
     return retval;
   }
 

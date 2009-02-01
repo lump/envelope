@@ -1,26 +1,19 @@
 package us.lump.envelope.client.portal;
 
 import us.lump.envelope.Command;
-import us.lump.envelope.exception.EnvelopeException;
-import us.lump.envelope.entity.Account;
-import us.lump.envelope.entity.Category;
-import us.lump.envelope.entity.Transaction;
-import us.lump.lib.Money;
-
-import java.sql.Date;
-import java.util.List;
+import us.lump.envelope.exception.AbortException;
 
 /**
  * Transaction Methods.
  *
  * @author troy
- * @version $Id: TransactionPortal.java,v 1.8 2008/09/13 19:17:42 troy Exp $
+ * @version $Id: TransactionPortal.java,v 1.9 2009/02/01 02:33:42 troy Alpha $
  */
 @SuppressWarnings({"unchecked"})
 public class TransactionPortal extends Portal {
 
   public void updateReconciled(Integer transactionId, Boolean reconciled)
-      throws EnvelopeException {
+      throws AbortException {
     invoke(new Command(
         Command.Name.updateReconciled, transactionId, reconciled));
   }

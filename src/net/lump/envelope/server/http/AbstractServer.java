@@ -23,9 +23,19 @@ public abstract class AbstractServer extends Thread {
   /** A Request Queue used for high throughput servers */
   protected RequestQueue requestQueue;
 
-  private static final Logger logger = Logger.getLogger(ClassServer.class);
+  private static final Logger logger = Logger.getLogger(SocketServer.class);
 
-  /** Creates a new AbstractServer */
+  /**
+   * Creates a new AbstractServer.
+   * @param port The port that this server is listening on
+   * @param backlog The number of requests to backlog if we are busy
+   * @param requestHandler The handler of incoming sockets
+   * @param maxQueueLength The maximum length that the queue can grow to.
+   * @param minThreads     The maximum number of threads that can be in this
+   *                       queue's associated thread pool.
+   * @param maxThreads     The minimum number of threads in this queue's
+   *                       associated thread pool.
+   */
   public AbstractServer(int port,
                         int backlog,
                         Class requestHandler,
@@ -70,6 +80,8 @@ public abstract class AbstractServer extends Thread {
   }
 
   /** Body of the server: listens in a tight loop for incoming requests */
+  @SuppressWarnings({"ConstantConditions"})
+  @Override 
   public void run() {
     // Start the server
     logger.info("Server Started, listening on port: " + this.port);

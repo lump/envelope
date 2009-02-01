@@ -9,6 +9,7 @@ import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.components.Hierarchy;
 import us.lump.envelope.client.ui.components.StatusBar;
 import us.lump.envelope.client.ui.defs.Strings;
+import us.lump.envelope.exception.AbortException;
 import us.lump.lib.Money;
 import us.lump.lib.util.BackgroundList;
 import us.lump.lib.util.BackgroundListEvent;
@@ -130,6 +131,8 @@ public class TransactionTableModel extends AbstractTableModel {
                         cf.getTransactions(TransactionTableModel.this.thing,
                                            beginDate, endDate));
 
+            if (results == null) break;
+
             beginningBalance =
                 results.get(0) != null
                 && ((List)results.get(0)).size() > 0
@@ -144,7 +147,7 @@ public class TransactionTableModel extends AbstractTableModel {
                 : new Money(0);
 
             incomingList = (BackgroundList<?>)results.get(2);
-
+            
 
             // boostrap statusbar
             try {
@@ -206,9 +209,10 @@ public class TransactionTableModel extends AbstractTableModel {
             // make sure table is updated.
             updateTableToRow(incomingList.filledSize(), incomingList);
           }
-          catch (InterruptedException e) {
+          catch (InterruptedException ignore) {
             break;
           }
+          catch (AbortException ignore) {}
           catch (Exception e) {
             e.printStackTrace();
           }
