@@ -36,11 +36,11 @@ public class Preferences extends JDialog {
   private JPanel tabPanel;
   private JLabel hostNameLabel;
   private JButton testButton;
-  private JTextPane classStatusMessage;
+  private JTextPane serverStatusMessage;
   private JButton cancelButton;
   private JPanel serverTab;
   private JPanel serverFormPanel;
-  private JPanel classServerStatusPanel;
+  private JPanel serverStatusPanel;
   private JPanel testButtonPanel;
   private JPanel loginTab;
   private JTextField userName;
@@ -326,67 +326,62 @@ public class Preferences extends JDialog {
                                                      null,
                                                      0,
                                                      false));
-    classServerStatusPanel = new JPanel();
-    classServerStatusPanel.setLayout(new GridLayoutManager(1,
-                                                           1,
-                                                           new Insets(3,
-                                                                      3,
-                                                                      3,
-                                                                      3),
-                                                           -1,
-                                                           -1));
-    classServerStatusPanel.setEnabled(true);
-    serverTab.add(classServerStatusPanel, new GridConstraints(1,
-                                                              0,
-                                                              1,
-                                                              1,
-                                                              GridConstraints.ANCHOR_CENTER,
-                                                              GridConstraints.FILL_BOTH,
-                                                              GridConstraints
-                                                                  .SIZEPOLICY_CAN_SHRINK
-                                                              | GridConstraints
-                                                                  .SIZEPOLICY_CAN_GROW,
-                                                              GridConstraints
-                                                                  .SIZEPOLICY_CAN_SHRINK
-                                                              | GridConstraints
-                                                                  .SIZEPOLICY_WANT_GROW,
-                                                              null,
-                                                              null,
-                                                              null,
-                                                              0,
-                                                              false));
-    classServerStatusPanel.setBorder(BorderFactory.createTitledBorder(
-        BorderFactory.createEtchedBorder(),
-        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString(
-            "server.status")));
-    classStatusMessage = new JTextPane();
-    classStatusMessage.setBackground(UIManager.getColor("Label.background"));
-    classStatusMessage.setEditable(false);
-    classStatusMessage.setForeground(UIManager.getColor("Label.foreground"));
-    classStatusMessage.setText(ResourceBundle.getBundle(
+    serverStatusPanel = new JPanel();
+    serverStatusPanel.setLayout(new GridLayoutManager(1,
+                                                      1,
+                                                      new Insets(3, 3, 3, 3),
+                                                      -1,
+                                                      -1));
+    serverStatusPanel.setEnabled(true);
+    serverTab.add(serverStatusPanel, new GridConstraints(1,
+                                                         0,
+                                                         1,
+                                                         1,
+                                                         GridConstraints.ANCHOR_CENTER,
+                                                         GridConstraints.FILL_BOTH,
+                                                         GridConstraints
+                                                             .SIZEPOLICY_CAN_SHRINK
+                                                         | GridConstraints
+                                                             .SIZEPOLICY_CAN_GROW,
+                                                         GridConstraints
+                                                             .SIZEPOLICY_CAN_SHRINK
+                                                         | GridConstraints
+                                                             .SIZEPOLICY_WANT_GROW,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         0,
+                                                         false));
+    serverStatusPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
+                                                                 ResourceBundle.getBundle(
+                                                                     "us/lump/envelope/client/ui/defs/Strings").getString(
+                                                                     "server.status")));
+    serverStatusMessage = new JTextPane();
+    serverStatusMessage.setBackground(UIManager.getColor("Panel.background"));
+    serverStatusMessage.setText(ResourceBundle.getBundle(
         "us/lump/envelope/client/ui/defs/Strings").getString(
         "test.not.performed.yet"));
-    classServerStatusPanel.add(classStatusMessage, new GridConstraints(0,
-                                                                       0,
-                                                                       1,
-                                                                       1,
-                                                                       GridConstraints.ANCHOR_NORTH,
-                                                                       GridConstraints.FILL_HORIZONTAL,
-                                                                       GridConstraints
-                                                                           .SIZEPOLICY_CAN_SHRINK
-                                                                       | GridConstraints
-                                                                           .SIZEPOLICY_WANT_GROW,
-                                                                       GridConstraints
-                                                                           .SIZEPOLICY_CAN_SHRINK
-                                                                       | GridConstraints
-                                                                           .SIZEPOLICY_WANT_GROW,
-                                                                       null,
-                                                                       new Dimension(
-                                                                           150,
-                                                                           -1),
-                                                                       null,
-                                                                       0,
-                                                                       false));
+    serverStatusPanel.add(serverStatusMessage, new GridConstraints(0,
+                                                                   0,
+                                                                   1,
+                                                                   1,
+                                                                   GridConstraints.ANCHOR_NORTH,
+                                                                   GridConstraints.FILL_HORIZONTAL,
+                                                                   GridConstraints
+                                                                       .SIZEPOLICY_CAN_SHRINK
+                                                                   | GridConstraints
+                                                                       .SIZEPOLICY_WANT_GROW,
+                                                                   GridConstraints
+                                                                       .SIZEPOLICY_CAN_SHRINK
+                                                                   | GridConstraints
+                                                                       .SIZEPOLICY_WANT_GROW,
+                                                                   null,
+                                                                   new Dimension(
+                                                                       150,
+                                                                       -1),
+                                                                   null,
+                                                                   0,
+                                                                   false));
     testButtonPanel = new JPanel();
     testButtonPanel.setLayout(new GridLayoutManager(1,
                                                     2,
@@ -838,7 +833,7 @@ public class Preferences extends JDialog {
 
     Boolean authed = null;
 //    try {
-      lsData.setUsername(userName.getText());
+    lsData.setUsername(userName.getText());
     try {
       lsData.setPassword(String.valueOf(password.getPassword()));
       lsData.setPasswordShouldBeSaved(rememberPasswordCheckBox.isSelected());
@@ -875,16 +870,16 @@ public class Preferences extends JDialog {
 
     String classTestResult = ssData.testSocketServer();
     if (classTestResult.equals(Strings.get("ok"))) {
-      classStatusMessage.setForeground(Colors.getColor("green"));
+      serverStatusMessage.setForeground(Colors.getColor("green"));
       classServerValid = true;
     } else {
       // default session status to invalid while testing class server
       setSessionState(State.neutral, Strings.get("pending"));
 
-      classStatusMessage.setForeground(Colors.getColor("red"));
+      serverStatusMessage.setForeground(Colors.getColor("red"));
       classServerValid = false;
     }
-    classStatusMessage.setText(classTestResult);
+    serverStatusMessage.setText(classTestResult);
 
     if (classServerValid) {
       cancelButton.setEnabled(false);

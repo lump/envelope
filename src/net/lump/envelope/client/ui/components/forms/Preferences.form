@@ -118,7 +118,7 @@
                       </component>
                     </children>
                   </grid>
-                  <grid id="cb618" binding="classServerStatusPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                  <grid id="cb618" binding="serverStatusPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="3" left="3" bottom="3" right="3"/>
                     <constraints>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -128,16 +128,14 @@
                     </properties>
                     <border type="etched" title-resource-bundle="us/lump/envelope/client/ui/defs/Strings" title-key="server.status"/>
                     <children>
-                      <component id="76860" class="javax.swing.JTextPane" binding="classStatusMessage">
+                      <component id="76860" class="javax.swing.JTextPane" binding="serverStatusMessage">
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="5" anchor="1" fill="1" indent="0" use-parent-layout="false">
                             <preferred-size width="150" height="-1"/>
                           </grid>
                         </constraints>
                         <properties>
-                          <background swing-color="Label.background"/>
-                          <editable value="false"/>
-                          <foreground swing-color="Label.foreground"/>
+                          <background swing-color="Panel.background"/>
                           <text resource-bundle="us/lump/envelope/client/ui/defs/Strings" key="test.not.performed.yet"/>
                         </properties>
                       </component>
