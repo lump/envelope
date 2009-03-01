@@ -147,7 +147,7 @@ public class TransactionTableModel extends AbstractTableModel {
                 : new Money(0);
 
             incomingList = (BackgroundList<?>)results.get(2);
-            
+
 
             // boostrap statusbar
             try {

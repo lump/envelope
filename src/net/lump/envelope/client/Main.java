@@ -10,7 +10,7 @@ import javax.swing.*;
  * Main class.
  *
  * @author troy
- * @version $Id: Main.java,v 1.16 2009/01/25 23:00:15 troy Exp $
+ * @version $Id: Main.java,v 1.17 2009/03/01 01:29:35 troy Test $
  */
 public class Main implements Runnable {
   private static Main singleton;
@@ -34,11 +34,11 @@ public class Main implements Runnable {
     }
 
 
-    try {
+//    try {
       // try nimbus first, since it's the coolest
-      UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
-    }
-    catch (Exception e) {
+//      UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+//    }
+//    catch (Exception e) {
       try {
         // try alloy next, since it is clean and nice
         // borrow the jetbrains license for now, until we get serious
@@ -57,7 +57,7 @@ public class Main implements Runnable {
           // nevermind
         }
       }
-    }
+//    }
   }
 
   // for possibly applet starting which are already using a http classloader
