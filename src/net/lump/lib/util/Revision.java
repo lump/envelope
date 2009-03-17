@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * Utility class for enum access to cvs variables for this file.
  *
  * @author Troy Bowman
- * @version $Id: Revision.java,v 1.6 2009/03/17 23:52:12 troy Exp $
+ * @version $Id: Revision.java,v 1.7 2009/03/17 23:53:26 troy Exp $
  */
 public enum Revision {
 
@@ -26,7 +26,7 @@ public enum Revision {
   Header,
   /** A standard header containing the relative pathname of the rcs file, the revision number, the date (UTC), the author, the state, and the locker (if locked). Files will normally never be locked when you use cvsnt. */
   RCSHeader,
-  /** Same as $Header: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.6 2009/03/17 23:52:12 troy Exp $, except that the rcs filename is without a path. */
+  /** Same as $Header: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.7 2009/03/17 23:53:26 troy Exp $, except that the rcs filename is without a path. */
   Id,
   /** Tag name used to check out this file. The keyword is expanded only if one checks out with an explicit tag name. For example, when running the command cvs co -r first, the keyword expands to Name: first. */
   Name,
@@ -54,16 +54,16 @@ public enum Revision {
       "$Author: troy $",
       "$Branch$",
       "$CommitId$",
-      "$Date: 2009/03/17 23:52:12 $",
-      "$Header: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.6 2009/03/17 23:52:12 troy Exp $",
+      "$Date: 2009/03/17 23:53:26 $",
+      "$Header: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.7 2009/03/17 23:53:26 troy Exp $",
       "$RCSHeader$",
-      "$Id: Revision.java,v 1.6 2009/03/17 23:52:12 troy Exp $",
+      "$Id: Revision.java,v 1.7 2009/03/17 23:53:26 troy Exp $",
       "$Name:  $",
       "$Locker:  $",
-//      "$Log: Revision.java,v $
+//      "$Log: Revision.java,v
 //      "Revision 1.6  2009/03/17 23:52:12  troy
 //      "all variables
-//      "",  // we can't parse log yet
+//      // we can't parse log yet
       "$RCSFile$",
       "$Revision",
       "$Source: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v $",
