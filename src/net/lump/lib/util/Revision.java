@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * Utility class for enum access to cvs variables for this file.
  *
  * @author Troy Bowman
- * @version $Id: Revision.java,v 1.8 2009/03/17 23:57:54 troy Exp $
+ * @version $Id: Revision.java,v 1.9 2009/03/17 23:58:21 troy Exp $
  */
 public enum Revision {
 
@@ -26,7 +26,7 @@ public enum Revision {
   Header,
   /** A standard header containing the relative pathname of the rcs file, the revision number, the date (UTC), the author, the state, and the locker (if locked). Files will normally never be locked when you use cvsnt. */
   RCSHeader,
-  /** Same as $Header: /export/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.8 2009/03/17 23:57:54 troy Exp $, except that the rcs filename is without a path. */
+  /** Same as $Header: /export/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.9 2009/03/17 23:58:21 troy Exp $, except that the rcs filename is without a path. */
   Id,
   /** Tag name used to check out this file. The keyword is expanded only if one checks out with an explicit tag name. For example, when running the command cvs co -r first, the keyword expands to Name: first. */
   Name,
@@ -54,18 +54,15 @@ public enum Revision {
       "$Author: troy $",
       "$Branch$",
       "$CommitId$",
-      "$Date: 2009/03/17 23:57:54 $",
-      "$Header: /export/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.8 2009/03/17 23:57:54 troy Exp $",
+      "$Date: 2009/03/17 23:58:21 $",
+      "$Header: /export/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.9 2009/03/17 23:58:21 troy Exp $",
       "$RCSHeader$",
-      "$Id: Revision.java,v 1.8 2009/03/17 23:57:54 troy Exp $",
+      "$Id: Revision.java,v 1.9 2009/03/17 23:58:21 troy Exp $",
       "$Name:  $",
       "$Locker:  $",
-      "$Log: Revision.java,v $
-      "Revision 1.8  2009/03/17 23:57:54  troy
-      "test
-      "",
+      //"$Log: Revision.java,v // log breaks quotes
       "$RCSFile$",
-      "$Revision: 1.8 $",
+      "$Revision: 1.9 $",
       "$Source: /export/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v $",
       "$State: Exp $",
   };
