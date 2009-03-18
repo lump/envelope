@@ -10,33 +10,22 @@ import java.util.regex.Pattern;
  * Utility class for enum access to cvs variables for this file.
  *
  * @author Troy Bowman
- * @version $Id: Revision.java,v 1.9 2009/03/17 23:58:21 troy Exp $
+ * @version $Id: Revision.java,v 1.10 2009/03/18 00:38:52 troy Alpha $
  */
 public enum Revision {
 
   /** The login name of the user who checked in the revision.*/
   Author,
-  /** The name of the branch that the revision is a member of. */
-  Branch,
-  /** The Commit (or Session) identifier of the commit that generated this revision. */
-  CommitId,
   /** The date and time (UTC) the revision was checked in. */
   Date,
   /** A standard header containing the full pathname of the rcs file, the revision number, the date (UTC), the author, the state, and the locker (if locked). Files will normally never be locked when you use cvsnt. */
   Header,
-  /** A standard header containing the relative pathname of the rcs file, the revision number, the date (UTC), the author, the state, and the locker (if locked). Files will normally never be locked when you use cvsnt. */
-  RCSHeader,
-  /** Same as $Header: /export/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.9 2009/03/17 23:58:21 troy Exp $, except that the rcs filename is without a path. */
+  /** Same as $Header: /export/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.10 2009/03/18 00:38:52 troy Alpha $, except that the rcs filename is without a path. */
   Id,
   /** Tag name used to check out this file. The keyword is expanded only if one checks out with an explicit tag name. For example, when running the command cvs co -r first, the keyword expands to Name: first. */
   Name,
   /** The login name of the user who locked the revision (empty if not locked, which is the normal case unless cvs admin -l is in use). This keyword has little meaning under cvsnt.*/
   Locker,
-//  /* The log message supplied during commit, preceded by a header containing the rcs filename, the revision number, the author, and the date (UTC). Existing log messages are not replaced. Instead, the new log message is inserted after $Log$. Each new line is prefixed with the same string which precedes the $Log keyword. For example, if the file contains */
-// we can't parse log yet  
-//  Log,
-  /** The name of the rcs file without a path. */
-  RCSfile,
   /** The revision number assigned to the revision. */
   Revision,
   /** The full pathname of the rcs file. */
@@ -44,27 +33,20 @@ public enum Revision {
   /** The state assigned to the revision. States can be assigned with cvs admin. */
   State;
 
-
-
   // store the cleaned-up value from which cvs gives us.
   private String value = null;
 
   // get CVS to fill in the values in strings
   private final String[] REVS = new String[]{
       "$Author: troy $",
-      "$Branch$",
-      "$CommitId$",
-      "$Date: 2009/03/17 23:58:21 $",
-      "$Header: /export/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.9 2009/03/17 23:58:21 troy Exp $",
-      "$RCSHeader$",
-      "$Id: Revision.java,v 1.9 2009/03/17 23:58:21 troy Exp $",
+      "$Date: 2009/03/18 00:38:52 $",
+      "$Header: /export/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.10 2009/03/18 00:38:52 troy Alpha $",
+      "$Id: Revision.java,v 1.10 2009/03/18 00:38:52 troy Alpha $",
       "$Name:  $",
       "$Locker:  $",
-      //"$Log: Revision.java,v // log breaks quotes
-      "$RCSFile$",
-      "$Revision: 1.9 $",
+      "$Revision: 1.10 $",
       "$Source: /export/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v $",
-      "$State: Exp $",
+      "$State: Alpha $",
   };
 
   /** the date format for Date */
