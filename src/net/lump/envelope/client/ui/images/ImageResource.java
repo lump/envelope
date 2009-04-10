@@ -60,7 +60,7 @@ public class ImageResource {
   private ImageResource() {}
 
   public static java.util.List<Image> getFrameList() {
-    ArrayList<Image> list = new ArrayList();
+    ArrayList<Image> list = new ArrayList<Image>();
     list.add(icon.envelope_512.getImage());
     list.add(icon.envelope_256.getImage());
     list.add(icon.envelope_128.getImage());
