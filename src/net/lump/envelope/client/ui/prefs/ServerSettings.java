@@ -3,7 +3,10 @@ package us.lump.envelope.client.ui.prefs;
 import us.lump.envelope.client.ui.defs.Strings;
 import static us.lump.envelope.client.ui.prefs.ServerSettings.Field.*;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.*;
 import java.text.MessageFormat;
 import java.util.prefs.Preferences;
@@ -16,13 +19,14 @@ public class ServerSettings {
 
   private static ValidCache socketServerValidated = new ValidCache();
 
-  public static final String CONTROLLER = "Controller";
+//  public static final String CONTROLLER = "Controller";
   public static final String DEFAULT_CLASS_PORT = "7041";
   public static final String PING = "/ping";
 
   enum Field {
     host,
     port,
+    context,
     encrypt,
     compress
   }
@@ -49,27 +53,27 @@ public class ServerSettings {
     }
   }
 
+  public String getContext() {
+    return prefs.get(context.name(), "/envelope");
+  }
+
+  public void setContext(final String context) {
+    prefs.put(Field.context.name(), context);
+  }
+
   private String infoQuery(String query) throws IOException {
     URL url = new URL(this.getCodeBase().toString() + "info" + query);
-    Socket socket = new Socket();
-    socket.connect(new InetSocketAddress(url.getHost(), url.getPort()), 1000);
-    BufferedReader r = new BufferedReader(
-        new InputStreamReader(socket.getInputStream()));
-    PrintWriter p = new PrintWriter(socket.getOutputStream(), true);
-    p.write("GET info" + query + "\r\n\r\n");
-    p.flush();
+    URLConnection c = url.openConnection();
+    c.setDoInput(true);
 
-    boolean inHeader = true;
+    BufferedReader r = new BufferedReader(new InputStreamReader(c.getInputStream()));
+    
     String output = "";
     String line;
     while ((line = r.readLine()) != null) {
-      if (line.matches("^\\s*$")) {
-        inHeader = false;
-        continue;
-      }
-      if (!inHeader) output += line;
+      output += line;
     }
-    socket.close();
+    r.close();
     return output;
   }
 
@@ -100,7 +104,7 @@ public class ServerSettings {
   }
   
   public URL getCodeBase() throws MalformedURLException {
-    return new URL("http://" + getHostName() + ":" + getPort() + "/");
+    return new URL("http://" + getHostName() + ":" + getPort() + getContext() + "/");
   }
 
   public String testSocketServer() {

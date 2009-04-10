@@ -9,8 +9,6 @@ import us.lump.envelope.client.portal.SecurityPortal;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
 import us.lump.envelope.exception.AbortException;
-import us.lump.envelope.server.PrefsConfigurator;
-import us.lump.envelope.server.rmi.Controller;
 import us.lump.lib.TestMoney;
 import us.lump.lib.util.TestEncryption;
 
@@ -18,49 +16,31 @@ import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-import java.rmi.Naming;
-import java.rmi.NotBoundException;
-import java.rmi.RemoteException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Properties;
 
 /**
  * A JUnit class which runs all tests.
  *
  * @author Troy Bowman
- * @version $Id: TestSuite.java,v 1.10 2009/02/01 02:33:42 troy Test $
+ * @version $Id: TestSuite.java,v 1.11 2009/04/10 22:49:28 troy Exp $
  */
 public class TestSuite extends TestCase {
-  public static int DEFAULT_SERVER_PORT = 7041;
-  public static final String HOST_PROPERTY = "server";
-    public static final String PORT_PROPERTY = "server.port";
-  public static String SERVER_HOST = "localhost" + DEFAULT_SERVER_PORT;
-
   public static final String USER = "bowmantest";
   public static final String PASSWORD = "guest";
+  public static final String HOST = localHost() + ":8080";
+  public static final String CONTEXT = "/envelope";
   public static final LoginSettings LOGINSETTINGS = LoginSettings.getInstance();
   private static Boolean authed = null;
 
   static {
     BasicConfigurator.configure();
 
-    Properties system = System.getProperties();
-
     try {
       ServerSettings ss = ServerSettings.getInstance();
-
-      if (system.containsKey(HOST_PROPERTY)) {
-        ss.setHostName(system.getProperty(HOST_PROPERTY));
-        ss.setPort(system.containsKey(PORT_PROPERTY)
-                        ? system.getProperty(PORT_PROPERTY)
-                        : String.valueOf(DEFAULT_SERVER_PORT));
-      } else {
-        Properties serverConfig = PrefsConfigurator.configure(Server.class);
-        ss.setHostName(localHost() +":" + DEFAULT_SERVER_PORT);
-      }
+      ss.setHostName(HOST);
+      ss.setContext(CONTEXT);
 
       LOGINSETTINGS.setUsername(USER);
       LOGINSETTINGS.setPassword(PASSWORD);
@@ -89,22 +69,6 @@ public class TestSuite extends TestCase {
   }
 
   /**
-   * Gets the Controller for testing.
-   *
-   * @return Controller.
-   *
-   * @throws MalformedURLException
-   * @throws NotBoundException
-   * @throws RemoteException
-   */
-  public static Controller getController()
-      throws MalformedURLException, NotBoundException, RemoteException {
-    String rmiName =
-        (String)System.getProperties().get("java.rmi.server.rminode");
-    return (Controller)Naming.lookup(rmiName + "Controller");
-  }
-
-  /**
    * The Test suite itself.
    *
    * @return Test
@@ -122,13 +86,15 @@ public class TestSuite extends TestCase {
    * Figure out local hosts's name.
    *
    * @return String
-   *
-   * @throws UnknownHostException
    */
-  private static String localHost() throws UnknownHostException {
-    final java.net.InetAddress localMachine =
-        java.net.InetAddress.getLocalHost();
-    return localMachine.getHostName();
+  private static String localHost() {
+    final java.net.InetAddress localMachine;
+    try {
+      localMachine = java.net.InetAddress.getLocalHost();
+      return localMachine.getHostName();
+    } catch (UnknownHostException e) {
+      return "localhost";
+    }
   }
 
 }

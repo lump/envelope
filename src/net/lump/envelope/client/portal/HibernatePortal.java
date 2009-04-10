@@ -1,36 +1,36 @@
 package us.lump.envelope.client.portal;
 
 import org.hibernate.criterion.DetachedCriteria;
-import us.lump.envelope.Command;
+import us.lump.envelope.command.Command;
+import us.lump.envelope.command.OutputListener;
 import us.lump.envelope.entity.Identifiable;
 import us.lump.envelope.exception.AbortException;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.List;
 
 /** A portal for hibernate operations. */
 @SuppressWarnings({"unchecked"})
 public class HibernatePortal extends Portal {
 
-  public List detachedCriteriaQuery(DetachedCriteria... dcs)
-      throws AbortException {
+  public Serializable detachedCriteriaQueryUnique(DetachedCriteria dc) throws AbortException {
+    return invoke(new Command(Command.Name.detachedCriteriaQueryUnique, null,dc));
+  }
 
-    if (dcs.length == 0)
-      throw new IllegalArgumentException("need one or more arguments");
-    if (dcs.length == 1)
-      return (List)invoke(new Command(Command.Name.detachedCriteriaQuery, dcs[0]));
-    else {
-      List<Command> dcl = new ArrayList<Command>();
-      for (DetachedCriteria dc : dcs)
-        dcl.add(new Command(Command.Name.detachedCriteriaQuery, dc));
-      return (List)invoke(dcl);
-    }
+  public List detachedCriteriaQueryList(DetachedCriteria dc) throws AbortException {
+    return (List)invoke(new Command(Command.Name.detachedCriteriaQueryList, null,dc));
+  }
+
+  public Serializable detachedCriteriaQueryUnique(DetachedCriteria dc, OutputListener ol) throws AbortException {
+    return invoke(new Command(Command.Name.detachedCriteriaQueryUnique, ol, dc));
+  }
+
+  public List detachedCriteriaQuery(DetachedCriteria dc, OutputListener ol) throws AbortException {
+    return (List)invoke(new Command(Command.Name.detachedCriteriaQueryList, ol, dc));
   }
 
   public <T extends Identifiable> T get(Class<T> cless, Serializable id)
       throws AbortException {
-    return (T)invoke(new Command(Command.Name.get, cless, id));
+    return (T)invoke(new Command(Command.Name.get, null, cless, id));
   }
-
 }

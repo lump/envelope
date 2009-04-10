@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<jnlp spec="1.0" codebase="http://{host}:{port}{context}/" href="envelope.jnlp">
+  <information>
+    <title>{title}</title>
+    <vendor>{vendor}</vendor>
+    <description>{description} (version {revision})</description>
+    <icon href="{icon}"/>
+  </information>
+  <security>
+    <all-permissions/>
+  </security>
+  <application-desc main-class="{main-class}"/>
+  <resources>
+    <j2se version="1.6+" java-vm-args="-Xmx512m"/>
+    <property name="codebase" value="{host}:{port}"/>
+    <property name="context" value="{context}"/>
+    <property name="java.security.policy"
+              value="http://{host}:{port}/info/security.policy"/>
+    {jars}
+  </resources>
+</jnlp>

@@ -10,7 +10,7 @@ import javax.swing.*;
  * Main class.
  *
  * @author troy
- * @version $Id: Main.java,v 1.17 2009/03/01 01:29:35 troy Test $
+ * @version $Id: Main.java,v 1.18 2009/04/10 22:49:27 troy Exp $
  */
 public class Main implements Runnable {
   private static Main singleton;
@@ -35,7 +35,7 @@ public class Main implements Runnable {
 
 
 //    try {
-      // try nimbus first, since it's the coolest
+//      // try nimbus first, since it's the coolest
 //      UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
 //    }
 //    catch (Exception e) {

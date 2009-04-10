@@ -2,11 +2,11 @@ package us.lump.envelope.client.ui.prefs;
 
 import us.lump.envelope.client.portal.SecurityPortal;
 import us.lump.envelope.client.ui.defs.Strings;
+import us.lump.envelope.command.security.Challenge;
+import us.lump.envelope.command.security.Crypt;
 import us.lump.envelope.exception.AbortException;
 import us.lump.envelope.exception.EnvelopeException;
 import static us.lump.envelope.exception.EnvelopeException.Name.Invalid_Credentials;
-import us.lump.envelope.server.security.Challenge;
-import us.lump.envelope.server.security.Crypt;
 import us.lump.lib.util.Encryption;
 
 import javax.crypto.BadPaddingException;
@@ -21,18 +21,17 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.prefs.Preferences;
 
 /**
- * Singleton for keeping track of login information.  (Basically the username
- * and password.
+ * Singleton for keeping track of login information.  (Basically the username and password.
  *
  * @author Troy Bowman
- * @version $Id: LoginSettings.java,v 1.15 2009/02/01 02:33:42 troy Test $
+ * @version $Id: LoginSettings.java,v 1.16 2009/04/10 22:49:28 troy Exp $
  */
 public class LoginSettings {
 
   // these strings define preference keys.
   private static final String USER = "username";
   private static final String SHOULD_SAVE_ENCRYPTED_PASSWORD
-      = "saveEncrypedPassword?";
+    = "saveEncrypedPassword?";
   private static final String ENCRYPTED_PASSWORD = "encryptedPassword";
   public static final String PASSWORD_ALREADY_SET = "-password-already-set-";
 
@@ -93,19 +92,19 @@ public class LoginSettings {
 
   public Boolean passwordIsSaved() {
     return (prefs.getByteArray(
-        ENCRYPTED_PASSWORD  + "." + ServerSettings.getInstance().getHostName(),
-        null) != null);
+      ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName(),
+      null) != null);
   }
 
   public LoginSettings setPassword(String password)
-      throws BadPaddingException, NoSuchAlgorithmException,
-      IllegalBlockSizeException, InvalidKeyException,
-      NoSuchPaddingException {
+    throws BadPaddingException, NoSuchAlgorithmException,
+    IllegalBlockSizeException, InvalidKeyException,
+    NoSuchPaddingException {
     // keep the password from being plain text in memory...
     if (!password.equals(PASSWORD_ALREADY_SET))
       this.password = Encryption.encodeAsym(
-          getKeyPair().getPublic(),
-          password.getBytes());
+        getKeyPair().getPublic(),
+        password.getBytes());
     return this;
   }
 
@@ -113,7 +112,7 @@ public class LoginSettings {
     prefs.putBoolean(SHOULD_SAVE_ENCRYPTED_PASSWORD, flag);
     // reset the password if we're setting it to false
     if (!flag) prefs.remove(
-        ENCRYPTED_PASSWORD  + "." + ServerSettings.getInstance().getHostName());
+      ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName());
     return this;
   }
 
@@ -131,8 +130,8 @@ public class LoginSettings {
    */
   public byte[] challengeResponse() {
     byte[] response = prefs.getByteArray(
-        ENCRYPTED_PASSWORD  + "." + ServerSettings.getInstance().getHostName(),
-        null);
+      ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName(),
+      null);
     if (!shouldPasswordBeSaved() || null == response || response.length == 0)
       throw new IllegalStateException("Password is not saved.");
     else
@@ -156,9 +155,9 @@ public class LoginSettings {
    * @throws InvalidKeySpecException
    */
   public byte[] challengeResponse(Challenge challenge, String password)
-      throws NoSuchAlgorithmException, BadPaddingException, IOException,
-      IllegalBlockSizeException, InvalidKeyException,
-      NoSuchPaddingException, InvalidKeySpecException {
+    throws NoSuchAlgorithmException, BadPaddingException, IOException,
+    IllegalBlockSizeException, InvalidKeyException,
+    NoSuchPaddingException, InvalidKeySpecException {
     setPassword(password);
     return challengeResponse(challenge);
   }
@@ -178,16 +177,16 @@ public class LoginSettings {
    * @throws IOException
    */
   public byte[] challengeResponse(Challenge challenge)
-      throws BadPaddingException, NoSuchAlgorithmException,
-      IllegalBlockSizeException, InvalidKeyException,
-      NoSuchPaddingException, IOException {
+    throws BadPaddingException, NoSuchAlgorithmException,
+    IllegalBlockSizeException, InvalidKeyException,
+    NoSuchPaddingException, IOException {
 
     byte[] response = null;
 
     if (password == null && shouldPasswordBeSaved() && passwordIsSaved()) {
       response = prefs.getByteArray(
-          ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName(),
-          new byte[]{});
+        ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName(),
+        new byte[]{});
       if (response.length == 0)
         throw new EnvelopeException(Invalid_Credentials);
       else return response;
@@ -198,16 +197,16 @@ public class LoginSettings {
 
     // encrypt the response with the server's public key
     response = Encryption.encodeAsym(
-        challenge.getServerKey(),
-        Crypt.crypt(
-            challenge.getChallenge(getKeyPair().getPrivate()),
-            new String(
-                Encryption.decodeAsym(
-                    getKeyPair().getPrivate(),
-                    this.password
-                )
-            )
-        ).getBytes()
+      challenge.getServerKey(),
+      Crypt.crypt(
+        challenge.getChallenge(getKeyPair().getPrivate()),
+        new String(
+          Encryption.decodeAsym(
+            getKeyPair().getPrivate(),
+            this.password
+          )
+        )
+      ).getBytes()
     );
 
     // response is encrypted with server's public key, so only that specific
@@ -215,11 +214,11 @@ public class LoginSettings {
     // on disk cannot be decrypted to find the original password.
     if (shouldPasswordBeSaved())
       prefs.putByteArray(
-          ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName(),
-          response);
+        ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName(),
+        response);
       // else make sure it is null
     else prefs.remove(
-        ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName());
+      ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName());
 
     return response;
   }

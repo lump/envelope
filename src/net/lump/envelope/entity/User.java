@@ -1,9 +1,8 @@
 package us.lump.envelope.entity;
 
-import us.lump.envelope.server.security.Permission;
+import us.lump.envelope.command.security.Permission;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.security.PublicKey;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
@@ -13,7 +12,7 @@ import java.text.MessageFormat;
  * User.
  *
  * @author Troy Bowman
- * @version $Id: User.java,v 1.6 2008/07/09 04:20:02 troy Test $
+ * @version $Id: User.java,v 1.7 2009/04/10 22:49:28 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "users")
@@ -128,29 +127,29 @@ public class User extends Identifiable<Integer, Timestamp> {
     User user = (User)o;
 
     if (budget != null
-        ? !budget.equals(user.budget)
-        : user.budget != null) return false;
+      ? !budget.equals(user.budget)
+      : user.budget != null) return false;
     if (cryptPassword != null
-        ? !cryptPassword.equals(user.cryptPassword)
-        : user.cryptPassword != null) return false;
+      ? !cryptPassword.equals(user.cryptPassword)
+      : user.cryptPassword != null) return false;
     if (id != null
-        ? !id.equals(user.id)
-        : user.id != null) return false;
+      ? !id.equals(user.id)
+      : user.id != null) return false;
     if (name != null
-        ? !name.equals(user.name)
-        : user.name != null) return false;
+      ? !name.equals(user.name)
+      : user.name != null) return false;
     if (permissions != null
-        ? !permissions.equals(user.permissions)
-        : user.permissions != null) return false;
+      ? !permissions.equals(user.permissions)
+      : user.permissions != null) return false;
     if (publicKey != null
-        ? !publicKey.equals(user.publicKey)
-        : user.publicKey != null) return false;
+      ? !publicKey.equals(user.publicKey)
+      : user.publicKey != null) return false;
     if (realName != null
-        ? !realName.equals(user.realName)
-        : user.realName != null) return false;
+      ? !realName.equals(user.realName)
+      : user.realName != null) return false;
     if (stamp != null
-        ? !stamp.equals(user.stamp)
-        : user.stamp != null) return false;
+      ? !stamp.equals(user.stamp)
+      : user.stamp != null) return false;
 
     return true;
   }
@@ -163,8 +162,8 @@ public class User extends Identifiable<Integer, Timestamp> {
     result = 31 * result + (name != null ? name.hashCode() : 0);
     result = 31 * result + (realName != null ? realName.hashCode() : 0);
     result = 31 * result + (cryptPassword != null
-                            ? cryptPassword.hashCode()
-                            : 0);
+      ? cryptPassword.hashCode()
+      : 0);
     result = 31 * result + (permissions != null ? permissions.hashCode() : 0);
     result = 31 * result + (publicKey != null ? publicKey.hashCode() : 0);
     return result;

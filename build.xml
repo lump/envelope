@@ -1,5 +1,5 @@
 <project name="envelope" basedir="." default="dist">
-         <!--xmlns:ivy="antlib:org.apache.ivy.ant">-->
+  <!--xmlns:ivy="antlib:org.apache.ivy.ant">-->
   <property environment="env"/>
   <tstamp>
     <format property="timestamp" pattern="EEE, d MMM yyyy HH:mm:ss Z (z)"/>
@@ -33,6 +33,7 @@
   <property name="compile.optimize" value="true"/>
 
   <property name="jar.compress" value="true"/>
+  <property name="property.file" value=".build.properties"/>
 
   <path id="compile.classpath">
     <fileset dir="${lib}" includes="*.jar"/>
@@ -50,6 +51,8 @@
     </fileset>
   </path>
 
+  <taskdef resource="net/sf/antcontrib/antlib.xml" classpathref="ant.classpath"/>
+
   <taskdef name="xjc"
            classname="com.sun.tools.xjc.XJCTask"
            classpathref="ant.classpath"/>
@@ -60,33 +63,60 @@
            classname="com.sun.tools.apache.ant.pack200.Unpack200Task"
            classpathref="ant.classpath"/>
 
+  <if>
+    <not>
+      <available file="${property.file}"/>
+    </not>
+    <then>
+      <touch file="${property.file}"/>
+    </then>
+  </if>
+
+  <property file="${property.file}"/>
+
+  <if>
+    <isset property="tomcat.deploy.dir"/>
+    <then>
+      <echo message="using tomcat deploy dir ${tomcat.deploy.dir}"/>
+      <echo message="edit ${property.file} to change your deploy dir"/>
+
+    </then>
+    <else>
+      <input message="where is your tomcat deploy dir?" addproperty="tomcat.deploy.dir"/>
+      <propertyfile file="${property.file}">
+        <entry key="tomcat.deploy.dir" value="${tomcat.deploy.dir}"/>
+      </propertyfile>
+    </else>
+  </if>
+
+
   <!--<available file="${lib}/${ivy.jar.file}"-->
-             <!--type="file" property="ivy.is.there"/>-->
+  <!--type="file" property="ivy.is.there"/>-->
 
   <!--<target name="download.ivy" unless="ivy.is.there">-->
-    <!--<echo message="installing ivy..."/>-->
-    <!--<get-->
-        <!--src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar"-->
-        <!--dest="${lib}/${ivy.jar.file}"-->
-        <!--usetimestamp="true"/>-->
-    <!--<echo message="downloaded ${ivy.jar.file}"/>-->
+  <!--<echo message="installing ivy..."/>-->
+  <!--<get-->
+  <!--src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar"-->
+  <!--dest="${lib}/${ivy.jar.file}"-->
+  <!--usetimestamp="true"/>-->
+  <!--<echo message="downloaded ${ivy.jar.file}"/>-->
   <!--</target>-->
 
   <!--<target name="bootstrap.ivy" depends="download.ivy" unless="ivy.is.loaded">-->
-    <!--<path id="ivy.lib.path">-->
-      <!--<fileset dir="${lib}" includes="${ivy.jar.file}"/>-->
-    <!--</path>-->
-    <!--<taskdef resource="org/apache/ivy/ant/antlib.xml"-->
-             <!--uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>-->
-    <!--<property name="ivy.is.loaded" value="true"/>-->
-    <!--<echo message="loaded ${ivy.jar.file}"/>-->
+  <!--<path id="ivy.lib.path">-->
+  <!--<fileset dir="${lib}" includes="${ivy.jar.file}"/>-->
+  <!--</path>-->
+  <!--<taskdef resource="org/apache/ivy/ant/antlib.xml"-->
+  <!--uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>-->
+  <!--<property name="ivy.is.loaded" value="true"/>-->
+  <!--<echo message="loaded ${ivy.jar.file}"/>-->
 
-    <!--<mkdir dir="${ivy.jars.dir}"/>-->
+  <!--<mkdir dir="${ivy.jars.dir}"/>-->
 
-    <!--<property name="ivy.instance" value="${ant.project.name}"/>-->
-    <!--<ivy:settings file="${basedir}/ivysettings.xml"/>-->
-    <!--<ivy:resolve file="${basedir}/ivy.xml"/>-->
-    <!--<ivy:cachepath pathid="ivy.lib.path"/>-->
+  <!--<property name="ivy.instance" value="${ant.project.name}"/>-->
+  <!--<ivy:settings file="${basedir}/ivysettings.xml"/>-->
+  <!--<ivy:resolve file="${basedir}/ivy.xml"/>-->
+  <!--<ivy:cachepath pathid="ivy.lib.path"/>-->
   <!--</target>-->
 
   <target name="clean.classes" description="clean the classes">
@@ -162,13 +192,8 @@
     <copy todir="${client.classes}">
       <!--includes="Envelope.class, us/lump/lib/util/ChildFirstClassLoader.class"/>-->
       <fileset dir="${classes}"
-               includes="security.policy,
-                Envelope.class,
-                us/lump/lib/**/*,
-                us/lump/envelope/exception/*
-                us/lump/envelope/Command*
-                us/lump/envelope/server/rmi/Controller*
-                us/lump/envelope/client/**/*"/>
+               includes="security.policy, Envelope.class, us/lump/**/*"
+               excludes="us/lump/envelope/server/**/*, us/lump/envelope/Client.java"/>
     </copy>
   </target>
 
@@ -232,15 +257,11 @@
   </target>
 
   <target name="server.jar" depends="compile" description="build server jar">
-    <copy todir="${server.classes}">
-      <fileset dir="${classes}"/>
-    </copy>
     <delete file="${dist}/${ant.project.name}-server.jar"/>
     <jar jarfile="${dist}/${ant.project.name}-server.jar"
          compress="${jar.compress}"
-         basedir="${server.classes}">
+         basedir="${classes}">
       <manifest>
-        <attribute name="Main-Class" value="us.lump.envelope.Server"/>
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Build-Time" value="${timestamp}"/>
         <attribute name="Built-On-OS"
@@ -251,50 +272,36 @@
     </jar>
   </target>
 
-  <target name="server.dist" depends="server.jar, client.jar"
-          description="build server distribution">
-    <mkdir dir="${one.jar.classes}"/>
+  <target name="server.war" depends="server.jar, client.dist"
+          description="build a server web archive for tomcat">
 
-    <javac srcdir="${one.jar.src}"
-           destdir="${one.jar.classes}"
-           debug="${compile.debug}"
-           deprecation="${compile.deprecation}"
-           optimize="${compile.optimize}">
-      <compilerarg value="-Xlint:unchecked"/>
-    </javac>
-
-    <mkdir dir="${one.jar.classes}/lib"/>
-    <copy todir="${one.jar.classes}/lib">
+    <property name="war.dir" value="war-build"/>
+    <delete file="${dist}/envelope.jar"/>
+    <delete dir="${war.dir}"/>
+    <mkdir dir="${war.dir}"/>
+    <mkdir dir="${war.dir}/WEB-INF/lib"/>
+    <copy todir="${war.dir}/WEB-INF/lib">
       <fileset dir="${lib}" includes="*.jar, *.pack.gz *.png"/>
-      <!--excludes="ui.jar"/>-->
-      <fileset dir="${dist}" includes="client*.jar, client*gz"/>
-      <!--<fileset dir="${lib}/jaxb" includes="*.jar"/>-->
+      <fileset dir="${dist}" includes="client*.jar, client*gz, ${ant.project.name}-server.jar"/>
       <fileset dir="src/us/lump/envelope/client/ui/images"
                includes="envelope_32.png, envelope.ico, envelope.icns"/>
     </copy>
+    <copy todir="${war.dir}">
+      <fileset dir="web" includes="**/**"/>
+    </copy>
 
-    <mkdir dir="${one.jar.classes}/main"/>
-    <copy tofile="${one.jar.classes}/main/main.jar"
-          file="${dist}/${ant.project.name}-server.jar"/>
-
-    <delete file="${dist}/server.jar"/>
-
-    <jar jarfile="${dist}/server.jar"
-         basedir="${one.jar.classes}"
-         compress="${jar.compress}">
+    <jar jarfile="${dist}/${ant.project.name}.war" basedir="${war.dir}">
       <manifest>
-        <attribute name="Main-Class" value="com.simontuffs.onejar.Boot"/>
-        <!--<attribute name="One-Jar-Expand" value="expand,doc"/>-->
-        <!--<attribute name="Version" value="${deploy.version}"/>-->
-        <attribute name="Boot-Class" value="us.lump.envelope.Server"/>
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Build-Time" value="${timestamp}"/>
-        <attribute name="Built-On-OS"
-                   value="${os.name} ${os.version} ${os.arch}"/>
+        <attribute name="Built-On-OS" value="${os.name} ${os.version} ${os.arch}"/>
         <attribute name="Built-On-VM" value="${java.version} ${java.vendor}"/>
         <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
       </manifest>
     </jar>
+
+    <copy file="${dist}/${ant.project.name}.war" todir="${tomcat.deploy.dir}"/>
+    <delete dir="${war.dir}"/>
   </target>
 
 </project>

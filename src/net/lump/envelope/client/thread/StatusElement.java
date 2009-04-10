@@ -4,13 +4,14 @@ package us.lump.envelope.client.thread;
  * Status element.
  *
  * @author Troy Bowman
- * @version $Id: StatusElement.java,v 1.5 2008/09/12 00:21:47 troy Alpha $
+ * @version $Id: StatusElement.java,v 1.6 2009/04/10 22:49:27 troy Exp $
  */
 
 public class StatusElement {
   private long id;
   Object value;
   private static long count = 0;
+  private boolean abort = false;
 
   private StatusElement() {}
 
@@ -29,6 +30,14 @@ public class StatusElement {
 
   private synchronized long getNextId() {
     return ++count;
+  }
+
+  public boolean isAborted() {
+    return abort;
+  }
+
+  public void setAborted(boolean abort) {
+    this.abort = abort;
   }
 
   public boolean equals(Object o) {

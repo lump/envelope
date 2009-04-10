@@ -11,7 +11,7 @@ import java.util.prefs.Preferences;
  * the application it is applied.
  *
  * @author Troy Bowman
- * @version $Id: PrefsConfigurator.java,v 1.2 2007/08/18 23:20:11 troy Test $
+ * @version $Id: PrefsConfigurator.java,v 1.3 2009/04/10 22:49:28 troy Exp $
  */
 public class PrefsConfigurator {
 
@@ -27,8 +27,7 @@ public class PrefsConfigurator {
     // yank the properties file from conventionized properties file
     Properties config = new Properties();
     try {
-      config.load(
-          cless.getResourceAsStream(cless.getSimpleName() + ".properties"));
+      config.load(cless.getResourceAsStream(cless.getSimpleName() + ".properties"));
     } catch (IOException e) {
       e.printStackTrace();
       System.exit(1);
