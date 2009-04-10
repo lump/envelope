@@ -127,7 +127,7 @@
     <delete dir="${one.jar.classes}"/>
   </target>
 
-  <target name="dist" depends="client.dist, server.dist"
+  <target name="dist" depends="client.dist, server.war"
           description="make the client and server distribution jars">
     <echo message="dist done."/>
   </target>
