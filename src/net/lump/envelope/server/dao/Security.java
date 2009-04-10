@@ -1,13 +1,13 @@
 package us.lump.envelope.server.dao;
 
 import net.sf.ehcache.Element;
-import us.lump.envelope.Command;
+import us.lump.envelope.command.Command;
+import us.lump.envelope.command.security.Challenge;
+import us.lump.envelope.command.security.Credentials;
+import us.lump.envelope.command.security.Crypt;
 import us.lump.envelope.entity.User;
 import us.lump.envelope.exception.EnvelopeException;
 import static us.lump.envelope.exception.EnvelopeException.Name.Invalid_Credentials;
-import us.lump.envelope.server.security.Challenge;
-import us.lump.envelope.server.security.Credentials;
-import us.lump.envelope.server.security.Crypt;
 import us.lump.lib.util.Encryption;
 
 import javax.crypto.BadPaddingException;
@@ -24,7 +24,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.16 2009/02/01 02:33:42 troy Alpha $
+ * @version $Id: Security.java,v 1.17 2009/04/10 22:49:28 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption
@@ -67,16 +67,16 @@ public class Security extends DAO {
   public Boolean ping() { return true; }
 
   public Boolean authChallengeResponse(String username,
-                                       byte[] challengeResponse)
-      throws BadPaddingException, NoSuchAlgorithmException, IOException,
-      IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException {
+    byte[] challengeResponse)
+    throws BadPaddingException, NoSuchAlgorithmException, IOException,
+    IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException {
     Boolean authed;
 
     User user = getUser(username);
 
     String hash = new String(
-        Encryption.decodeAsym(serverKeyPair.getPrivate(), challengeResponse),
-        Encryption.TRANS_ENCODING);
+      Encryption.decodeAsym(serverKeyPair.getPrivate(), challengeResponse),
+      Encryption.TRANS_ENCODING);
 
     if (hash.equals(user.getCryptPassword())) {
       // update the userCache
@@ -90,14 +90,13 @@ public class Security extends DAO {
       throw new EnvelopeException(Invalid_Credentials);
     }
 
-    
 
     return authed;
   }
 
   public Boolean validateSession(Command c)
-      throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
-      SignatureException, InvalidKeyException {
+    throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
+    SignatureException, InvalidKeyException {
     Credentials credentials = c.getCredentials();
 
     User user = getUser(credentials.getUsername());
@@ -105,25 +104,25 @@ public class Security extends DAO {
     boolean valid = c.verify(user.getPublicKey());
     if (valid) {
       logger.debug("signature for \""
-                   + credentials.getUsername()
-                   + "\" successfully verfied");
+        + credentials.getUsername()
+        + "\" successfully verfied");
     } else {
       logger.error("signature for \""
-                   + credentials.getUsername()
-                   + "\" FAILED");
+        + credentials.getUsername()
+        + "\" FAILED");
     }
 
     return valid;
   }
 
   public Challenge getChallenge(String username, PublicKey publicKey)
-      throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
-      BadPaddingException, IllegalBlockSizeException, InvalidKeyException,
-      NoSuchPaddingException {
+    throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
+    BadPaddingException, IllegalBlockSizeException, InvalidKeyException,
+    NoSuchPaddingException {
     logger.debug("challenge asked for \"" + username + "\"");
 
     User user = getUser(username);
-    
+
     // set the new public key
     user.setPublicKey(publicKey);
 
@@ -133,28 +132,28 @@ public class Security extends DAO {
     commit();
 
     return new Challenge(
-        serverKeyPair.getPublic(),
-        publicKey,
-        Crypt.yankSalt(user.getCryptPassword())
+      serverKeyPair.getPublic(),
+      publicKey,
+      Crypt.yankSalt(user.getCryptPassword())
     );
   }
 
-//  public CipherInputStream decrypt(InputStream is) throws
+  //  public CipherInputStream decrypt(InputStream is) throws
   public ByteArrayInputStream decrypt(InputStream is) throws
-      IllegalBlockSizeException,
-      IOException,
-      InvalidKeyException,
-      NoSuchAlgorithmException,
-      NoSuchPaddingException,
-      BadPaddingException {
+    IllegalBlockSizeException,
+    IOException,
+    InvalidKeyException,
+    NoSuchAlgorithmException,
+    NoSuchPaddingException,
+    BadPaddingException {
     return Encryption.decodeAsym(serverKeyPair.getPrivate(), is);
   }
 
   public Key unwrapSessionKey(byte[] encryptedKey) throws
-      IOException,
-      InvalidKeyException,
-      NoSuchAlgorithmException,
-      NoSuchPaddingException {
+    IOException,
+    InvalidKeyException,
+    NoSuchAlgorithmException,
+    NoSuchPaddingException {
     return Encryption.unwrapSessionKey(encryptedKey, serverKeyPair.getPrivate());
   }
 

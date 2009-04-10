@@ -17,7 +17,7 @@ import java.util.List;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.20 2009/02/01 02:33:42 troy Test $
+ * @version $Id: CriteriaFactory.java,v 1.21 2009/04/10 22:49:27 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -34,20 +34,16 @@ public class CriteriaFactory {
   }
 
   public Budget getBudgetForUser(String user) throws AbortException {
-    Budget retval = null;
-    List l = null;
-    l = (new HibernatePortal()).detachedCriteriaQuery(
+    return (Budget)(new HibernatePortal()).detachedCriteriaQueryUnique(
         DetachedCriteria.forClass(User.class)
             .add(Restrictions.eq("name", user))
             .setProjection(Projections.property("budget")));
-    if (l.size() > 0) retval = (Budget)l.get(0);
-    return retval;
   }
 
   public List<String> getEntitiesforBudget(Budget budget)
       throws AbortException {
     List<String> list =
-        (List<String>)(new HibernatePortal()).detachedCriteriaQuery(
+        (List<String>)(new HibernatePortal()).detachedCriteriaQueryList(
             DetachedCriteria.forClass(Transaction.class)
                 .createAlias("allocations", "a")
                 .createAlias("a.category", "c")
@@ -73,7 +69,7 @@ public class CriteriaFactory {
         .add(Projections.sum("amount"));
 //        .add(Projections.max("t.date"));
     List<Object[]> list =
-        (List<Object[]>)(new HibernatePortal()).detachedCriteriaQuery(
+        (List<Object[]>)(new HibernatePortal()).detachedCriteriaQueryList(
             DetachedCriteria.forClass(Allocation.class)
                 .createAlias("category", "c")
                 .createAlias("c.account", "a")
@@ -100,7 +96,7 @@ public class CriteriaFactory {
         .add(Projections.sum("amount"))
         .add(Projections.max("t.date"));
     List<Object[]> list =
-        (List<Object[]>)(new HibernatePortal()).detachedCriteriaQuery(
+        (List<Object[]>)(new HibernatePortal()).detachedCriteriaQueryList(
             DetachedCriteria.forClass(Allocation.class)
                 .createAlias("category", "c")
                 .add(Restrictions.eq("c.account", account))
@@ -108,19 +104,17 @@ public class CriteriaFactory {
                 .setProjection(plist)
                 .addOrder(Order.asc("CategoryName")));
     if (list != null)
-      for (Object[] o : list) {
-        retval.add(new Hierarchy.CategoryTotal((String)o[0],
-                                               (Integer)o[1],
-                                               (Money)o[2]));
-      }
+      for (Object[] o : list)
+        retval.add(new Hierarchy.CategoryTotal((String)o[0], (Integer)o[1], (Money)o[2]));
+
     return retval;
   }
 
   public DetachedCriteria getBeginningBalance(Object thing,
-                                              Date endDate,
-                                              Boolean reconciled) {
+      Date endDate,
+      Boolean reconciled) {
     if (!(thing instanceof Hierarchy.CategoryTotal
-          || thing instanceof Hierarchy.AccountTotal))
+        || thing instanceof Hierarchy.AccountTotal))
       throw new IllegalArgumentException(
           "first argument must be Cateogry or Budget");
 
@@ -130,7 +124,7 @@ public class CriteriaFactory {
           .createAlias("allocations", "a")
           .createAlias("a.category", "c")
           .add(Restrictions.eq("c.account",
-                               ((Hierarchy.AccountTotal)thing).account))
+              ((Hierarchy.AccountTotal)thing).account))
           .add(Restrictions.lt("date", endDate));
       if (reconciled != null)
         dc.add(Restrictions.eq("reconciled", reconciled));
@@ -139,7 +133,7 @@ public class CriteriaFactory {
       dc = DetachedCriteria.forClass(Allocation.class)
           .createAlias("transaction", "t")
           .add(Restrictions.eq("category.id",
-                               ((Hierarchy.CategoryTotal)thing).id))
+              ((Hierarchy.CategoryTotal)thing).id))
           .add(Restrictions.lt("t.date", endDate));
       if (reconciled != null)
         dc.add(Restrictions.eq("t.reconciled", reconciled));
@@ -150,11 +144,11 @@ public class CriteriaFactory {
   }
 
   public DetachedCriteria getTransactions(Object thing,
-                                          Date beginDate,
-                                          Date endDate)
+      Date beginDate,
+      Date endDate)
       throws EnvelopeException {
     if (!((thing instanceof Hierarchy.CategoryTotal)
-          || (thing instanceof Hierarchy.AccountTotal)))
+        || (thing instanceof Hierarchy.AccountTotal)))
       throw new IllegalArgumentException(
           "first argument must be CategoryTotal or AccountTotal");
 
@@ -172,7 +166,7 @@ public class CriteriaFactory {
           .createAlias("allocations", "a")
           .createAlias("a.category", "c")
           .add(Restrictions.eq("c.account",
-                               ((Hierarchy.AccountTotal)thing).account))
+              ((Hierarchy.AccountTotal)thing).account))
           .add(Restrictions.ge("date", beginDate))
           .add(Restrictions.le("date", endDate))
           .setProjection(plist)
@@ -190,7 +184,7 @@ public class CriteriaFactory {
       dc = DetachedCriteria.forClass(Allocation.class)
           .createAlias("transaction", "t")
           .add(Restrictions.eq("category.id",
-                               ((Hierarchy.CategoryTotal)thing).id))
+              ((Hierarchy.CategoryTotal)thing).id))
           .add(Restrictions.ge("t.date", beginDate))
           .add(Restrictions.le("t.date", endDate))
           .setProjection(plist)

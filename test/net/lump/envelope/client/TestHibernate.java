@@ -10,8 +10,6 @@ import us.lump.envelope.entity.Account;
 import us.lump.envelope.entity.Budget;
 import us.lump.envelope.entity.Identifiable;
 
-import java.util.List;
-
 /** Test Hibernate Operations. */
 public class TestHibernate extends TestCase {
 
@@ -22,9 +20,7 @@ public class TestHibernate extends TestCase {
     criteria.add(Restrictions.eq("budget.id", 0));
     criteria.add(Restrictions.eq("name", "Guest's Checking"));
     HibernatePortal hp = new HibernatePortal();
-    List l = hp.detachedCriteriaQuery(criteria);
-
-
+    Account blah = (Account)hp.detachedCriteriaQueryUnique(criteria);
     System.out.println("Hello world");
   }
 

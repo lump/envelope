@@ -49,7 +49,7 @@
         <option name="ALIGN_MULTILINE_PARAMETERS" value="false" />
         <option name="ALIGN_MULTILINE_FOR" value="false" />
         <option name="SPACE_AFTER_TYPE_CAST" value="false" />
-        <option name="RIGHT_MARGIN" value="80" />
+        <option name="RIGHT_MARGIN" value="132" />
         <option name="CALL_PARAMETERS_WRAP" value="1" />
         <option name="METHOD_PARAMETERS_WRAP" value="1" />
         <option name="EXTENDS_LIST_WRAP" value="1" />
@@ -88,6 +88,15 @@
           <option name="LABEL_INDENT_SIZE" value="0" />
           <option name="LABEL_INDENT_ABSOLUTE" value="false" />
         </ADDITIONAL_INDENT_OPTIONS>
+        <ADDITIONAL_INDENT_OPTIONS fileType="haml">
+          <option name="INDENT_SIZE" value="2" />
+          <option name="CONTINUATION_INDENT_SIZE" value="8" />
+          <option name="TAB_SIZE" value="4" />
+          <option name="USE_TAB_CHARACTER" value="false" />
+          <option name="SMART_TABS" value="false" />
+          <option name="LABEL_INDENT_SIZE" value="0" />
+          <option name="LABEL_INDENT_ABSOLUTE" value="false" />
+        </ADDITIONAL_INDENT_OPTIONS>
         <ADDITIONAL_INDENT_OPTIONS fileType="java">
           <option name="INDENT_SIZE" value="2" />
           <option name="CONTINUATION_INDENT_SIZE" value="4" />
@@ -110,6 +119,15 @@
           <option name="INDENT_SIZE" value="2" />
           <option name="CONTINUATION_INDENT_SIZE" value="4" />
           <option name="TAB_SIZE" value="2" />
+          <option name="USE_TAB_CHARACTER" value="false" />
+          <option name="SMART_TABS" value="false" />
+          <option name="LABEL_INDENT_SIZE" value="0" />
+          <option name="LABEL_INDENT_ABSOLUTE" value="false" />
+        </ADDITIONAL_INDENT_OPTIONS>
+        <ADDITIONAL_INDENT_OPTIONS fileType="rb">
+          <option name="INDENT_SIZE" value="2" />
+          <option name="CONTINUATION_INDENT_SIZE" value="8" />
+          <option name="TAB_SIZE" value="4" />
           <option name="USE_TAB_CHARACTER" value="false" />
           <option name="SMART_TABS" value="false" />
           <option name="LABEL_INDENT_SIZE" value="0" />
@@ -164,6 +182,9 @@
       <entry name="?*.dtd" />
       <entry name="?*.tld" />
     </wildcardResourcePatterns>
+  </component>
+  <component name="CopyrightManager" default="">
+    <module2copyright />
   </component>
   <component name="DependenciesAnalyzeManager">
     <option name="myForwardDirection" value="false" />
@@ -388,7 +409,14 @@
   <component name="ProjectDetails">
     <option name="projectName" value="envelope" />
   </component>
-  <component name="ProjectFileVersion" converted="true" />
+  <component name="ProjectFileVersion" converted="true">
+    <converter id="javaee-modules" />
+    <converter id="ror-modules" />
+    <converter id="SelenaRunConfToDiana" />
+  </component>
+  <component name="ProjectKey">
+    <option name="state" value=":ext:troy@tao.lump.us:/export/cvsroot|envelope/envelope.ipr" />
+  </component>
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/envelope.iml" filepath="$PROJECT_DIR$/envelope.iml" />
@@ -446,7 +474,9 @@
       <CLASSES>
         <root url="file://$PROJECT_DIR$/lib" />
       </CLASSES>
-      <JAVADOC />
+      <JAVADOC>
+        <root url="jar://$PROJECT_DIR$/doc/servlet-2_3-fcs-docs.zip!/" />
+      </JAVADOC>
       <SOURCES />
       <jarDirectory url="file://$PROJECT_DIR$/lib" recursive="false" />
     </library>

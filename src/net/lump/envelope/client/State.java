@@ -18,7 +18,7 @@ import java.util.TreeSet;
 /**
  * This is a repository for globally accessed object instances.
  *
- * @version $Id: State.java,v 1.6 2009/02/01 02:33:42 troy Test $
+ * @version $Id: State.java,v 1.7 2009/04/10 22:49:27 troy Exp $
  */
 public class State {
 
@@ -75,9 +75,10 @@ public class State {
     this.categories = categories;
   }
 
+  @SuppressWarnings({"unchecked"})
   public List<String> entities() throws AbortException {
     Element element = entityCache.get(ENTITIES);
-    if (element != null) //noinspection unchecked
+    if (element != null)
       return (List<String>)element.getValue();
     else {
       java.util.List<String> entities;

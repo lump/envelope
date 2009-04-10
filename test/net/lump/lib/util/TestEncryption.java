@@ -2,24 +2,22 @@ package us.lump.lib.util;
 
 import junit.framework.TestCase;
 import org.junit.Test;
-import us.lump.envelope.server.security.Challenge;
-import us.lump.envelope.Command;
+import us.lump.envelope.command.Command;
+import us.lump.envelope.command.security.Challenge;
 
-import javax.crypto.SecretKey;
-import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
-import java.security.KeyPair;
-import java.io.ByteArrayOutputStream;
+import javax.crypto.SecretKey;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
-import java.util.Arrays;
+import java.security.KeyPair;
 
 /**
  * .
  *
  * @author Troy Bowman
- * @version $Id: TestEncryption.java,v 1.8 2008/10/30 23:00:11 troy Alpha $
+ * @version $Id: TestEncryption.java,v 1.9 2009/04/10 22:49:28 troy Exp $
  */
 public class TestEncryption extends TestCase {
 
@@ -29,15 +27,15 @@ public class TestEncryption extends TestCase {
 
     String blah = "blahblah";
     byte[] encrypted =
-        Encryption.encodeAsym(kp.getPublic(), blah.getBytes("US-ASCII"));
+      Encryption.encodeAsym(kp.getPublic(), blah.getBytes("US-ASCII"));
     assertEquals("Asym Decryption failed",
-                 blah,
-                 new String(Encryption.decodeAsym(kp.getPrivate(), encrypted),
-                            "US-ASCII"));
+      blah,
+      new String(Encryption.decodeAsym(kp.getPrivate(), encrypted),
+        "US-ASCII"));
 
     Challenge c = new Challenge(kp.getPublic(), kp.getPublic(), blah);
     assertEquals("Challenge decription failed",
-                 c.getChallenge(kp.getPrivate()), blah);
+      c.getChallenge(kp.getPrivate()), blah);
   }
 
   @Test
@@ -51,7 +49,7 @@ public class TestEncryption extends TestCase {
 //    int buffsize = 0;
 //    do {
     Command command =
-        new Command(Command.Name.getChallenge, "troy", kp.getPublic());
+      new Command(Command.Name.getChallenge, null, "troy", kp.getPublic());
 
     ByteArrayOutputStream serializedos = Compression.serializeOnly(command);
     startSize = serializedos.size();
@@ -86,12 +84,12 @@ public class TestEncryption extends TestCase {
 //    byte[] output = cipherout.doFinal(baos.toByteArray());
 //    finishSize = output.length;
 
-      InputStream is3 = new ByteArrayInputStream(baos.toByteArray());
-      CipherInputStream cis3 = Encryption.decodeSym(sessionKey, is3);
+    InputStream is3 = new ByteArrayInputStream(baos.toByteArray());
+    CipherInputStream cis3 = Encryption.decodeSym(sessionKey, is3);
     ObjectInputStream ois = new ObjectInputStream(cis3);
     Object o = ois.readObject();
-      byte[] b3 = new byte[1024];
-      finishSize = cis3.read(b3);
+    byte[] b3 = new byte[1024];
+    finishSize = cis3.read(b3);
     assertEquals("startSize doesn't match finishSize!", startSize, finishSize);
     System.out.println(startSize + " " + finishSize);
 //      buffsize++;

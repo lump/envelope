@@ -13,7 +13,7 @@ import java.security.spec.X509EncodedKeySpec;
  * signing and encryption.
  *
  * @author Troy Bowman
- * @version $Id: Encryption.java,v 1.10 2008/09/01 19:18:01 troy Test $
+ * @version $Id: Encryption.java,v 1.11 2009/04/10 22:49:28 troy Exp $
  */
 
 public final class Encryption {

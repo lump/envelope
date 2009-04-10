@@ -14,7 +14,6 @@ import org.hibernate.impl.SessionImpl;
 import us.lump.envelope.entity.*;
 import us.lump.envelope.entity.Transaction;
 import us.lump.envelope.exception.EnvelopeException;
-import us.lump.envelope.server.PrefsConfigurator;
 import us.lump.envelope.server.ThreadInfo;
 
 import java.io.Serializable;
@@ -26,7 +25,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.23 2009/02/01 02:33:42 troy Test $
+ * @version $Id: DAO.java,v 1.24 2009/04/10 22:49:28 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -60,12 +59,17 @@ public abstract class DAO {
     if (!this.isActive()) begin();
   }
 
-  /** Initialize the session factory in the DAO. */
-  public static void initialize() {
+  /** Initialize the session factory in the DAO.
+   * @param config
+   * @param config
+   * @throws java.io.IOException*/
+  /**
+   * Initialize the session factory in the DAO.
+   * @param config a properties that configures hibernate
+   */
+  public static void initialize(Properties config) {
     if (sessionFactory == null) {
-      Properties config = PrefsConfigurator.configure(DAO.class);
       sessionFactory = new AnnotationConfiguration()
-//          .addPackage("us.lump.envelope.entity")
           .addAnnotatedClass(Account.class)
           .addAnnotatedClass(Budget.class)
           .addAnnotatedClass(Category.class)
@@ -80,7 +84,6 @@ public abstract class DAO {
   }
 
   static SessionFactory getSessionFactory() {
-    initialize();
     return sessionFactory;
   }
 
@@ -99,15 +102,14 @@ public abstract class DAO {
   }
 
   /**
-   * This takes a detached criteria query, probably provided by the client, and
-   * returns the list of results.
+   * This takes a detached criteria query, probably provided by the client, and returns the list of results.
    *
    * @param dc The detached criteria
    *
    * @return List
    */
   @SuppressWarnings({"unchecked"})
-  public List detachedCriteriaQuery(DetachedCriteria dc) {
+  public List detachedCriteriaQueryList(DetachedCriteria dc) {
     logger.debug(dc.toString());
 
     List l = dc.getExecutableCriteria(getCurrentSession())
@@ -115,12 +117,18 @@ public abstract class DAO {
         .list();
 
     // evict if these are Identifiable objects.
-    if (l.size() > 0 && l.get(0) instanceof Identifiable)
-      evict(l);
-
-//    BackgroundList bl = new BackgroundList(l);
-
+    if (l.size() > 0 && l.get(0) instanceof Identifiable) evict((List<Identifiable>)l);
     return l;
+  }
+
+  public Serializable detachedCriteriaQueryUnique(DetachedCriteria dc) {
+    logger.debug(dc.toString());
+
+    Serializable s = (Serializable)dc.getExecutableCriteria(getCurrentSession()).setCacheable(true).uniqueResult();
+
+    // evict if this is an Identifiable
+    if (s instanceof Identifiable) evict((Identifiable)s);
+    return s;
   }
 
   @SuppressWarnings({"unchecked"})
@@ -173,12 +181,12 @@ public abstract class DAO {
   }
 
   public <T extends Identifiable> List<T> getList(Class<T> t,
-                                                  Serializable[] ids) {
+      Serializable[] ids) {
     return getList(t, listify(ids));
   }
 
   public <T extends Identifiable> List<T> getList(Class<T> t,
-                                                  Iterable<Serializable> ids) {
+      Iterable<Serializable> ids) {
     List<T> out = new ArrayList<T>();
     for (Serializable id : ids) out.add(get(t, id));
     return out;
@@ -208,12 +216,12 @@ public abstract class DAO {
   }
 
   public <T extends Identifiable> List<T> loadList(Class<T> t,
-                                                   Serializable... ids) {
+      Serializable... ids) {
     return loadList(t, listify(ids));
   }
 
   public <T extends Identifiable> List<T> loadList(Class<T> t,
-                                                   Iterable<Serializable> ids) {
+      Iterable<Serializable> ids) {
     List<T> out = new ArrayList<T>();
     for (Serializable id : ids) out.add(load(t, id));
     return out;
@@ -303,7 +311,7 @@ public abstract class DAO {
 
       if (users.isEmpty())
         throw new EnvelopeException(EnvelopeException.Name.Invalid_User,
-                                "User " + username + " is invalid.");
+            "User " + username + " is invalid.");
       user = users.get(0);
       cache.get(USER).put(new Element(username, user));
       ThreadInfo.setUser(user);
@@ -326,13 +334,11 @@ public abstract class DAO {
   }
 
   /**
-   * Flush the associated Session and end the unit of work (unless we are in
-   * FlushMode.NEVER. This method will commit the underlying transaction if and
-   * only if the underlying transaction was initiated by this object.
+   * Flush the associated Session and end the unit of work (unless we are in FlushMode.NEVER. This method will commit the underlying
+   * transaction if and only if the underlying transaction was initiated by this object.
    *
    * @throws org.hibernate.HibernateException
-   *          - Indicates problems flushing the session or talking to the
-   *          database.
+   *          - Indicates problems flushing the session or talking to the database.
    */
   public void commit() throws HibernateException {
     getTransaction().commit();
@@ -346,15 +352,12 @@ public abstract class DAO {
   }
 
   /**
-   * Force this session to flush. Must be called at the end of a unit of work,
-   * before commiting the transaction and closing the session (depending on
-   * flush-mode, Transaction.commit() calls this method). Flushing is the
-   * process of synchronizing the underlying persistent store with persistable
-   * state held in memory.
+   * Force this session to flush. Must be called at the end of a unit of work, before commiting the transaction and closing the
+   * session (depending on flush-mode, Transaction.commit() calls this method). Flushing is the process of synchronizing the
+   * underlying persistent store with persistable state held in memory.
    *
    * @throws org.hibernate.HibernateException
-   *          - Indicates problems flushing the session or talking to the
-   *          database.
+   *          - Indicates problems flushing the session or talking to the database.
    */
   public synchronized void flush() throws HibernateException {
     getCurrentSession().flush();
@@ -371,9 +374,8 @@ public abstract class DAO {
   }
 
   /**
-   * Does this session contain any changes which must be synchronized with the
-   * database? In other words, would any DML operations be executed if we
-   * flushed this session?
+   * Does this session contain any changes which must be synchronized with the database? In other words, would any DML operations be
+   * executed if we flushed this session?
    *
    * @return True if the session contains pending changes; false otherwise.
    */
@@ -400,36 +402,30 @@ public abstract class DAO {
   }
 
   /**
-   * Check if this transaction was successfully committed. This method could
-   * return false even after successful invocation of commit. As an example, JTA
-   * based strategies no-op on commit calls if they did not start the
-   * transaction; in that case, they also report wasCommitted as false.
+   * Check if this transaction was successfully committed. This method could return false even after successful invocation of
+   * commit. As an example, JTA based strategies no-op on commit calls if they did not start the transaction; in that case, they
+   * also report wasCommitted as false.
    *
-   * @return boolean True if the transaction was (unequivocally) committed via
-   *         this local transaction; false otherwise.
+   * @return boolean True if the transaction was (unequivocally) committed via this local transaction; false otherwise.
    */
   public boolean wasCommitted() {
     return getTransaction().wasCommitted();
   }
 
   /**
-   * Was this transaction rolled back or set to rollback only? This only
-   * accounts for actions initiated from this local transaction. If, for
-   * example, the underlying transaction is forced to rollback via some other
-   * means, this method still reports false because the rollback was not
-   * initiated from here.
+   * Was this transaction rolled back or set to rollback only? This only accounts for actions initiated from this local transaction.
+   * If, for example, the underlying transaction is forced to rollback via some other means, this method still reports false because
+   * the rollback was not initiated from here.
    *
-   * @return boolean True if the transaction was rolled back via this local
-   *         transaction; false otherwise.
+   * @return boolean True if the transaction was rolled back via this local transaction; false otherwise.
    */
   public boolean wasRolledBack() {
     return getTransaction().wasRolledBack();
   }
 
   /**
-   * End the session by releasing the JDBC connection and cleaning up. It is not
-   * strictly necessary to close the session but you must at least disconnect()
-   * it.
+   * End the session by releasing the JDBC connection and cleaning up. It is not strictly necessary to close the session but you
+   * must at least disconnect() it.
    *
    * @return the connection provided by the application or null.
    */
@@ -439,14 +435,11 @@ public abstract class DAO {
   }
 
   /**
-   * Disconnect the Session from the current JDBC connection. If the connection
-   * was obtained by Hibernate close it and return it to the connection pool;
-   * otherwise, return it to the application. This is used by applications which
-   * supply JDBC connections to Hibernate and which require long-sessions (or
-   * long-conversations) Note that disconnect() called on a session where the
-   * connection was retrieved by Hibernate through its configured
-   * org.hibernate.connection.ConnectionProvider has no effect, provided
-   * ConnectionReleaseMode.ON_CLOSE is not in effect.
+   * Disconnect the Session from the current JDBC connection. If the connection was obtained by Hibernate close it and return it to
+   * the connection pool; otherwise, return it to the application. This is used by applications which supply JDBC connections to
+   * Hibernate and which require long-sessions (or long-conversations) Note that disconnect() called on a session where the
+   * connection was retrieved by Hibernate through its configured org.hibernate.connection.ConnectionProvider has no effect,
+   * provided ConnectionReleaseMode.ON_CLOSE is not in effect.
    *
    * @return the application-supplied connection or null
    */

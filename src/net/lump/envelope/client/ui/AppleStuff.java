@@ -18,7 +18,7 @@ public class AppleStuff {
 
     application = Application.getApplication();
     application.setEnabledPreferencesMenu(true);
-    application.setDockIconBadge("Hi");
+//    application.setDockIconBadge("Hi");
 
     applicationAdapter = new com.apple.eawt.ApplicationAdapter() {
       public void handleAbout(ApplicationEvent e) {

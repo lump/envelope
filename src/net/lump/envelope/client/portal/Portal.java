@@ -1,13 +1,12 @@
 package us.lump.envelope.client.portal;
 
-import us.lump.envelope.Command;
-import us.lump.envelope.client.SocketClient;
+import us.lump.envelope.client.HttpClient;
 import us.lump.envelope.client.ui.components.forms.Preferences;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
+import us.lump.envelope.command.Command;
 import us.lump.envelope.exception.AbortException;
 import us.lump.envelope.exception.EnvelopeException;
-import us.lump.envelope.server.rmi.Controller;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,31 +20,32 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * All portals should subclass this class, as this provides a single point of
- * exit/entry to the server along with exception handling.
+ * All portals should subclass this class, as this provides a single point of exit/entry to the server along with exception
+ * handling.
  *
  * @author Troy Bowman
- * @version $Id: Portal.java,v 1.24 2009/02/01 02:33:42 troy Alpha $
+ * @version $Id: Portal.java,v 1.25 2009/04/10 22:49:27 troy Exp $
  */
 
 abstract class Portal {
-  private Controller controller;
   Component frame;
 
   public Serializable invoke(Command command) throws AbortException {
     return invoke(null, command);
   }
-  public Serializable invoke(List<Command> commands) throws AbortException {
-    return invoke(null, commands);
+
+  public Serializable rawInvoke(Command command) throws AbortException {
+    return rawInvoke(null, command);
   }
 
   public Serializable invoke(Component frame, Command command) throws AbortException {
-    // sign the command before invoking
     try {
       LoginSettings ls = LoginSettings.getInstance();
+      // sign the command before invoking
       command.sign(ls.getUsername(), ls.getKeyPair().getPrivate());
     } catch (Exception e) {
       handleException(e);
@@ -53,57 +53,40 @@ abstract class Portal {
     return rawInvoke(frame, command);
   }
 
-  public Serializable invoke(Component frame, List<Command> commands) throws AbortException {
-    // sign the command before invoking
+  public Serializable rawInvoke(Component frame, Command command) throws AbortException {
+    this.frame = frame;
+    Serializable retval = null;
     try {
-      LoginSettings ls = LoginSettings.getInstance();
-      for (Command c : commands)
-        c.sign(ls.getUsername(), ls.getKeyPair().getPrivate());
+      retval = new HttpClient().invoke(command);
     } catch (Exception e) {
       handleException(e);
     }
-    return rawInvoke(frame, commands);
+    return retval;
   }
 
-  public Serializable rawInvoke(Command command) throws AbortException {
-    return rawInvoke(null, command);
-  }
-
-  public Serializable rawInvoke(List<Command> commands) throws AbortException {
+  public List<Serializable> invoke(List<Command> commands) throws AbortException {
+    try {
+      LoginSettings ls = LoginSettings.getInstance();
+      for (Command c : commands) c.sign(ls.getUsername(), ls.getKeyPair().getPrivate());
+    } catch (Exception e) {
+      handleException(e);
+    }
     return rawInvoke(null, commands);
   }
 
-  // this is the real deal.
-  public Serializable rawInvoke(Component jframe, Command command) throws AbortException {
-    // set instance variables for use if exceptions happen
+  public List<Serializable> rawInvoke(Component jframe, List<Command> commands) throws AbortException {
+    ArrayList<Serializable> retval = new ArrayList<Serializable>();
     this.frame = jframe;
-
     try {
-      return SocketClient.getSocket().invoke(command);
-//      return getController().invoke(command);
+//      SocketClient.getSocket().invoke(commands);
+      for (Command c : commands) retval.add(new HttpClient().invoke(c));
     } catch (Exception e) {
       handleException(e);
-      return null;
     }
+    return retval;
   }
 
-  // this is the real deal.
-  public Serializable rawInvoke(Component jframe,
-                                List<Command> commands) throws AbortException {
-    // set instance variables for use if exceptions happen
-    this.frame = jframe;
-
-    try {
-      return SocketClient.getSocket().invoke(commands);
-//      return getController().invoke(command);
-    } catch (Exception e) {
-      handleException(e);
-      return null;
-    }
-  }
-
-  private void handleException(Exception incomingException)
-      throws AbortException {
+  private void handleException(Exception incomingException) throws AbortException {
 
     //try to find a nested envelope exception first...
     Throwable cause = incomingException;
@@ -114,8 +97,7 @@ abstract class Portal {
         EnvelopeException e = (EnvelopeException)cause;
         if (e.getType() == EnvelopeException.Type.Session) {
           checkSettings(e);
-        }
-        else {
+        } else {
           error(incomingException);
         }
       }
@@ -198,25 +180,20 @@ abstract class Portal {
   private void checkSettings(Exception e) throws AbortException {
     Preferences appPrefs = Preferences.getInstance();
 
-    if (e instanceof EnvelopeException) {
-      appPrefs.setSessionState(
-          Preferences.State.bad,
-          ((EnvelopeException)e).getName().toString().replaceAll("_"," "));
+    if (!(e instanceof EnvelopeException) && e instanceof IOException) error(e);
+    else if (e instanceof EnvelopeException) {
+      appPrefs.setSessionState(Preferences.State.bad, ((EnvelopeException)e).getName().toString().replaceAll("_", " "));
       appPrefs.selectTab(Strings.get("login"));
       appPrefs.setVisible(true);
       throw new AbortException(e);
-    }
-    else if (!appPrefs.areServerSettingsOk()) {
+    } else if (!appPrefs.areServerSettingsOk()) {
       appPrefs.selectTab(Strings.get("server"));
       appPrefs.setVisible(true);
       throw new AbortException(e);
-    }
-    else if (!appPrefs.areLoginSettingsOk()) {
+    } else if (!appPrefs.areLoginSettingsOk()) {
       appPrefs.selectTab(Strings.get("login"));
       appPrefs.setVisible(true);
       throw new AbortException(e);
-    } else {
-      error(e);
-    }
+    } else error(e);
   }
 }

@@ -1,6 +1,5 @@
 package us.lump.envelope.client.ui.components;
 
-import sun.swing.DefaultLookup;
 import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.State;
 import us.lump.envelope.client.thread.StatusRunnable;
@@ -39,7 +38,7 @@ import java.util.List;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.29 2009/02/01 02:33:42 troy Test $
+ * @version $Id: Hierarchy.java,v 1.30 2009/04/10 22:49:27 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -263,11 +262,11 @@ public class Hierarchy extends JTree {
     }
 
     public Component getTableCellRendererComponent(JTable table,
-                                                   Object value,
-                                                   boolean isSelected,
-                                                   boolean hasFocus,
-                                                   int row,
-                                                   int col) {
+        Object value,
+        boolean isSelected,
+        boolean hasFocus,
+        int row,
+        int col) {
       JLabel label = new JLabel(
           value == null ? "" : ((Money)value).toFormattedString(),
           SwingConstants.RIGHT);
@@ -286,10 +285,8 @@ public class Hierarchy extends JTree {
 
       // this is for Nimbus's alternate row color, shouldn't affect other stuff
       if (UIManager.getLookAndFeel().getID().equals("Nimbus") &&
-          (original == null
-           || original instanceof javax.swing.plaf.UIResource)) {
-        Color alternateColor =
-            DefaultLookup.getColor(this, ui, "Table.alternateRowColor", null);
+          (original == null || original instanceof javax.swing.plaf.UIResource)) {
+        Color alternateColor = (Color)UIManager.get("Table.alternateRowColor");
         if (alternateColor != null && row % 2 == 0) {
           label.setBackground(alternateColor);
           label.setOpaque(true);
@@ -343,7 +340,7 @@ public class Hierarchy extends JTree {
       balanceLabel.setHorizontalAlignment(JLabel.RIGHT);
       this.add(mainLabel);
       this.add(new Box.Filler(new Dimension(5, 0), new Dimension(5, 0),
-                              new Dimension(Short.MAX_VALUE, 0)));
+          new Dimension(Short.MAX_VALUE, 0)));
       this.add(balanceLabel);
 //      this.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 //      balanceLabel.setBorder(BorderFactory.createLineBorder(Color.GREEN));
@@ -378,12 +375,12 @@ public class Hierarchy extends JTree {
     }
 
     public Component getTreeCellRendererComponent(JTree tree,
-                                                  Object value,
-                                                  boolean selected,
-                                                  boolean expanded,
-                                                  boolean leaf,
-                                                  int row,
-                                                  boolean hasFocus) {
+        Object value,
+        boolean selected,
+        boolean expanded,
+        boolean leaf,
+        int row,
+        boolean hasFocus) {
 
 //      this.setSize(tree.getWidth(), this.getHeight());
       mainLabel.setFont(tree.getFont());
@@ -508,9 +505,9 @@ public class Hierarchy extends JTree {
     public Account account;
 
     public AccountTotal(Account account,
-                        String name,
-                        Integer id,
-                        Money balance) {
+        String name,
+        Integer id,
+        Money balance) {
       super(name, id, balance);
       this.account = account;
     }
@@ -568,8 +565,8 @@ public class Hierarchy extends JTree {
       return new NodeDimensionsHandler() {
         @Override
         public Rectangle getNodeDimensions(Object value, int row,
-                                           int depth, boolean expanded,
-                                           Rectangle size) {
+            int depth, boolean expanded,
+            Rectangle size) {
 
           // Return size of editing component, if editing and asking
           // for editing row.
@@ -586,7 +583,7 @@ public class Hierarchy extends JTree {
               size.height = prefSize.height;
             } else {
               size = new Rectangle(getRowX(row, depth), 0,
-                                   prefSize.width, prefSize.height);
+                  prefSize.width, prefSize.height);
             }
             return size;
           }
@@ -596,8 +593,8 @@ public class Hierarchy extends JTree {
 
             aComponent = currentCellRenderer.getTreeCellRendererComponent
                 (tree, value, tree.isRowSelected(row),
-                 expanded, treeModel.isLeaf(value), row,
-                 false);
+                    expanded, treeModel.isLeaf(value), row,
+                    false);
             if (tree != null) {
               // Only ever removed when UI changes, this is OK!
               rendererPane.add(aComponent);

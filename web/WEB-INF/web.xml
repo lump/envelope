@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+		  http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
+         version="2.5">
+
+  <!-- $Id: web.xml,v 1.2 2009/04/10 22:49:28 troy Exp $ -->
+
+  <display-name>Envelope Budget</display-name>
+  <servlet>
+    <servlet-name>EnvelopeServlet</servlet-name>
+    <servlet-class>us.lump.envelope.server.servlet.EnvelopeServlet</servlet-class>
+    <init-param>
+      <param-name>init</param-name>
+      <param-value>blah</param-value>
+    </init-param>
+  </servlet>
+
+  <servlet>
+    <servlet-name>ErrorServlet</servlet-name>
+    <servlet-class>us.lump.envelope.server.servlet.ErrorServlet</servlet-class>
+  </servlet>
+
+  <servlet>
+    <servlet-name>DefaultServlet</servlet-name>
+    <servlet-class>us.lump.envelope.server.servlet.DefaultServlet</servlet-class>
+  </servlet>
+
+  <servlet-mapping>
+    <servlet-name>EnvelopeServlet</servlet-name>
+    <url-pattern>/invoke</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>ErrorServlet</servlet-name>
+    <url-pattern>/error</url-pattern>
+  </servlet-mapping>
+
+  <servlet-mapping>
+    <servlet-name>DefaultServlet</servlet-name>
+    <url-pattern>/</url-pattern>
+  </servlet-mapping>
+
+
+  <mime-mapping>
+    <extension>tgz</extension>
+    <mime-type>application/x-tar-gz</mime-type>
+  </mime-mapping>
+  <mime-mapping>
+    <extension>jardiff</extension>
+    <mime-type>application/x-java-archive-diff</mime-type>
+  </mime-mapping>
+  <mime-mapping>
+    <extension>gz</extension>
+    <mime-type>application/x-gz</mime-type>
+  </mime-mapping>
+  <mime-mapping>
+    <extension>scpt</extension>
+    <mime-type>application/x-applescript</mime-type>
+  </mime-mapping>
+  <mime-mapping>
+    <extension>pem</extension>
+    <mime-type>application/x-x509-ca-cert</mime-type>
+  </mime-mapping>
+
+<!--
+  <error-page>
+    <error-code>400</error-code>
+    <location>/error?id=400</location>
+  </error-page>
+  <error-page>
+    <error-code>401</error-code>
+    <location>/error?id=401</location>
+  </error-page>
+  <error-page>
+    <error-code>402</error-code>
+    <location>/error?id=402</location>
+  </error-page>
+  <error-page>
+    <error-code>403</error-code>
+    <location>/error?id=403</location>
+  </error-page>
+  <error-page>
+    <error-code>404</error-code>
+    <location>/error?id=404</location>
+  </error-page>
+  <error-page>
+    <error-code>405</error-code>
+    <location>/error?id=405</location>
+  </error-page>
+  <error-page>
+    <error-code>406</error-code>
+    <location>/error?id=406</location>
+  </error-page>
+  <error-page>
+    <error-code>407</error-code>
+    <location>/error?id=407</location>
+  </error-page>
+  <error-page>
+    <error-code>408</error-code>
+    <location>/error?id=408</location>
+  </error-page>
+  <error-page>
+    <error-code>409</error-code>
+    <location>/error?id=409</location>
+  </error-page>
+  <error-page>
+    <error-code>410</error-code>
+    <location>/error?id=410</location>
+  </error-page>
+  <error-page>
+    <error-code>411</error-code>
+    <location>/error?id=411</location>
+  </error-page>
+  <error-page>
+    <error-code>412</error-code>
+    <location>/error?id=412</location>
+  </error-page>
+  <error-page>
+    <error-code>413</error-code>
+    <location>/error?id=413</location>
+  </error-page>
+  <error-page>
+    <error-code>414</error-code>
+    <location>/error?id=414</location>
+  </error-page>
+  <error-page>
+    <error-code>415</error-code>
+    <location>/error?id=415</location>
+  </error-page>
+  <error-page>
+    <error-code>416</error-code>
+    <location>/error?id=416</location>
+  </error-page>
+  <error-page>
+    <error-code>417</error-code>
+    <location>/error?id=417</location>
+  </error-page>
+  <error-page>
+    <error-code>500</error-code>
+    <location>/error?id=500</location>
+  </error-page>
+  <error-page>
+    <error-code>501</error-code>
+    <location>/error?id=501</location>
+  </error-page>
+  <error-page>
+    <error-code>502</error-code>
+    <location>/error?id=502</location>
+  </error-page>
+  <error-page>
+    <error-code>503</error-code>
+    <location>/error?id=503</location>
+  </error-page>
+  <error-page>
+    <error-code>504</error-code>
+    <location>/error?id=504</location>
+  </error-page>
+  <error-page>
+    <error-code>505</error-code>
+    <location>/error?id=505</location>
+  </error-page>
+  -->
+
+</web-app>
