@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module relativePaths="true" type="JAVA_MODULE" version="4">
+  <component name="CodeStyleSettingsManager" />
+  <component name="CopyrightManager" />
   <component name="FacetManager">
     <facet type="web" name="Web">
       <configuration>
@@ -52,6 +54,8 @@
       </library>
     </orderEntry>
   </component>
+  <component name="ProjectFileVersion" />
+  <component name="ProjectKey" />
   <component name="RSpecModuleSettingsStorage">
     <RSPEC_MODULE_SETTINGS_STORAGE_ID NAME="RSPEC_SUPPORT_TYPE" VALUE="NONE" />
   </component>
@@ -59,5 +63,6 @@
     <option name="ACTIVE_VCS_NAME" value="CVS" />
     <option name="USE_PROJECT_VCS" value="false" />
   </component>
+  <component name="libraryTable" />
 </module>
 
