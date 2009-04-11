@@ -24,14 +24,13 @@ import java.util.List;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
+import java.util.zip.*;
 
 /**
  * The default servlet.
  *
  * @author troy
- * @version $Id: EnvelopeServlet.java,v 1.2 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: EnvelopeServlet.java,v 1.3 2009/04/11 06:00:14 troy Exp $
  */
 public class EnvelopeServlet extends HttpServlet {
 
@@ -42,7 +41,6 @@ public class EnvelopeServlet extends HttpServlet {
   }
 
   public void init() {
-
     try {
       PropertyConfigurator.configure(ServerPrefs.getInstance().getProps(Log4j.class));
       DAO.initialize(ServerPrefs.getInstance().getProps(DAO.class));
@@ -50,14 +48,11 @@ public class EnvelopeServlet extends HttpServlet {
     } catch (IOException ignore) {}
   }
 
-  @SuppressWarnings({"unchecked"})
-  @Override 
-  protected void doPost(HttpServletRequest rq, HttpServletResponse rp)
-      throws ServletException, IOException {
+  @SuppressWarnings({"unchecked"}) @Override
+  protected void doPost(HttpServletRequest rq, HttpServletResponse rp) throws ServletException, IOException {
 
     Matcher m = Pattern.compile("^(multipart/form-data);\\s+boundary=(.*?)$", Pattern.CASE_INSENSITIVE)
         .matcher(rq.getContentType());
-
     try {
 
       if (m.matches() && m.group(2) != null) {
@@ -91,8 +86,8 @@ public class EnvelopeServlet extends HttpServlet {
           }
 
           String disposition = headers.get("content-disposition");
-          Matcher dMatcher = Pattern.compile("^.*form-data\\s*;\\s*name\\s*=\\s*\"?(.*?)\"\\s*.*$",
-              Pattern.CASE_INSENSITIVE).matcher(disposition);
+          Matcher dMatcher = Pattern.compile("^.*form-data\\s*;\\s*name\\s*=\\s*\"?(.*?)\"\\s*.*$", Pattern.CASE_INSENSITIVE)
+              .matcher(disposition);
           if (disposition != null && dMatcher.matches() && dMatcher.group(1) != null) {
             name = dMatcher.group(1);
           } else {
@@ -123,7 +118,7 @@ public class EnvelopeServlet extends HttpServlet {
             String encoding = headers.get("content-transfer-encoding");
             byte[] input;
             if (encoding != null) {
-              if (encoding.equals("base64")) input = Base64.base64ToByteArray(new String(content));
+              if (encoding.equals("base64")) input = Base64.base64ToByteArray(new String(content).replaceAll("\\s", ""));
               else {
                 rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "only base64 ecnoding is allowed for " + name);
                 return;
@@ -146,21 +141,26 @@ public class EnvelopeServlet extends HttpServlet {
 
             String encoding = headers.get("content-encoding");
             if (encoding != null && encoding.length() > 0) {
-              if (encoding.equals("gzip")) {
-                GZIPInputStream gzis = new GZIPInputStream(new ByteArrayInputStream(content));
-                byte[] out = new byte[0];
-                byte[] buffer = new byte[1024];
-                int read;
-                while ((read = gzis.read(buffer)) > 0) {
-                  byte[] newOut = new byte[out.length + read];
-                  System.arraycopy(buffer, 0, newOut, out.length, read);
-                  out = newOut;
-                }
-                content = out;
-              } else {
-                rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "only gzip encoding is allowed");
+              InputStream is = new ByteArrayInputStream(content);
+              if (encoding.equals("gzip"))
+                is = new GZIPInputStream(is);
+              else if (encoding.equals("deflate"))
+                is = new InflaterInputStream(is);
+              else {
+                rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "only gzip or deflate encoding is allowed");
                 return;
               }
+
+              byte[] out = new byte[0];
+              byte[] buffer = new byte[1430];
+              int read;
+              while ((read = is.read(buffer)) > 0) {
+                byte[] newOut = new byte[out.length + read];
+                System.arraycopy(out, 0, newOut, 0, out.length);
+                System.arraycopy(buffer, 0, newOut, out.length, read);
+                out = newOut;
+              }
+              content = out;
             }
 
             String serType = "application/java-serialized-object";
@@ -173,9 +173,8 @@ public class EnvelopeServlet extends HttpServlet {
                 Controller c = new Controller();
                 Serializable retval;
                 try {
-                   retval = c.invoke(command);
-                }
-                catch (RemoteException r) {
+                  retval = c.invoke(command);
+                } catch (RemoteException r) {
                   retval = r;
                 }
 
@@ -197,16 +196,22 @@ public class EnvelopeServlet extends HttpServlet {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 OutputStream os = baos;
 
-                if (encoding != null && encoding.equals("gzip")) {
-                  rp.addHeader("Content-Encoding", "gzip");
-                  os = new GZIPOutputStream(os);
-                }
-
                 if (encryptionAlgorithm != null && encryptionAlgorithm.length() > 0 && sessionKey != null) {
                   rp.addHeader("Content-Encryption", encryptionAlgorithm);
                   Cipher cout = Cipher.getInstance(encryptionAlgorithm);
                   cout.init(Cipher.ENCRYPT_MODE, sessionKey);
                   os = new CipherOutputStream(os, cout);
+                }
+
+                if (encoding != null) {
+                  if (encoding.equals("gzip")) {
+                    rp.addHeader("Content-Encoding", "gzip");
+                    os = new GZIPOutputStream(os);
+                  }
+                  if (encoding.equals("deflate")) {
+                    rp.addHeader("Content-Encoding", "deflate");
+                    os = new DeflaterOutputStream(os, new Deflater(Deflater.BEST_COMPRESSION));
+                  }
                 }
 
                 ObjectOutputStream oos = new ObjectOutputStream(os);
@@ -231,7 +236,7 @@ public class EnvelopeServlet extends HttpServlet {
 //                while ((read = bais.read(buffer)) > 0) {
 //                  servletOs.write(buffer, 0, read);
 //                  try {
-//                    Thread.sleep(50);
+//                    Thread.sleep(25);
 //                  } catch (InterruptedException ignore) {
 //                  }
 //                  servletOs.flush();
@@ -247,26 +252,18 @@ public class EnvelopeServlet extends HttpServlet {
               rp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "field " + name + " can only accept " + serType);
               return;
             }
-          }
-          else rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "argument " + name + " not recognized");
+          } else rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "argument " + name + " not recognized");
         }
       } else {
         rp.setStatus(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE);
       }
     }
-    catch (ClassNotFoundException e) {
-      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-    } catch (InvalidKeyException e) {
-      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-    } catch (NoSuchAlgorithmException e) {
-      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-    } catch (NoSuchPaddingException e) {
-      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-    } catch (IllegalBlockSizeException e) {
-      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-    } catch (BadPaddingException e) {
-      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-    }
+    catch (ClassNotFoundException e) { rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
+    catch (InvalidKeyException e) { rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
+    catch (NoSuchAlgorithmException e) { rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
+    catch (NoSuchPaddingException e) { rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
+    catch (IllegalBlockSizeException e) { rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
+    catch (BadPaddingException e) { rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
   }
 
   @SuppressWarnings({"ConstantConditions", "ResultOfMethodCallIgnored"})

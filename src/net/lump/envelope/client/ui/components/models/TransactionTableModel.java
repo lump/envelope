@@ -29,7 +29,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * A table model which lists transactions.
  *
  * @author Troy Bowman
- * @version $Id: TransactionTableModel.java,v 1.33 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: TransactionTableModel.java,v 1.34 2009/04/11 06:00:14 troy Exp $
  */
 public class TransactionTableModel extends AbstractTableModel {
   private Vector<Object[]> transactions = new Vector<Object[]>();
@@ -96,7 +96,7 @@ public class TransactionTableModel extends AbstractTableModel {
 
 
             int selectedRow = table.getSelectedRow();
-            if (selectedRow > -1)
+            if (selectedRow > -1 && (transactions.size() > selectedRow))
               selectionCache = (Integer)transactions.get(selectedRow)[COLUMN.TransactionID.ordinal()];
 
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -108,14 +108,11 @@ public class TransactionTableModel extends AbstractTableModel {
             beginDate = t.begin;
             endDate = t.end;
             TransactionTableModel.this.thing = t.thing;
-            isTransaction =
-                TransactionTableModel.this.thing instanceof Hierarchy.AccountTotal;
+            isTransaction = TransactionTableModel.this.thing instanceof Hierarchy.AccountTotal;
 
-            if (!(
-                TransactionTableModel.this.thing instanceof Hierarchy.AccountTotal
-                    || TransactionTableModel.this.thing instanceof Hierarchy.CategoryTotal))
-              throw new IllegalArgumentException(
-                  "only AccountTotal or CategoryTotal aceptable as first argument");
+            if (!(TransactionTableModel.this.thing instanceof Hierarchy.AccountTotal
+                || TransactionTableModel.this.thing instanceof Hierarchy.CategoryTotal))
+              throw new IllegalArgumentException("only AccountTotal or CategoryTotal aceptable as first argument");
 
             startDate = System.currentTimeMillis();
 
@@ -123,58 +120,56 @@ public class TransactionTableModel extends AbstractTableModel {
             HibernatePortal hp = new HibernatePortal();
 
             List<Command> commands = new ArrayList<Command>(0);
-            commands.add(new Command(
-                Command.Name.detachedCriteriaQueryList,
+            commands.add(new Command(Command.Name.detachedCriteriaQueryList,
                 new OutputListener() {
                   public void commandOutputOccurred(OutputEvent event) {
                     beginningBalance = event.getPayload() != null ? (Money)event.getPayload() : new Money(0);
-                  }},
+                  }
+                },
                 cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, null)));
 
-            commands.add(new Command(
-                Command.Name.detachedCriteriaQueryList,
+            commands.add(new Command(Command.Name.detachedCriteriaQueryList,
                 new OutputListener() {
                   public void commandOutputOccurred(OutputEvent event) {
                     beginningReconciledBalance = event.getPayload() != null ? (Money)event.getPayload() : new Money(0);
-                  }},
+                  }
+                },
                 cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, Boolean.TRUE)));
 
             final Boolean[] finished = new Boolean[]{Boolean.FALSE};
 
             commands.add(new Command(Command.Name.detachedCriteriaQueryList, new OutputListener() {
-                  public void commandOutputOccurred(OutputEvent event) {
-                    synchronized (finished) {
-                      StatusBar sb = StatusBar.getInstance();
+              public void commandOutputOccurred(OutputEvent event) {
+                synchronized (finished) {
+                  StatusBar sb = StatusBar.getInstance();
 
-                      if (startDate < (System.currentTimeMillis() - 150) && !sb.getProgress().isVisible())
-                        sb.getProgress().setVisible(true);
+                  if (startDate < (System.currentTimeMillis() - 150) && !sb.getProgress().isVisible())
+                    sb.getProgress().setVisible(true);
 
-                      if (sb.getProgress().isVisible()) {
-                        if (sb.getProgress().getMinimum() != 0) sb.getProgress().setMinimum(0);
+                  if (sb.getProgress().isVisible()) {
+                    if (sb.getProgress().getMinimum() != 0) sb.getProgress().setMinimum(0);
 
-                        if (sb.getProgress().getMaximum() != event.getTotal().intValue())
-                          sb.getProgress().setMaximum(event.getTotal().intValue());
+                    if (sb.getProgress().getMaximum() != event.getTotal().intValue())
+                      sb.getProgress().setMaximum(event.getTotal().intValue());
 
-                        sb.getProgress().setValue(event.getIndex().intValue());
-                      }
-
-                      statusElement.setValue(
-                          Strings.get("reading") + " " + thing + " row " + (event.getIndex() + 1L));
-                      StatusBar.getInstance().updateLabel();
-
-                      updateTableFor(event.getIndex().intValue(), (Object[])event.getPayload());
-                      rowCount = event.getIndex().intValue();
-
-                      if (event.getIndex().equals(event.getTotal()-1)) {
-                        finished[0] = Boolean.TRUE;
-                        if (sb.getProgress().isVisible()) sb.getProgress().setVisible(false);
-                        finished.notifyAll();
-                      }
-                    }
+                    sb.getProgress().setValue(event.getIndex().intValue());
                   }
-                },
-                cf.getTransactions(
-                    TransactionTableModel.this.thing, beginDate, endDate)));
+
+                  statusElement.setValue(
+                      Strings.get("reading") + " " + TransactionTableModel.this.thing + " row " + (event.getIndex() + 1L));
+                  StatusBar.getInstance().updateLabel();
+
+                  updateTableFor(event.getIndex().intValue(), (Object[])event.getPayload());
+                  rowCount = event.getIndex().intValue();
+
+                  if (event.getIndex().equals(event.getTotal() - 1)) {
+                    finished[0] = Boolean.TRUE;
+                    if (sb.getProgress().isVisible()) sb.getProgress().setVisible(false);
+                    finished.notifyAll();
+                  }
+                }
+              }
+            }, cf.getTransactions(TransactionTableModel.this.thing, beginDate, endDate)));
 
             hp.invoke(commands);
 
@@ -182,7 +177,8 @@ public class TransactionTableModel extends AbstractTableModel {
             // wait until filled (so other things in the queue can't start and conflict)
             try {
               synchronized (finished) {
-                while (!finished[0] && (System.currentTimeMillis() - 20000) < startTime) finished.wait(1000);
+                while ((!finished[0] && filled != rowCount) && (System.currentTimeMillis() - 20000) > startTime)
+                  finished.wait(1000);
               }
             }
             catch (InterruptedException e) {
@@ -222,8 +218,7 @@ public class TransactionTableModel extends AbstractTableModel {
       final int rowNumber,
       Object[] row) {
 
-    if (rowNumber > filled + 1)
-      System.err.println("NON-SEQUENTIAL " + rowNumber + " for " + filled);
+    if (rowNumber > filled + 1) System.err.println("NON-SEQUENTIAL " + rowNumber + " for " + filled);
     filled = rowNumber;
 
     if (rowNumber != 0 && ((rowNumber - 1) > (transactions.size() - 1)))
@@ -233,40 +228,28 @@ public class TransactionTableModel extends AbstractTableModel {
           + (transactions.size() - 1));
 
     // refresh our amnesia on the balances
-    Money reconciled = rowNumber == 0
-        ? beginningBalance
-        : (Money)transactions.get(rowNumber - 1)[COLUMN.Reconciled.ordinal()];
-
-    Money balance = rowNumber == 0
-        ? beginningReconciledBalance
-        : (Money)transactions.get(rowNumber - 1)[COLUMN.Balance.ordinal()];
+    Money reconciled = rowNumber == 0 ? beginningBalance : (Money)transactions.get(rowNumber - 1)[COLUMN.Reconciled.ordinal()];
+    Money balance = rowNumber == 0 ? beginningReconciledBalance : (Money)transactions.get(rowNumber - 1)[COLUMN.Balance.ordinal()];
 
     // calculate balance column
     balance = new Money(balance.add((Money)row[COLUMN.Amount.ordinal()]));
 
     // only add reconciled balance if it tx is reconciled
-    if ((Boolean)row[COLUMN.C.ordinal()]) reconciled =
-        new Money(reconciled.add((Money)row[COLUMN.Amount.ordinal()]));
+    if ((Boolean)row[COLUMN.C.ordinal()]) reconciled = new Money(reconciled.add((Money)row[COLUMN.Amount.ordinal()]));
 
     // create our new row
-    final Object[] newRow = new Object[]{
-        row[0], row[1], row[2], new Money(balance),
-        new Money(reconciled), row[3], row[4], row[5]};
+    final Object[] newRow = new Object[]{row[0], row[1], row[2], new Money(balance), new Money(reconciled), row[3], row[4], row[5]};
 
     if (rowNumber < transactions.size()) transactions.set(rowNumber, newRow);
     else transactions.add(rowNumber, newRow);
 
-    final boolean reselect =
-        (selectionCache != null
-            && newRow[COLUMN.TransactionID.ordinal()].equals(selectionCache));
+    final boolean reselect = (selectionCache != null && newRow[COLUMN.TransactionID.ordinal()].equals(selectionCache));
     // make sure table updates happen on swing thread to avoid deadlocks
 
     SwingUtilities.invokeLater(new Runnable() {
       public void run() {
         fireTableRowsInserted(rowNumber, rowNumber);
-        if (reselect) {
-          table.changeSelection(rowNumber, 0, false, false);
-        }
+        if (reselect) table.changeSelection(rowNumber, 0, false, false);
         Thread.yield();
       }
     });
