@@ -30,7 +30,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: EnvelopeServlet.java,v 1.4 2009/04/11 07:26:17 troy Exp $
+ * @version $Id: EnvelopeServlet.java,v 1.5 2009/04/11 23:06:29 troy Exp $
  */
 public class EnvelopeServlet extends HttpServlet {
 
@@ -103,9 +103,9 @@ public class EnvelopeServlet extends HttpServlet {
             int bytesRead = 0;
             int read;
             while (bytesRead < contentLength) {
-              read = bis.read(buffer);
+              read = bis.read(buffer, 0, contentLength - bytesRead);
               if (read < 0) break;
-              System.arraycopy(buffer, 0, content, 0, read);
+              System.arraycopy(buffer, 0, content, bytesRead, read);
               bytesRead = bytesRead + read;
             }
             bis.mark(READLIMIT);
