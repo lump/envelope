@@ -22,12 +22,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.InflaterInputStream;
 
 /**
  * A http client invoker.
  *
  * @author troy
- * @version $Id: HttpClient.java,v 1.2 2009/04/10 22:49:27 troy Exp $
+ * @version $Id: HttpClient.java,v 1.3 2009/04/11 06:00:14 troy Exp $
  */
 public class HttpClient {
 
@@ -39,7 +40,7 @@ public class HttpClient {
       AbortException, ClassNotFoundException {
 
     boolean encryptable = serverSettings.getEncrypt()
-        && (Command.Name.unEncryptables().and(command.getName().bit()).compareTo(BigInteger.ZERO) != 0);
+        && (Command.Name.unEncryptables().and(command.getName().bit()).compareTo(BigInteger.ZERO) == 0);
 
     SecretKey sessionKey = null;
     ArrayList<Serializable> output = null;
@@ -104,9 +105,13 @@ public class HttpClient {
 
       // if we're compressing, set the compress header
       if (serverSettings.getCompress()) {
-        out.writeBytes("Content-Encoding: gzip" + n);
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        GZIPOutputStream gz = new GZIPOutputStream(baos);
+
+//        out.writeBytes("Content-Encoding: deflate" + n);
+//        OutputStream gz = new DeflaterOutputStream(baos, new Deflater(Deflater.BEST_COMPRESSION));
+        out.writeBytes("Content-Encoding: gzip" + n);
+        OutputStream gz = new GZIPOutputStream(baos);
         gz.write(cmdBytes);
         gz.flush();
         gz.close();
@@ -134,14 +139,6 @@ public class HttpClient {
       out.flush();
 
       InputStream is = connection.getInputStream();
-      String encoding = connection.getContentEncoding();
-      if (encoding != null && encoding.length() > 0) {
-        if (encoding.equals("gzip")) {
-          is = new GZIPInputStream(is);
-        } else {
-          throw new IllegalStateException("gzip encoding isn't supported");
-        }
-      }
 
       // handle an encrypted body
       String encryptionAlgorithm = connection.getHeaderField("content-encryption");
@@ -149,6 +146,17 @@ public class HttpClient {
         final Cipher c = Cipher.getInstance(encryptionAlgorithm);
         c.init(Cipher.DECRYPT_MODE, sessionKey);
         is = new CipherInputStream(is, c);
+      }
+
+      String encoding = connection.getContentEncoding();
+      if (encoding != null && encoding.length() > 0) {
+        if (encoding.equals("gzip")) {
+          is = new GZIPInputStream(is);
+        } else if (encoding.equals("deflate")) {
+          is = new InflaterInputStream(is);
+        } else {
+          throw new IllegalStateException("gzip encoding isn't supported");
+        }
       }
 
       String objectCount = connection.getHeaderField("object-count");

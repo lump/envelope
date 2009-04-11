@@ -369,13 +369,11 @@ public class Preferences extends JDialog {
     compress.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         ssData.setCompress(compress.isSelected());
-        encrypt.setSelected(ssData.getEncrypt());
       }
     });
     encrypt.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         ssData.setEncrypt(encrypt.isSelected());
-        compress.setSelected(ssData.getCompress());
       }
     });
 

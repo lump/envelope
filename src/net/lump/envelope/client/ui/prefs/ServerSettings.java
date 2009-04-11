@@ -90,7 +90,6 @@ public class ServerSettings {
     return prefs.getBoolean(encrypt.name(), false);
   }
   public void setEncrypt(boolean flag) {
-    if (flag && !getCompress()) setCompress(flag);
     prefs.putBoolean(encrypt.name(), flag);
   }
 
@@ -99,7 +98,6 @@ public class ServerSettings {
   }
 
   public void setCompress(boolean flag) {
-    if (!flag && getEncrypt()) setEncrypt(flag);
     prefs.putBoolean(compress.name(), flag);
   }
   
