@@ -30,7 +30,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: EnvelopeServlet.java,v 1.3 2009/04/11 06:00:14 troy Exp $
+ * @version $Id: EnvelopeServlet.java,v 1.4 2009/04/11 07:26:17 troy Exp $
  */
 public class EnvelopeServlet extends HttpServlet {
 
@@ -258,12 +258,18 @@ public class EnvelopeServlet extends HttpServlet {
         rp.setStatus(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE);
       }
     }
-    catch (ClassNotFoundException e) { rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
-    catch (InvalidKeyException e) { rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
-    catch (NoSuchAlgorithmException e) { rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
-    catch (NoSuchPaddingException e) { rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
-    catch (IllegalBlockSizeException e) { rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
-    catch (BadPaddingException e) { rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
+    catch (ClassNotFoundException e) {
+      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
+    catch (InvalidKeyException e) {
+      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
+    catch (NoSuchAlgorithmException e) {
+      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
+    catch (NoSuchPaddingException e) {
+      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
+    catch (IllegalBlockSizeException e) {
+      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
+    catch (BadPaddingException e) {
+      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
   }
 
   @SuppressWarnings({"ConstantConditions", "ResultOfMethodCallIgnored"})
