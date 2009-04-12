@@ -30,7 +30,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: EnvelopeServlet.java,v 1.6 2009/04/12 00:04:20 troy Exp $
+ * @version $Id: EnvelopeServlet.java,v 1.7 2009/04/12 02:09:16 troy Exp $
  */
 public class EnvelopeServlet extends HttpServlet {
 
@@ -51,8 +51,8 @@ public class EnvelopeServlet extends HttpServlet {
   @SuppressWarnings({"unchecked", "ConstantConditions"}) @Override
   protected void doPost(HttpServletRequest rq, HttpServletResponse rp) throws ServletException, IOException {
 
-    Matcher m = Pattern.compile("^(multipart/form-data);\\s+boundary=(.*?)$", Pattern.CASE_INSENSITIVE)
-        .matcher(rq.getContentType());
+    Matcher m =
+        Pattern.compile("^(multipart/form-data);\\s+boundary=(.*?)$", Pattern.CASE_INSENSITIVE).matcher(rq.getContentType());
     try {
 
       if (m.matches() && m.group(2) != null) {
@@ -61,19 +61,23 @@ public class EnvelopeServlet extends HttpServlet {
 
         Pattern nlp = Pattern.compile("(?:\\r?\\n)");
         Pattern dnlp = Pattern.compile(nlp.pattern() + "{2}");
+        Pattern boundarySearch = Pattern.compile(String.format("%s%s((?:%s)?%s?)", fix, boundary, fix, nlp.pattern()));
         Pattern boundaryStart = Pattern.compile(String.format("%s%s", fix, boundary));
-        Pattern boundaryEnd = Pattern.compile(String.format(nlp.pattern() + "%s%s%s", fix, boundary, fix));
+        Pattern boundaryEnd = Pattern.compile(String.format(nlp.pattern() + "?%s%s%s%s?", fix, boundary, fix, nlp.pattern()));
 
         BufferedInputStream bis = new BufferedInputStream(rq.getInputStream());
         bis.mark(READLIMIT);
 
         SecretKey sessionKey = null;
         Security security = null;
+        Command command = null;
+        String encoding = null;
+        String encryption = null;
 
         while (true) {
           String name = null;
 
-          String foundBoundary = readUpTo(bis, true, boundaryStart, boundaryEnd).toString();
+          String foundBoundary = readUpTo(bis, true, boundarySearch).toString();
           if (foundBoundary.matches("^.*" + boundaryEnd.pattern() + "$")) break;
 
           // we found a boundary with content, lets read it.
@@ -86,11 +90,12 @@ public class EnvelopeServlet extends HttpServlet {
           }
 
           String disposition = headers.get("content-disposition");
-          Matcher dMatcher = Pattern.compile("^.*form-data\\s*;\\s*name\\s*=\\s*\"?(.*?)\"\\s*.*$", Pattern.CASE_INSENSITIVE)
-              .matcher(disposition);
+          Matcher dMatcher =
+              Pattern.compile("^.*form-data\\s*;\\s*name\\s*=\\s*\"?(.*?)\"\\s*.*$", Pattern.CASE_INSENSITIVE).matcher(disposition);
           if (disposition != null && dMatcher.matches() && dMatcher.group(1) != null) {
             name = dMatcher.group(1);
-          } else {
+          }
+          else {
             rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "bad content disposition " + name);
             return;
           }
@@ -109,50 +114,50 @@ public class EnvelopeServlet extends HttpServlet {
               bytesRead = bytesRead + read;
             }
             bis.mark(READLIMIT);
-          } else {
+          }
+          else {
             content = readUpTo(bis, false, boundaryStart).toString().getBytes();
           }
 
           // handle an incoming key
           if (name.equalsIgnoreCase("key")) {
-            String encoding = headers.get("content-transfer-encoding");
+            String transferEncoding = headers.get("content-transfer-encoding");
             byte[] input;
-            if (encoding != null) {
-              if (encoding.equals("base64")) input = Base64.base64ToByteArray(new String(content).replaceAll("\\s", ""));
+            if (transferEncoding != null) {
+              if (transferEncoding.equals("base64")) input = Base64.base64ToByteArray(new String(content).replaceAll("\\s", ""));
               else {
                 rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "only base64 ecnoding is allowed for " + name);
                 return;
               }
-            } else {
+            }
+            else {
               input = content;
             }
             security = security == null ? new Security() : security;
             sessionKey = (SecretKey)security.unwrapSessionKey(input);
-
-          } else if (name.equalsIgnoreCase("command")) {
+          }
+          else if (name.equalsIgnoreCase("command")) {
 
             // handle an encrypted body
-            String encryptionAlgorithm = headers.get("content-encryption");
-            if (encryptionAlgorithm != null && encryptionAlgorithm.length() > 0) {
-              final Cipher c = Cipher.getInstance(encryptionAlgorithm);
+            encryption = headers.get("content-encryption");
+            if (encryption != null && encryption.length() > 0) {
+              final Cipher c = Cipher.getInstance(encryption);
               c.init(Cipher.DECRYPT_MODE, sessionKey);
               content = c.doFinal(content);
             }
 
-            String encoding = headers.get("content-encoding");
+            encoding = headers.get("content-encoding");
             if (encoding != null && encoding.length() > 0) {
               InputStream is = new ByteArrayInputStream(content);
-              if (encoding.equals("gzip"))
-                is = new GZIPInputStream(is);
-              else if (encoding.equals("deflate"))
-                is = new InflaterInputStream(is);
+              if (encoding.equals("gzip")) is = new GZIPInputStream(is);
+              else if (encoding.equals("deflate")) is = new InflaterInputStream(is);
               else {
                 rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "only gzip or deflate encoding is allowed");
                 return;
               }
 
               byte[] out = new byte[0];
-              byte[] buffer = new byte[1430];
+              byte[] buffer = new byte[4096];
               int read;
               while ((read = is.read(buffer)) > 0) {
                 byte[] newOut = new byte[out.length + read];
@@ -168,69 +173,83 @@ public class EnvelopeServlet extends HttpServlet {
             if (contentType != null && contentType.equals(serType)) {
               Object o = new ObjectInputStream(new ByteArrayInputStream(content)).readObject();
               if (o instanceof Command) {
+                command = (Command)o;
+              }
+              else {
+                rp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE,
+                    name + " was not a " + Command.class.getCanonicalName());
+              }
+            }
+            else {
+              rp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "field " + name + " can only accept " + serType);
+              return;
+            }
+          }
+          else rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "argument " + name + " not recognized");
+        }
 
-                Command command = (Command)o;
-                Controller c = new Controller();
-                Serializable retval;
-                try {
-                  retval = c.invoke(command);
-                } catch (RemoteException r) {
-                  retval = r;
-                }
+        Controller c = new Controller();
+        Serializable retval;
+        try {
+          retval = c.invoke(command);
+        } catch (RemoteException r) {
+          retval = r;
+        }
 
-                List<Serializable> rl;
-                if (retval instanceof List) {
-                  rp.addHeader("Single-Object", Boolean.FALSE.toString());
-                  rl = (List<Serializable>)retval;
-                } else {
-                  rp.addHeader("Single-Object", Boolean.TRUE.toString());
-                  rl = new Vector<Serializable>(1);
-                  rl.add(retval);
-                }
+        List<Serializable> rl;
+        if (retval instanceof List) {
+          rp.addHeader("Single-Object", Boolean.FALSE.toString());
+          rl = (List<Serializable>)retval;
+        }
+        else {
+          rp.addHeader("Single-Object", Boolean.TRUE.toString());
+          rl = new Vector<Serializable>(1);
+          rl.add(retval);
+        }
 
-                rp.addHeader("Content-Type", "application/java-serialized-object");
-                rp.addIntHeader("Object-Count", rl.size());
-                rp.addHeader("Command-Sequence-Id", String.valueOf(command.getSeqId()));
+        rp.addHeader("Content-Type", "application/java-serialized-object");
+        rp.addIntHeader("Object-Count", rl.size());
+        rp.addHeader("Command-Sequence-Id", String.valueOf(command.getSeqId()));
 
-                // we have to cache the output to get content-length
+        // we have to cache the output to get content-length
 //                ByteArrayOutputStream baos = new ByteArrayOutputStream();
 //                OutputStream os = baos;
-                OutputStream os = rp.getOutputStream();
+        OutputStream os = rp.getOutputStream();
 
-                if (encryptionAlgorithm != null && encryptionAlgorithm.length() > 0 && sessionKey != null) {
-                  rp.addHeader("Content-Encryption", encryptionAlgorithm);
-                  Cipher cout = Cipher.getInstance(encryptionAlgorithm);
-                  cout.init(Cipher.ENCRYPT_MODE, sessionKey);
-                  os = new CipherOutputStream(os, cout);
-                }
+        if (encryption != null && encryption.length() > 0 && sessionKey != null) {
+          rp.addHeader("Content-Encryption", encryption);
+          Cipher cout = Cipher.getInstance(encryption);
+          cout.init(Cipher.ENCRYPT_MODE, sessionKey);
+          os = new CipherOutputStream(os, cout);
+        }
 
-                if (encoding != null) {
-                  if (encoding.equals("gzip")) {
-                    rp.addHeader("Content-Encoding", "gzip");
-                    os = new GZIPOutputStream(os);
-                  }
-                  if (encoding.equals("deflate")) {
-                    rp.addHeader("Content-Encoding", "deflate");
-                    os = new DeflaterOutputStream(os, new Deflater(Deflater.BEST_COMPRESSION));
-                  }
-                }
+        if (encoding != null) {
+          if (encoding.equals("gzip")) {
+            rp.addHeader("Content-Encoding", "gzip");
+            os = new GZIPOutputStream(os);
+          }
+          if (encoding.equals("deflate")) {
+            rp.addHeader("Content-Encoding", "deflate");
+            os = new DeflaterOutputStream(os, new Deflater(Deflater.BEST_COMPRESSION));
+          }
+        }
 
-                ObjectOutputStream oos = new ObjectOutputStream(os);
-                for (Serializable s : rl) {
-                  oos.writeObject(s);
-                }
-                oos.flush();
-                oos.close();
+        ObjectOutputStream oos = new ObjectOutputStream(os);
+        for (Serializable s : rl) {
+          oos.writeObject(s);
+        }
+        oos.flush();
+        oos.close();
 
 //                rp.addIntHeader("Content-Length", baos.size());
 
 //                OutputStream servletOs = rp.getOutputStream();
 
-                // finally write it to the servlet's outputstream
+        // finally write it to the servlet's outputstream
 //                servletOs.write(baos.toByteArray());
 //                servletOs.flush();
 
-                // this simulates slow network
+        // this simulates slow network
 //                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
 //                byte[] buffer = new byte[128];
 //                int read;
@@ -242,35 +261,25 @@ public class EnvelopeServlet extends HttpServlet {
 //                  }
 //                  servletOs.flush();
 //                }
-                break;
+//                break;
 
-              } else {
-                rp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE,
-                    name + " was not a " + Command.class.getCanonicalName());
-              }
-
-            } else {
-              rp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "field " + name + " can only accept " + serType);
-              return;
-            }
-          } else rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "argument " + name + " not recognized");
-        }
-      } else {
+      }
+      else {
         rp.setStatus(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE);
       }
+    } catch (ClassNotFoundException e) {
+      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+    } catch (InvalidKeyException e) {
+      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+    } catch (NoSuchAlgorithmException e) {
+      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+    } catch (NoSuchPaddingException e) {
+      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+    } catch (IllegalBlockSizeException e) {
+      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+    } catch (BadPaddingException e) {
+      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
     }
-    catch (ClassNotFoundException e) {
-      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
-    catch (InvalidKeyException e) {
-      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
-    catch (NoSuchAlgorithmException e) {
-      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
-    catch (NoSuchPaddingException e) {
-      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
-    catch (IllegalBlockSizeException e) {
-      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
-    catch (BadPaddingException e) {
-      rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage()); }
   }
 
   @SuppressWarnings({"ConstantConditions", "ResultOfMethodCallIgnored"})
