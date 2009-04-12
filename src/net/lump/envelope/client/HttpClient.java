@@ -28,7 +28,7 @@ import java.util.zip.InflaterInputStream;
  * A http client invoker.
  *
  * @author troy
- * @version $Id: HttpClient.java,v 1.3 2009/04/11 06:00:14 troy Exp $
+ * @version $Id: HttpClient.java,v 1.4 2009/04/12 02:08:52 troy Exp $
  */
 public class HttpClient {
 
@@ -189,7 +189,7 @@ public class HttpClient {
     }
 
     // return the output.
-    if (output.size() == 0) return null;
+    if (output.size() == 0 && single) return null;
     else if (output.size() == 1 && single) return output.get(0);
     else return output;
   }
