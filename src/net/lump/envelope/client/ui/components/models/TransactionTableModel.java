@@ -17,6 +17,7 @@ import us.lump.lib.Money;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -29,7 +30,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * A table model which lists transactions.
  *
  * @author Troy Bowman
- * @version $Id: TransactionTableModel.java,v 1.34 2009/04/11 06:00:14 troy Exp $
+ * @version $Id: TransactionTableModel.java,v 1.35 2009/04/12 02:08:52 troy Exp $
  */
 public class TransactionTableModel extends AbstractTableModel {
   private Vector<Object[]> transactions = new Vector<Object[]>();
@@ -119,16 +120,14 @@ public class TransactionTableModel extends AbstractTableModel {
             CriteriaFactory cf = CriteriaFactory.getInstance();
             HibernatePortal hp = new HibernatePortal();
 
-            List<Command> commands = new ArrayList<Command>(0);
-            commands.add(new Command(Command.Name.detachedCriteriaQueryList,
+            hp.invoke(new Command(Command.Name.detachedCriteriaQueryList,
                 new OutputListener() {
                   public void commandOutputOccurred(OutputEvent event) {
                     beginningBalance = event.getPayload() != null ? (Money)event.getPayload() : new Money(0);
                   }
-                },
-                cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, null)));
+                }, cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, null)));
 
-            commands.add(new Command(Command.Name.detachedCriteriaQueryList,
+            hp.invoke(new Command(Command.Name.detachedCriteriaQueryList,
                 new OutputListener() {
                   public void commandOutputOccurred(OutputEvent event) {
                     beginningReconciledBalance = event.getPayload() != null ? (Money)event.getPayload() : new Money(0);
@@ -138,7 +137,7 @@ public class TransactionTableModel extends AbstractTableModel {
 
             final Boolean[] finished = new Boolean[]{Boolean.FALSE};
 
-            commands.add(new Command(Command.Name.detachedCriteriaQueryList, new OutputListener() {
+            Serializable retval = hp.invoke(new Command(Command.Name.detachedCriteriaQueryList, new OutputListener() {
               public void commandOutputOccurred(OutputEvent event) {
                 synchronized (finished) {
                   StatusBar sb = StatusBar.getInstance();
@@ -171,7 +170,9 @@ public class TransactionTableModel extends AbstractTableModel {
               }
             }, cf.getTransactions(TransactionTableModel.this.thing, beginDate, endDate)));
 
-            hp.invoke(commands);
+            if (retval instanceof List && ((List)retval).size() == 0) {
+              rowCount = 0;
+            }
 
             long startTime = System.currentTimeMillis();
             // wait until filled (so other things in the queue can't start and conflict)

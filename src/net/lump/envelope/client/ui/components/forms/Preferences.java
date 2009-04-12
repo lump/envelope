@@ -75,169 +75,169 @@ public class Preferences extends JDialog {
     okCancelPanel = new JPanel();
     okCancelPanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
     prefsPane.add(okCancelPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null, null, 0, false));
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null, null, 0, false));
     final Spacer spacer1 = new Spacer();
     okCancelPanel.add(spacer1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-      GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, new Dimension(152, 11), null, 0, false));
+        GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, new Dimension(152, 11), null, 0, false));
     okCancelGroup = new JPanel();
     okCancelGroup.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
     okCancelPanel.add(okCancelGroup, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
     ok = new JButton();
     this.$$$loadButtonText$$$(ok, ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("ok"));
     okCancelGroup.add(ok, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
-      null, 0, false));
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
+        null, 0, false));
     cancelButton = new JButton();
     this.$$$loadButtonText$$$(cancelButton,
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("cancel"));
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("cancel"));
     okCancelPanel.add(cancelButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
-      null, 0, false));
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
+        null, 0, false));
     tabPanel = new JPanel();
     tabPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
     prefsPane.add(tabPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
     prefsTabs = new JTabbedPane();
     tabPanel.add(prefsTabs, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0,
-      false));
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0,
+        false));
     serverTab = new JPanel();
     serverTab.setLayout(new GridLayoutManager(3, 1, new Insets(5, 5, 5, 5), -1, -1));
     prefsTabs.addTab(ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("server"), serverTab);
     serverFormPanel = new JPanel();
     serverFormPanel.setLayout(new GridLayoutManager(4, 2, new Insets(0, 0, 0, 0), -1, -1));
     serverTab.add(serverFormPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
     hostNameLabel = new JLabel();
     this.$$$loadLabelText$$$(hostNameLabel,
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("hostname"));
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("hostname"));
     serverFormPanel.add(hostNameLabel,
-      new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
-        GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(68, 23), null, 0, false));
+        new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(68, 23), null, 0, false));
     hostName = new JTextField();
     serverFormPanel.add(hostName, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
-      GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, 23), null, 0, false));
+        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, 23), null, 0, false));
     compress = new JCheckBox();
     this.$$$loadButtonText$$$(compress,
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("compress.with.blah"));
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("compress.with.blah"));
     serverFormPanel.add(compress, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
-      null, 0, false));
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
+        null, 0, false));
     encrypt = new JCheckBox();
     this.$$$loadButtonText$$$(encrypt,
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("encrypt.with.blah"));
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("encrypt.with.blah"));
     serverFormPanel.add(encrypt, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
-      null, 0, false));
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
+        null, 0, false));
     context = new JTextField();
     serverFormPanel.add(context, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
-      GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
     contextLabel = new JLabel();
     this.$$$loadLabelText$$$(contextLabel,
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("context"));
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("context"));
     serverFormPanel.add(contextLabel,
-      new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
-        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     serverStatusPanel = new JPanel();
     serverStatusPanel.setLayout(new GridLayoutManager(1, 1, new Insets(3, 3, 3, 3), -1, -1));
     serverStatusPanel.setEnabled(true);
     serverTab.add(serverStatusPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
     serverStatusPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(),
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("server.status")));
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("server.status")));
     serverStatusMessage = new JTextPane();
     serverStatusMessage.setBackground(UIManager.getColor("Panel.background"));
     serverStatusMessage
-      .setText(ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("test.not.performed.yet"));
+        .setText(ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("test.not.performed.yet"));
     serverStatusPanel.add(serverStatusMessage,
-      new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_NORTH, GridConstraints.FILL_HORIZONTAL,
-        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
-        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, -1), null, 0,
-        false));
+        new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_NORTH, GridConstraints.FILL_HORIZONTAL,
+            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, -1), null, 0,
+            false));
     testButtonPanel = new JPanel();
     testButtonPanel.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
     serverTab.add(testButtonPanel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
     testButton = new JButton();
     this.$$$loadButtonText$$$(testButton,
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("test.settings"));
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("test.settings"));
     testButtonPanel.add(testButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-      GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     final Spacer spacer2 = new Spacer();
     testButtonPanel.add(spacer2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-      GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
     loginTab = new JPanel();
     loginTab.setLayout(new GridLayoutManager(3, 3, new Insets(0, 0, 0, 0), -1, -1));
     prefsTabs.addTab(ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("login"), loginTab);
     loginPanel = new JPanel();
     loginPanel.setLayout(new GridLayoutManager(5, 2, new Insets(0, 0, 0, 0), -1, -1));
     loginTab.add(loginPanel, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
     userNameLabel = new JLabel();
     userNameLabel.setHorizontalAlignment(11);
     userNameLabel.setHorizontalTextPosition(0);
     this.$$$loadLabelText$$$(userNameLabel,
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("username"));
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("username"));
     loginPanel.add(userNameLabel,
-      new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
-        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     userName = new JTextField();
     loginPanel.add(userName, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
-      GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
     passwordLabel = new JLabel();
     passwordLabel.setHorizontalAlignment(11);
     this.$$$loadLabelText$$$(passwordLabel,
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("password"));
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("password"));
     loginPanel.add(passwordLabel,
-      new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
-        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     password = new JPasswordField();
     loginPanel.add(password, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
-      GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
     rememberPasswordCheckBox = new JCheckBox();
     this.$$$loadButtonText$$$(rememberPasswordCheckBox,
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("remember.password"));
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("remember.password"));
     loginPanel.add(rememberPasswordCheckBox, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
-      null, 0, false));
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
+        null, 0, false));
     sessionStateLabel = new JLabel();
     sessionStateLabel.setHorizontalAlignment(11);
     this.$$$loadLabelText$$$(sessionStateLabel,
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("session.state"));
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("session.state"));
     loginPanel.add(sessionStateLabel,
-      new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
-        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     sessionState = new JLabel();
     this.$$$loadLabelText$$$(sessionState,
-      ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("unknown"));
+        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("unknown"));
     loginPanel.add(sessionState,
-      new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
-        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     logInButton = new JButton();
     this.$$$loadButtonText$$$(logInButton, ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("log.in"));
     loginPanel.add(logInButton, new GridConstraints(4, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-      GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
-      null, 0, false));
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
+        null, 0, false));
     final Spacer spacer3 = new Spacer();
     loginTab.add(spacer3, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
-      GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
     final Spacer spacer4 = new Spacer();
     loginTab.add(spacer4, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
-      GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
     final Spacer spacer5 = new Spacer();
     loginTab.add(spacer5, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-      GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
     final Spacer spacer6 = new Spacer();
     loginTab.add(spacer6, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-      GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
   }
 
   /** @noinspection ALL */
@@ -325,16 +325,11 @@ public class Preferences extends JDialog {
         boolean serverSettingsOk = areServerSettingsOk();
         boolean loginSettingsOk = areLoginSettingsOk();
 
-        if (serverSettingsOk && loginSettingsOk)
-          setVisible(false);
+        if (serverSettingsOk && loginSettingsOk) setVisible(false);
         else {
-          JOptionPane.showMessageDialog(
-            (Component)e.getSource(),
-            Strings.get("error.settings.are.not.valid"),
-            Strings.get("error"),
-            JOptionPane.ERROR_MESSAGE);
-          if (!loginSettingsOk && serverSettingsOk)
-            selectTab(Strings.get("login"));
+          JOptionPane.showMessageDialog((Component)e.getSource(), Strings.get("error.settings.are.not.valid"), Strings.get("error"),
+              JOptionPane.ERROR_MESSAGE);
+          if (!loginSettingsOk && serverSettingsOk) selectTab(Strings.get("login"));
           else selectTab(Strings.get("server"));
         }
       }
@@ -349,10 +344,8 @@ public class Preferences extends JDialog {
 //    });
     cancelButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
-        if (areServerSettingsOk() && areLoginSettingsOk())
-          setVisible(false);
-        else
-          System.exit(0);
+        if (areServerSettingsOk() && areLoginSettingsOk()) setVisible(false);
+        else System.exit(0);
       }
     });
     logInButton.addActionListener(new ActionListener() {
@@ -390,15 +383,13 @@ public class Preferences extends JDialog {
   }
 
   public void selectTab(int index) {
-    if (prefsTabs.getSelectedIndex() != index)
-      prefsTabs.setSelectedIndex(index);
+    if (prefsTabs.getSelectedIndex() != index) prefsTabs.setSelectedIndex(index);
   }
 
   public Boolean areLoginSettingsOk() {
     SecurityPortal sp = new SecurityPortal();
 
-    if (!hadLoginSuccessYet && !lsData.passwordIsSaved()
-      && Arrays.equals(password.getPassword(), new char[0])) {
+    if (!hadLoginSuccessYet && !lsData.passwordIsSaved() && Arrays.equals(password.getPassword(), new char[0])) {
       sessionState.setForeground(Colors.getColor("red"));
       sessionState.setText(Strings.get("session.state.not.attempted"));
       return false;
@@ -481,15 +472,11 @@ public class Preferences extends JDialog {
 
 
   public void fillServerFormWithSavedData() {
-    if (System.getProperty("codebase") != null)
-      hostName.setText(System.getProperty("codebase"));
-    else
-      hostName.setText(ssData.getHostName() + ":" + ssData.getPort());
+    if (System.getProperty("codebase") != null) hostName.setText(System.getProperty("codebase"));
+    else hostName.setText(ssData.getHostName() + ":" + ssData.getPort());
 
-    if (System.getProperty("context") != null)
-      context.setText(System.getProperty("context"));
-    else
-      context.setText(ssData.getContext());
+    if (System.getProperty("context") != null) context.setText(System.getProperty("context"));
+    else context.setText(ssData.getContext());
 
     compress.setSelected(ssData.getCompress());
     encrypt.setSelected(ssData.getEncrypt());
@@ -502,9 +489,7 @@ public class Preferences extends JDialog {
   }
 
   public boolean isModified(ServerSettings data) {
-    if (hostName.getText() != null ? !hostName.getText()
-      .equals(data.getHostName()) : data.getHostName() != null)
-      return true;
+    if (hostName.getText() != null ? !hostName.getText().equals(data.getHostName()) : data.getHostName() != null) return true;
     return false;
   }
 
