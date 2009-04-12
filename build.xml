@@ -281,7 +281,7 @@
     <mkdir dir="${war.dir}"/>
     <mkdir dir="${war.dir}/WEB-INF/lib"/>
     <copy todir="${war.dir}/WEB-INF/lib">
-      <fileset dir="${lib}" includes="*.jar, *.pack.gz *.png"/>
+      <fileset dir="${lib}" includes="*.jar, *.pack.gz *.png" excludes="servlet-api.jar"/>
       <fileset dir="${dist}" includes="client*.jar, client*gz, ${ant.project.name}-server.jar"/>
       <fileset dir="src/us/lump/envelope/client/ui/images"
                includes="envelope_32.png, envelope.ico, envelope.icns"/>
