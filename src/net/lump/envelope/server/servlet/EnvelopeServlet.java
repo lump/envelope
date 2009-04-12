@@ -30,7 +30,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: EnvelopeServlet.java,v 1.5 2009/04/11 23:06:29 troy Exp $
+ * @version $Id: EnvelopeServlet.java,v 1.6 2009/04/12 00:04:20 troy Exp $
  */
 public class EnvelopeServlet extends HttpServlet {
 
@@ -48,7 +48,7 @@ public class EnvelopeServlet extends HttpServlet {
     } catch (IOException ignore) {}
   }
 
-  @SuppressWarnings({"unchecked"}) @Override
+  @SuppressWarnings({"unchecked", "ConstantConditions"}) @Override
   protected void doPost(HttpServletRequest rq, HttpServletResponse rp) throws ServletException, IOException {
 
     Matcher m = Pattern.compile("^(multipart/form-data);\\s+boundary=(.*?)$", Pattern.CASE_INSENSITIVE)
@@ -193,8 +193,9 @@ public class EnvelopeServlet extends HttpServlet {
                 rp.addHeader("Command-Sequence-Id", String.valueOf(command.getSeqId()));
 
                 // we have to cache the output to get content-length
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                OutputStream os = baos;
+//                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+//                OutputStream os = baos;
+                OutputStream os = rp.getOutputStream();
 
                 if (encryptionAlgorithm != null && encryptionAlgorithm.length() > 0 && sessionKey != null) {
                   rp.addHeader("Content-Encryption", encryptionAlgorithm);
@@ -221,16 +222,16 @@ public class EnvelopeServlet extends HttpServlet {
                 oos.flush();
                 oos.close();
 
-                rp.addIntHeader("Content-Length", baos.size());
+//                rp.addIntHeader("Content-Length", baos.size());
 
-                OutputStream servletOs = rp.getOutputStream();
+//                OutputStream servletOs = rp.getOutputStream();
 
-                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
                 // finally write it to the servlet's outputstream
-                servletOs.write(baos.toByteArray());
-                servletOs.flush();
+//                servletOs.write(baos.toByteArray());
+//                servletOs.flush();
 
                 // this simulates slow network
+//                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
 //                byte[] buffer = new byte[128];
 //                int read;
 //                while ((read = bais.read(buffer)) > 0) {
