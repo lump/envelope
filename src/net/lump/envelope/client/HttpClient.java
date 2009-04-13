@@ -28,7 +28,7 @@ import java.util.zip.InflaterInputStream;
  * A http client invoker.
  *
  * @author troy
- * @version $Id: HttpClient.java,v 1.5 2009/04/13 04:20:02 troy Exp $
+ * @version $Id: HttpClient.java,v 1.6 2009/04/13 17:13:04 troy Exp $
  */
 public class HttpClient {
 
@@ -49,8 +49,10 @@ public class HttpClient {
     // rfc 2388 multipart/form-data post
     final String prefix = "--";
     final String n = "\r\n";
-    final String boundary = "---------=command-" + String.valueOf(Math.random()).replaceAll("^0\\.", "") + "-" + String
-        .valueOf(System.currentTimeMillis());
+    final String boundary = String.format("---------%s-%s-%s",
+        command.getName().name(),
+        String.valueOf(Math.random()).replaceAll("^0\\.", ""),
+        String.valueOf(System.currentTimeMillis()));
 
     URL url = new URL(
         "http://" + serverSettings.getHostName() + ":" + serverSettings.getPort() + serverSettings.getContext() + "/invoke");
@@ -184,7 +186,7 @@ public class HttpClient {
           command.fireOutput(new OutputEvent(command, (long)count, (long)x, s));
           // allow the UI event thread to catch up
 //          Thread.yield();
-          try { Thread.sleep(1); } catch (InterruptedException ignore) { }
+          try { Thread.sleep(0); } catch (InterruptedException ignore) { }
         }
       }
     } finally {

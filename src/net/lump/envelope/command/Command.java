@@ -19,7 +19,7 @@ import java.util.List;
  * A command.
  *
  * @author Troy Bowman
- * @version $Id: Command.java,v 1.2 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: Command.java,v 1.3 2009/04/13 17:13:04 troy Exp $
  */
 public class Command implements Serializable {
   /**
@@ -38,7 +38,7 @@ public class Command implements Serializable {
    * command, and each command has a bit associated with it for bitwise operations.
    *
    * @author Troy Bowman
-   * @version $Id: Command.java,v 1.2 2009/04/10 22:49:28 troy Exp $
+   * @version $Id: Command.java,v 1.3 2009/04/13 17:13:04 troy Exp $
    */
   public enum Name {
 
@@ -133,10 +133,10 @@ public class Command implements Serializable {
      * @return BigInteger
      */
     public static BigInteger unEncryptables() {
-      return authChallengeResponse.bit()
-        .or(getServerPublicKey.bit())
+      return getServerPublicKey.bit()
+//          .or(authChallengeResponse.bit())
 //          .or(....bit());
-        ;
+          ;
     }
   }
 
