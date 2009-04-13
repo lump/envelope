@@ -30,7 +30,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: EnvelopeServlet.java,v 1.10 2009/04/13 18:06:19 troy Exp $
+ * @version $Id: EnvelopeServlet.java,v 1.11 2009/04/13 18:08:13 troy Exp $
  */
 public class EnvelopeServlet extends HttpServlet {
 
@@ -71,8 +71,8 @@ public class EnvelopeServlet extends HttpServlet {
         SecretKey sessionKey = null;
         Security security = null;
         Command command = null;
-        String encoding = null;
-        String encryption = null;
+        String encoding;
+        String encryption;
 
         while (true) {
           String name = null;

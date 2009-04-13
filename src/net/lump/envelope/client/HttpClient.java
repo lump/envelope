@@ -28,7 +28,7 @@ import java.util.zip.InflaterInputStream;
  * A http client invoker.
  *
  * @author troy
- * @version $Id: HttpClient.java,v 1.7 2009/04/13 18:06:19 troy Exp $
+ * @version $Id: HttpClient.java,v 1.8 2009/04/13 18:08:13 troy Exp $
  */
 public class HttpClient {
 
