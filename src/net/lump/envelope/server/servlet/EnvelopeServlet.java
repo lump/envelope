@@ -30,7 +30,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: EnvelopeServlet.java,v 1.9 2009/04/13 17:13:04 troy Exp $
+ * @version $Id: EnvelopeServlet.java,v 1.10 2009/04/13 18:06:19 troy Exp $
  */
 public class EnvelopeServlet extends HttpServlet {
 
@@ -186,6 +186,13 @@ public class EnvelopeServlet extends HttpServlet {
             }
           }
           else rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "argument " + name + " not recognized");
+        }
+
+        //todo: make this more intelligent
+        if (rq.getHeader("accept") == null
+            || rq.getHeader("accept").indexOf("application/java-serialized-object") == -1)
+        {
+          rp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "accept of " + rq.getHeader("accept") + " is not supported");
         }
 
         Controller c = new Controller();

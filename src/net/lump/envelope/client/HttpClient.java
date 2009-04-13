@@ -28,7 +28,7 @@ import java.util.zip.InflaterInputStream;
  * A http client invoker.
  *
  * @author troy
- * @version $Id: HttpClient.java,v 1.6 2009/04/13 17:13:04 troy Exp $
+ * @version $Id: HttpClient.java,v 1.7 2009/04/13 18:06:19 troy Exp $
  */
 public class HttpClient {
 
@@ -62,6 +62,7 @@ public class HttpClient {
     connection.setDoInput(true);
     connection.setDefaultUseCaches(false);
     connection.setRequestMethod("POST");
+    connection.addRequestProperty("Accept", "application/java-serialized-object");
     connection.addRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
     if (serverSettings.getCompress()) connection.addRequestProperty("Accept-Encoding", "gzip");
     if (serverSettings.getEncrypt()) connection.addRequestProperty("Accept-Encryption", Encryption.symAlg);
