@@ -30,7 +30,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: EnvelopeServlet.java,v 1.8 2009/04/13 04:20:02 troy Exp $
+ * @version $Id: EnvelopeServlet.java,v 1.9 2009/04/13 17:13:04 troy Exp $
  */
 public class EnvelopeServlet extends HttpServlet {
 
@@ -216,22 +216,36 @@ public class EnvelopeServlet extends HttpServlet {
         OutputStream os = baos;
 //        OutputStream os = rp.getOutputStream();
 
-        if (encryption != null && encryption.length() > 0 && sessionKey != null) {
-          rp.addHeader("Content-Encryption", encryption);
-          Cipher cout = Cipher.getInstance(encryption);
+        String acceptEncryption = rq.getHeader("accept-encryption");
+        if (acceptEncryption != null && acceptEncryption.length() > 0 && sessionKey != null) {
+          acceptEncryption = acceptEncryption.replaceAll("^\\s*(.*?)\\s*$", "$1");
+          rp.addHeader("Content-Encryption", acceptEncryption);
+          Cipher cout = Cipher.getInstance(acceptEncryption);
           cout.init(Cipher.ENCRYPT_MODE, sessionKey);
           os = new CipherOutputStream(os, cout);
         }
 
-        if (encoding != null) {
-          if (encoding.equals("gzip")) {
-            rp.addHeader("Content-Encoding", "gzip");
-            os = new GZIPOutputStream(os);
+        // parse accept encodings
+        String acceptEncoding = rq.getHeader("accept-encoding");
+        if (acceptEncoding != null) {
+          String[] acceptEncodings;
+          if (acceptEncoding.indexOf(",") == -1) acceptEncodings = new String[]{acceptEncoding};
+          else acceptEncodings = acceptEncoding.replaceAll("^\\s*(.*?)\\s*$", "$1").split("\\s*,\\s*");
+          boolean found = false;
+          for (String enc : acceptEncodings) {
+            if (enc.equalsIgnoreCase("gzip")) {
+              rp.addHeader("Content-Encoding", "gzip");
+              os = new GZIPOutputStream(os);
+              found = true;
+              break;
+            }
+            if (enc.equalsIgnoreCase("deflate")) {
+              rp.addHeader("Content-Encoding", "deflate");
+              os = new DeflaterOutputStream(os, new Deflater(Deflater.BEST_COMPRESSION));
+              found = true;
+            }
           }
-          if (encoding.equals("deflate")) {
-            rp.addHeader("Content-Encoding", "deflate");
-            os = new DeflaterOutputStream(os, new Deflater(Deflater.BEST_COMPRESSION));
-          }
+          if (!found) rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "only gzip or deflate encoding is allowed");
         }
 
         ObjectOutputStream oos = new ObjectOutputStream(os);

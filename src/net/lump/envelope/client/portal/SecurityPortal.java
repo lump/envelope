@@ -12,7 +12,7 @@ import java.security.PublicKey;
  * Security methods.
  *
  * @author Troy Bowman
- * @version $Id: SecurityPortal.java,v 1.12 2009/04/10 22:49:27 troy Exp $
+ * @version $Id: SecurityPortal.java,v 1.13 2009/04/13 17:13:04 troy Exp $
  */
 
 public class SecurityPortal extends Portal {
@@ -50,6 +50,5 @@ public class SecurityPortal extends Portal {
 
   public PublicKey getServerPublicKey() throws AbortException {
     return (PublicKey)(new SecurityPortal()).invoke(new Command(Command.Name.getServerPublicKey, null));
-
   }
 }
