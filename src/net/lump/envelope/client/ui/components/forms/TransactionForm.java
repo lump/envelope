@@ -34,7 +34,7 @@ import java.util.ResourceBundle;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.14 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.15 2009/04/13 04:20:02 troy Exp $
  */
 public class TransactionForm {
   private JButton saveButton;
@@ -78,10 +78,8 @@ public class TransactionForm {
     tableModel = new AllocationFormTableModel();
     allocationsTable.setModel(tableModel);
     transactionAllocationSplit.setResizeWeight(0.5);
-    transactionAllocationSplit.getLeftComponent()
-        .setMinimumSize(new Dimension(200, 0));
-    transactionAllocationSplit.getRightComponent()
-        .setMinimumSize(new Dimension(200, 0));
+    transactionAllocationSplit.getLeftComponent().setMinimumSize(new Dimension(200, 0));
+    transactionAllocationSplit.getRightComponent().setMinimumSize(new Dimension(200, 0));
     transactionAllocationSplit.setContinuousLayout(true);
     transactionAllocationSplit.setOneTouchExpandable(false);
 
@@ -137,25 +135,19 @@ public class TransactionForm {
 
 
     final JTable table = TableQueryBar.getInstance().getTable();
-    table.getSelectionModel().addListSelectionListener(
-        new ListSelectionListener() {
-          public void valueChanged(ListSelectionEvent e) {
-            if (e.getValueIsAdjusting()) return;
-            if (table.getSelectedRow() < 0) return;
-            loadTransactionForId(
-                ((TransactionTableModel)table
-                    .getModel()).getTransactionId(table.getSelectedRow()));
-          }
-        });
+    table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+      public void valueChanged(ListSelectionEvent e) {
+        if (e.getValueIsAdjusting()) return;
+        if (table.getSelectedRow() < 0) return;
+        loadTransactionForId(((TransactionTableModel)table.getModel()).getTransactionId(table.getSelectedRow()));
+      }
+    });
 
     table.addMouseListener(new MouseListener() {
       public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() == 2) {
           MainFrame.getInstance().setTransactionViewShowing(true);
-          loadTransactionForId(
-              ((TransactionTableModel)table
-                  .getModel())
-                  .getTransactionId(table.getSelectedRow()));
+          loadTransactionForId(((TransactionTableModel)table.getModel()).getTransactionId(table.getSelectedRow()));
 
         }
       }
@@ -196,8 +188,7 @@ public class TransactionForm {
   public void loadTransactionForId(final int id) {
     if (!MainFrame.getInstance().isTransactionViewShowing()) return;
     if (transaction == null || !transaction.getId().equals(id)) {
-      StatusRunnable r = new StatusRunnable(
-          MessageFormat.format(Strings.get("retrieving.transaction"), id)) {
+      StatusRunnable r = new StatusRunnable(MessageFormat.format(Strings.get("retrieving.transaction"), id)) {
         public void run() {
 
           try {
@@ -208,15 +199,13 @@ public class TransactionForm {
                 try {
                   if (transaction.getAmount().doubleValue() > 0) {
                     setIncomeView();
-                  } else {
+                  }
+                  else {
                     setExpenseView();
                   }
 
-                  amount.setText(
-                      typeExpenseRadio.isSelected()
-                          ? new Money(transaction.getAmount()
-                          .multiply(new Money("-1"))).toFormattedString()
-                          : transaction.getAmount().toFormattedString());
+                  amount.setText(typeExpenseRadio.isSelected() ? new Money(transaction.getAmount().multiply(new Money("-1")))
+                      .toFormattedString() : transaction.getAmount().toFormattedString());
 
                   transactionDate.setDate(transaction.getDate());
                   description.setText(transaction.getDescription());
@@ -230,8 +219,7 @@ public class TransactionForm {
                 } catch (AbortException ignore) {}
               }
             });
-          }
-          catch (AbortException ignore) {}
+          } catch (AbortException ignore) {}
 
         }
       };
@@ -254,16 +242,12 @@ public class TransactionForm {
     Long today = System.currentTimeMillis();
     today = today - (today % 86400000);
 
-    transactionDate = new JDateChooser(new Date(today),
-        "MMM d, yyyy",
-        new JTextFieldDateEditor());
+    transactionDate = new JDateChooser(new Date(today), "MMM d, yyyy", new JTextFieldDateEditor());
 
-    transactionDate.setPreferredSize(new Dimension(
-        transactionDate.getPreferredSize().width + 30,
-        transactionDate.getPreferredSize().height));
+    transactionDate
+        .setPreferredSize(new Dimension(transactionDate.getPreferredSize().width + 30, transactionDate.getPreferredSize().height));
 
-    referencePaydate = new JDateChooser(null, "MMM d, yyyy",
-        new JTextFieldDateEditor());
+    referencePaydate = new JDateChooser(null, "MMM d, yyyy", new JTextFieldDateEditor());
 
   }
 

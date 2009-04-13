@@ -28,7 +28,7 @@ import java.util.zip.InflaterInputStream;
  * A http client invoker.
  *
  * @author troy
- * @version $Id: HttpClient.java,v 1.4 2009/04/12 02:08:52 troy Exp $
+ * @version $Id: HttpClient.java,v 1.5 2009/04/13 04:20:02 troy Exp $
  */
 public class HttpClient {
 
@@ -39,8 +39,8 @@ public class HttpClient {
       throws IOException, NoSuchAlgorithmException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException,
       AbortException, ClassNotFoundException {
 
-    boolean encryptable = serverSettings.getEncrypt()
-        && (Command.Name.unEncryptables().and(command.getName().bit()).compareTo(BigInteger.ZERO) == 0);
+    boolean encryptable =
+        serverSettings.getEncrypt() && (Command.Name.unEncryptables().and(command.getName().bit()).compareTo(BigInteger.ZERO) == 0);
 
     SecretKey sessionKey = null;
     ArrayList<Serializable> output = null;
@@ -49,11 +49,11 @@ public class HttpClient {
     // rfc 2388 multipart/form-data post
     final String prefix = "--";
     final String n = "\r\n";
-    final String boundary = "---------=command-" + String.valueOf(Math.random()).replaceAll("^0\\.", "")
-        + "-" + String.valueOf(System.currentTimeMillis());
+    final String boundary = "---------=command-" + String.valueOf(Math.random()).replaceAll("^0\\.", "") + "-" + String
+        .valueOf(System.currentTimeMillis());
 
-    URL url = new URL("http://" + serverSettings.getHostName() + ":" + serverSettings.getPort()
-        + serverSettings.getContext() + "/invoke");
+    URL url = new URL(
+        "http://" + serverSettings.getHostName() + ":" + serverSettings.getPort() + serverSettings.getContext() + "/invoke");
 
     HttpURLConnection connection = (HttpURLConnection)url.openConnection();
     connection.setDoOutput(true);
@@ -75,8 +75,8 @@ public class HttpClient {
         sessionKey = Encryption.generateSymKey();
 
         // encrypt the key with server's public key for transfer and base64 it.
-        String encodedKey = Base64.byteArrayToBase64(Encryption.wrapSecretKey(
-            sessionKey, LoginSettings.getInstance().getServerKey()));
+        String encodedKey =
+            Base64.byteArrayToBase64(Encryption.wrapSecretKey(sessionKey, LoginSettings.getInstance().getServerKey()));
 
         // write the sym key
         out.writeBytes(prefix + boundary + n);
@@ -152,9 +152,11 @@ public class HttpClient {
       if (encoding != null && encoding.length() > 0) {
         if (encoding.equals("gzip")) {
           is = new GZIPInputStream(is);
-        } else if (encoding.equals("deflate")) {
+        }
+        else if (encoding.equals("deflate")) {
           is = new InflaterInputStream(is);
-        } else {
+        }
+        else {
           throw new IllegalStateException("gzip encoding isn't supported");
         }
       }
@@ -169,22 +171,23 @@ public class HttpClient {
       if (sequenceNumber != null && sequenceNumber.matches("^\\d+$")) seqId = Long.parseLong(sequenceNumber);
       else throw new IllegalStateException("sequence identifier is bad");
 
-      single = connection.getHeaderField("single-object") != null
-          && Boolean.parseBoolean(connection.getHeaderField("single-object"));
+      single =
+          connection.getHeaderField("single-object") != null && Boolean.parseBoolean(connection.getHeaderField("single-object"));
       final ObjectInputStream ois = new ObjectInputStream(is);
       assert seqId == command.getSeqId() : "sequence identifier didn't match";
       output = new ArrayList<Serializable>(count);
       for (int x = 0; x < count; x++) {
         Serializable s = (Serializable)ois.readObject();
-        if (s instanceof RemoteException)
-          throw (RemoteException)s;
+        if (s instanceof RemoteException) throw (RemoteException)s;
         else {
           output.add(s);
           command.fireOutput(new OutputEvent(command, (long)count, (long)x, s));
+          // allow the UI event thread to catch up
+//          Thread.yield();
+          try { Thread.sleep(1); } catch (InterruptedException ignore) { }
         }
       }
-    }
-    finally {
+    } finally {
       out.close();
     }
 

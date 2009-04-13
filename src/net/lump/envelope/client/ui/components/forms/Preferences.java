@@ -350,11 +350,10 @@ public class Preferences extends JDialog {
     });
     logInButton.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
+        setSessionState(State.neutral, Strings.get("pending"));
         if (areServerSettingsOk()) areLoginSettingsOk();
-
         else {
-          sessionState.setForeground(Colors.getColor("red"));
-          sessionState.setText(Strings.get("error.server.settings.not.valid"));
+          setSessionState(State.bad, Strings.get("error.server.settings.not.valid"));
         }
       }
     });
@@ -390,8 +389,7 @@ public class Preferences extends JDialog {
     SecurityPortal sp = new SecurityPortal();
 
     if (!hadLoginSuccessYet && !lsData.passwordIsSaved() && Arrays.equals(password.getPassword(), new char[0])) {
-      sessionState.setForeground(Colors.getColor("red"));
-      sessionState.setText(Strings.get("session.state.not.attempted"));
+      setSessionState(State.bad, Strings.get("session.state.not.attempted"));
       return false;
     }
 
@@ -437,10 +435,10 @@ public class Preferences extends JDialog {
     if (classTestResult.equals(Strings.get("ok"))) {
       serverStatusMessage.setForeground(Colors.getColor("green"));
       classServerValid = true;
-    } else {
+    }
+    else {
       // default session status to invalid while testing class server
       setSessionState(State.neutral, Strings.get("pending"));
-
       serverStatusMessage.setForeground(Colors.getColor("red"));
       classServerValid = false;
     }
@@ -449,13 +447,14 @@ public class Preferences extends JDialog {
     if (classServerValid) {
       cancelButton.setEnabled(false);
       return true;
-    } else {
+    }
+    else {
       cancelButton.setEnabled(true);
       return false;
     }
   }
 
-  public void setSessionState(State state, String message) {
+  public void setSessionState(final State state, final String message) {
     switch (state) {
       case good:
         sessionState.setForeground(Colors.getColor("green"));

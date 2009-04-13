@@ -30,7 +30,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: EnvelopeServlet.java,v 1.7 2009/04/12 02:09:16 troy Exp $
+ * @version $Id: EnvelopeServlet.java,v 1.8 2009/04/13 04:20:02 troy Exp $
  */
 public class EnvelopeServlet extends HttpServlet {
 
@@ -212,9 +212,9 @@ public class EnvelopeServlet extends HttpServlet {
         rp.addHeader("Command-Sequence-Id", String.valueOf(command.getSeqId()));
 
         // we have to cache the output to get content-length
-//                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//                OutputStream os = baos;
-        OutputStream os = rp.getOutputStream();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        OutputStream os = baos;
+//        OutputStream os = rp.getOutputStream();
 
         if (encryption != null && encryption.length() > 0 && sessionKey != null) {
           rp.addHeader("Content-Encryption", encryption);
@@ -241,28 +241,23 @@ public class EnvelopeServlet extends HttpServlet {
         oos.flush();
         oos.close();
 
-//                rp.addIntHeader("Content-Length", baos.size());
+        rp.addIntHeader("Content-Length", baos.size());
 
-//                OutputStream servletOs = rp.getOutputStream();
+        OutputStream servletOs = rp.getOutputStream();
 
         // finally write it to the servlet's outputstream
-//                servletOs.write(baos.toByteArray());
-//                servletOs.flush();
+        servletOs.write(baos.toByteArray());
+        servletOs.flush();
 
         // this simulates slow network
-//                ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-//                byte[] buffer = new byte[128];
-//                int read;
-//                while ((read = bais.read(buffer)) > 0) {
-//                  servletOs.write(buffer, 0, read);
-//                  try {
-//                    Thread.sleep(25);
-//                  } catch (InterruptedException ignore) {
-//                  }
-//                  servletOs.flush();
-//                }
-//                break;
-
+//        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+//        byte[] buffer = new byte[128];
+//        int read;
+//        while ((read = bais.read(buffer)) > 0) {
+//          servletOs.write(buffer, 0, read);
+//          try { Thread.sleep(2); } catch (InterruptedException ignore) { }
+//          servletOs.flush();
+//        }
       }
       else {
         rp.setStatus(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE);
