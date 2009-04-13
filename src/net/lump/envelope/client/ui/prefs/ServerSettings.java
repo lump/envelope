@@ -64,6 +64,8 @@ public class ServerSettings {
   private String infoQuery(String query) throws IOException {
     URL url = new URL(this.getCodeBase().toString() + "info" + query);
     URLConnection c = url.openConnection();
+    c.addRequestProperty("Accept", "text/plain");
+
     c.setDoInput(true);
 
     BufferedReader r = new BufferedReader(new InputStreamReader(c.getInputStream()));
