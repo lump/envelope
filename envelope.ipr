@@ -47,6 +47,7 @@
             <option name="LABEL_INDENT_ABSOLUTE" value="false" />
           </value>
         </option>
+        <option name="ELSE_ON_NEW_LINE" value="true" />
         <option name="ALIGN_MULTILINE_PARAMETERS" value="false" />
         <option name="ALIGN_MULTILINE_FOR" value="false" />
         <option name="SPACE_AFTER_TYPE_CAST" value="false" />

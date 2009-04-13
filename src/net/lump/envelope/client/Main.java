@@ -10,7 +10,7 @@ import javax.swing.*;
  * Main class.
  *
  * @author troy
- * @version $Id: Main.java,v 1.18 2009/04/10 22:49:27 troy Exp $
+ * @version $Id: Main.java,v 1.19 2009/04/13 04:20:02 troy Exp $
  */
 public class Main implements Runnable {
   private static Main singleton;
@@ -27,36 +27,32 @@ public class Main implements Runnable {
     if (System.getProperty("mrj.version") != null) {
       System.setProperty("com.apple.macos.useScreenMenuBar", "true");
       System.setProperty("apple.laf.useScreenMenuBar", "true");
-      System.setProperty("com.apple.mrj.application.apple.menu.about.name",
-                         Strings.get("envelope.budget"));
+      System.setProperty("com.apple.mrj.application.apple.menu.about.name", Strings.get("envelope.budget"));
       // don't fuss with LAF
       return;
     }
 
 
 //    try {
-//      // try nimbus first, since it's the coolest
+////       try nimbus first, since it's the coolest
 //      UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
 //    }
 //    catch (Exception e) {
+    try {
+      // try alloy next, since it is clean and nice
+      // borrow the jetbrains license for now, until we get serious
+      com.incors.plaf.alloy.AlloyLookAndFeel.setProperty("alloy.licenseCode", "4#JetBrains#1ou2uex#6920nk");
+      javax.swing.LookAndFeel alloyLnF = new com.incors.plaf.alloy.AlloyLookAndFeel(new BedouinTheme());
+      alloyLnF.initialize();
+      javax.swing.UIManager.setLookAndFeel(alloyLnF);
+    } catch (Exception ex) {
       try {
-        // try alloy next, since it is clean and nice
-        // borrow the jetbrains license for now, until we get serious
-        com.incors.plaf.alloy.AlloyLookAndFeel
-            .setProperty("alloy.licenseCode", "4#JetBrains#1ou2uex#6920nk");
-        javax.swing.LookAndFeel alloyLnF =
-            new com.incors.plaf.alloy.AlloyLookAndFeel(new BedouinTheme());
-        alloyLnF.initialize();
-        javax.swing.UIManager.setLookAndFeel(alloyLnF);
+        // oh well, let's just use ye olde metal
+        UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+      } catch (Exception e1) {
+        // nevermind
       }
-      catch (Exception ex) {
-        try {
-          // oh well, let's just use ye olde metal
-          UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-        } catch (Exception e1) {
-          // nevermind
-        }
-      }
+    }
 //    }
   }
 

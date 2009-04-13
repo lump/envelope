@@ -30,7 +30,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * A table model which lists transactions.
  *
  * @author Troy Bowman
- * @version $Id: TransactionTableModel.java,v 1.35 2009/04/12 02:08:52 troy Exp $
+ * @version $Id: TransactionTableModel.java,v 1.36 2009/04/13 04:20:02 troy Exp $
  */
 public class TransactionTableModel extends AbstractTableModel {
   private Vector<Object[]> transactions = new Vector<Object[]>();
@@ -48,8 +48,7 @@ public class TransactionTableModel extends AbstractTableModel {
   private long startDate = -1;
 
 
-  private BlockingQueue<Task> q =
-      new LinkedBlockingQueue<Task>();
+  private BlockingQueue<Task> q = new LinkedBlockingQueue<Task>();
 
   public static enum COLUMN {
     C,
@@ -65,14 +64,10 @@ public class TransactionTableModel extends AbstractTableModel {
 
   public void setSelectionCache(Integer i) {
     if (i != null && i > -1 && i < transactions.size())
-      selectionCache =
-          (Integer)transactions.get(i)[COLUMN.TransactionID.ordinal()];
+      selectionCache = (Integer)transactions.get(i)[COLUMN.TransactionID.ordinal()];
   }
 
-  public TransactionTableModel(final Object thing,
-      final Date begin,
-      final Date end,
-      final JTable table) {
+  public TransactionTableModel(final Object thing, final Date begin, final Date end, final JTable table) {
 
     this.table = table;
 
@@ -120,20 +115,17 @@ public class TransactionTableModel extends AbstractTableModel {
             CriteriaFactory cf = CriteriaFactory.getInstance();
             HibernatePortal hp = new HibernatePortal();
 
-            hp.invoke(new Command(Command.Name.detachedCriteriaQueryList,
-                new OutputListener() {
-                  public void commandOutputOccurred(OutputEvent event) {
-                    beginningBalance = event.getPayload() != null ? (Money)event.getPayload() : new Money(0);
-                  }
-                }, cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, null)));
+            hp.invoke(new Command(Command.Name.detachedCriteriaQueryList, new OutputListener() {
+              public void commandOutputOccurred(OutputEvent event) {
+                beginningBalance = event.getPayload() != null ? (Money)event.getPayload() : new Money(0);
+              }
+            }, cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, null)));
 
-            hp.invoke(new Command(Command.Name.detachedCriteriaQueryList,
-                new OutputListener() {
-                  public void commandOutputOccurred(OutputEvent event) {
-                    beginningReconciledBalance = event.getPayload() != null ? (Money)event.getPayload() : new Money(0);
-                  }
-                },
-                cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, Boolean.TRUE)));
+            hp.invoke(new Command(Command.Name.detachedCriteriaQueryList, new OutputListener() {
+              public void commandOutputOccurred(OutputEvent event) {
+                beginningReconciledBalance = event.getPayload() != null ? (Money)event.getPayload() : new Money(0);
+              }
+            }, cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, Boolean.TRUE)));
 
             final Boolean[] finished = new Boolean[]{Boolean.FALSE};
 
@@ -181,8 +173,7 @@ public class TransactionTableModel extends AbstractTableModel {
                 while ((!finished[0] && filled != rowCount) && (System.currentTimeMillis() - 20000) > startTime)
                   finished.wait(1000);
               }
-            }
-            catch (InterruptedException e) {
+            } catch (InterruptedException e) {
               // KTHXBYE
             }
 
@@ -196,15 +187,11 @@ public class TransactionTableModel extends AbstractTableModel {
               fireTableRowsDeleted(rowCount, oldSize - 1);
             }
 
-          }
-          catch (InterruptedException ignore) {
+          } catch (InterruptedException ignore) {
             break;
-          }
-          catch (AbortException ignore) {}
-          catch (Exception e) {
+          } catch (AbortException ignore) {} catch (Exception e) {
             e.printStackTrace();
-          }
-          finally {
+          } finally {
             if (t != null) t.finish();
           }
         }
@@ -215,18 +202,13 @@ public class TransactionTableModel extends AbstractTableModel {
     queue(thing, begin, end);
   }
 
-  private synchronized void updateTableFor(
-      final int rowNumber,
-      Object[] row) {
+  private synchronized void updateTableFor(final int rowNumber, Object[] row) {
 
     if (rowNumber > filled + 1) System.err.println("NON-SEQUENTIAL " + rowNumber + " for " + filled);
     filled = rowNumber;
 
-    if (rowNumber != 0 && ((rowNumber - 1) > (transactions.size() - 1)))
-      System.err.println("transactions doesn't have row "
-          + (rowNumber - 1)
-          + " as transactions is size: "
-          + (transactions.size() - 1));
+    if (rowNumber != 0 && ((rowNumber - 1) > (transactions.size() - 1))) System.err
+        .println("transactions doesn't have row " + (rowNumber - 1) + " as transactions is size: " + (transactions.size() - 1));
 
     // refresh our amnesia on the balances
     Money reconciled = rowNumber == 0 ? beginningBalance : (Money)transactions.get(rowNumber - 1)[COLUMN.Reconciled.ordinal()];
@@ -251,7 +233,7 @@ public class TransactionTableModel extends AbstractTableModel {
       public void run() {
         fireTableRowsInserted(rowNumber, rowNumber);
         if (reselect) table.changeSelection(rowNumber, 0, false, false);
-        Thread.yield();
+        if (table.getSelectedRow() == -1) table.scrollRectToVisible(table.getCellRect(table.getRowCount(), 0, true));
       }
     });
 
@@ -296,42 +278,28 @@ public class TransactionTableModel extends AbstractTableModel {
       fireTableCellUpdated(row, col);
 
 // establish the beginning reconciled balance
-      Money reconciled = row == 0
-          ? beginningReconciledBalance
-          : (Money)transactions.get(row - 1)[COLUMN.Reconciled
-              .ordinal()];
+      Money reconciled = row == 0 ? beginningReconciledBalance : (Money)transactions.get(row - 1)[COLUMN.Reconciled.ordinal()];
 
 // step through each row beginning with the row we're on
 // and re-total the reconciled column
       for (int x = row; x < transactions.size(); x++) {
         if ((Boolean)transactions.get(x)[COLUMN.C.ordinal()])
-          reconciled = new Money(reconciled.add(
-              (Money)transactions.get(x)[COLUMN.Amount.ordinal()]));
-        transactions.get(x)[COLUMN.Reconciled.ordinal()] =
-            new Money(reconciled);
+          reconciled = new Money(reconciled.add((Money)transactions.get(x)[COLUMN.Amount.ordinal()]));
+        transactions.get(x)[COLUMN.Reconciled.ordinal()] = new Money(reconciled);
         fireTableCellUpdated(x, COLUMN.Reconciled.ordinal());
       }
 
       // update the Transaction
       ThreadPool.getInstance().execute(new StatusRunnable(
-          MessageFormat.format("{0} {1} {2}",
-              ((Boolean)value)
-                  ? Strings.get("reconciling")
-                  : Strings.get("unreconciling"),
-              Strings.get("transaction").toLowerCase(),
-              transactions.get(row)[COLUMN.TransactionID
-                  .ordinal()])) {
+          MessageFormat.format("{0} {1} {2}", ((Boolean)value) ? Strings.get("reconciling") : Strings.get("unreconciling"),
+              Strings.get("transaction").toLowerCase(), transactions.get(row)[COLUMN.TransactionID.ordinal()])) {
 
         public void run() {
           try {
-            new TransactionPortal().updateReconciled(
-                (Integer)transactions.get(row)[COLUMN.TransactionID.ordinal()],
-                (Boolean)value);
+            new TransactionPortal()
+                .updateReconciled((Integer)transactions.get(row)[COLUMN.TransactionID.ordinal()], (Boolean)value);
           } catch (Exception e) {
-            JOptionPane.showMessageDialog(null,
-                e.getMessage(),
-                Strings.get("error"),
-                JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(null, e.getMessage(), Strings.get("error"), JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
           }
         }
@@ -372,15 +340,10 @@ public class TransactionTableModel extends AbstractTableModel {
       this.thing = thing;
       this.begin = begin;
       this.end = end;
-      final String type = thing instanceof Hierarchy.AccountTotal
-          ? Strings.get("account").toLowerCase()
-          : Strings.get("category").toLowerCase();
+      final String type =
+          thing instanceof Hierarchy.AccountTotal ? Strings.get("account").toLowerCase() : Strings.get("category").toLowerCase();
       statusElement =
-          StatusBar.getInstance().addTask(MessageFormat.format(
-              "{0} {1} {2}",
-              Strings.get("retrieving"),
-              thing.toString(),
-              type));
+          StatusBar.getInstance().addTask(MessageFormat.format("{0} {1} {2}", Strings.get("retrieving"), thing.toString(), type));
     }
 
     public void finish() {
