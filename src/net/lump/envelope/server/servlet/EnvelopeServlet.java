@@ -30,7 +30,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: EnvelopeServlet.java,v 1.12 2009/04/14 05:03:39 troy Exp $
+ * @version $Id: EnvelopeServlet.java,v 1.13 2009/04/14 05:36:41 troy Exp $
  */
 public class EnvelopeServlet extends HttpServlet {
 
@@ -189,7 +189,7 @@ public class EnvelopeServlet extends HttpServlet {
         }
 
         //todo: make this more intelligent
-        if (rq.getHeader("accept") == null || rq.getHeader("accept").indexOf("application/java-serialized-object") == -1) {
+        if (rq.getHeader("accept") == null || !rq.getHeader("accept").contains("application/java-serialized-object")) {
           rp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "accept of " + rq.getHeader("accept") + " is not supported");
         }
 
@@ -234,7 +234,7 @@ public class EnvelopeServlet extends HttpServlet {
         String acceptEncoding = rq.getHeader("accept-encoding");
         if (acceptEncoding != null) {
           String[] acceptEncodings;
-          if (acceptEncoding.indexOf(",") == -1) acceptEncodings = new String[]{acceptEncoding};
+          if (!acceptEncoding.contains(",")) acceptEncodings = new String[]{acceptEncoding};
           else acceptEncodings = acceptEncoding.replaceAll("^\\s*(.*?)\\s*$", "$1").split("\\s*,\\s*");
           boolean found = false;
           for (String enc : acceptEncodings) {
@@ -297,10 +297,9 @@ public class EnvelopeServlet extends HttpServlet {
   }
 
   @SuppressWarnings({"ConstantConditions", "ResultOfMethodCallIgnored"})
-  public CharSequence readUpTo(BufferedInputStream bis, boolean inclusive, Pattern... search) throws IOException {
+  public CharSequence readUpTo(BufferedInputStream bis, boolean inclusive, Pattern search) throws IOException {
     bis.mark(READLIMIT);
 
-    if (search.length == 0) return null;
     StringBuffer s = new StringBuffer();
     Matcher matcher = null;
     boolean found = false;
@@ -317,16 +316,14 @@ public class EnvelopeServlet extends HttpServlet {
 
       s.append(new String(buffer, 0, read));
 
-      for (Pattern p : search) {
-        matcher = p.matcher(s);
-        found = matcher.find();
-        if (found) break;
-      }
+      matcher = search.matcher(s);
+      found = matcher.find();
+      if (found) break;
     }
 
     if (matcher == null) return null;
-
     bis.reset();
+
     // this skip should always skip, because we've already buffered the amount we want to skip to.
     int end = inclusive ? matcher.end() : matcher.start();
     bis.skip(end);
