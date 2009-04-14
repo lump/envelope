@@ -30,7 +30,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: EnvelopeServlet.java,v 1.11 2009/04/13 18:08:13 troy Exp $
+ * @version $Id: EnvelopeServlet.java,v 1.12 2009/04/14 05:03:39 troy Exp $
  */
 public class EnvelopeServlet extends HttpServlet {
 
@@ -189,9 +189,7 @@ public class EnvelopeServlet extends HttpServlet {
         }
 
         //todo: make this more intelligent
-        if (rq.getHeader("accept") == null
-            || rq.getHeader("accept").indexOf("application/java-serialized-object") == -1)
-        {
+        if (rq.getHeader("accept") == null || rq.getHeader("accept").indexOf("application/java-serialized-object") == -1) {
           rp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "accept of " + rq.getHeader("accept") + " is not supported");
         }
 
@@ -317,7 +315,7 @@ public class EnvelopeServlet extends HttpServlet {
       // if we read -1 bytes, we've reached EOF.
       if (read == -1) throw new EOFException("EOF Reached");
 
-      s.append(new String(buffer).substring(0, read));
+      s.append(new String(buffer, 0, read));
 
       for (Pattern p : search) {
         matcher = p.matcher(s);
