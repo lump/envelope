@@ -22,7 +22,7 @@ import java.util.zip.GZIPOutputStream;
  * Serves static files.
  *
  * @author troy
- * @version $Id: FileServer.java,v 1.2 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: FileServer.java,v 1.3 2009/04/14 05:37:27 troy Exp $
  */
 public class FileServer {
 
@@ -76,10 +76,8 @@ public class FileServer {
 //      return;
       PrintWriter out = rp.getWriter();
       out.append("<html><head><title>Envelope</title><style><!-- body { font-family: sans-serif; } --></style>")
-          .append("</head><body><ul><li><a href=\"")
-          .append(rq.getContextPath())
-          .append("/envelope.jnlp\">Envelope JNLP</a></li><li><a href=\"")
-          .append(rq.getContextPath())
+          .append("</head><body><ul><li><a href=\"").append(rq.getContextPath())
+          .append("/envelope.jnlp\">Envelope JNLP</a></li><li><a href=\"").append(rq.getContextPath())
           .append("/configure\">Server Configuration</a></li></ul></body></html>");
 
       out.flush();
@@ -104,9 +102,10 @@ public class FileServer {
   private void feedJnlp() throws IOException {
     try {
       rp.setHeader("Content-Disposition", "name=envelope.jnlp\r\n");
+      rp.setDateHeader("Last-Modified", System.currentTimeMillis());
       contentType = "application/x-java-jnlp-file";
-      blortStream(new ByteArrayInputStream(
-          new Jnlp(rq.getServerName(), rq.getServerPort(), rq.getContextPath()).toString().getBytes()));
+      blortStream(
+          new ByteArrayInputStream(new Jnlp(rq.getServerName(), rq.getServerPort(), rq.getContextPath()).toString().getBytes()));
     } catch (IOException e) {
       rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
@@ -166,27 +165,28 @@ public class FileServer {
           if (Pattern.compile("^.*\\.jar.pack.gz$", Pattern.CASE_INSENSITIVE).matcher(rq.getServletPath()).matches()) {
             contentType = "application/java-archive";
             encoding = "pack200-gzip";
-          } else contentType = "application/x-gzip";
-        } else if (magic == 0x89504e47) //png = 0x89 + "PNG"
+          }
+          else contentType = "application/x-gzip";
+        }
+        else if (magic == 0x89504e47) //png = 0x89 + "PNG"
           contentType = "image/png";
-        else if ((new String(firstBytes)).matches("^\\s*<\\?xml.*"))
-          contentType = "text/xml";
+        else if ((new String(firstBytes)).matches("^\\s*<\\?xml.*")) contentType = "text/xml";
       }
 
 
-      String[] encodings = rq.getHeader("accept-encoding") != null
-          ? rq.getHeader("accept-encoding").split("\\s*,\\s*")
-          : new String[]{"raw"};
+      String[] encodings =
+          rq.getHeader("accept-encoding") != null ? rq.getHeader("accept-encoding").split("\\s*,\\s*") : new String[]{"raw"};
 
       for (String format : encodings) {
         if (format.equals("raw") || encoding.equals("pack200-gzip")) {
           break;
-        } else if (format.equals("gzip")
-            && ((magic >> 16) != GZIPInputStream.GZIP_MAGIC)) {
+        }
+        else if (format.equals("gzip") && ((magic >> 16) != GZIPInputStream.GZIP_MAGIC)) {
           encoding = "gzip";
           os = new GZIPOutputStream(os);
           break;
-        } else if (format.equals("deflate")) {
+        }
+        else if (format.equals("deflate")) {
           encoding = "deflate";
           os = new DeflaterOutputStream(os);
           break;
@@ -195,8 +195,7 @@ public class FileServer {
     }
 
     rp.setStatus(HttpServletResponse.SC_OK);
-    if (!encoding.equals("raw"))
-      rp.setHeader("Content-Encoding", encoding);
+    if (!encoding.equals("raw")) rp.setHeader("Content-Encoding", encoding);
     rp.setHeader("Content-Type", contentType);
 
     if (rq.getMethod().equals("HEAD")) os.close();
@@ -261,26 +260,20 @@ public class FileServer {
   }
 
   private void feedInfo() throws IOException {
-    Matcher infoMatcher =
-        Pattern.compile("^/(info/.*|log4j.properties|)$").matcher(rq.getServletPath());
+    Matcher infoMatcher = Pattern.compile("^/(info/.*|log4j.properties|)$").matcher(rq.getServletPath());
     if (infoMatcher.matches() && infoMatcher.group(1) != null) {
       String query = infoMatcher.group(1);
       String returnValue = "";
 
       if (query.matches("^info/ping$")) returnValue = "pong";
-      else if (query.matches("^info/uptime$"))
-        returnValue = Interval.span(ManagementFactory.getRuntimeMXBean().getUptime());
-      else if (query.matches("^info/security.policy$"))
-        returnValue = "grant { permission java.security.AllPermission; };";
-      else if (query.matches("^log4j.properties$"))
-        returnValue = "log4j.rootLogger=INFO, console\n"
-            + "log4j.logger.us.lump=INFO\n"
-            + "log4j.logger.envelope=INFO\n"
-            + "log4j.logger.org.hibernate=INFO\n"
-            + "log4j.appender.console=org.apache.log4j.ConsoleAppender\n"
-            + "log4j.appender.console.layout=org.apache.log4j.PatternLayout\n"
-            + "log4j.appender.console.layout.ConversionPattern=%d [%t] %p %c{2} %m%n\n"
-            + "log4j.appender.console.Target=System.err\n";
+      else if (query.matches("^info/uptime$")) returnValue = Interval.span(ManagementFactory.getRuntimeMXBean().getUptime());
+      else if (query.matches("^info/security.policy$")) returnValue = "grant { permission java.security.AllPermission; };";
+      else if (query.matches("^log4j.properties$")) returnValue =
+          "log4j.rootLogger=INFO, console\n" + "log4j.logger.us.lump=INFO\n" + "log4j.logger.envelope=INFO\n"
+              + "log4j.logger.org.hibernate=INFO\n" + "log4j.appender.console=org.apache.log4j.ConsoleAppender\n"
+              + "log4j.appender.console.layout=org.apache.log4j.PatternLayout\n"
+              + "log4j.appender.console.layout.ConversionPattern=%d [%t] %p %c{2} %m%n\n"
+              + "log4j.appender.console.Target=System.err\n";
 
       byte[] out = returnValue.getBytes();
       rp.setStatus(HttpServletResponse.SC_OK);
@@ -289,7 +282,8 @@ public class FileServer {
       if (!rq.getMethod().equals("HEAD")) rp.getOutputStream().write(out);
 
       logger.info("returned " + returnValue + " for " + rq.getServletPath() + " from " + rq.getRemoteHost());
-    } else { rp.sendError(HttpServletResponse.SC_NOT_FOUND); }
+    }
+    else { rp.sendError(HttpServletResponse.SC_NOT_FOUND); }
   }
 
 }
