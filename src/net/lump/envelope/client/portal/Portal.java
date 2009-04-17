@@ -28,7 +28,7 @@ import java.util.List;
  * handling.
  *
  * @author Troy Bowman
- * @version $Id: Portal.java,v 1.25 2009/04/10 22:49:27 troy Exp $
+ * @version $Id: Portal.java,v 1.26 2009/04/17 18:15:52 troy Exp $
  */
 
 abstract class Portal {
@@ -158,7 +158,7 @@ abstract class Portal {
         message,
         Strings.get("error"),
         JOptionPane.ERROR_MESSAGE);
-    throw new AbortException((Throwable)e);
+    throw new AbortException(e);
   }
 
   private void fatalError(Exception e) {
