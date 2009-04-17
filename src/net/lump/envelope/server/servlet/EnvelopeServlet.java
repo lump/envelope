@@ -30,7 +30,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: EnvelopeServlet.java,v 1.13 2009/04/14 05:36:41 troy Exp $
+ * @version $Id: EnvelopeServlet.java,v 1.14 2009/04/17 18:14:58 troy Exp $
  */
 public class EnvelopeServlet extends HttpServlet {
 
@@ -252,6 +252,10 @@ public class EnvelopeServlet extends HttpServlet {
           }
           if (!found) rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "only gzip or deflate encoding is allowed");
         }
+
+        // these don't seem to really help, do they?
+        rp.addHeader("Connection", "keep-alive");
+        rp.addHeader("Keep-Alive", "timeout=86400, max=16");
 
         ObjectOutputStream oos = new ObjectOutputStream(os);
         for (Serializable s : rl) {
