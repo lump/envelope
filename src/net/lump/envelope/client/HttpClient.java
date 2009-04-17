@@ -28,7 +28,7 @@ import java.util.zip.InflaterInputStream;
  * A http client invoker.
  *
  * @author troy
- * @version $Id: HttpClient.java,v 1.8 2009/04/13 18:08:13 troy Exp $
+ * @version $Id: HttpClient.java,v 1.9 2009/04/17 18:15:27 troy Exp $
  */
 public class HttpClient {
 
@@ -57,6 +57,8 @@ public class HttpClient {
     URL url = new URL(
         "http://" + serverSettings.getHostName() + ":" + serverSettings.getPort() + serverSettings.getContext() + "/invoke");
 
+    if (System.getProperty("http.keepAlive") == null
+        || !System.getProperty("http.keepAlive").equals("true")) System.setProperty("http.keepAlive", "true");
     HttpURLConnection connection = (HttpURLConnection)url.openConnection();
     connection.setDoOutput(true);
     connection.setDoInput(true);
