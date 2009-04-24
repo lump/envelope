@@ -1,6 +1,7 @@
 package us.lump.envelope.server;
 
 import org.apache.log4j.Logger;
+import org.hibernate.ScrollableResults;
 import us.lump.envelope.command.Command;
 import us.lump.envelope.exception.EnvelopeException;
 import static us.lump.envelope.exception.EnvelopeException.Name;
@@ -9,45 +10,40 @@ import us.lump.envelope.server.dao.DAO;
 import us.lump.envelope.server.dao.Security;
 import us.lump.lib.util.Interval;
 
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controller.java,v 1.2 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: Controller.java,v 1.3 2009/04/24 23:47:26 troy Exp $
  */
-public class Controller extends UnicastRemoteObject {
+public class Controller {
   final Logger logger = Logger.getLogger(Controller.class);
   private static final String DAO_PATH = "us.lump.envelope.server.dao.";
-
   private static final String SPACE = " ";
+  private HttpServletResponse rp;
+  private OutputStream os;
+
+  private Controller() {}
 
   /**
-   * This is usally called by the remote registry.
-   *
-   * @throws RemoteException
+   * blah.
    */
-  public Controller() throws RemoteException {
-    super(0);
-  }
-
-  /**
-   * A constructor which doesn't start up UnicastRemoteObject crap.
-   *
-   * @param blah
-   * @throws RemoteException
-   */
-  public Controller(Object blah) throws RemoteException {
+  public Controller(HttpServletResponse rp, OutputStream os) {
+    this.rp = rp;
+    this.os = os;
   }
 
   /**
@@ -64,10 +60,7 @@ public class Controller extends UnicastRemoteObject {
    * @throws RemoteException
    */
   @SuppressWarnings({"LoopStatementThatDoesntLoop"})
-  public Serializable invoke(Command command) throws RemoteException {
-
-
-    ArrayList<Serializable> returnList = new ArrayList<Serializable>();
+  public void invoke(Command command) throws RemoteException {
 
     logger.debug("Received command " + command.getName().name());
 
@@ -96,13 +89,13 @@ public class Controller extends UnicastRemoteObject {
     }
 
     // session management should be done now, so we can now dispatch and return
-    return dispatch(command);
+    dispatch(command);
   }
 
   /*
    * This method handles the reflection needed to dispatch the Command.
    */
-  private Serializable dispatch(Command command) throws RemoteException {
+  private void dispatch(Command command) throws RemoteException {
     // start time
     long start = System.currentTimeMillis();
 
@@ -140,11 +133,38 @@ public class Controller extends UnicastRemoteObject {
         else throw ite;
       }
 
-      // make sure the return value is Serializable.
-      if (returnValue instanceof Serializable || returnValue == null)
-        return (Serializable)returnValue;
-      else
-        throw new RemoteException("return value is not serializable");
+      // we have to handle the results here before the transaction is over.
+      if (returnValue instanceof ScrollableResults) {
+        ScrollableResults sr = (ScrollableResults)returnValue;
+        sr.last();
+        int count = sr.getRowNumber() +1;
+        rp.addHeader("Single-Object", Boolean.FALSE.toString());
+        rp.addIntHeader("Object-Count", count);
+        sr.beforeFirst();
+        ObjectOutputStream oos = new ObjectOutputStream(os);
+        while (sr.next()) {
+          oos.writeObject(sr.get().length == 1 ? sr.get()[0] : sr.get());
+          oos.flush();
+        }
+      }
+      else if (returnValue instanceof List) {
+        rp.addHeader("Single-Object", Boolean.FALSE.toString());
+        List l = (List)returnValue;
+        rp.addIntHeader("Object-Count", l.size());
+        ObjectOutputStream oos = new ObjectOutputStream(os);
+        for (Object o : l) {
+          oos.writeObject(o);
+          oos.flush();
+        }
+      }
+      else if (returnValue instanceof Serializable) {
+        rp.addHeader("Single-Object", Boolean.TRUE.toString());
+        rp.addIntHeader("Object-Count", 1);
+        ObjectOutputStream oos = new ObjectOutputStream(os);
+        oos.writeObject(returnValue);
+        oos.flush();
+      }
+      else throw new RemoteException("return value is not serializable");
 
     } catch (Exception e) {
       // rollback the transaction if it is active.

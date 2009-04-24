@@ -20,8 +20,6 @@ import java.rmi.RemoteException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.*;
@@ -30,13 +28,13 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: EnvelopeServlet.java,v 1.14 2009/04/17 18:14:58 troy Exp $
+ * @version $Id: InvocationServlet.java,v 1.1 2009/04/24 23:47:26 troy Exp $
  */
-public class EnvelopeServlet extends HttpServlet {
+public class InvocationServlet extends HttpServlet {
 
   private static final int READLIMIT = 104857600;
 
-  public EnvelopeServlet() {
+  public InvocationServlet() {
     super();
   }
 
@@ -193,33 +191,12 @@ public class EnvelopeServlet extends HttpServlet {
           rp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "accept of " + rq.getHeader("accept") + " is not supported");
         }
 
-        Controller c = new Controller();
-        Serializable retval;
-        try {
-          retval = c.invoke(command);
-        } catch (RemoteException r) {
-          retval = r;
-        }
-
-        List<Serializable> rl;
-        if (retval instanceof List) {
-          rp.addHeader("Single-Object", Boolean.FALSE.toString());
-          rl = (List<Serializable>)retval;
-        }
-        else {
-          rp.addHeader("Single-Object", Boolean.TRUE.toString());
-          rl = new Vector<Serializable>(1);
-          rl.add(retval);
-        }
-
+        // prepare the output stream depending on the request params
+        OutputStream os = rp.getOutputStream();
         rp.addHeader("Content-Type", "application/java-serialized-object");
-        rp.addIntHeader("Object-Count", rl.size());
         rp.addHeader("Command-Sequence-Id", String.valueOf(command.getSeqId()));
-
-        // we have to cache the output to get content-length
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        OutputStream os = baos;
-//        OutputStream os = rp.getOutputStream();
+        rp.addHeader("Connection", "keep-alive");
+        rp.addHeader("Keep-Alive", "timeout=86400, max=16");
 
         String acceptEncryption = rq.getHeader("accept-encryption");
         if (acceptEncryption != null && acceptEncryption.length() > 0 && sessionKey != null) {
@@ -253,24 +230,25 @@ public class EnvelopeServlet extends HttpServlet {
           if (!found) rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "only gzip or deflate encoding is allowed");
         }
 
-        // these don't seem to really help, do they?
-        rp.addHeader("Connection", "keep-alive");
-        rp.addHeader("Keep-Alive", "timeout=86400, max=16");
-
-        ObjectOutputStream oos = new ObjectOutputStream(os);
-        for (Serializable s : rl) {
-          oos.writeObject(s);
+        Controller c = new Controller(rp, os);
+        try {
+           c.invoke(command);
+        } catch (RemoteException r) {
+          rp.addHeader("Single-Object", Boolean.TRUE.toString());
+          rp.addIntHeader("Object-Count", 1);
+          new ObjectOutputStream(os).writeObject(r);
+          os.flush();
         }
-        oos.flush();
-        oos.close();
 
-        rp.addIntHeader("Content-Length", baos.size());
+        os.flush();
+        os.close();
 
-        OutputStream servletOs = rp.getOutputStream();
+//        rp.addIntHeader("Content-Length", baos.size());
+//        OutputStream servletOs = rp.getOutputStream();
 
         // finally write it to the servlet's outputstream
-        servletOs.write(baos.toByteArray());
-        servletOs.flush();
+//        servletOs.write(baos.toByteArray());
+//        servletOs.flush();
 
         // this simulates slow network
 //        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());

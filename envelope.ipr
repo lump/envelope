@@ -476,10 +476,10 @@
       <CLASSES>
         <root url="file://$PROJECT_DIR$/lib" />
       </CLASSES>
-      <JAVADOC>
-        <root url="jar://$PROJECT_DIR$/doc/servlet-2_3-fcs-docs.zip!/" />
-      </JAVADOC>
-      <SOURCES />
+      <JAVADOC />
+      <SOURCES>
+        <root url="file:///home/troy/java/dublan/hibernate-distribution-3.3.1.GA/project/core/src/main/java" />
+      </SOURCES>
       <jarDirectory url="file://$PROJECT_DIR$/lib" recursive="false" />
     </library>
   </component>
