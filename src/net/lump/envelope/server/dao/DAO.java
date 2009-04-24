@@ -25,7 +25,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.24 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: DAO.java,v 1.25 2009/04/24 23:47:26 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -106,19 +106,13 @@ public abstract class DAO {
    *
    * @param dc The detached criteria
    *
-   * @return List
+   * @return Scrollable Results
    */
   @SuppressWarnings({"unchecked"})
-  public List detachedCriteriaQueryList(DetachedCriteria dc) {
+  public ScrollableResults detachedCriteriaQueryList(DetachedCriteria dc) {
     logger.debug(dc.toString());
 
-    List l = dc.getExecutableCriteria(getCurrentSession())
-        .setCacheable(true)
-        .list();
-
-    // evict if these are Identifiable objects.
-    if (l.size() > 0 && l.get(0) instanceof Identifiable) evict((List<Identifiable>)l);
-    return l;
+    return dc.getExecutableCriteria(getCurrentSession()).setCacheable(true).scroll();
   }
 
   public Serializable detachedCriteriaQueryUnique(DetachedCriteria dc) {
@@ -156,7 +150,7 @@ public abstract class DAO {
   }
 
   public <T extends Identifiable> void delete(T[] is) {
-    this.delete(listify(is));
+    this.delete(Arrays.asList(is));
   }
 
   public <T extends Identifiable> void delete(Iterable<T> l) {
@@ -168,7 +162,7 @@ public abstract class DAO {
   }
 
   protected <T extends Identifiable> void evict(T[] is) {
-    this.evict(listify(is));
+    this.evict(Arrays.asList(is));
   }
 
   public <T extends Identifiable> void evict(Iterable<T> l) {
@@ -182,7 +176,7 @@ public abstract class DAO {
 
   public <T extends Identifiable> List<T> getList(Class<T> t,
       Serializable[] ids) {
-    return getList(t, listify(ids));
+    return getList(t, Arrays.asList(ids));
   }
 
   public <T extends Identifiable> List<T> getList(Class<T> t,
@@ -217,7 +211,7 @@ public abstract class DAO {
 
   public <T extends Identifiable> List<T> loadList(Class<T> t,
       Serializable... ids) {
-    return loadList(t, listify(ids));
+    return loadList(t, Arrays.asList(ids));
   }
 
   public <T extends Identifiable> List<T> loadList(Class<T> t,
@@ -233,7 +227,7 @@ public abstract class DAO {
   }
 
   public <T extends Identifiable> List<T> mergeList(T[] is) {
-    return mergeList(listify(is));
+    return mergeList(Arrays.asList(is));
   }
 
   public <T extends Identifiable> List<T> mergeList(Iterable<T> is) {
@@ -248,7 +242,7 @@ public abstract class DAO {
   }
 
   public <T extends Identifiable> void refresh(T[] is) {
-    refresh(listify(is));
+    refresh(Arrays.asList(is));
   }
 
   public <T extends Identifiable> void refresh(Iterable<T> is) {
@@ -269,7 +263,7 @@ public abstract class DAO {
   }
 
   public <T extends Identifiable> List<Serializable> saveOrUpdateList(T[] os) {
-    return saveOrUpdateList(listify(os));
+    return saveOrUpdateList(Arrays.asList(os));
   }
 
   public <T extends Identifiable> List<Serializable> saveOrUpdateList(
@@ -284,7 +278,7 @@ public abstract class DAO {
   }
 
   public <T extends Identifiable> void update(T[] os) {
-    update(listify(os));
+    update(Arrays.asList(os));
   }
 
   public <T extends Identifiable> void update(Iterable<T> os) {
@@ -469,13 +463,6 @@ public abstract class DAO {
         ((SessionImpl)getCurrentSession()).getJDBCContext().borrowConnection();
     if (c.isClosed()) throw new SessionException("Session is closed!");
     return c;
-  }
-
-
-  <T> Iterable<T> listify(T[] is) {
-    ArrayList<T> list = new ArrayList<T>();
-    Collections.addAll(list, is);
-    return list;
   }
 
   protected void finalize() throws Throwable {
