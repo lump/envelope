@@ -27,7 +27,7 @@ import java.util.List;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controller.java,v 1.3 2009/04/24 23:47:26 troy Exp $
+ * @version $Id: Controller.java,v 1.4 2009/04/25 15:32:12 troy Exp $
  */
 public class Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -38,24 +38,20 @@ public class Controller {
 
   private Controller() {}
 
-  /**
-   * blah.
-   */
+  /** blah. */
   public Controller(HttpServletResponse rp, OutputStream os) {
     this.rp = rp;
     this.os = os;
   }
 
   /**
-   * Invoke a command. This is the central method where every command must pass.
-   * Since this causes centralization, we can check for security as defined by
-   * the command, and validate sessions if necessary.  We can also catch errors
-   * and handle graceful closing or rollbacks of transactions.
+   * Invoke a command. This is the central method where every command must pass. Since this causes centralization, we can check for
+   * security as defined by the command, and validate sessions if necessary.  We can also catch errors and handle graceful closing
+   * or rollbacks of transactions.
    *
    * @param command the command
    *
    * @return an object which must be Serializable for transfer
-   *
    *
    * @throws RemoteException
    */
@@ -66,8 +62,7 @@ public class Controller {
 
     try {
       // if a session is required, force check authorization first
-      if (command.getName().isSessionRequired()
-          && !(new Security()).validateSession(command)) {
+      if (command.getName().isSessionRequired() && !(new Security()).validateSession(command)) {
         throw new EnvelopeException(Invalid_Session);
       }
     } catch (IOException e) {
@@ -114,17 +109,16 @@ public class Controller {
       }
 
       // deduce the DAO class name from the facet and create an instance.
-      dao = (DAO)Class.forName(
-          DAO_PATH + command.getName().getFacet().name()).newInstance();
+      dao = (DAO)Class.forName(DAO_PATH + command.getName().getFacet().name()).newInstance();
 
       Object returnValue = null;
       try {
-      // invoke the method and reap the return value.
-      returnValue =
-          // get the method from the command name and parameter names
-          dao.getClass().getMethod(command.getName().name(), paramNames)
-              // invoke the method on a new instance of the class with the arguments
-              .invoke(dao, args);
+        // invoke the method and reap the return value.
+        returnValue =
+            // get the method from the command name and parameter names
+            dao.getClass().getMethod(command.getName().name(), paramNames)
+                // invoke the method on a new instance of the class with the arguments
+                .invoke(dao, args);
       } catch (InvocationTargetException ite) {
         Throwable cause = ite.getCause();
         if (cause instanceof RemoteException && returnValue == null) {
@@ -137,15 +131,15 @@ public class Controller {
       if (returnValue instanceof ScrollableResults) {
         ScrollableResults sr = (ScrollableResults)returnValue;
         sr.last();
-        int count = sr.getRowNumber() +1;
+        int count = sr.getRowNumber() + 1;
         rp.addHeader("Single-Object", Boolean.FALSE.toString());
         rp.addIntHeader("Object-Count", count);
         sr.beforeFirst();
         ObjectOutputStream oos = new ObjectOutputStream(os);
         while (sr.next()) {
           oos.writeObject(sr.get().length == 1 ? sr.get()[0] : sr.get());
-          oos.flush();
         }
+        oos.flush();
       }
       else if (returnValue instanceof List) {
         rp.addHeader("Single-Object", Boolean.FALSE.toString());
@@ -154,8 +148,8 @@ public class Controller {
         ObjectOutputStream oos = new ObjectOutputStream(os);
         for (Object o : l) {
           oos.writeObject(o);
-          oos.flush();
         }
+        oos.flush();
       }
       else if (returnValue instanceof Serializable) {
         rp.addHeader("Single-Object", Boolean.TRUE.toString());
@@ -168,9 +162,7 @@ public class Controller {
 
     } catch (Exception e) {
       // rollback the transaction if it is active.
-      if (dao != null
-          && dao.getTransaction().isActive()
-          && !dao.getTransaction().wasRolledBack()) {
+      if (dao != null && dao.getTransaction().isActive() && !dao.getTransaction().wasRolledBack()) {
         dao.getTransaction().rollback();
         logger.warn("transaction was rolled back", e);
       }
@@ -179,25 +171,18 @@ public class Controller {
       logger.fatal("caught exception leaving controller", e);
 
       if (e instanceof ClassNotFoundException)
-        throw new IllegalArgumentException(
-            "Bad Facet " + command.getName().getFacet().name(), e);
-      if (e instanceof IllegalAccessException
-          || e instanceof NoSuchMethodException)
-        throw new IllegalArgumentException(
-            "Bad Command " + command.getName().name(), e);
+        throw new IllegalArgumentException("Bad Facet " + command.getName().getFacet().name(), e);
+      if (e instanceof IllegalAccessException || e instanceof NoSuchMethodException)
+        throw new IllegalArgumentException("Bad Command " + command.getName().name(), e);
       if (e instanceof InstantiationException)
-        throw new IllegalArgumentException(
-            "Could not instantiate " + command.getName().getFacet().name(), e);
+        throw new IllegalArgumentException("Could not instantiate " + command.getName().getFacet().name(), e);
       if (e instanceof InvocationTargetException) {
-        if (e.getCause() instanceof EnvelopeException)
-          throw (EnvelopeException)e.getCause();
-        throw new IllegalArgumentException(
-            "Could not invoke " + command.getName().name());
+        if (e.getCause() instanceof EnvelopeException) throw (EnvelopeException)e.getCause();
+        throw new IllegalArgumentException("Could not invoke " + command.getName().name());
       }
 
       throw new RemoteException("wrapped throwable", e);
-    }
-    finally {
+    } finally {
       if (dao != null) {
         if (dao.isActive() && !dao.wasRolledBack()) {
           if (dao.isDirty()) dao.flush();
@@ -208,12 +193,8 @@ public class Controller {
         dao.disconnect();
       }
 
-      logger.info(
-          (command.getCredentials() != null
-           ? command.getCredentials().getUsername()
-           : "no-session")
-          + SPACE + command.getName().name() + SPACE
-          + Interval.span(start, System.currentTimeMillis()));
+      logger.info((command.getCredentials() != null ? command.getCredentials().getUsername() : "no-session") + SPACE
+          + command.getName().name() + SPACE + Interval.span(start, System.currentTimeMillis()));
     }
   }
 }
