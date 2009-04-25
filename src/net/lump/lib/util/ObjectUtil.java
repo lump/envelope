@@ -10,7 +10,7 @@ import java.io.*;
  * Misc Object Utilities.
  *
  * @author troy
- * @version $Id: ObjectUtil.java,v 1.1 2009/04/24 23:47:26 troy Exp $
+ * @version $Id: ObjectUtil.java,v 1.2 2009/04/25 00:18:21 troy Exp $
  */
 public class ObjectUtil {
 
@@ -23,7 +23,7 @@ public class ObjectUtil {
    *
    * @return a deep-copied object.
    */
-  public static <T> T deepcopy(T obj) {
+  @SuppressWarnings({"unchecked"}) public static <T> T deepcopy(T obj) {
     final ByteArrayOutputStream baos = new ByteArrayOutputStream();
     T out = null;
     try {
