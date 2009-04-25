@@ -1,6 +1,7 @@
 package us.lump.envelope.client;
 
 import com.incors.plaf.alloy.themes.bedouin.BedouinTheme;
+import org.apache.log4j.BasicConfigurator;
 import us.lump.envelope.client.ui.MainFrame;
 import us.lump.envelope.client.ui.defs.Strings;
 
@@ -10,7 +11,7 @@ import javax.swing.*;
  * Main class.
  *
  * @author troy
- * @version $Id: Main.java,v 1.19 2009/04/13 04:20:02 troy Exp $
+ * @version $Id: Main.java,v 1.20 2009/04/25 03:33:55 troy Exp $
  */
 public class Main implements Runnable {
   private static Main singleton;
@@ -58,6 +59,7 @@ public class Main implements Runnable {
 
   // for possibly applet starting which are already using a http classloader
   public static void main(String[] args) {
+    BasicConfigurator.configure();
     getInstance().run();
   }
 
