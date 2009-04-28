@@ -1,10 +1,10 @@
 --
--- $Id: bootstrap-psql.sql,v 1.1 2009/04/28 22:41:39 troy Exp $
+-- $Id: bootstrap-psql.sql,v 1.2 2009/04/28 22:48:12 troy Exp $
 --
 
 -- this script creates the budget role, schema, database, and tables.
 -- run it like this:
--- $ psql -U postgres < bootstrap-pgsql-admin.sql
+-- $ psql -U postgres < bootstrap-psql.sql
 
 drop database if exists envelope;
 drop role if exists budget;
