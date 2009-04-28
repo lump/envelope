@@ -1,5 +1,5 @@
 --
--- $Id: bootstrap.sql,v 1.10 2008/07/21 14:59:42 troy Test $
+-- $Id: bootstrap-mysql.sql,v 1.1 2009/04/28 22:41:39 troy Exp $
 --
 
 drop table if exists users;
