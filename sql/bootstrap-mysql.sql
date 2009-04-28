@@ -1,17 +1,13 @@
 --
--- $Id: bootstrap-mysql.sql,v 1.1 2009/04/28 22:41:39 troy Exp $
+-- $Id: bootstrap-mysql.sql,v 1.2 2009/04/28 22:46:32 troy Exp $
 --
 
-drop table if exists users;
-drop table if exists allocations;
-drop table if exists transactions;
-drop table if exists category_allocation_settings;
-drop table if exists allocation_settings;
-drop table if exists categories;
-drop table if exists accounts;
-drop table if exists allocation_tag;
-drop table if exists tags;
-drop table if exists budgets;
+-- this can be run like this:
+-- mysql -u root -pPassword < bootstrap-mysql.sql
+
+drop database if exists envelope;
+create database envelope;
+connect envelope;
 
 create table budgets (
   `id` int not null auto_increment primary key,
