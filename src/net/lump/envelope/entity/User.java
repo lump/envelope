@@ -1,9 +1,13 @@
 package us.lump.envelope.entity;
 
 import us.lump.envelope.command.security.Permission;
+import us.lump.lib.util.Encryption;
 
 import javax.persistence.*;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 
@@ -12,10 +16,9 @@ import java.text.MessageFormat;
  * User.
  *
  * @author Troy Bowman
- * @version $Id: User.java,v 1.7 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: User.java,v 1.8 2009/04/29 01:30:15 troy Exp $
  */
-@javax.persistence.Entity
-@Table(name = "users")
+@javax.persistence.Entity @Table(name = "users")
 public class User extends Identifiable<Integer, Timestamp> {
   private Integer id;
   private Timestamp stamp;
@@ -24,16 +27,13 @@ public class User extends Identifiable<Integer, Timestamp> {
   private String realName;
   private String cryptPassword;
   private Permission permissions;
-  private PublicKey publicKey;
+  private String publicKey;
 
   public String toString() {
     return MessageFormat.format("{0} ({1})", name, realName);
   }
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
-  @Column(name = "id", nullable = false)
-  @Override
+  @Id @GeneratedValue(strategy = GenerationType.AUTO) @Column(name = "id", nullable = false) @Override
   public Integer getId() {
     return id;
   }
@@ -43,9 +43,7 @@ public class User extends Identifiable<Integer, Timestamp> {
     this.id = id;
   }
 
-  @Version
-  @Column(name = "stamp", nullable = false)
-  @Override
+  @Version @Column(name = "stamp", nullable = false) @Override
   public Timestamp getStamp() {
     return stamp;
   }
@@ -54,8 +52,7 @@ public class User extends Identifiable<Integer, Timestamp> {
     this.stamp = stamp;
   }
 
-  @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-  @JoinColumn(name = "budget")
+  @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE}) @JoinColumn(name = "budget")
   public Budget getBudget() {
     return budget;
   }
@@ -82,14 +79,23 @@ public class User extends Identifiable<Integer, Timestamp> {
     this.cryptPassword = cryptPassword;
   }
 
+
   @Column(name = "public_key")
-  @Lob
-  public PublicKey getPublicKey() {
+  public String getPublicKeyString() {
     return publicKey;
   }
 
-  public void setPublicKey(PublicKey publicKey) {
+  public void setPublicKeyString(String publicKey) {
     this.publicKey = publicKey;
+  }
+
+  @Transient
+  public PublicKey getPublicKey() throws IOException, InvalidKeySpecException, NoSuchAlgorithmException {
+    return Encryption.decodePublicKey(publicKey);
+  }
+
+  public void setPublicKey(PublicKey publicKey) {
+    this.publicKey = Encryption.encodeKey(publicKey);
   }
 
   @Column(name = "real_name")
@@ -126,30 +132,14 @@ public class User extends Identifiable<Integer, Timestamp> {
 
     User user = (User)o;
 
-    if (budget != null
-      ? !budget.equals(user.budget)
-      : user.budget != null) return false;
-    if (cryptPassword != null
-      ? !cryptPassword.equals(user.cryptPassword)
-      : user.cryptPassword != null) return false;
-    if (id != null
-      ? !id.equals(user.id)
-      : user.id != null) return false;
-    if (name != null
-      ? !name.equals(user.name)
-      : user.name != null) return false;
-    if (permissions != null
-      ? !permissions.equals(user.permissions)
-      : user.permissions != null) return false;
-    if (publicKey != null
-      ? !publicKey.equals(user.publicKey)
-      : user.publicKey != null) return false;
-    if (realName != null
-      ? !realName.equals(user.realName)
-      : user.realName != null) return false;
-    if (stamp != null
-      ? !stamp.equals(user.stamp)
-      : user.stamp != null) return false;
+    if (budget != null ? !budget.equals(user.budget) : user.budget != null) return false;
+    if (cryptPassword != null ? !cryptPassword.equals(user.cryptPassword) : user.cryptPassword != null) return false;
+    if (id != null ? !id.equals(user.id) : user.id != null) return false;
+    if (name != null ? !name.equals(user.name) : user.name != null) return false;
+    if (permissions != null ? !permissions.equals(user.permissions) : user.permissions != null) return false;
+    if (publicKey != null ? !publicKey.equals(user.publicKey) : user.publicKey != null) return false;
+    if (realName != null ? !realName.equals(user.realName) : user.realName != null) return false;
+    if (stamp != null ? !stamp.equals(user.stamp) : user.stamp != null) return false;
 
     return true;
   }
@@ -161,9 +151,7 @@ public class User extends Identifiable<Integer, Timestamp> {
     result = 31 * result + (budget != null ? budget.hashCode() : 0);
     result = 31 * result + (name != null ? name.hashCode() : 0);
     result = 31 * result + (realName != null ? realName.hashCode() : 0);
-    result = 31 * result + (cryptPassword != null
-      ? cryptPassword.hashCode()
-      : 0);
+    result = 31 * result + (cryptPassword != null ? cryptPassword.hashCode() : 0);
     result = 31 * result + (permissions != null ? permissions.hashCode() : 0);
     result = 31 * result + (publicKey != null ? publicKey.hashCode() : 0);
     return result;

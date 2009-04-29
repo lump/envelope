@@ -1,5 +1,5 @@
 --
--- $Id: bootstrap-psql.sql,v 1.2 2009/04/28 22:48:12 troy Exp $
+-- $Id: bootstrap-psql.sql,v 1.3 2009/04/29 01:29:54 troy Exp $
 --
 
 -- this script creates the budget role, schema, database, and tables.
@@ -195,7 +195,7 @@ create table users (
   real_name varchar(64) default NULL,
   crypt_password varchar(34) default NULL,
   permissions int default NULL,
-  public_key bytea,
+  public_key text,
   constraint users_budget foreign key (budget) references budgets(id) on update cascade on delete restrict
 );
 insert into users (budget, name, real_name, crypt_password, permissions)
