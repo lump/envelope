@@ -1,5 +1,5 @@
 --
--- $Id: bootstrap-mysql.sql,v 1.2 2009/04/28 22:46:32 troy Exp $
+-- $Id: bootstrap-mysql.sql,v 1.3 2009/04/29 01:29:54 troy Exp $
 --
 
 -- this can be run like this:
@@ -197,7 +197,7 @@ create table `users` (
   `real_name` varchar(64) default NULL,
   `crypt_password` varchar(34) default NULL,
   `permissions` int(11) default NULL,
-  `public_key` blob,
+  `public_key` text,
   UNIQUE index `name` (`name`),
   constraint users_budget foreign key (budget) references budgets(id) on update cascade on delete restrict
 )ENGINE=INNODB;
