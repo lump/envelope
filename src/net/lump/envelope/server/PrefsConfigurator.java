@@ -11,7 +11,7 @@ import java.util.prefs.Preferences;
  * the application it is applied.
  *
  * @author Troy Bowman
- * @version $Id: PrefsConfigurator.java,v 1.3 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: PrefsConfigurator.java,v 1.4 2009/04/30 16:15:01 troy Exp $
  */
 public class PrefsConfigurator {
 
@@ -34,7 +34,7 @@ public class PrefsConfigurator {
     }
 
     // make a sorted array of names
-    String[] customizableNames = config.keySet().toArray(new String[0]);
+    String[] customizableNames = config.stringPropertyNames().toArray(new String[config.stringPropertyNames().size()]);
     Arrays.sort(customizableNames);
 
     // yank the preferences for class
