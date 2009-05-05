@@ -27,7 +27,7 @@ import java.util.List;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controller.java,v 1.4 2009/04/25 15:32:12 troy Exp $
+ * @version $Id: Controller.java,v 1.5 2009/05/05 03:37:43 troy Exp $
  */
 public class Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -36,6 +36,7 @@ public class Controller {
   private HttpServletResponse rp;
   private OutputStream os;
 
+  @SuppressWarnings({"UnusedDeclaration"})
   private Controller() {}
 
   /** blah. */

@@ -24,13 +24,12 @@ import java.beans.PropertyChangeListener;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.37 2009/02/01 02:33:42 troy Test $
+ * @version $Id: MainFrame.java,v 1.38 2009/05/05 03:37:43 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
   private Preferences appPrefs;
-  private java.util.prefs.Preferences prefs
-      = java.util.prefs.Preferences.userNodeForPackage(this.getClass());
+  private java.util.prefs.Preferences prefs = java.util.prefs.Preferences.userNodeForPackage(this.getClass());
   static final JMenuBar mainMenuBar = new JMenuBar();
   private static MainFrame singleton;
   TransactionForm transactionForm = new TransactionForm();
@@ -40,14 +39,8 @@ public class MainFrame extends JFrame {
   //content
   private JScrollPane treeScrollPane = new JScrollPane();
   private JPanel contentPane = new JPanel(new BorderLayout());
-  private JSplitPane tableContentSplitPane =
-      new JSplitPane(JSplitPane.VERTICAL_SPLIT,
-                     Box.createVerticalGlue(),
-                     null);
-  private JSplitPane treeContentSplitPane =
-      new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
-                     treeScrollPane,
-                     tableContentSplitPane);
+  private JSplitPane tableContentSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, Box.createVerticalGlue(), null);
+  private JSplitPane treeContentSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeScrollPane, tableContentSplitPane);
 
 
   public void setTablePane(JPanel p) {
@@ -90,8 +83,7 @@ public class MainFrame extends JFrame {
 //    this.setIconImage(ImageResource.icon.envelope_32.getImage());
 
     treeContentSplitPane.setResizeWeight(0);
-    treeContentSplitPane.getLeftComponent()
-        .setMinimumSize(new Dimension(200, 0));
+    treeContentSplitPane.getLeftComponent().setMinimumSize(new Dimension(200, 0));
     treeContentSplitPane.setContinuousLayout(true);
     treeContentSplitPane.setOneTouchExpandable(true);
 
@@ -124,7 +116,7 @@ public class MainFrame extends JFrame {
       AppleStuff apple = new AppleStuff();
       mac = true;
     }
-    
+
     this.setJMenuBar(mainMenuBar);
     JMenu fileMenu = new JMenu(Strings.get("file"));
     JMenu viewMenu = new JMenu(Strings.get("view"));
@@ -134,22 +126,16 @@ public class MainFrame extends JFrame {
     mainMenuBar.add(viewMenu);
 
     if (!mac) {
-      fileMenu.add(new JMenuItem(new prefsActionClass(
-          Strings.get("preferences"), KeyStroke.getKeyStroke(
-              KeyEvent.VK_S, shortcutKeyMask)
-      )));
+      fileMenu.add(
+          new JMenuItem(new prefsActionClass(Strings.get("preferences"), KeyStroke.getKeyStroke(KeyEvent.VK_S, shortcutKeyMask))));
       fileMenu.add(new JSeparator());
 
-      fileMenu.add(new JMenuItem(new exitActionClass(
-          Strings.get("exit"),
-          KeyStroke.getKeyStroke(KeyEvent.VK_Q, KeyEvent.CTRL_MASK)
-      )));
+      fileMenu
+          .add(new JMenuItem(new exitActionClass(Strings.get("exit"), KeyStroke.getKeyStroke(KeyEvent.VK_Q, KeyEvent.CTRL_MASK))));
       fileMenu.setEnabled(true);
 
       JMenu helpMenu = new JMenu(Strings.get("help"));
-      helpMenu.add(new JMenuItem(new aboutActionClass(
-          Strings.get("about"))
-      ));
+      helpMenu.add(new JMenuItem(new aboutActionClass(Strings.get("about"))));
       mainMenuBar.add(helpMenu);
     }
 
@@ -186,8 +172,7 @@ public class MainFrame extends JFrame {
     // hack to get stupid tree to resize width
     treeContentSplitPane.addPropertyChangeListener(new PropertyChangeListener() {
       public void propertyChange(PropertyChangeEvent evt) {
-        if (evt.getPropertyName()
-            .equals(JSplitPane.DIVIDER_LOCATION_PROPERTY)) {
+        if (evt.getPropertyName().equals(JSplitPane.DIVIDER_LOCATION_PROPERTY)) {
           Hierarchy.getInstance().configureLayoutCache();
         }
       }
@@ -234,10 +219,8 @@ public class MainFrame extends JFrame {
     //    frame.pack();
     validate();
     pack();
-    setSize(new Dimension(prefs.getInt("windowSizeX", 640),
-                          prefs.getInt("windowSizeY", 480)));
-    treeContentSplitPane.setDividerLocation(prefs.getInt("splitPaneLocation",
-                                                         treeContentSplitPane.getDividerLocation()));
+    setSize(new Dimension(prefs.getInt("windowSizeX", 640), prefs.getInt("windowSizeY", 480)));
+    treeContentSplitPane.setDividerLocation(prefs.getInt("splitPaneLocation", treeContentSplitPane.getDividerLocation()));
     setVisible(true);
     status.removeTask(initStatus);
   }
@@ -249,18 +232,14 @@ public class MainFrame extends JFrame {
   public void doViewTransaction() {
     if (viewTransaction.isSelected()) {
 
-      if (savedTransactionFormSplitterLocation == 0)
-        tableContentSplitPane.setDividerLocation(0.4);
-      else
-        tableContentSplitPane
-            .setDividerLocation(savedTransactionFormSplitterLocation);
+      if (savedTransactionFormSplitterLocation == 0) tableContentSplitPane.setDividerLocation(0.4);
+      else tableContentSplitPane.setDividerLocation(savedTransactionFormSplitterLocation);
 
-      tableContentSplitPane.setDividerSize((Integer)UIManager.get(
-          "SplitPane.dividerSize"));
+      tableContentSplitPane.setDividerSize((Integer)UIManager.get("SplitPane.dividerSize"));
       transactionForm.getTransactionFormPanel().setVisible(true);
-    } else {
-      savedTransactionFormSplitterLocation =
-          tableContentSplitPane.getDividerLocation();
+    }
+    else {
+      savedTransactionFormSplitterLocation = tableContentSplitPane.getDividerLocation();
       tableContentSplitPane.setDividerSize(0);
       transactionForm.getTransactionFormPanel().setVisible(false);
     }
@@ -269,10 +248,9 @@ public class MainFrame extends JFrame {
 
   public void aboutBox() {
     if (aboutBox == null) aboutBox = new AboutBox();
-    aboutBox.setTitle(Strings.get("about"));
+    aboutBox.setTitle(Strings.get("about") + " " + Strings.get("envelope.budget"));
     aboutBox.setResizable(false);
-    aboutBox.setLocation(new Point(getLocation().x + 20,
-                                   getLocation().y + 20));
+    aboutBox.setLocation(new Point(getLocation().x + 20, getLocation().y + 20));
     aboutBox.setVisible(true);
   }
 
@@ -320,8 +298,7 @@ public class MainFrame extends JFrame {
   }
 
   void exit(int value) {
-    prefs.putInt("splitPaneLocation",
-                 treeContentSplitPane.getDividerLocation());
+    prefs.putInt("splitPaneLocation", treeContentSplitPane.getDividerLocation());
     prefs.putInt("windowSizeX", getWidth());
     prefs.putInt("windowSizeY", getHeight());
     System.exit(value);
