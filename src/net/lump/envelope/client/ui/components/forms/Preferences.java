@@ -6,6 +6,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import us.lump.envelope.client.portal.SecurityPortal;
 import us.lump.envelope.client.ui.defs.Colors;
 import us.lump.envelope.client.ui.defs.Strings;
+import us.lump.envelope.client.ui.images.ImageResource;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
 import us.lump.envelope.command.security.Challenge;
@@ -304,6 +305,7 @@ public class Preferences extends JDialog {
 
   private Preferences() {
 
+    setIconImages(ImageResource.getFrameList());
     setContentPane(prefsPane);
     setModal(true);
     getRootPane().setDefaultButton(ok);
