@@ -16,10 +16,10 @@ import java.util.List;
 
 
 /**
- * A command.
+ * A command.  Commands are used by the client to be able to issue remote requests.
  *
  * @author Troy Bowman
- * @version $Id: Command.java,v 1.4 2009/04/24 23:47:26 troy Exp $
+ * @version $Id: Command.java,v 1.5 2009/05/12 02:32:57 troy Exp $
  */
 public class Command implements Serializable {
   /**
@@ -30,15 +30,14 @@ public class Command implements Serializable {
   public enum Dao {
     Generic,
     Security,
-    Action,
-  }
+    Action, }
 
   /**
    * A Name enumerates the commands, each enumeration defines the name, arguments, facet, whether a session is required for a
    * command, and each command has a bit associated with it for bitwise operations.
    *
    * @author Troy Bowman
-   * @version $Id: Command.java,v 1.4 2009/04/24 23:47:26 troy Exp $
+   * @version $Id: Command.java,v 1.5 2009/05/12 02:32:57 troy Exp $
    */
   public enum Name {
 
@@ -51,7 +50,7 @@ public class Command implements Serializable {
 
     // generic
     detachedCriteriaQueryList(Dao.Generic, DetachedCriteria.class),
-    detachedCriteriaQueryUnique(Dao.Generic, DetachedCriteria.class),    
+    detachedCriteriaQueryUnique(Dao.Generic, DetachedCriteria.class),
     get(Dao.Generic, Class.class, Serializable.class),
     save(Dao.Generic, Identifiable.class),
     saveOrUpdate(Dao.Generic, Identifiable.class),
@@ -171,8 +170,7 @@ public class Command implements Serializable {
    * @param listener the Listener which will receive output.
    * @param params   the parameters.
    */
-  public Command(
-    Name name, OutputListener listener, Serializable... params) {
+  public Command(Name name, OutputListener listener, Serializable... params) {
     this(name, listener);
     for (Serializable s : params) set(s);
   }
@@ -229,8 +227,7 @@ public class Command implements Serializable {
   }
 
   public void addOutputListener(OutputListener listener) {
-    if (listener != null)
-      this.listenerList.add(OutputListener.class, listener);
+    if (listener != null) this.listenerList.add(OutputListener.class, listener);
   }
 
   /**
@@ -276,23 +273,14 @@ public class Command implements Serializable {
     // if this command will fit in the list...
     if (this.name.getParamTypes().size() > id) {
       // and the provided parameter is an instance of the parameter's type
-      if (value == null
-        || this.name.getParamType(id).isInstance(value))
-        if (this.params.size() == id) this.params.add(value);
-        else if (this.params.size() > id) this.params.set(id, value);
-        else
-          throw new IllegalStateException("arguments must be added in order");
-      else
-        throw new IllegalArgumentException(
-          this.name.name()
-            + " parameter number "
-            + id
-            + " requires type "
-            + this.name.getParamType(id).getSimpleName()
-            + " and is not type "
-            + value.getClass().getSimpleName());
-    } else
-      throw new IllegalArgumentException("invalid parameter " + id);
+      if (value == null || this.name.getParamType(id).isInstance(value)) if (this.params.size() == id) this.params.add(value);
+      else if (this.params.size() > id) this.params.set(id, value);
+      else throw new IllegalStateException("arguments must be added in order");
+      else throw new IllegalArgumentException(
+          this.name.name() + " parameter number " + id + " requires type " + this.name.getParamType(id).getSimpleName()
+              + " and is not type " + value.getClass().getSimpleName());
+    }
+    else throw new IllegalArgumentException("invalid parameter " + id);
     return this;
   }
 
@@ -310,13 +298,9 @@ public class Command implements Serializable {
    * @throws UnsupportedEncodingException UnsupportedEncodingException
    */
   public Command sign(String username, PrivateKey key)
-    throws NoSuchAlgorithmException, SignatureException,
-    InvalidKeyException, UnsupportedEncodingException {
+      throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, UnsupportedEncodingException {
     this.credentials = new Credentials(username);
-    credentials.setSignature(
-      Encryption.sign(key,
-        credentials.getUsername() +
-          String.valueOf(credentials.getStamp())));
+    credentials.setSignature(Encryption.sign(key, credentials.getUsername() + String.valueOf(credentials.getStamp())));
     return this;
   }
 
@@ -332,16 +316,9 @@ public class Command implements Serializable {
    * @throws UnsupportedEncodingException UnsupportedEncodingException
    * @throws InvalidKeyException          InvalidKeyException
    */
-  public boolean verify
-    (PublicKey
-      key) throws NoSuchAlgorithmException,
-    SignatureException, UnsupportedEncodingException,
-    InvalidKeyException {
-    return Encryption.verify(
-      key,
-      credentials.getUsername() + String.valueOf(credentials.getStamp()),
-      credentials.getSignature()
-    );
+  public boolean verify(PublicKey key)
+      throws NoSuchAlgorithmException, SignatureException, UnsupportedEncodingException, InvalidKeyException {
+    return Encryption.verify(key, credentials.getUsername() + String.valueOf(credentials.getStamp()), credentials.getSignature());
   }
 
   public String toString() {
