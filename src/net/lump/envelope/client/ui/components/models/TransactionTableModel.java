@@ -30,7 +30,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * A table model which lists transactions.
  *
  * @author Troy Bowman
- * @version $Id: TransactionTableModel.java,v 1.38 2009/05/31 04:01:49 troy Exp $
+ * @version $Id: TransactionTableModel.java,v 1.39 2009/05/31 21:45:30 troy Exp $
  */
 public class TransactionTableModel extends AbstractTableModel {
   private Vector<Object[]> transactions = new Vector<Object[]>();

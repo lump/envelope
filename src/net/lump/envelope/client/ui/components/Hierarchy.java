@@ -5,6 +5,7 @@ import us.lump.envelope.client.State;
 import us.lump.envelope.client.thread.StatusRunnable;
 import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.components.forms.TableQueryBar;
+import us.lump.envelope.client.ui.components.models.MoneyRenderer;
 import us.lump.envelope.client.ui.components.models.TransactionTableModel;
 import us.lump.envelope.client.ui.defs.Colors;
 import us.lump.envelope.client.ui.defs.Fonts;
@@ -17,12 +18,9 @@ import us.lump.envelope.exception.AbortException;
 import us.lump.lib.Money;
 
 import javax.swing.*;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.plaf.basic.BasicTreeUI;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -38,7 +36,7 @@ import java.util.List;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.30 2009/04/10 22:49:27 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.31 2009/05/31 21:45:30 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -254,62 +252,6 @@ public class Hierarchy extends JTree {
       }
     };
     ThreadPool.getInstance().execute(r);
-  }
-
-  class MoneyRenderer extends DefaultTableCellRenderer {
-    public MoneyRenderer() {
-      super();
-    }
-
-    public Component getTableCellRendererComponent(JTable table,
-        Object value,
-        boolean isSelected,
-        boolean hasFocus,
-        int row,
-        int col) {
-      JLabel label = new JLabel(
-          value == null ? "" : ((Money)value).toFormattedString(),
-          SwingConstants.RIGHT);
-      label.setFont(Fonts.getFont("fixed"));
-      label.setBorder(
-          new CompoundBorder(
-              new EmptyBorder(new Insets(1, 4, 1, 4)),
-              label.getBorder()));
-
-      if (value != null && ((Money)value).doubleValue() < 0)
-        label.setForeground(Colors.getColor("red"));
-//      else
-//        label.setForeground(Colors.getColor("green"));
-
-      Color original = label.getBackground();
-
-      // this is for Nimbus's alternate row color, shouldn't affect other stuff
-      if (UIManager.getLookAndFeel().getID().equals("Nimbus") &&
-          (original == null || original instanceof javax.swing.plaf.UIResource)) {
-        Color alternateColor = (Color)UIManager.get("Table.alternateRowColor");
-        if (alternateColor != null && row % 2 == 0) {
-          label.setBackground(alternateColor);
-          label.setOpaque(true);
-        } else {
-          label.setBackground(original);
-          label.setOpaque(false);
-        }
-
-      }
-
-      if (isSelected) {
-        label.setBackground(table.getSelectionBackground());
-        label.setForeground(table.getSelectionForeground());
-        label.setOpaque(true);
-      }
-      if (hasFocus) {
-        label.setForeground(table.getSelectionForeground());
-        label.setBackground(table.getSelectionBackground());
-        label.setOpaque(true);
-      }
-
-      return label;
-    }
   }
 
   protected JScrollPane getScrollPane() {

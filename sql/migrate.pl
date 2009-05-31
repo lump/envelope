@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.17 2009/01/01 18:27:19 troy Test $
+# $Id: migrate.pl,v 1.18 2009/05/31 21:45:30 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -107,21 +107,27 @@ $sth->finish;
 $dsth->finish;
 
 
-$dsth = $dbs->{dest}->{connection}->prepare(
-  "insert into allocation_settings (budget,name,type,reference_date) values (?, ?, ?, ?)")
-  or die $dbs->{source}->{connection}->errstr;;
-$dsth->execute($budget_id, "SOS", 'Biweekly_Payday', '2006-11-30');
-$dsth->finish;
-print "inserted allocation setting $budget_id, SOS, Biweekly_Payday, 2006-11-30\n";
-($allocation_setting_id) = $dbs->{dest}->{connection}->selectrow_array("select id from allocation_settings where id is null");
+#$dsth = $dbs->{dest}->{connection}->prepare(
+#  "insert into allocation_settings (budget,name,type,reference_date) values (?, ?, ?, ?)")
+#  or die $dbs->{source}->{connection}->errstr;;
+#$dsth->execute($budget_id, "SOS", 'Biweekly_Payday', '2006-11-30');
+#$dsth->finish;
+#print "inserted allocation setting $budget_id, SOS, Biweekly_Payday, 2006-11-30\n";
+#($allocation_setting_id) = $dbs->{dest}->{connection}->selectrow_array("select id from allocation_settings where id is null");
 
 $dsth = $dbs->{dest}->{connection}->prepare("insert into categories (account, name) values (?, ?)")
   or die $dbs->{source}->{connection}->errstr;
 
+#$dsth2 = $dbs->{dest}->{connection}->prepare("
+#insert into category_allocation_settings
+#(allocation_setting, category, allocation, allocation_type, auto_deduct)
+#values (?, (select id from categories where id is null), ?, ?, ?)")
+#  or die $dbs->{source}->{connection}->errstr;
+
 $dsth2 = $dbs->{dest}->{connection}->prepare("
-insert into category_allocation_settings
-(allocation_setting, category, allocation, allocation_type, auto_deduct)
-values (?, (select id from categories where id is null), ?, ?, ?)")
+insert into allocation_presets
+(budget, name, category, allocation, allocation_type, auto_deduct)
+values (?, 'Pay Day', (select id from categories where id is null), ?, ?, ?)")
   or die $dbs->{source}->{connection}->errstr;
 
 $sth = $dbs->{source}->{connection}->prepare("select * from categories where budgetname = 'bowman'") or die $dbs->{source}->{connection}->errstr;;
@@ -141,8 +147,10 @@ while (my $row = $sth->fetchrow_hashref()) {
     or die $dsth->errstr;
   print "inserted account $account_id, $row->{category}\n";
 
-  $dsth2->execute($allocation_setting_id, $allocation_amount, $row->{which}, $row->{deducted})
-    or die $dsth->errstr;
+  $dsth2->execute($budget_id, $allocation_amount, ($row->{which} eq "ppp" ? "percent" : "fixed"), $row->{deducted})
+     or die $dsth->errstr;
+#  $dsth2->execute($allocation_setting_id, $allocation_amount, $row->{which}, $row->{deducted})
+#    or die $dsth->errstr;
   print "inserted $allocation_setting_id, $allocation_amount, $row->{which}, $row->{deducted}\n";
 }
 $sth->finish;

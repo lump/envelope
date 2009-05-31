@@ -25,7 +25,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.25 2009/04/24 23:47:26 troy Exp $
+ * @version $Id: DAO.java,v 1.26 2009/05/31 21:45:30 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -73,8 +73,9 @@ public abstract class DAO {
           .addAnnotatedClass(Account.class)
           .addAnnotatedClass(Budget.class)
           .addAnnotatedClass(Category.class)
-          .addAnnotatedClass(AllocationSetting.class)
-          .addAnnotatedClass(CategoryAllocationSetting.class)
+          .addAnnotatedClass(AllocationPreset.class)
+//          .addAnnotatedClass(AllocationSetting.class)
+//          .addAnnotatedClass(CategoryAllocationSetting.class)
           .addAnnotatedClass(Transaction.class)
           .addAnnotatedClass(Allocation.class)
           .addAnnotatedClass(Tag.class)
