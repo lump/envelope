@@ -30,7 +30,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * A table model which lists transactions.
  *
  * @author Troy Bowman
- * @version $Id: TransactionTableModel.java,v 1.37 2009/05/05 03:37:43 troy Exp $
+ * @version $Id: TransactionTableModel.java,v 1.38 2009/05/31 04:01:49 troy Exp $
  */
 public class TransactionTableModel extends AbstractTableModel {
   private Vector<Object[]> transactions = new Vector<Object[]>();
@@ -134,24 +134,20 @@ public class TransactionTableModel extends AbstractTableModel {
                 synchronized (finished) {
                   StatusBar sb = StatusBar.getInstance();
 
-                  if (startDate < (System.currentTimeMillis() - 150) && !sb.getProgress().isVisible())
-                    sb.getProgress().setVisible(true);
-
                   if (sb.getProgress().isVisible()) {
                     if (sb.getProgress().getMinimum() != 0) sb.getProgress().setMinimum(0);
-
                     if (sb.getProgress().getMaximum() != event.getTotal().intValue())
                       sb.getProgress().setMaximum(event.getTotal().intValue());
-
                     sb.getProgress().setValue(event.getIndex().intValue());
                   }
+                  else if (startDate < (System.currentTimeMillis() - 150)) sb.getProgress().setVisible(true);
 
                   statusElement.setValue(
                       Strings.get("reading") + " " + TransactionTableModel.this.thing + " row " + (event.getIndex() + 1L));
                   StatusBar.getInstance().updateLabel();
 
                   updateTableFor(event.getIndex().intValue(), (Object[])event.getPayload());
-                  rowCount = event.getIndex().intValue();
+                  rowCount = event.getIndex().intValue() + 1;
 
                   if (event.getIndex().equals(event.getTotal() - 1)) {
                     finished[0] = Boolean.TRUE;
