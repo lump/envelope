@@ -11,7 +11,7 @@ import java.text.ParseException;
  * and formatting.
  *
  * @author Troy Bowman
- * @version $Id: Money.java,v 1.3 2008/07/19 05:39:44 troy Test $
+ * @version $Id: Money.java,v 1.4 2009/05/31 21:45:30 troy Exp $
  */
 public class Money extends BigDecimal implements Serializable {
   

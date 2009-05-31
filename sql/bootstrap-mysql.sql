@@ -1,5 +1,5 @@
 --
--- $Id: bootstrap-mysql.sql,v 1.3 2009/04/29 01:29:54 troy Exp $
+-- $Id: bootstrap-mysql.sql,v 1.4 2009/05/31 21:45:30 troy Exp $
 --
 
 -- this can be run like this:
@@ -35,19 +35,19 @@ insert into accounts values (0, null, 0, 'Guest''s Checking','Debit', '0.0', '0.
 update accounts set id = 0;
 alter table accounts auto_increment = 0;
 
-create table allocation_settings (
-  `id` int not null auto_increment primary key,
-  `stamp` timestamp not null default current_timestamp,
-  `budget` int not null,
-  `name` varchar(64) not null,
-  `type` enum('Reimbursement','Weekly_Payday','Biweekly_Payday','Semimonthly_Payday','Monthly_Payday') not null,
-  `reference_date` date,
-  unique index budget_name(`budget`,`name`),
-  constraint allocation_settings_budget foreign key (budget) references budgets(id) ON UPDATE CASCADE ON DELETE RESTRICT
-)ENGINE=INNODB;
-insert into allocation_settings values(null,null,0,'Guest''s Main Job','Semimonthly Payday',now());
-update allocation_settings set id=0;
-alter table allocation_settings auto_increment = 0;
+-- create table allocation_settings (
+--  `id` int not null auto_increment primary key,
+--  `stamp` timestamp not null default current_timestamp,
+--  `budget` int not null,
+--  `name` varchar(64) not null,
+--  `type` enum('Reimbursement','Weekly_Payday','Biweekly_Payday','Semimonthly_Payday','Monthly_Payday') not null,
+--  `reference_date` date,
+--  unique index budget_name(`budget`,`name`),
+--  constraint allocation_settings_budget foreign key (budget) references budgets(id) ON UPDATE CASCADE ON DELETE RESTRICT
+-- )ENGINE=INNODB;
+-- insert into allocation_settings values(null,null,0,'Guest''s Main Job','Semimonthly Payday',now());
+-- update allocation_settings set id=0;
+-- alter table allocation_settings auto_increment = 0;
 
 create table categories (
   `id` int NOT NULL auto_increment primary key,
@@ -55,92 +55,138 @@ create table categories (
   `account` int not null,
   `name` varchar(64) NOT NULL default '',
   unique index budget_name (`account`,`name`),
-  constraint categories_accounts foreign key (account) references accounts(id) ON UPDATE CASCADE ON DELETE RESTRICT
+  constraint categories_accounts foreign key (account) references accounts(id) on update cascade on delete restrict
 )ENGINE=INNODB;
 
-create table category_allocation_settings (
-  `id` int not null auto_increment primary key,
-  `stamp` timestamp not null default current_timestamp,
-  `allocation_setting` int not null,
+-- create table category_allocation_settings (
+--  `id` int not null auto_increment primary key,
+--  `stamp` timestamp not null default current_timestamp,
+--  `allocation_setting` int not null,
+--  `category` int not null,
+--  `allocation` double not null default '0.0',
+--  `allocation_type` enum('ppp','fpp','fpm') not null default 'ppp',
+--  `auto_deduct` tinyint(1) not null default '0',
+--  constraint cat_alloc_settings_categories foreign key (category) references categories(id) on update cascade on delete restrict,
+--  constraint cat_alloc_settings_alloc_settings foreign key (allocation_setting) references allocation_settings(id) on update cascade on delete restrict
+-- )ENGINE=INNODB;
+
+create table allocation_presets (
+  `id` int NOT NULL auto_increment primary key,
+  `stamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  `budget` int not null,
+  `name` varchar(64) NOT NULL,
   `category` int not null,
   `allocation` double not null default '0.0',
-  `allocation_type` enum('ppp','fpp','fpm') not null default 'ppp',
+  `allocation_type` enum('percent','fixed') not null default 'fixed',
   `auto_deduct` tinyint(1) not null default '0',
-  constraint cat_alloc_settings_categories foreign key (category) references categories(id) on update cascade on delete restrict,
-  constraint cat_alloc_settings_alloc_settings foreign key (allocation_setting) references allocation_settings(id) on update cascade on delete restrict
+  constraint presets_categoryies_categories foreign key (category) references categories(id) on update cascade on delete restrict,
+  constraint presets_budget foreign key (budget) references budgets(id) on update cascade on delete restrict
 )ENGINE=INNODB;
-
 
 insert into categories values(null, null, 0, 'Tithing');
 update categories set id = 0;
 alter table categories auto_increment = 0;
-insert into category_allocation_settings values (null, null, 0, 0, '.1', 'ppp', 0);
+insert into allocation_presets values (null, null, 0, "Pay Day", 0, 0.1, 'percent',0);
+-- insert into category_allocation_settings values (null, null, 0, 0, '.1', 'ppp', 0);
 insert into categories values(null, null, 0, 'Water');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),22.5,'fpm',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 22.5, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),22.5,'fpm',0);
 insert into categories values(null, null, 0, 'Subscriptions');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),2,'fpp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 2, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),2,'fpp',0);
 insert into categories values(null, null, 0, 'Travel');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 0, 'percent',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
 insert into categories values(null, null, 0, 'State Tax');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),3.76,'ppp',1);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 3.76, 'percent',1);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),3.76,'ppp',1);
 insert into categories values(null, null, 0, 'Social Security');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),90,'fpp',1);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 90, 'fixed',1);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),90,'fpp',1);
 insert into categories values(null, null, 0, 'Sewer');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),2.5,'fpm',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 2.5, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),2.5,'fpm',0);
 insert into categories values(null, null, 0, 'Restaurants');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),10,'fpp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 10, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),10,'fpp',0);
 insert into categories values(null, null, 0, 'Recreation');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),5,'fpp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 5, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),5,'fpp',0);
 insert into categories values(null, null, 0, 'Phone');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),30,'fpm',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 30, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),30,'fpm',0);
 insert into categories values(null, null, 0, 'Other Taxes and Fees');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 0, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
 insert into categories values(null, null, 0, 'Mortgage');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),600,'fpm',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 600, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),600,'fpm',0);
 insert into categories values(null, null, 0, 'Memberships');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 0, 'percent',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
 insert into categories values(null, null, 0, 'Medicare');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),30,'fpp',1);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 30, 'fixed',1);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),30,'fpp',1);
 insert into categories values(null, null, 0, 'Medical Insurance');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),100,'fpp',1);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 100, 'fixed',1);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),100,'fpp',1);
 insert into categories values(null, null, 0, 'Medical');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),46,'fpm',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 46, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),46,'fpm',0);
 insert into categories values(null, null, 0, 'Media');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'fpp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 0, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'fpp',0);
 insert into categories values(null, null, 0, 'Home');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),40,'fpm',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 40, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),40,'fpm',0);
 insert into categories values(null, null, 0, 'Hobbies');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 0, 'percent',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
 insert into categories values(null, null, 0, 'Haircuts');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),4,'fpm',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 4, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),4,'fpm',0);
 insert into categories values(null, null, 0, 'Groceries');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),200,'fpp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 200, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),200,'fpp',0);
 insert into categories values(null, null, 0, 'Gifts');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),20,'fpp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 20, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),20,'fpp',0);
 insert into categories values(null, null, 0, 'Gasoline');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),30,'fpp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 30, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),30,'fpp',0);
 insert into categories values(null, null, 0, 'Gas');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),50,'fpm',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 50, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),50,'fpm',0);
 insert into categories values(null, null, 0, 'Furniture');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),7,'ppp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 7, 'percent',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),7,'ppp',0);
 insert into categories values(null, null, 0, 'Federal Tax');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',1);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 0, 'percent',1);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',1);
 insert into categories values(null, null, 0, 'Fast Offering');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 0, 'percent',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
 insert into categories values(null, null, 0, 'Electronics');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 0, 'percent',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),0,'ppp',0);
 insert into categories values(null, null, 0, 'Computer');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),15,'fpm',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 15, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),15,'fpm',0);
 insert into categories values(null, null, 0, 'Clothes');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),15,'fpp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 15, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),15,'fpp',0);
 insert into categories values(null, null, 0, 'Car Payment');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),6.25,'ppp',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 6.25, 'percent',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),6.25,'ppp',0);
 insert into categories values(null, null, 0, 'Car Maintenance');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),12,'fpm',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 12, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),12,'fpm',0);
 insert into categories values(null, null, 0, 'Car Insurance');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),266.68,'fpm',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 266.68, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),266.68,'fpm',0);
 insert into categories values(null, null, 0, 'Electricity');
-insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),70,'fpm',0);
+insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 70, 'fixed',0);
+-- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),70,'fpm',0);
 
 create table tags (
   `id` int(11) NOT NULL auto_increment primary key,
