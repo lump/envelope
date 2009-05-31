@@ -27,7 +27,7 @@ import java.util.List;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controller.java,v 1.5 2009/05/05 03:37:43 troy Exp $
+ * @version $Id: Controller.java,v 1.6 2009/05/31 16:31:17 troy Exp $
  */
 public class Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -131,16 +131,21 @@ public class Controller {
       // we have to handle the results here before the transaction is over.
       if (returnValue instanceof ScrollableResults) {
         ScrollableResults sr = (ScrollableResults)returnValue;
-        sr.last();
-        int count = sr.getRowNumber() + 1;
-        rp.addHeader("Single-Object", Boolean.FALSE.toString());
-        rp.addIntHeader("Object-Count", count);
-        sr.beforeFirst();
-        ObjectOutputStream oos = new ObjectOutputStream(os);
-        while (sr.next()) {
-          oos.writeObject(sr.get().length == 1 ? sr.get()[0] : sr.get());
+        try {
+          sr.last();
+          int count = sr.getRowNumber() + 1;
+          rp.addHeader("Single-Object", Boolean.FALSE.toString());
+          rp.addIntHeader("Object-Count", count);
+          sr.beforeFirst();
+          ObjectOutputStream oos = new ObjectOutputStream(os);
+          while (sr.next()) {
+            oos.writeObject(sr.get().length == 1 ? sr.get()[0] : sr.get());
+          }
+          oos.flush();
+        } finally {
+          sr.close();
         }
-        oos.flush();
+
       }
       else if (returnValue instanceof List) {
         rp.addHeader("Single-Object", Boolean.FALSE.toString());
