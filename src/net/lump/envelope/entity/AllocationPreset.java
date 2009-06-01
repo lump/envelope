@@ -11,7 +11,7 @@ import java.sql.Timestamp;
  * A record which maintains an allocation preset.
  *
  * @author troy
- * @version $Id: AllocationPreset.java,v 1.1 2009/05/31 21:45:30 troy Exp $
+ * @version $Id: AllocationPreset.java,v 1.2 2009/06/01 01:52:06 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "allocation_presets")
@@ -28,6 +28,7 @@ public class AllocationPreset extends Identifiable<Integer, Timestamp> implement
   private Category category;
   private BigDecimal allocation = new BigDecimal(0.0);
   private AllocationType allocationType;
+  private Boolean autoDeduct;
 
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
@@ -100,5 +101,14 @@ public class AllocationPreset extends Identifiable<Integer, Timestamp> implement
 
   public void setAllocationType(AllocationType allocationType) {
     this.allocationType = allocationType;
+  }
+
+  @Column(name = "auto_deduct", nullable = false)
+  public Boolean isAutoDeduct() {
+    return autoDeduct;
+  }
+
+  public void setAutoDeduct(Boolean autoDeduct) {
+    this.autoDeduct = autoDeduct;
   }
 }
