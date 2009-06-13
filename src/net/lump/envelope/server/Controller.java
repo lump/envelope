@@ -27,7 +27,7 @@ import java.util.List;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controller.java,v 1.6 2009/05/31 16:31:17 troy Exp $
+ * @version $Id: Controller.java,v 1.7 2009/06/13 18:32:14 troy Exp $
  */
 public class Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -157,7 +157,7 @@ public class Controller {
         }
         oos.flush();
       }
-      else if (returnValue instanceof Serializable) {
+      else if (returnValue instanceof Serializable || returnValue == null) {
         rp.addHeader("Single-Object", Boolean.TRUE.toString());
         rp.addIntHeader("Object-Count", 1);
         ObjectOutputStream oos = new ObjectOutputStream(os);
