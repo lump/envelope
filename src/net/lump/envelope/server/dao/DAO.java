@@ -25,7 +25,7 @@ import java.util.*;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.26 2009/05/31 21:45:30 troy Exp $
+ * @version $Id: DAO.java,v 1.27 2009/06/28 16:21:35 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -48,7 +48,7 @@ public abstract class DAO {
     for (String s : new String[]{USER}) { //, BUDGET, ACCOUNT}) {
       cache.put
           (s, new Cache(s, cacheSize, false, false, cacheTtl, cacheTti));
-      CacheManager.create(Security.class.getResource("ehcache.xml"))
+      CacheManager.create(Security.class.getResource("WEB-INF/classes/ehcache.xml"))
           .addCache(cache.get(s));
     }
   }
