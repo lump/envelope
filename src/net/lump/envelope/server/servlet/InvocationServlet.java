@@ -1,11 +1,9 @@
 package us.lump.envelope.server.servlet;
 
-import org.apache.log4j.PropertyConfigurator;
 import us.lump.envelope.command.Command;
 import us.lump.envelope.server.Controller;
 import us.lump.envelope.server.dao.DAO;
 import us.lump.envelope.server.dao.Security;
-import us.lump.envelope.server.log.Log4j;
 import us.lump.envelope.server.servlet.beans.ServerPrefs;
 import us.lump.lib.util.Base64;
 
@@ -28,7 +26,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: InvocationServlet.java,v 1.1 2009/04/24 23:47:26 troy Exp $
+ * @version $Id: InvocationServlet.java,v 1.2 2009/06/28 16:21:35 troy Exp $
  */
 public class InvocationServlet extends HttpServlet {
 
@@ -40,7 +38,6 @@ public class InvocationServlet extends HttpServlet {
 
   public void init() {
     try {
-      PropertyConfigurator.configure(ServerPrefs.getInstance().getProps(Log4j.class));
       DAO.initialize(ServerPrefs.getInstance().getProps(DAO.class));
     } catch (MalformedURLException ignore) {
     } catch (IOException ignore) {}

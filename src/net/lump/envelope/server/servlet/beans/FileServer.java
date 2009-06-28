@@ -22,7 +22,7 @@ import java.util.zip.GZIPOutputStream;
  * Serves static files.
  *
  * @author troy
- * @version $Id: FileServer.java,v 1.3 2009/04/14 05:37:27 troy Exp $
+ * @version $Id: FileServer.java,v 1.4 2009/06/28 16:21:35 troy Exp $
  */
 public class FileServer {
 

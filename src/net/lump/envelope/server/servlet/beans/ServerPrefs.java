@@ -1,7 +1,6 @@
 package us.lump.envelope.server.servlet.beans;
 
 import us.lump.envelope.server.dao.DAO;
-import us.lump.envelope.server.log.Log4j;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -15,12 +14,12 @@ import java.util.prefs.Preferences;
  * Configure stuff.
  *
  * @author troy
- * @version $Id: ServerPrefs.java,v 1.2 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: ServerPrefs.java,v 1.3 2009/06/28 16:21:35 troy Exp $
  */
 public class ServerPrefs {
 
   private static ServerPrefs instance = null;
-  private static final Class[] classes = new Class[]{ServerPrefs.class, DAO.class, Log4j.class};
+  private static final Class[] classes = new Class[]{ServerPrefs.class, DAO.class};
   private static final HashMap<Class, Preferences> configs = new HashMap<Class, Preferences>();
   private boolean configured = true;
 
