@@ -1,10 +1,11 @@
 package us.lump.envelope.entity;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
@@ -15,10 +16,11 @@ import java.sql.Timestamp;
  * should match the account balance.
  *
  * @author Troy Bowman
- * @version $Id: Category.java,v 1.10 2008/07/16 05:40:00 troy Test $
+ * @version $Id: Category.java,v 1.11 2009/07/06 21:45:29 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "categories")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Category extends Identifiable<Integer, Timestamp> implements Comparable<Category> {
 
   private Integer id;

@@ -3,6 +3,7 @@ package us.lump.lib;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.text.ParseException;
 
@@ -11,7 +12,7 @@ import java.text.ParseException;
  * and formatting.
  *
  * @author Troy Bowman
- * @version $Id: Money.java,v 1.4 2009/05/31 21:45:30 troy Exp $
+ * @version $Id: Money.java,v 1.5 2009/07/06 21:45:29 troy Exp $
  */
 public class Money extends BigDecimal implements Serializable {
   
@@ -79,6 +80,48 @@ public class Money extends BigDecimal implements Serializable {
   public Money(long val) {
     super(val);
   }
+
+  public Money negate() {
+    return new Money(super.negate());
+  }
+
+  public Money add(Money that) {
+    return new Money(super.add(that));
+  }
+
+  public Money subtract(Money that) {
+    return new Money(super.subtract(that));
+  }
+
+  public Money multiply(Money that) {
+    return new Money(super.multiply(that));
+  }
+
+  public Money abs() {
+    return new Money(super.abs());
+  }
+
+  public Money divide(Money divisor) {
+    return new Money(super.divide(divisor));
+  }
+
+  public Money divide(Money divisor, int scale, int roundingMode) {
+    return new Money(super.divide(divisor, scale, roundingMode));
+  }
+
+  public Money divide(Money divisor, int scale, RoundingMode roundingMode) {
+    return new Money(super.divide(divisor, scale, roundingMode));
+  }
+
+  public Money divide(Money divisor, int roundingMode) {
+    return new Money(super.divide(divisor, roundingMode));
+  }
+
+
+  public String toString() {
+    return super.toString();
+  }
+
 
   /**
    * Formats the value of this object with the current locale's currency number

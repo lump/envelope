@@ -4,15 +4,12 @@ import us.lump.envelope.client.ui.defs.Colors;
 import us.lump.lib.Money;
 
 import javax.swing.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.FocusListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.KeyListener;
 import java.awt.*;
+import java.awt.event.*;
 
 /**
  * This is a JTextField with formatting for Money.
- * @version: $Id: MoneyTextField.java,v 1.1 2008/07/21 21:59:18 troy Test $
+ * @version: $Id: MoneyTextField.java,v 1.2 2009/07/06 21:45:29 troy Exp $
  */
 public class MoneyTextField extends JTextField {
   public MoneyTextField() {
@@ -39,9 +36,19 @@ public class MoneyTextField extends JTextField {
       }
     });
 
+    Action emptyAction = new AbstractAction() {
+      public void actionPerformed(ActionEvent e) {
+        System.out.println("e = " + e);
+        MoneyTextField.this.getParent().getKeyListeners();
+      }
+    };
+    getInputMap().put(KeyStroke.getKeyStroke("DOWN"), emptyAction);
+    getInputMap().put(KeyStroke.getKeyStroke("UP"), emptyAction);
+
+
     addKeyListener(new KeyListener(){
       public void keyTyped(KeyEvent e) {
-        if (!String.valueOf(e.getKeyChar()).matches("[0-9\\.\\(\\)\\$\\,\\-]"))
+        if (!String.valueOf(e.getKeyChar()).matches("[0-9\\.\\(\\)\\$\\,\\-\b]"))
           e.consume();
       }
       public void keyPressed(KeyEvent e) { }

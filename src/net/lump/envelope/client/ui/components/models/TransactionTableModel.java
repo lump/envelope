@@ -9,7 +9,6 @@ import us.lump.envelope.client.thread.ThreadPool;
 import us.lump.envelope.client.ui.components.Hierarchy;
 import us.lump.envelope.client.ui.components.StatusBar;
 import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.command.Command;
 import us.lump.envelope.command.OutputEvent;
 import us.lump.envelope.command.OutputListener;
 import us.lump.envelope.exception.AbortException;
@@ -17,7 +16,6 @@ import us.lump.lib.Money;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
-import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -30,7 +28,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * A table model which lists transactions.
  *
  * @author Troy Bowman
- * @version $Id: TransactionTableModel.java,v 1.39 2009/05/31 21:45:30 troy Exp $
+ * @version $Id: TransactionTableModel.java,v 1.40 2009/07/06 21:45:29 troy Exp $
  */
 public class TransactionTableModel extends AbstractTableModel {
   private Vector<Object[]> transactions = new Vector<Object[]>();
@@ -115,21 +113,27 @@ public class TransactionTableModel extends AbstractTableModel {
             CriteriaFactory cf = CriteriaFactory.getInstance();
             HibernatePortal hp = new HibernatePortal();
 
-            hp.invoke(new Command(Command.Name.detachedCriteriaQueryList, new OutputListener() {
-              public void commandOutputOccurred(OutputEvent event) {
-                beginningBalance = event.getPayload() != null ? (Money)event.getPayload() : new Money(0);
-              }
-            }, cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, null)));
+            hp.detachedCriteriaQueryUnique(
+                cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, null),
+                new OutputListener() {
+                  public void commandOutputOccurred(OutputEvent event) {
+                    beginningBalance = event.getPayload() != null ? (Money)event.getPayload() : new Money(0);
+                  }
+                });
 
-            hp.invoke(new Command(Command.Name.detachedCriteriaQueryList, new OutputListener() {
-              public void commandOutputOccurred(OutputEvent event) {
-                beginningReconciledBalance = event.getPayload() != null ? (Money)event.getPayload() : new Money(0);
-              }
-            }, cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, Boolean.TRUE)));
+            hp.detachedCriteriaQueryUnique(
+                cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, Boolean.TRUE),
+                new OutputListener() {
+                  public void commandOutputOccurred(OutputEvent event) {
+                    beginningReconciledBalance = event.getPayload() != null ? (Money)event.getPayload() : new Money(0);
+                  }
+                });
 
             final Boolean[] finished = new Boolean[]{Boolean.FALSE};
 
-            Serializable retval = hp.invoke(new Command(Command.Name.detachedCriteriaQueryList, new OutputListener() {
+            List retval = hp.detachedCriteriaQueryList(
+                cf.getTransactions(TransactionTableModel.this.thing, beginDate, endDate),
+                new OutputListener() {
               public void commandOutputOccurred(OutputEvent event) {
                 synchronized (finished) {
                   StatusBar sb = StatusBar.getInstance();
@@ -156,11 +160,9 @@ public class TransactionTableModel extends AbstractTableModel {
                   }
                 }
               }
-            }, cf.getTransactions(TransactionTableModel.this.thing, beginDate, endDate)));
+            });
 
-            if (retval instanceof List && ((List)retval).size() == 0) {
-              rowCount = 0;
-            }
+            if (retval.size() == 0) rowCount = 0;
 
             long startTime = System.currentTimeMillis();
             // wait until filled (so other things in the queue can't start and conflict)

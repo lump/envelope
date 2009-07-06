@@ -13,7 +13,7 @@ import java.util.Collection;
  * Categories, which are tied to Accounts.
  *
  * @author Troy Bowman
- * @version $Id: Allocation.java,v 1.9 2008/07/17 03:30:40 troy Test $
+ * @version $Id: Allocation.java,v 1.10 2009/07/06 21:45:29 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)

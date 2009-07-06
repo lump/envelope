@@ -5,17 +5,17 @@ import org.hibernate.annotations.FetchMode;
 import us.lump.lib.Money;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * A transaction.
  *
  * @author Troy Bowman
- * @version $Id: Transaction.java,v 1.10 2008/07/17 03:30:40 troy Test $
+ * @version $Id: Transaction.java,v 1.11 2009/07/06 21:45:29 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
@@ -28,7 +28,7 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
   private Integer id;
   private Timestamp stamp;
   private Date date;
-  private List<Allocation> allocations;
+  private List<Allocation> allocations = new ArrayList<Allocation>();
   private String entity;
   private String description;
   private Boolean reconciled;
@@ -174,9 +174,9 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
     result = 31 * result + (stamp != null ? stamp.hashCode() : 0);
     result = 31 * result + (date != null ? date.hashCode() : 0);
 
-    if (this.getAllocations() != null)
-      for (Allocation a : this.getAllocations())
-        result = 31 * result + (a != null ? a.hashCode() : 0);
+//    if (this.getAllocations() != null)
+//      for (Allocation a : this.getAllocations())
+//        result = 31 * result + (a != null ? a.hashCode() : 0);
 
     result = 31 * result + (entity != null ? entity.hashCode() : 0);
     result = 31 * result + (description != null ? description.hashCode() : 0);

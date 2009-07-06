@@ -13,21 +13,33 @@ import java.util.List;
 @SuppressWarnings({"unchecked"})
 public class HibernatePortal extends Portal {
 
+
   public Serializable detachedCriteriaQueryUnique(DetachedCriteria dc) throws AbortException {
-    return invoke(new Command(Command.Name.detachedCriteriaQueryUnique, null,dc));
+    return detachedCriteriaQueryUnique(dc, false);
+  }
+  public Serializable detachedCriteriaQueryUnique(DetachedCriteria dc, boolean cache) throws AbortException {
+    return detachedCriteriaQueryUnique(dc, cache, null);
+  }
+  public Serializable detachedCriteriaQueryUnique(DetachedCriteria dc, OutputListener ol) throws AbortException {
+    return invoke(new Command(Command.Name.detachedCriteriaQueryUnique, ol, dc, false));
+  }
+  public Serializable detachedCriteriaQueryUnique(DetachedCriteria dc, boolean cache, OutputListener ol) throws AbortException {
+    return invoke(new Command(Command.Name.detachedCriteriaQueryUnique, ol, dc, cache));
   }
 
   public List detachedCriteriaQueryList(DetachedCriteria dc) throws AbortException {
-    return (List)invoke(new Command(Command.Name.detachedCriteriaQueryList, null,dc));
+    return detachedCriteriaQueryList(dc, false);
+  }
+  public List detachedCriteriaQueryList(DetachedCriteria dc, boolean cache) throws AbortException {
+    return detachedCriteriaQueryList(dc, cache, null);
+  }
+  public List detachedCriteriaQueryList(DetachedCriteria dc, OutputListener ol) throws AbortException {
+    return detachedCriteriaQueryList(dc, false, ol);
+  }
+  public List detachedCriteriaQueryList(DetachedCriteria dc, boolean cache, OutputListener ol) throws AbortException {
+    return (List)invoke(new Command(Command.Name.detachedCriteriaQueryList, ol, dc, cache));
   }
 
-  public Serializable detachedCriteriaQueryUnique(DetachedCriteria dc, OutputListener ol) throws AbortException {
-    return invoke(new Command(Command.Name.detachedCriteriaQueryUnique, ol, dc));
-  }
-
-  public List detachedCriteriaQuery(DetachedCriteria dc, OutputListener ol) throws AbortException {
-    return (List)invoke(new Command(Command.Name.detachedCriteriaQueryList, ol, dc));
-  }
 
   public <T extends Identifiable> T get(Class<T> cless, Serializable id)
       throws AbortException {

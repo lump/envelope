@@ -1,6 +1,5 @@
 package us.lump.envelope.server.dao;
 
-import net.sf.ehcache.Element;
 import us.lump.envelope.command.Command;
 import us.lump.envelope.command.security.Challenge;
 import us.lump.envelope.command.security.Credentials;
@@ -24,7 +23,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.17 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: Security.java,v 1.18 2009/07/06 21:45:29 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption
@@ -79,10 +78,6 @@ public class Security extends DAO {
       Encryption.TRANS_ENCODING);
 
     if (hash.equals(user.getCryptPassword())) {
-      // update the userCache
-      cache.get(USER).put(new Element(username, user));
-
-      // we're authed.
       authed = true;
       logger.info("password for \"" + username + "\" successfully verfied");
     } else {

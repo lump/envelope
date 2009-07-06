@@ -17,7 +17,7 @@ import java.util.List;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.21 2009/04/10 22:49:27 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.22 2009/07/06 21:45:29 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {
@@ -55,6 +55,14 @@ public class CriteriaFactory {
                 .addOrder(Order.asc("entity")));
 
     return list;
+  }
+
+  public DetachedCriteria getCategoriesforBudget(Budget budget)
+      throws AbortException {
+    return DetachedCriteria.forClass(Category.class)
+        .createAlias("account", "a")
+        .add(Restrictions.eq("a.budget", budget))
+        .addOrder(Order.asc("name"));
   }
 
   public List<Hierarchy.AccountTotal> getAccountTotals(Budget budget)
@@ -129,7 +137,8 @@ public class CriteriaFactory {
       if (reconciled != null)
         dc.add(Restrictions.eq("reconciled", reconciled));
       dc.setProjection(Projections.sum("a.amount"));
-    } else {
+    }
+    else {
       dc = DetachedCriteria.forClass(Allocation.class)
           .createAlias("transaction", "t")
           .add(Restrictions.eq("category.id",
@@ -141,6 +150,21 @@ public class CriteriaFactory {
     }
 
     return dc;
+  }
+
+  public DetachedCriteria getBalance(Category c) {
+    return DetachedCriteria.forClass(Allocation.class)
+        .add(Restrictions.eq("category", c))
+        .setProjection(Projections.sum("amount"));
+  }
+
+  public DetachedCriteria getBalances(List<Category> categories) {
+    if (categories.size() == 0) throw new IllegalArgumentException("need one or more categories");
+    return DetachedCriteria.forClass(Allocation.class)
+        .add(Restrictions.in("category", categories))
+        .setProjection(Projections.projectionList()
+            .add(Projections.groupProperty("category"))
+            .add(Projections.sum("amount")));
   }
 
   public DetachedCriteria getTransactions(Object thing,
@@ -172,7 +196,8 @@ public class CriteriaFactory {
           .setProjection(plist)
           .addOrder(Order.asc("date"))
           .addOrder(Order.asc("stamp"));
-    } else {
+    }
+    else {
       ProjectionList plist = Projections.projectionList();
       plist.add(Projections.property("t.reconciled"))
           .add(Projections.property("t.date"))

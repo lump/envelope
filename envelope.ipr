@@ -451,7 +451,9 @@
       </CLASSES>
       <JAVADOC />
       <SOURCES>
-        <root url="file:///home/troy/java/dublan/hibernate-distribution-3.3.1.GA/project/core/src/main/java" />
+        <root url="jar://$PROJECT_DIR$/lib/src/hibernate-annotations-src.zip!/" />
+        <root url="jar://$PROJECT_DIR$/lib/src/hibernate-3.2-src.zip!/" />
+        <root url="jar://$PROJECT_DIR$/lib/src/ehcache-1.2.3-src.zip!/src" />
       </SOURCES>
       <jarDirectory url="file://$PROJECT_DIR$/lib" recursive="false" />
     </library>

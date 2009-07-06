@@ -1,5 +1,7 @@
 package us.lump.envelope.entity;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import us.lump.envelope.command.security.Permission;
 import us.lump.lib.util.Encryption;
 
@@ -16,9 +18,11 @@ import java.text.MessageFormat;
  * User.
  *
  * @author Troy Bowman
- * @version $Id: User.java,v 1.8 2009/04/29 01:30:15 troy Exp $
+ * @version $Id: User.java,v 1.9 2009/07/06 21:45:29 troy Exp $
  */
-@javax.persistence.Entity @Table(name = "users")
+@javax.persistence.Entity
+@Table(name = "users")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class User extends Identifiable<Integer, Timestamp> {
   private Integer id;
   private Timestamp stamp;

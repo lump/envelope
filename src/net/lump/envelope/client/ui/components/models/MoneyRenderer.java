@@ -15,6 +15,7 @@ public class MoneyRenderer extends DefaultTableCellRenderer {
     super();
   }
 
+
   public Component getTableCellRendererComponent(JTable table,
       Object value,
       boolean isSelected,
@@ -58,9 +59,14 @@ public class MoneyRenderer extends DefaultTableCellRenderer {
       label.setOpaque(true);
     }
     if (hasFocus) {
-      label.setForeground(table.getSelectionForeground());
-      label.setBackground(table.getSelectionBackground());
-      label.setOpaque(true);
+      if (table.isCellEditable(row, col)) {
+        table.editCellAt(row, col);
+      }
+      else {
+        label.setForeground(table.getSelectionForeground());
+        label.setBackground(table.getSelectionBackground());
+        label.setOpaque(true);
+      }
     }
 
     return label;
