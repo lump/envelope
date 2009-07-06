@@ -1,5 +1,12 @@
 <project name="envelope" basedir="." default="dist">
   <!--xmlns:ivy="antlib:org.apache.ivy.ant">-->
+
+  <!-- toggle pack200 on by -Dpack=true on compile -->
+  <property name="pack" value="false"/>
+
+  <!-- toggle compress on with -Dcompress=true -->
+  <property name="compress" value="false"/>
+
   <property environment="env"/>
   <tstamp>
     <format property="timestamp" pattern="EEE, d MMM yyyy HH:mm:ss Z (z)"/>
@@ -32,7 +39,6 @@
   <property name="compile.deprecation" value="false"/>
   <property name="compile.optimize" value="true"/>
 
-  <property name="jar.compress" value="true"/>
   <property name="property.file" value=".build.properties"/>
 
   <path id="compile.classpath">
@@ -119,7 +125,7 @@
   <!--<ivy:cachepath pathid="ivy.lib.path"/>-->
   <!--</target>-->
 
-  <target name="clean.classes" description="clean the classes">
+  <target name="clean" description="clean the classes">
     <delete dir="${classes}"/>
     <delete dir="${client.classes}"/>
     <delete dir="${server.classes}"/>
@@ -127,12 +133,12 @@
     <delete dir="${one.jar.classes}"/>
   </target>
 
-  <target name="dist" depends="client.dist, server.war"
+  <target name="dist" depends="client.dist, war"
           description="make the client and server distribution jars">
     <echo message="dist done."/>
   </target>
 
-  <target name="prepare" depends="clean.classes">
+  <target name="prepare" depends="clean">
     <mkdir dir="${classes}"/>
     <mkdir dir="${test.classes}"/>
   </target>
@@ -201,8 +207,9 @@
           description="build client jar">
     <delete file="${dist}/client.jar"/>
     <jar jarfile="${dist}/client.jar"
-         compress="${jar.compress}"
-         basedir="${client.classes}">
+         compress="${compress}"
+         basedir="${client.classes}"
+         index="yes">
       <manifest>
         <attribute name="Main-Class" value="Envelope"/>
         <attribute name="Built-By" value="${user.name}"/>
@@ -217,23 +224,28 @@
   </target>
 
   <target name="client.dist" depends="client.jar"
-          description="create client distribution jar and sign and pack200 it">
-    <pack200 src="${dist}/client.jar"
-             destfile="${dist}/client.pack200.jar"
-             repack="true"
-             deflatehint="false"
-             unknownattribute="error"
-             stripdebug="true"
-             modificationtime="keep"
-             segmentlimit="-1"
-             keepfileorder="true"
-             effort="1"
-             gzipoutput="false"/>
+          description="create client distribution jar and sign it (pack200 with -Dpack=true)">
+    <if>
+      <equals arg1="true" arg2="${pack}"/>
+      <then>
+        <pack200 src="${dist}/client.jar"
+                 destfile="${dist}/client.pack200.jar"
+                 repack="true"
+                 deflatehint="false"
+                 unknownattribute="error"
+                 stripdebug="true"
+                 modificationtime="keep"
+                 segmentlimit="-1"
+                 keepfileorder="true"
+                 effort="1"
+                 gzipoutput="false"/>
 
-    <move verbose="true"
-          overwrite="true"
-          file="${dist}/client.pack200.jar"
-          tofile="${dist}/client.jar"/>
+        <move verbose="true"
+              overwrite="true"
+              file="${dist}/client.pack200.jar"
+              tofile="${dist}/client.jar"/>
+      </then>
+    </if>
 
     <signjar alias="envelope"
              keystore="security/keystore"
@@ -242,55 +254,60 @@
              lazy="true">
       <fileset dir="${dist}" includes="client.jar"/>
     </signjar>
-    <pack200 src="${dist}/client.jar"
-             destfile="${dist}/client.jar.pack.gz"
-             repack="false"
-             deflatehint="false"
-             unknownattribute="error"
-             stripdebug="true"
-             modificationtime="keep"
-             segmentlimit="-1"
-             keepfileorder="true"
-             effort="1"
-             gzipoutput="true"/>
-    <!--<delete file="${dist}/client.pack200.jar"/>-->
+
+    <if>
+      <equals arg1="true" arg2="${pack}"/>
+      <then>
+        <pack200 src="${dist}/client.jar"
+                 destfile="${dist}/client.jar.pack.gz"
+                 repack="false"
+                 deflatehint="false"
+                 unknownattribute="error"
+                 stripdebug="true"
+                 modificationtime="keep"
+                 segmentlimit="-1"
+                 keepfileorder="true"
+                 effort="1"
+                 gzipoutput="true"/>
+      </then>
+    </if>
   </target>
 
-  <target name="server.jar" depends="compile" description="build server jar">
-    <delete file="${dist}/${ant.project.name}-server.jar"/>
-    <jar jarfile="${dist}/${ant.project.name}-server.jar"
-         compress="${jar.compress}"
-         basedir="${classes}">
-      <manifest>
-        <attribute name="Built-By" value="${user.name}"/>
-        <attribute name="Build-Time" value="${timestamp}"/>
-        <attribute name="Built-On-OS"
-                   value="${os.name} ${os.version} ${os.arch}"/>
-        <attribute name="Built-On-VM" value="${java.version} ${java.vendor}"/>
-        <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
-      </manifest>
-    </jar>
-  </target>
-
-  <target name="server.war" depends="server.jar, client.dist"
-          description="build a server web archive for tomcat">
-
+  <target name="war.prepare" depends="compile">
     <property name="war.dir" value="war-build"/>
     <delete file="${dist}/envelope.jar"/>
     <delete dir="${war.dir}"/>
     <mkdir dir="${war.dir}"/>
     <mkdir dir="${war.dir}/WEB-INF/lib"/>
+    <copy todir="${war.dir}/WEB-INF/classes">
+      <fileset dir="${classes}"/>
+    </copy>
+
     <copy todir="${war.dir}/WEB-INF/lib">
       <fileset dir="${lib}" includes="*.jar, *.pack.gz *.png" excludes="servlet-api.jar"/>
-      <fileset dir="${dist}" includes="client*.jar, client*gz, ${ant.project.name}-server.jar"/>
       <fileset dir="src/us/lump/envelope/client/ui/images"
                includes="envelope_32.png, envelope.ico, envelope.icns"/>
     </copy>
     <copy todir="${war.dir}">
       <fileset dir="web" includes="**/**"/>
     </copy>
+  </target>
 
-    <jar jarfile="${dist}/${ant.project.name}.war" basedir="${war.dir}">
+  <target name="war.without.client"
+          depends="war.prepare">
+    <antcall target="war"/>
+  </target>
+
+  <target name="war.with.client"
+          depends="client.dist,war.prepare">
+    <copy todir="${war.dir}/WEB-INF/lib">
+      <fileset dir="${dist}" includes="client*.jar, client*gz"/>
+    </copy>
+    <antcall target="war"/>
+  </target>
+
+  <target name="war" description="build a server web archive for tomcat (compress with -Dcompress=true)">
+    <jar jarfile="${dist}/${ant.project.name}.war" basedir="${war.dir}" compress="${compress}">
       <manifest>
         <attribute name="Built-By" value="${user.name}"/>
         <attribute name="Build-Time" value="${timestamp}"/>
@@ -299,9 +316,15 @@
         <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
       </manifest>
     </jar>
-
-    <copy file="${dist}/${ant.project.name}.war" todir="${tomcat.deploy.dir}"/>
     <delete dir="${war.dir}"/>
+  </target>
+
+  <target name="deploy" depends="war.with.client" description="deploy the server war to tomcat">
+    <copy file="${dist}/${ant.project.name}.war" todir="${tomcat.deploy.dir}"/>
+  </target>
+
+  <target name="deploy.clientless" depends="war.without.client" description="deploy the server war to tomcat">
+    <copy file="${dist}/${ant.project.name}.war" todir="${tomcat.deploy.dir}"/>
   </target>
 
 </project>
