@@ -59,4 +59,18 @@ java.io.tmpdir - Default temp file path -->
       diskExpiryThreadIntervalSeconds="120"
       memoryStoreEvictionPolicy="LRU"/>
 
+  <cache name="us.lump.envelope.entity.User"
+         timeToIdleSeconds="60"
+         timeToLiveSeconds="300"
+         eternal="false"
+         maxElementsInMemory="1024"
+         overflowToDisk="false"/>
+
+  <cache name="us.lump.envelope.entity.Category"
+         timeToIdleSeconds="15"
+         timeToLiveSeconds="60"
+         eternal="false"
+         maxElementsInMemory="1024"
+         overflowToDisk="false"/>
+
 </ehcache>
