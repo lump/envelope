@@ -1,4 +1,4 @@
-package us.lump.envelope.command;
+package us.lump.envelope.shared.command;
 
 import java.io.Serializable;
 import java.util.EventObject;
@@ -7,7 +7,7 @@ import java.util.EventObject;
  * A command output event.
  *
  * @author troy
- * @version $Id: OutputEvent.java,v 1.2 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: OutputEvent.java,v 1.1 2009/07/13 17:21:44 troy Exp $
  */
 public class OutputEvent extends EventObject {
   Serializable payload;

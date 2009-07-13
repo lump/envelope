@@ -1,10 +1,9 @@
-package us.lump.envelope.entity;
+package us.lump.envelope.shared.entity;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 

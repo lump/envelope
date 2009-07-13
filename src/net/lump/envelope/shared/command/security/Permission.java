@@ -1,4 +1,4 @@
-package us.lump.envelope.command.security;
+package us.lump.envelope.shared.command.security;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -9,7 +9,7 @@ import java.util.HashMap;
  * An object which runs bitwise manipulations to determine access levels.
  *
  * @author Troy Bowman
- * @version $Id: Permission.java,v 1.2 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: Permission.java,v 1.1 2009/07/13 17:21:44 troy Exp $
  */
 public class Permission implements Serializable {
   public static final long READ = 1L;

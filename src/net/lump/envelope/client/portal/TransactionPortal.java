@@ -1,13 +1,13 @@
 package us.lump.envelope.client.portal;
 
-import us.lump.envelope.command.Command;
-import us.lump.envelope.exception.AbortException;
+import us.lump.envelope.shared.command.Command;
+import us.lump.envelope.shared.exception.AbortException;
 
 /**
  * Transaction Methods.
  *
  * @author troy
- * @version $Id: TransactionPortal.java,v 1.10 2009/04/10 22:49:27 troy Exp $
+ * @version $Id: TransactionPortal.java,v 1.11 2009/07/13 17:21:44 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class TransactionPortal extends Portal {

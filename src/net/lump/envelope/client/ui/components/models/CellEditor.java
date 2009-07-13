@@ -8,7 +8,7 @@ package us.lump.envelope.client.ui.components.models;
  */
 
 import us.lump.envelope.client.ui.defs.Colors;
-import us.lump.envelope.entity.Category;
+import us.lump.envelope.shared.entity.Category;
 import us.lump.lib.Money;
 
 import javax.swing.*;

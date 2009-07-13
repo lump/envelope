@@ -5,10 +5,10 @@ import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 import us.lump.envelope.client.CriteriaFactory;
 import us.lump.envelope.client.portal.HibernatePortal;
-import us.lump.envelope.entity.Allocation;
-import us.lump.envelope.entity.Category;
-import us.lump.envelope.entity.Transaction;
-import us.lump.envelope.exception.AbortException;
+import us.lump.envelope.shared.entity.Allocation;
+import us.lump.envelope.shared.entity.Category;
+import us.lump.envelope.shared.entity.Transaction;
+import us.lump.envelope.shared.exception.AbortException;
 import us.lump.lib.Money;
 
 import javax.swing.*;
@@ -22,7 +22,7 @@ import java.util.List;
  * This provides the model for the allocation list in the form.
  *
  * @author Troy Bowman
- * @version $Id: AllocationFormTableModel.java,v 1.4 2009/07/06 21:45:29 troy Exp $
+ * @version $Id: AllocationFormTableModel.java,v 1.5 2009/07/13 17:21:44 troy Exp $
  */
 public class AllocationFormTableModel extends AbstractTableModel {
 

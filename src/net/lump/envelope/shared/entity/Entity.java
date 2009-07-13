@@ -1,9 +1,7 @@
-package us.lump.envelope.entity;
+package us.lump.envelope.shared.entity;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
-import java.sql.Date;
-import java.util.List;
 
 /** An entity to or from which we do transactions with. */
 @javax.persistence.Entity

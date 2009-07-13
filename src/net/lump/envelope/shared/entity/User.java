@@ -1,8 +1,8 @@
-package us.lump.envelope.entity;
+package us.lump.envelope.shared.entity;
 
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
-import us.lump.envelope.command.security.Permission;
+import us.lump.envelope.shared.command.security.Permission;
 import us.lump.lib.util.Encryption;
 
 import javax.persistence.*;
@@ -18,7 +18,7 @@ import java.text.MessageFormat;
  * User.
  *
  * @author Troy Bowman
- * @version $Id: User.java,v 1.9 2009/07/06 21:45:29 troy Exp $
+ * @version $Id: User.java,v 1.1 2009/07/13 17:21:44 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "users")

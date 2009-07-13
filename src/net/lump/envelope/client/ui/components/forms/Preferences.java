@@ -9,8 +9,8 @@ import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.images.ImageResource;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
 import us.lump.envelope.client.ui.prefs.ServerSettings;
-import us.lump.envelope.command.security.Challenge;
-import us.lump.envelope.exception.AbortException;
+import us.lump.envelope.shared.command.security.Challenge;
+import us.lump.envelope.shared.exception.AbortException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;

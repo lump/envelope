@@ -2,12 +2,12 @@ package us.lump.envelope.server;
 
 import org.apache.log4j.Logger;
 import org.hibernate.ScrollableResults;
-import us.lump.envelope.command.Command;
-import us.lump.envelope.exception.EnvelopeException;
-import static us.lump.envelope.exception.EnvelopeException.Name;
-import static us.lump.envelope.exception.EnvelopeException.Name.Invalid_Session;
 import us.lump.envelope.server.dao.DAO;
 import us.lump.envelope.server.dao.Security;
+import us.lump.envelope.shared.command.Command;
+import us.lump.envelope.shared.exception.EnvelopeException;
+import static us.lump.envelope.shared.exception.EnvelopeException.Name;
+import static us.lump.envelope.shared.exception.EnvelopeException.Name.Invalid_Session;
 import us.lump.lib.util.Interval;
 
 import javax.servlet.http.HttpServletResponse;
@@ -27,7 +27,7 @@ import java.util.List;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controller.java,v 1.7 2009/06/13 18:32:14 troy Exp $
+ * @version $Id: Controller.java,v 1.8 2009/07/13 17:21:44 troy Exp $
  */
 public class Controller {
   final Logger logger = Logger.getLogger(Controller.class);

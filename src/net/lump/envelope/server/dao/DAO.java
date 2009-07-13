@@ -7,10 +7,10 @@ import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.impl.SessionImpl;
-import us.lump.envelope.entity.*;
-import us.lump.envelope.entity.Transaction;
-import us.lump.envelope.exception.EnvelopeException;
 import us.lump.envelope.server.ThreadInfo;
+import us.lump.envelope.shared.entity.*;
+import us.lump.envelope.shared.entity.Transaction;
+import us.lump.envelope.shared.exception.EnvelopeException;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -24,7 +24,7 @@ import java.util.Properties;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.28 2009/07/06 21:45:29 troy Exp $
+ * @version $Id: DAO.java,v 1.29 2009/07/13 17:21:44 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;

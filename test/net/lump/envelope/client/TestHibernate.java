@@ -6,9 +6,9 @@ import org.hibernate.criterion.Restrictions;
 import org.junit.Test;
 import us.lump.envelope.TestSuite;
 import us.lump.envelope.client.portal.HibernatePortal;
-import us.lump.envelope.entity.Account;
-import us.lump.envelope.entity.Budget;
-import us.lump.envelope.entity.Identifiable;
+import us.lump.envelope.shared.entity.Account;
+import us.lump.envelope.shared.entity.Budget;
+import us.lump.envelope.shared.entity.Identifiable;
 
 /** Test Hibernate Operations. */
 public class TestHibernate extends TestCase {

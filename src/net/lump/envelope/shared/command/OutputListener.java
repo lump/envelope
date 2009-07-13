@@ -1,4 +1,4 @@
-package us.lump.envelope.command;
+package us.lump.envelope.shared.command;
 
 import java.util.EventListener;
 
@@ -6,7 +6,7 @@ import java.util.EventListener;
  * A listener that can handle CommandOutputEvents.
  *
  * @author troy
- * @version $Id: OutputListener.java,v 1.2 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: OutputListener.java,v 1.1 2009/07/13 17:21:44 troy Exp $
  */
 public interface OutputListener extends EventListener {
   public void commandOutputOccurred(OutputEvent event);

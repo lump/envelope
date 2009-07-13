@@ -1,4 +1,4 @@
-package us.lump.envelope.entity.type;
+package us.lump.envelope.shared.entity.type;
 
 import org.hibernate.EntityMode;
 import org.hibernate.HibernateException;
@@ -14,7 +14,7 @@ import java.sql.Types;
  * A MoneyType type for Hibernate.
  *
  * @author Troy Bowman
- * @version $Id: MoneyType.java,v 1.2 2007/08/18 23:20:11 troy Test $
+ * @version $Id: MoneyType.java,v 1.1 2009/07/13 17:21:44 troy Exp $
  */
 public class MoneyType extends ImmutableType implements Serializable {
   public Object fromStringValue(String xml) {

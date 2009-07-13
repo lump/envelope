@@ -1,7 +1,6 @@
-package us.lump.envelope.entity;
+package us.lump.envelope.shared.entity;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
@@ -10,7 +9,7 @@ import java.text.MessageFormat;
  * An Allocation Setting object.
  *
  * @author Troy Bowman
- * @version $Id: AllocationSetting.java,v 1.3 2008/07/09 04:20:02 troy Test $
+ * @version $Id: AllocationSetting.java,v 1.1 2009/07/13 17:21:44 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "allocation_settings")
