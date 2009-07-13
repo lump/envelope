@@ -13,7 +13,7 @@ import java.util.Collection;
  * Categories, which are tied to Accounts.
  *
  * @author Troy Bowman
- * @version $Id: Allocation.java,v 1.1 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: Allocation.java,v 1.2 2009/07/13 18:38:06 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
@@ -146,7 +146,7 @@ public class Allocation extends Identifiable<Integer, Timestamp> {
    * @return Money
    */
   @Column(name = "amount", nullable = false, precision = 2)
-  @Type(type = "us.lump.envelope.entity.type.MoneyType")
+  @Type(type = "us.lump.envelope.shared.entity.type.MoneyType")
   public Money getAmount() {
     return amount;
   }

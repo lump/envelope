@@ -199,7 +199,7 @@
       <!--includes="Envelope.class, us/lump/lib/util/ChildFirstClassLoader.class"/>-->
       <fileset dir="${classes}"
                includes="security.policy, Envelope.class, us/lump/**/*"
-               excludes="us/lump/envelope/server/**/*, us/lump/envelope/Client.java"/>
+               excludes="us/lump/envelope/server/**/*"/>
     </copy>
   </target>
 
