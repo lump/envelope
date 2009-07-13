@@ -6,10 +6,10 @@ import net.sf.ehcache.Element;
 import us.lump.envelope.client.ui.MainFrame;
 import us.lump.envelope.client.ui.components.Hierarchy;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
-import us.lump.envelope.entity.Account;
-import us.lump.envelope.entity.Budget;
-import us.lump.envelope.entity.Category;
-import us.lump.envelope.exception.AbortException;
+import us.lump.envelope.shared.entity.Account;
+import us.lump.envelope.shared.entity.Budget;
+import us.lump.envelope.shared.entity.Category;
+import us.lump.envelope.shared.exception.AbortException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -18,7 +18,7 @@ import java.util.TreeSet;
 /**
  * This is a repository for globally accessed object instances.
  *
- * @version $Id: State.java,v 1.7 2009/04/10 22:49:27 troy Exp $
+ * @version $Id: State.java,v 1.8 2009/07/13 17:21:44 troy Exp $
  */
 public class State {
 

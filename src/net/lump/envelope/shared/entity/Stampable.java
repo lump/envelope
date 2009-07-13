@@ -1,6 +1,4 @@
-package us.lump.envelope.entity;
-
-import us.lump.envelope.server.dao.DAO;
+package us.lump.envelope.shared.entity;
 
 import java.io.Serializable;
 

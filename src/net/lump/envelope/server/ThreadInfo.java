@@ -1,12 +1,12 @@
 package us.lump.envelope.server;
 
-import us.lump.envelope.entity.User;
+import us.lump.envelope.shared.entity.User;
 
 /**
  * An attempt at keeping a repository of thread local variables.
  *
  * @author troy
- * @version $Id: ThreadInfo.java,v 1.1 2008/09/13 19:19:30 troy Test $
+ * @version $Id: ThreadInfo.java,v 1.2 2009/07/13 17:21:44 troy Exp $
  */
 public class ThreadInfo {
 

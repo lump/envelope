@@ -4,7 +4,7 @@ import org.hibernate.CacheMode;
 import org.hibernate.Criteria;
 import org.hibernate.ScrollableResults;
 import org.hibernate.criterion.DetachedCriteria;
-import us.lump.envelope.entity.Identifiable;
+import us.lump.envelope.shared.entity.Identifiable;
 
 import java.io.Serializable;
 

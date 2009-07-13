@@ -1,7 +1,6 @@
-package us.lump.envelope.entity;
+package us.lump.envelope.shared.entity;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
@@ -16,7 +15,7 @@ import java.sql.Timestamp;
  * car.
  *
  * @author troy
- * @version $Id: Tag.java,v 1.3 2008/07/09 04:20:02 troy Test $
+ * @version $Id: Tag.java,v 1.1 2009/07/13 17:21:44 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)

@@ -1,10 +1,10 @@
 package us.lump.envelope.client.portal;
 
 import org.hibernate.criterion.DetachedCriteria;
-import us.lump.envelope.command.Command;
-import us.lump.envelope.command.OutputListener;
-import us.lump.envelope.entity.Identifiable;
-import us.lump.envelope.exception.AbortException;
+import us.lump.envelope.shared.command.Command;
+import us.lump.envelope.shared.command.OutputListener;
+import us.lump.envelope.shared.entity.Identifiable;
+import us.lump.envelope.shared.exception.AbortException;
 
 import java.io.Serializable;
 import java.util.List;

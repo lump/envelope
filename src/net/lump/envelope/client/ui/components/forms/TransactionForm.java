@@ -17,12 +17,12 @@ import us.lump.envelope.client.ui.components.models.CellEditor;
 import us.lump.envelope.client.ui.components.models.MoneyRenderer;
 import us.lump.envelope.client.ui.components.models.TransactionTableModel;
 import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.command.OutputEvent;
-import us.lump.envelope.command.OutputListener;
-import us.lump.envelope.entity.Allocation;
-import us.lump.envelope.entity.Category;
-import us.lump.envelope.entity.Transaction;
-import us.lump.envelope.exception.AbortException;
+import us.lump.envelope.shared.command.OutputEvent;
+import us.lump.envelope.shared.command.OutputListener;
+import us.lump.envelope.shared.entity.Allocation;
+import us.lump.envelope.shared.entity.Category;
+import us.lump.envelope.shared.entity.Transaction;
+import us.lump.envelope.shared.exception.AbortException;
 import us.lump.lib.Money;
 import us.lump.lib.util.ObjectUtil;
 
@@ -52,7 +52,7 @@ import java.util.ResourceBundle;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.18 2009/07/06 21:45:29 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.19 2009/07/13 17:21:44 troy Exp $
  */
 public class TransactionForm {
   private JButton saveButton;

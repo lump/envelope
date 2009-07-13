@@ -4,9 +4,9 @@ import us.lump.envelope.client.HttpClient;
 import us.lump.envelope.client.ui.components.forms.Preferences;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.prefs.LoginSettings;
-import us.lump.envelope.command.Command;
-import us.lump.envelope.exception.AbortException;
-import us.lump.envelope.exception.EnvelopeException;
+import us.lump.envelope.shared.command.Command;
+import us.lump.envelope.shared.exception.AbortException;
+import us.lump.envelope.shared.exception.EnvelopeException;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,7 +28,7 @@ import java.util.List;
  * handling.
  *
  * @author Troy Bowman
- * @version $Id: Portal.java,v 1.27 2009/05/31 21:45:30 troy Exp $
+ * @version $Id: Portal.java,v 1.28 2009/07/13 17:21:44 troy Exp $
  */
 
 abstract class Portal {

@@ -1,4 +1,4 @@
-package us.lump.envelope.command.security;
+package us.lump.envelope.shared.command.security;
 
 import us.lump.lib.util.Encryption;
 import static us.lump.lib.util.Encryption.TRANS_ENCODING;
@@ -18,7 +18,7 @@ import java.security.PublicKey;
  * An authorization challenge.
  *
  * @author Troy Bowman
- * @version $Id: Challenge.java,v 1.2 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: Challenge.java,v 1.1 2009/07/13 17:21:44 troy Exp $
  */
 public class Challenge implements Serializable {
   private PublicKey serverKey;

@@ -1,4 +1,4 @@
-package us.lump.envelope.entity;
+package us.lump.envelope.shared.entity;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -15,7 +15,7 @@ import java.util.List;
  * A transaction.
  *
  * @author Troy Bowman
- * @version $Id: Transaction.java,v 1.11 2009/07/06 21:45:29 troy Exp $
+ * @version $Id: Transaction.java,v 1.1 2009/07/13 17:21:44 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)

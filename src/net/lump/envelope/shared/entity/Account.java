@@ -1,4 +1,4 @@
-package us.lump.envelope.entity;
+package us.lump.envelope.shared.entity;
 
 import org.hibernate.annotations.Type;
 import us.lump.lib.Money;
@@ -12,13 +12,13 @@ import java.util.List;
  * An account object.
  *
  * @author Troy Bowman
- * @version $Id: Account.java,v 1.11 2008/09/04 00:57:27 troy Test $
+ * @version $Id: Account.java,v 1.1 2009/07/13 17:21:44 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "accounts")
 public class Account extends Identifiable<Integer, Timestamp>
     implements Comparable<Account> {
-//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.11 $".replaceAll("\\D", ""));
+//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.1 $".replaceAll("\\D", ""));
 
   /** The type of an Account. */
   public static enum AccountType {

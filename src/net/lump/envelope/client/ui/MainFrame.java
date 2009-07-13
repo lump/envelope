@@ -11,7 +11,7 @@ import us.lump.envelope.client.ui.components.forms.TableQueryBar;
 import us.lump.envelope.client.ui.components.forms.TransactionForm;
 import us.lump.envelope.client.ui.defs.Strings;
 import us.lump.envelope.client.ui.images.ImageResource;
-import us.lump.envelope.exception.AbortException;
+import us.lump.envelope.shared.exception.AbortException;
 import us.lump.lib.util.EmacsKeyBindings;
 
 import javax.swing.*;
@@ -24,7 +24,7 @@ import java.beans.PropertyChangeListener;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.38 2009/05/05 03:37:43 troy Exp $
+ * @version $Id: MainFrame.java,v 1.39 2009/07/13 17:21:44 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;

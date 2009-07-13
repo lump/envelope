@@ -2,8 +2,8 @@ package us.lump.lib.util;
 
 import junit.framework.TestCase;
 import org.junit.Test;
-import us.lump.envelope.command.Command;
-import us.lump.envelope.command.security.Challenge;
+import us.lump.envelope.shared.command.Command;
+import us.lump.envelope.shared.command.security.Challenge;
 
 import javax.crypto.CipherInputStream;
 import javax.crypto.SecretKey;
@@ -17,7 +17,7 @@ import java.security.KeyPair;
  * .
  *
  * @author Troy Bowman
- * @version $Id: TestEncryption.java,v 1.9 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: TestEncryption.java,v 1.10 2009/07/13 17:21:44 troy Exp $
  */
 public class TestEncryption extends TestCase {
 

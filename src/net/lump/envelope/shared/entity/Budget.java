@@ -1,14 +1,13 @@
-package us.lump.envelope.entity;
+package us.lump.envelope.shared.entity;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.sql.Timestamp;
 
 /**
  * A budget object.
  *
  * @author Troy Bowman
- * @version $Id: Budget.java,v 1.5 2008/07/09 04:20:02 troy Test $
+ * @version $Id: Budget.java,v 1.1 2009/07/13 17:21:44 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "budgets")

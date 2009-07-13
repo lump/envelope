@@ -1,4 +1,4 @@
-package us.lump.envelope.entity;
+package us.lump.envelope.shared.entity;
 
 import org.hibernate.annotations.Type;
 import us.lump.lib.Money;
@@ -13,7 +13,7 @@ import java.util.Collection;
  * Categories, which are tied to Accounts.
  *
  * @author Troy Bowman
- * @version $Id: Allocation.java,v 1.10 2009/07/06 21:45:29 troy Exp $
+ * @version $Id: Allocation.java,v 1.1 2009/07/13 17:21:44 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)

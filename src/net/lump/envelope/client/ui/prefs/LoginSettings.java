@@ -2,11 +2,11 @@ package us.lump.envelope.client.ui.prefs;
 
 import us.lump.envelope.client.portal.SecurityPortal;
 import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.command.security.Challenge;
-import us.lump.envelope.command.security.Crypt;
-import us.lump.envelope.exception.AbortException;
-import us.lump.envelope.exception.EnvelopeException;
-import static us.lump.envelope.exception.EnvelopeException.Name.Invalid_Credentials;
+import us.lump.envelope.shared.command.security.Challenge;
+import us.lump.envelope.shared.command.security.Crypt;
+import us.lump.envelope.shared.exception.AbortException;
+import us.lump.envelope.shared.exception.EnvelopeException;
+import static us.lump.envelope.shared.exception.EnvelopeException.Name.Invalid_Credentials;
 import us.lump.lib.util.Encryption;
 
 import javax.crypto.BadPaddingException;
@@ -24,7 +24,7 @@ import java.util.prefs.Preferences;
  * Singleton for keeping track of login information.  (Basically the username and password.
  *
  * @author Troy Bowman
- * @version $Id: LoginSettings.java,v 1.16 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: LoginSettings.java,v 1.17 2009/07/13 17:21:44 troy Exp $
  */
 public class LoginSettings {
 

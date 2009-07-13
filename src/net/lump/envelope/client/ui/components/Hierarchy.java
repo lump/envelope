@@ -11,10 +11,10 @@ import us.lump.envelope.client.ui.defs.Colors;
 import us.lump.envelope.client.ui.defs.Fonts;
 import us.lump.envelope.client.ui.defs.Strings;
 import static us.lump.envelope.client.ui.images.ImageResource.icon.*;
-import us.lump.envelope.entity.Account;
-import us.lump.envelope.entity.Budget;
-import us.lump.envelope.entity.Category;
-import us.lump.envelope.exception.AbortException;
+import us.lump.envelope.shared.entity.Account;
+import us.lump.envelope.shared.entity.Budget;
+import us.lump.envelope.shared.entity.Category;
+import us.lump.envelope.shared.exception.AbortException;
 import us.lump.lib.Money;
 
 import javax.swing.*;
@@ -36,7 +36,7 @@ import java.util.List;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.31 2009/05/31 21:45:30 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.32 2009/07/13 17:21:44 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
