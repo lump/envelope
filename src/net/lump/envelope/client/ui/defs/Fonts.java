@@ -1,49 +1,43 @@
 package us.lump.envelope.client.ui.defs;
 
 import java.awt.*;
-import java.util.HashMap;
-import java.util.Set;
 
 /**
  * .
  *
  * @author troy
- * @version $Id: Fonts.java,v 1.3 2008/07/09 07:58:25 troy Test $
+ * @version $Id: Fonts.java,v 1.4 2009/07/27 16:37:04 troy Exp $
  */
-public class Fonts {
+public enum Fonts {
 
-  private static HashMap<String, Font> fonts = new HashMap<String, Font>();
+  serif_36_bold_italic(new Font("serif", Font.ITALIC | Font.BOLD, 36)),
+  lucida_grande(new Font("Lucida Grande", Font.BOLD, 14)),
+  sans_serif(new Font("SansSerif", Font.BOLD, 14)),
+  sans_14_bold(new Font("Lucida Grande", Font.BOLD, 14), new Font("SansSerif", Font.PLAIN, 14)),
+  sans_10_bold(new Font("Lucida Grande", Font.BOLD, 10), new Font("SansSerif", Font.PLAIN, 10)),
+  fixed(
+      new Font("Bitstream Vera Sans Mono", Font.PLAIN, 12),
+      new Font("Andale Mono", Font.PLAIN, 12),
+      new Font("Monaco", Font.PLAIN, 12),
+      new Font("Courier New", Font.PLAIN, 12),
+      new Font("Monospaced", Font.PLAIN, 12)
+  );
 
-  static {
+  Font font;
 
-//    for (String s : GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames())
-//      System.out.println(s);
-    
-    fonts.put("serif-36-bold-italic",
-              new Font("serif", Font.ITALIC + Font.BOLD, 36));
+  Fonts(Font... fonts) {
+    font = null;
 
-    Font sans14Bold = new Font("Lucida Grande", Font.BOLD, 14);
-    if (sans14Bold == null) sans14Bold = new Font("SansSerif", Font.BOLD, 14);
-    fonts.put("sans-14-bold", sans14Bold);
-
-    Font sans10 = new Font("Lucida Grande", Font.PLAIN, 10);
-    if (sans10 == null) sans10 = new Font("SansSerif", Font.PLAIN, 10);
-    fonts.put("sans-10-bold", sans10);
-
-    Font fixed = new Font("Bitstream Vera Sans Mono", Font.PLAIN, 12);
-    if (fixed == null) fixed = new Font("Andale Mono", Font.PLAIN, 12);
-    if (fixed == null) fixed = new Font("Monaco", Font.PLAIN, 12);
-    if (fixed == null) fixed = new Font("Courier New", Font.PLAIN, 12);
-    if (fixed == null) fixed = new Font("Monospaced", Font.PLAIN, 12);
-    fonts.put("fixed", fixed);
-
+    // get the first font that is defined in the list
+    for (Font f : fonts) {
+      if (f != null) {
+        font = f;
+        break;
+      }
+    }
   }
 
-  public static Font getFont(String name) {
-    return fonts.get(name);
-  }
-
-  public static Set<String> getNames() {
-    return fonts.keySet();
+  public Font getFont() {
+    return this.font;
   }
 }
