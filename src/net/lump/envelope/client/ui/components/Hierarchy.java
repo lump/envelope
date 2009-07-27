@@ -36,7 +36,7 @@ import java.util.List;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.32 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.33 2009/07/27 16:37:05 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -114,7 +114,8 @@ public class Hierarchy extends JTree {
             tm = new TransactionTableModel(
                 o, tqb.getBeginDate(), tqb.getEndDate(),
                 tqb.getTable());
-          } else tm.queue(o, tqb.getBeginDate(), tqb.getEndDate());
+          }
+          else tm.queue(o, tqb.getBeginDate(), tqb.getEndDate());
           if (!table.getModel().equals(tm)) table.setModel(tm);
 
           table.setDefaultRenderer(Money.class, new MoneyRenderer());
@@ -124,7 +125,7 @@ public class Hierarchy extends JTree {
           Dimension checkWidth = new JCheckBox().getPreferredSize();
           int dateWidth =
               table.getFontMetrics(table.getFont()).stringWidth("MMM MM, MMMM");
-          int amountWidth = table.getFontMetrics(Fonts.getFont("fixed"))
+          int amountWidth = table.getFontMetrics(Fonts.fixed.getFont())
               .stringWidth("$0,000,000.00");
           table.getColumnModel().getColumn(0).setMaxWidth(checkWidth.width);
 
@@ -306,7 +307,8 @@ public class Hierarchy extends JTree {
       if (ui != null) {
         // On the off chance some one created a UI, honor it
         super.paintComponent(g);
-      } else if (isOpaque()) {
+      }
+      else if (isOpaque()) {
         g.setColor(getBackground());
         g.fillRect(0, 0, getWidth(), getHeight());
       }
@@ -332,7 +334,8 @@ public class Hierarchy extends JTree {
         this.setBackground(backgroundSelectionColor);
         mainLabel.setForeground(textSelectionColor);
         balanceLabel.setForeground(textSelectionColor);
-      } else {
+      }
+      else {
         this.setOpaque(false);
 //        this.setBackground(backgroundNonSelectionColor);
         mainLabel.setForeground(textNonSelectionColor);
@@ -349,13 +352,15 @@ public class Hierarchy extends JTree {
           else mainLabel.setIcon(budget_closed.get());
           mainLabel.setText(((Budget)o).getName());
           balanceLabel.setText("");
-        } else if (o instanceof CategoryTotal) {
+        }
+        else if (o instanceof CategoryTotal) {
           if (o instanceof AccountTotal) {
             if (expanded) mainLabel.setIcon(account.get());
             else mainLabel.setIcon(account_closed.get());
             mainLabel.setText(((AccountTotal)o).name);
             balanceLabel.setText("");
-          } else {
+          }
+          else {
             CategoryTotal ct = (CategoryTotal)o;
 
             double total = ct.balance.doubleValue();
@@ -427,10 +432,12 @@ public class Hierarchy extends JTree {
     if (o instanceof Budget) {
       if (expanded) return budget.get();
       else return budget_closed.get();
-    } else if (o instanceof Account) {
+    }
+    else if (o instanceof Account) {
       if (expanded) return account.get();
       else return account_closed.get();
-    } else if (o instanceof CategoryTotal) {
+    }
+    else if (o instanceof CategoryTotal) {
       CategoryTotal ct = (CategoryTotal)o;
       double total = ct.balance.doubleValue();
       if (total < 0) return envelope_red.get();
@@ -523,7 +530,8 @@ public class Hierarchy extends JTree {
               size.x = getRowX(row, depth);
               size.width = prefSize.width;
               size.height = prefSize.height;
-            } else {
+            }
+            else {
               size = new Rectangle(getRowX(row, depth), 0,
                   prefSize.width, prefSize.height);
             }
@@ -566,7 +574,8 @@ public class Hierarchy extends JTree {
               size.x = getRowX(row, depth);
               size.width = targetWidth;
               size.height = prefSize.height;
-            } else {
+            }
+            else {
               size = new Rectangle(
                   size.width = getRowX(row, depth), 0,
                   targetWidth, prefSize.height);

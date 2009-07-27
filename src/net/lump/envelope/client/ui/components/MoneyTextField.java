@@ -1,16 +1,14 @@
 package us.lump.envelope.client.ui.components;
 
 import us.lump.envelope.client.ui.defs.Colors;
+import us.lump.envelope.client.ui.defs.Fonts;
 import us.lump.lib.Money;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
-/**
- * This is a JTextField with formatting for Money.
- * @version: $Id: MoneyTextField.java,v 1.2 2009/07/06 21:45:29 troy Exp $
- */
+/** This is a JTextField with formatting for Money. */
 public class MoneyTextField extends JTextField {
   public MoneyTextField() {
     this(null);
@@ -18,6 +16,8 @@ public class MoneyTextField extends JTextField {
 
   public MoneyTextField(String value) {
     super(value, 15);
+
+    setFont(Fonts.fixed.getFont());
 
     setHorizontalAlignment(JTextField.RIGHT);
 
@@ -46,19 +46,22 @@ public class MoneyTextField extends JTextField {
     getInputMap().put(KeyStroke.getKeyStroke("UP"), emptyAction);
 
 
-    addKeyListener(new KeyListener(){
+    addKeyListener(new KeyListener() {
       public void keyTyped(KeyEvent e) {
         if (!String.valueOf(e.getKeyChar()).matches("[0-9\\.\\(\\)\\$\\,\\-\b]"))
           e.consume();
       }
+
       public void keyPressed(KeyEvent e) { }
+
       public void keyReleased(KeyEvent e) { }
     });
 
-    addFocusListener(new FocusListener(){
+    addFocusListener(new FocusListener() {
       public void focusGained(FocusEvent e) {
         ((JTextField)e.getSource()).selectAll();
       }
+
       public void focusLost(FocusEvent e) {
         ((Component)e.getSource()).setBackground(
             UIManager.getLookAndFeelDefaults().getColor("TextPane.background"));

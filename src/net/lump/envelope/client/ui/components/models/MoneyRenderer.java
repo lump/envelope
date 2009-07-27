@@ -25,7 +25,7 @@ public class MoneyRenderer extends DefaultTableCellRenderer {
     JLabel label = new JLabel(
         value == null ? "" : ((Money)value).toFormattedString(),
         SwingConstants.RIGHT);
-    label.setFont(Fonts.getFont("fixed"));
+    label.setFont(Fonts.fixed.getFont());
     label.setBorder(
         new CompoundBorder(
             new EmptyBorder(new Insets(1, 4, 1, 4)),
