@@ -22,7 +22,7 @@ import java.util.List;
  * This provides the model for the allocation list in the form.
  *
  * @author Troy Bowman
- * @version $Id: AllocationFormTableModel.java,v 1.5 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: AllocationFormTableModel.java,v 1.6 2009/08/28 22:07:46 troy Exp $
  */
 public class AllocationFormTableModel extends AbstractTableModel {
 
@@ -139,10 +139,12 @@ public class AllocationFormTableModel extends AbstractTableModel {
     return editingTransaction;
   }
 
+  @Override
   public String getColumnName(int columnIndex) {
     return Columns.values()[columnIndex].toString();
   }
 
+  @Override
   public Class<?> getColumnClass(int columnIndex) {
     if (editingTransaction.getAllocations() == null || editingTransaction.getAllocations().size() == 0) return null;
     return Columns.values()[columnIndex].columnClass;
@@ -164,26 +166,34 @@ public class AllocationFormTableModel extends AbstractTableModel {
     }
   }
 
-  @Override public void removeTableModelListener(TableModelListener l) {
+  @Override
+  public void removeTableModelListener(TableModelListener l) {
     super.removeTableModelListener(l);
   }
 
+  @Override
   public boolean isCellEditable(int row, int column) {
     return Columns.values()[column].editable;
   }
 
-  @Override public void setValueAt(Object value, int row, int column) {
+  @Override
+  public void setValueAt(Object value, int row, int column) {
     if (value == null) return;
     switch (Columns.values()[column]) {
       case Category:
         editingTransaction.getAllocations().get(row).setCategory((Category)value);
         break;
       case Allocation:
-        Money m = value instanceof Money ? (Money)value : new Money(value.toString());
-        editingTransaction.getAllocations().get(row).setAmount(expense ? m.negate() : m);
+        try {
+          Money m = value instanceof Money ? (Money)value : new Money(value.toString().trim());
+          editingTransaction.getAllocations().get(row).setAmount(expense ? m.negate() : m);
+        } catch (NumberFormatException nfe) {
+          return;
+        }
         break;
     }
-    fireTableRowsUpdated(row, row);  }
+    fireTableRowsUpdated(row, row);
+  }
 
   public Object getValueAt(int row, int column) {
     if (editingTransaction.getAllocations() == null) return null;
