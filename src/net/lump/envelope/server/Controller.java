@@ -1,14 +1,14 @@
-package us.lump.envelope.server;
+package net.lump.envelope.server;
 
 import org.apache.log4j.Logger;
 import org.hibernate.ScrollableResults;
-import us.lump.envelope.server.dao.DAO;
-import us.lump.envelope.server.dao.Security;
-import us.lump.envelope.shared.command.Command;
-import us.lump.envelope.shared.exception.EnvelopeException;
-import static us.lump.envelope.shared.exception.EnvelopeException.Name;
-import static us.lump.envelope.shared.exception.EnvelopeException.Name.Invalid_Session;
-import us.lump.lib.util.Interval;
+import net.lump.envelope.server.dao.DAO;
+import net.lump.envelope.server.dao.Security;
+import net.lump.envelope.shared.command.Command;
+import net.lump.envelope.shared.exception.EnvelopeException;
+import static net.lump.envelope.shared.exception.EnvelopeException.Name;
+import static net.lump.envelope.shared.exception.EnvelopeException.Name.Invalid_Session;
+import net.lump.lib.util.Interval;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -27,11 +27,11 @@ import java.util.List;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controller.java,v 1.8 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: Controller.java,v 1.9 2009/10/02 22:06:23 troy Exp $
  */
 public class Controller {
   final Logger logger = Logger.getLogger(Controller.class);
-  private static final String DAO_PATH = "us.lump.envelope.server.dao.";
+  private static final String DAO_PATH = "net.lump.envelope.server.dao.";
   private static final String SPACE = " ";
   private HttpServletResponse rp;
   private OutputStream os;

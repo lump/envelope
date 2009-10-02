@@ -1,7 +1,7 @@
-package us.lump.envelope.shared.entity;
+package net.lump.envelope.shared.entity;
 
 import org.hibernate.annotations.Type;
-import us.lump.lib.Money;
+import net.lump.lib.Money;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -13,7 +13,7 @@ import java.util.Collection;
  * Categories, which are tied to Accounts.
  *
  * @author Troy Bowman
- * @version $Id: Allocation.java,v 1.2 2009/07/13 18:38:06 troy Exp $
+ * @version $Id: Allocation.java,v 1.3 2009/10/02 22:06:23 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
@@ -146,7 +146,7 @@ public class Allocation extends Identifiable<Integer, Timestamp> {
    * @return Money
    */
   @Column(name = "amount", nullable = false, precision = 2)
-  @Type(type = "us.lump.envelope.shared.entity.type.MoneyType")
+  @Type(type = "net.lump.envelope.shared.entity.type.MoneyType")
   public Money getAmount() {
     return amount;
   }

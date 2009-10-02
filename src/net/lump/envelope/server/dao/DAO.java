@@ -1,4 +1,4 @@
-package us.lump.envelope.server.dao;
+package net.lump.envelope.server.dao;
 
 import org.apache.log4j.Logger;
 import org.hibernate.*;
@@ -7,10 +7,10 @@ import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.impl.SessionImpl;
-import us.lump.envelope.server.ThreadInfo;
-import us.lump.envelope.shared.entity.*;
-import us.lump.envelope.shared.entity.Transaction;
-import us.lump.envelope.shared.exception.EnvelopeException;
+import net.lump.envelope.server.ThreadInfo;
+import net.lump.envelope.shared.entity.*;
+import net.lump.envelope.shared.entity.Transaction;
+import net.lump.envelope.shared.exception.EnvelopeException;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -24,7 +24,7 @@ import java.util.Properties;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.29 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: DAO.java,v 1.30 2009/10/02 22:06:23 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;

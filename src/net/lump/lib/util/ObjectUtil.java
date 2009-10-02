@@ -1,4 +1,4 @@
-package us.lump.lib.util;
+package net.lump.lib.util;
 
 import org.apache.log4j.Logger;
 
@@ -10,7 +10,7 @@ import java.io.*;
  * Misc Object Utilities.
  *
  * @author troy
- * @version $Id: ObjectUtil.java,v 1.3 2009/07/06 21:45:29 troy Exp $
+ * @version $Id: ObjectUtil.java,v 1.4 2009/10/02 22:06:23 troy Exp $
  */
 public class ObjectUtil {
 

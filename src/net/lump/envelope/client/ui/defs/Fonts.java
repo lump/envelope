@@ -1,4 +1,4 @@
-package us.lump.envelope.client.ui.defs;
+package net.lump.envelope.client.ui.defs;
 
 import java.awt.*;
 
@@ -6,7 +6,7 @@ import java.awt.*;
  * .
  *
  * @author troy
- * @version $Id: Fonts.java,v 1.4 2009/07/27 16:37:04 troy Exp $
+ * @version $Id: Fonts.java,v 1.5 2009/10/02 22:06:23 troy Exp $
  */
 public enum Fonts {
 

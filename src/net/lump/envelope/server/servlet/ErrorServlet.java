@@ -1,4 +1,4 @@
-package us.lump.envelope.server.servlet;
+package net.lump.envelope.server.servlet;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -11,7 +11,7 @@ import java.io.PrintWriter;
  * Handle errors in a different way.
  *
  * @author troy
- * @version $Id: ErrorServlet.java,v 1.2 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: ErrorServlet.java,v 1.3 2009/10/02 22:06:23 troy Exp $
  */
 public class ErrorServlet extends HttpServlet {
   protected void doGet(HttpServletRequest request, HttpServletResponse response)

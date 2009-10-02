@@ -16,7 +16,7 @@ outjar=slim-client
 
 # parse the loaded text file to get a list of class files
 grep http:// loaded.txt \
-  | egrep -v us.lump.envelope.client.Main\|us.lump.envelope.client.ui.defs.Strings\|us.lump.client.ui.MainFrame \
+  | egrep -v net.lump.envelope.client.Main\|net.lump.envelope.client.ui.defs.Strings\|net.lump.client.ui.MainFrame \
   | perl -lne '/.*?\s(.*?)\s+.*$/;$a=$1;$a=~s/\./\//g; print $a' > $listfile
 
 rm -rf $dir

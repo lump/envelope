@@ -1,7 +1,7 @@
-package us.lump.envelope.shared.entity;
+package net.lump.envelope.shared.entity;
 
 import org.hibernate.annotations.Type;
-import us.lump.lib.Money;
+import net.lump.lib.Money;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -12,13 +12,13 @@ import java.util.List;
  * An account object.
  *
  * @author Troy Bowman
- * @version $Id: Account.java,v 1.2 2009/07/13 18:38:06 troy Exp $
+ * @version $Id: Account.java,v 1.3 2009/10/02 22:06:23 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "accounts")
 public class Account extends Identifiable<Integer, Timestamp>
     implements Comparable<Account> {
-//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.2 $".replaceAll("\\D", ""));
+//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.3 $".replaceAll("\\D", ""));
 
   /** The type of an Account. */
   public static enum AccountType {
@@ -117,7 +117,7 @@ public class Account extends Identifiable<Integer, Timestamp>
   }
 
   @Column(name = "limit", nullable = false)
-  @Type(type = "us.lump.envelope.shared.entity.type.MoneyType")
+  @Type(type = "net.lump.envelope.shared.entity.type.MoneyType")
   public Money getLimit() {
     return limit;
   }

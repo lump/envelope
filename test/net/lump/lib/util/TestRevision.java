@@ -1,4 +1,4 @@
-package us.lump.lib.util;
+package net.lump.lib.util;
 
 import org.junit.Test;
 import junit.framework.TestCase;
@@ -7,7 +7,7 @@ import junit.framework.TestCase;
  * Test Revision.
  *
  * @author Troy Bowman
- * @version $Id: TestRevision.java,v 1.1 2008/10/30 23:00:11 troy Test $
+ * @version $Id: TestRevision.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 
 public class TestRevision extends TestCase {

@@ -1,13 +1,13 @@
-package us.lump.envelope.server.dao;
+package net.lump.envelope.server.dao;
 
-import us.lump.envelope.shared.command.Command;
-import us.lump.envelope.shared.command.security.Challenge;
-import us.lump.envelope.shared.command.security.Credentials;
-import us.lump.envelope.shared.command.security.Crypt;
-import us.lump.envelope.shared.entity.User;
-import us.lump.envelope.shared.exception.EnvelopeException;
-import static us.lump.envelope.shared.exception.EnvelopeException.Name.Invalid_Credentials;
-import us.lump.lib.util.Encryption;
+import net.lump.envelope.shared.command.Command;
+import net.lump.envelope.shared.command.security.Challenge;
+import net.lump.envelope.shared.command.security.Credentials;
+import net.lump.envelope.shared.command.security.Crypt;
+import net.lump.envelope.shared.entity.User;
+import net.lump.envelope.shared.exception.EnvelopeException;
+import static net.lump.envelope.shared.exception.EnvelopeException.Name.Invalid_Credentials;
+import net.lump.lib.util.Encryption;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -23,7 +23,7 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.19 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: Security.java,v 1.20 2009/10/02 22:06:23 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption

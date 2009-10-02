@@ -1,9 +1,9 @@
-package us.lump.envelope.client.ui;
+package net.lump.envelope.client.ui;
 
 import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationAdapter;
 import com.apple.eawt.ApplicationEvent;
-import us.lump.envelope.client.ui.components.forms.Preferences;
+import net.lump.envelope.client.ui.components.forms.Preferences;
 
 /**
  * This is in its own class to prevent having to ship apple's ui.jar.

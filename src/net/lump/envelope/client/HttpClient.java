@@ -1,13 +1,13 @@
-package us.lump.envelope.client;
+package net.lump.envelope.client;
 
-import us.lump.envelope.client.ui.prefs.LoginSettings;
-import us.lump.envelope.client.ui.prefs.ServerSettings;
-import us.lump.envelope.shared.command.Command;
-import us.lump.envelope.shared.command.OutputEvent;
-import us.lump.envelope.shared.exception.AbortException;
-import us.lump.lib.util.Base64;
-import us.lump.lib.util.CipherOutputStream;
-import us.lump.lib.util.Encryption;
+import net.lump.envelope.client.ui.prefs.LoginSettings;
+import net.lump.envelope.client.ui.prefs.ServerSettings;
+import net.lump.envelope.shared.command.Command;
+import net.lump.envelope.shared.command.OutputEvent;
+import net.lump.envelope.shared.exception.AbortException;
+import net.lump.lib.util.Base64;
+import net.lump.lib.util.CipherOutputStream;
+import net.lump.lib.util.Encryption;
 
 import javax.crypto.*;
 import java.io.*;
@@ -28,7 +28,7 @@ import java.util.zip.InflaterInputStream;
  * A http client invoker.
  *
  * @author troy
- * @version $Id: HttpClient.java,v 1.13 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: HttpClient.java,v 1.14 2009/10/02 22:06:23 troy Exp $
  */
 public class HttpClient {
 

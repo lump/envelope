@@ -1,12 +1,12 @@
-package us.lump.envelope.server.dao;
+package net.lump.envelope.server.dao;
 
-import us.lump.envelope.shared.entity.Transaction;
+import net.lump.envelope.shared.entity.Transaction;
 
 /**
  * A DAO for Transactions.
  *
  * @author Troy Bowman
- * @version $Id: Action.java,v 1.10 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: Action.java,v 1.11 2009/10/02 22:06:23 troy Exp $
  */
 public class Action extends DAO {
 

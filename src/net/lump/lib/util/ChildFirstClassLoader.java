@@ -1,4 +1,4 @@
-package us.lump.lib.util;
+package net.lump.lib.util;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -11,7 +11,7 @@ import java.net.URLClassLoader;
  * A child-first class loader.
  *
  * @author Troy Bowman
- * @version $Revision: 1.5 $
+ * @version $Revision: 1.6 $
  */
 public class ChildFirstClassLoader extends URLClassLoader {
 

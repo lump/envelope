@@ -1,11 +1,11 @@
-package us.lump.envelope.server.servlet;
+package net.lump.envelope.server.servlet;
 
-import us.lump.envelope.server.Controller;
-import us.lump.envelope.server.dao.DAO;
-import us.lump.envelope.server.dao.Security;
-import us.lump.envelope.server.servlet.beans.ServerPrefs;
-import us.lump.envelope.shared.command.Command;
-import us.lump.lib.util.Base64;
+import net.lump.envelope.server.Controller;
+import net.lump.envelope.server.dao.DAO;
+import net.lump.envelope.server.dao.Security;
+import net.lump.envelope.server.servlet.beans.ServerPrefs;
+import net.lump.envelope.shared.command.Command;
+import net.lump.lib.util.Base64;
 
 import javax.crypto.*;
 import javax.servlet.ServletException;
@@ -26,7 +26,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: InvocationServlet.java,v 1.3 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: InvocationServlet.java,v 1.4 2009/10/02 22:06:23 troy Exp $
  */
 public class InvocationServlet extends HttpServlet {
 

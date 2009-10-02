@@ -1,7 +1,7 @@
-package us.lump.envelope.shared.command.security;
+package net.lump.envelope.shared.command.security;
 
-import us.lump.lib.util.Encryption;
-import static us.lump.lib.util.Encryption.TRANS_ENCODING;
+import net.lump.lib.util.Encryption;
+import static net.lump.lib.util.Encryption.TRANS_ENCODING;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -18,7 +18,7 @@ import java.security.PublicKey;
  * An authorization challenge.
  *
  * @author Troy Bowman
- * @version $Id: Challenge.java,v 1.1 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: Challenge.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 public class Challenge implements Serializable {
   private PublicKey serverKey;

@@ -14,7 +14,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  */
-package us.lump.lib.util;
+package net.lump.lib.util;
 
 import javax.swing.*;
 import javax.swing.text.*;

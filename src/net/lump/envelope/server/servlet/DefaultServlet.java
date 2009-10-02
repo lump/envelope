@@ -1,6 +1,6 @@
-package us.lump.envelope.server.servlet;
+package net.lump.envelope.server.servlet;
 
-import us.lump.envelope.server.servlet.beans.FileServer;
+import net.lump.envelope.server.servlet.beans.FileServer;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -12,7 +12,7 @@ import java.io.IOException;
  * This servlet handles feeding the jnlp file, jars, and classes to the client.
  *
  * @author troy
- * @version $Id: DefaultServlet.java,v 1.3 2009/06/28 16:21:35 troy Exp $
+ * @version $Id: DefaultServlet.java,v 1.4 2009/10/02 22:06:23 troy Exp $
  */
 public class DefaultServlet extends HttpServlet {
 

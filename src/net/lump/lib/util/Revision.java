@@ -1,4 +1,4 @@
-package us.lump.lib.util;
+package net.lump.lib.util;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
  * Utility class for enum access to cvs variables for this file.
  *
  * @author Troy Bowman
- * @version $Id: Revision.java,v 1.10 2009/03/18 00:38:52 troy Alpha $
+ * @version $Id: Revision.java,v 1.11 2009/10/02 22:06:23 troy Exp $
  */
 public enum Revision {
 
@@ -20,7 +20,7 @@ public enum Revision {
   Date,
   /** A standard header containing the full pathname of the rcs file, the revision number, the date (UTC), the author, the state, and the locker (if locked). Files will normally never be locked when you use cvsnt. */
   Header,
-  /** Same as $Header: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.10 2009/03/18 00:38:52 troy Alpha $, except that the rcs filename is without a path. */
+  /** Same as $Header: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.11 2009/10/02 22:06:23 troy Exp $, except that the rcs filename is without a path. */
   Id,
   /** Tag name used to check out this file. The keyword is expanded only if one checks out with an explicit tag name. For example, when running the command cvs co -r first, the keyword expands to Name: first. */
   Name,
@@ -39,14 +39,14 @@ public enum Revision {
   // get CVS to fill in the values in strings
   private final String[] REVS = new String[]{
       "$Author: troy $",
-      "$Date: 2009/03/18 00:38:52 $",
-      "$Header: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.10 2009/03/18 00:38:52 troy Alpha $",
-      "$Id: Revision.java,v 1.10 2009/03/18 00:38:52 troy Alpha $",
+      "$Date: 2009/10/02 22:06:23 $",
+      "$Header: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.11 2009/10/02 22:06:23 troy Exp $",
+      "$Id: Revision.java,v 1.11 2009/10/02 22:06:23 troy Exp $",
       "$Name:  $",
       "$Locker:  $",
-      "$Revision: 1.10 $",
+      "$Revision: 1.11 $",
       "$Source: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v $",
-      "$State: Alpha $",
+      "$State: Exp $",
   };
 
   /** the date format for Date */

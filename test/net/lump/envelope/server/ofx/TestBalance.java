@@ -1,4 +1,4 @@
-package us.lump.envelope.server.ofx;
+package net.lump.envelope.server.ofx;
 
 import junit.framework.TestCase;
 //import net.ofx.types.OFX;
@@ -20,7 +20,7 @@ import java.io.FileOutputStream;
  * .
  *
  * @author Troy Bowman
- * @version $Id: TestBalance.java,v 1.4 2008/09/12 00:21:47 troy Test $
+ * @version $Id: TestBalance.java,v 1.5 2009/10/02 22:06:23 troy Exp $
  */
 public class TestBalance extends TestCase {
   //http://java.sun.com/developer/technicalArticles/WebServices/jaxb/index.html

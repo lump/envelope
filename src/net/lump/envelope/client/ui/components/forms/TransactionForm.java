@@ -1,30 +1,30 @@
-package us.lump.envelope.client.ui.components.forms;
+package net.lump.envelope.client.ui.components.forms;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
-import us.lump.envelope.client.CriteriaFactory;
-import us.lump.envelope.client.State;
-import us.lump.envelope.client.portal.HibernatePortal;
-import us.lump.envelope.client.thread.StatusRunnable;
-import us.lump.envelope.client.thread.ThreadPool;
-import us.lump.envelope.client.ui.MainFrame;
-import us.lump.envelope.client.ui.components.MoneyTextField;
-import us.lump.envelope.client.ui.components.models.AllocationFormTableModel;
-import us.lump.envelope.client.ui.components.models.CellEditor;
-import us.lump.envelope.client.ui.components.models.MoneyRenderer;
-import us.lump.envelope.client.ui.components.models.TransactionTableModel;
-import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.shared.command.OutputEvent;
-import us.lump.envelope.shared.command.OutputListener;
-import us.lump.envelope.shared.entity.Allocation;
-import us.lump.envelope.shared.entity.Category;
-import us.lump.envelope.shared.entity.Transaction;
-import us.lump.envelope.shared.exception.AbortException;
-import us.lump.lib.Money;
-import us.lump.lib.util.ObjectUtil;
+import net.lump.envelope.client.CriteriaFactory;
+import net.lump.envelope.client.State;
+import net.lump.envelope.client.portal.HibernatePortal;
+import net.lump.envelope.client.thread.StatusRunnable;
+import net.lump.envelope.client.thread.ThreadPool;
+import net.lump.envelope.client.ui.MainFrame;
+import net.lump.envelope.client.ui.components.MoneyTextField;
+import net.lump.envelope.client.ui.components.models.AllocationFormTableModel;
+import net.lump.envelope.client.ui.components.models.CellEditor;
+import net.lump.envelope.client.ui.components.models.MoneyRenderer;
+import net.lump.envelope.client.ui.components.models.TransactionTableModel;
+import net.lump.envelope.client.ui.defs.Strings;
+import net.lump.envelope.shared.command.OutputEvent;
+import net.lump.envelope.shared.command.OutputListener;
+import net.lump.envelope.shared.entity.Allocation;
+import net.lump.envelope.shared.entity.Category;
+import net.lump.envelope.shared.entity.Transaction;
+import net.lump.envelope.shared.exception.AbortException;
+import net.lump.lib.Money;
+import net.lump.lib.util.ObjectUtil;
 
 import javax.persistence.Column;
 import javax.swing.*;
@@ -52,7 +52,7 @@ import java.util.ResourceBundle;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.19 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.20 2009/10/02 22:06:23 troy Exp $
  */
 public class TransactionForm {
   private JButton saveButton;
@@ -113,14 +113,14 @@ public class TransactionForm {
     transactionInfoPanel.setLayout(new GridLayoutManager(6, 3, new Insets(0, 0, 0, 0), -1, -1));
     transactionAllocationSplit.setLeftComponent(transactionInfoPanel);
     transactionInfoPanel.setBorder(BorderFactory.createTitledBorder(
-        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("transaction")));
+        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("transaction")));
     dateLabel = new JLabel();
-    this.$$$loadLabelText$$$(dateLabel, ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("date"));
+    this.$$$loadLabelText$$$(dateLabel, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("date"));
     transactionInfoPanel.add(dateLabel,
         new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     entityLabel = new JLabel();
-    this.$$$loadLabelText$$$(entityLabel, ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("paid.to"));
+    this.$$$loadLabelText$$$(entityLabel, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("paid.to"));
     transactionInfoPanel.add(entityLabel,
         new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -131,7 +131,7 @@ public class TransactionForm {
         null, 0, false));
     descriptionLabel = new JLabel();
     this.$$$loadLabelText$$$(descriptionLabel,
-        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("description"));
+        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("description"));
     transactionInfoPanel.add(descriptionLabel,
         new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -147,7 +147,7 @@ public class TransactionForm {
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     typeExpenseRadio = new JRadioButton();
     this.$$$loadButtonText$$$(typeExpenseRadio,
-        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("expense"));
+        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("expense"));
     transactionInfoPanel.add(typeExpenseRadio,
         new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
@@ -158,7 +158,7 @@ public class TransactionForm {
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
     totalsPanel.setBorder(
-        BorderFactory.createTitledBorder(ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("totals")));
+        BorderFactory.createTitledBorder(ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("totals")));
     totalsScrollPane = new JScrollPane();
     totalsPanel.add(totalsScrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
@@ -181,7 +181,7 @@ public class TransactionForm {
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     typeIncomeRadio = new JRadioButton();
     this.$$$loadButtonText$$$(typeIncomeRadio,
-        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("income"));
+        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("income"));
     transactionInfoPanel.add(typeIncomeRadio,
         new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
@@ -190,7 +190,7 @@ public class TransactionForm {
     allocationsPanel.setLayout(new GridLayoutManager(2, 4, new Insets(0, 0, 0, 0), -1, -1));
     transactionAllocationSplit.setRightComponent(allocationsPanel);
     allocationsPanel.setBorder(BorderFactory.createTitledBorder(
-        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("allocations")));
+        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("allocations")));
     allocationsScrollPane = new JScrollPane();
     allocationsPanel.add(allocationsScrollPane,
         new GridConstraints(1, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
@@ -205,21 +205,21 @@ public class TransactionForm {
             GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     presetsLoadButton = new JButton();
     this.$$$loadButtonText$$$(presetsLoadButton,
-        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("load"));
+        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("load"));
     allocationsPanel.add(presetsLoadButton,
         new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
             null, null, 0, false));
     presetsSaveButton = new JButton();
     this.$$$loadButtonText$$$(presetsSaveButton,
-        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("save"));
+        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("save"));
     allocationsPanel.add(presetsSaveButton,
         new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
             null, null, 0, false));
     presetsCheckBox = new JCheckBox();
     this.$$$loadButtonText$$$(presetsCheckBox,
-        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("presets"));
+        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("presets"));
     allocationsPanel.add(presetsCheckBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
         null, 0, false));
@@ -231,13 +231,13 @@ public class TransactionForm {
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
             null, null, 0, false));
     newButton = new JButton();
-    this.$$$loadButtonText$$$(newButton, ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("new"));
+    this.$$$loadButtonText$$$(newButton, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("new"));
     transactionFormPanel.add(newButton,
         new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
             null, null, 0, false));
     closeButton = new JButton();
-    this.$$$loadButtonText$$$(closeButton, ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("close"));
+    this.$$$loadButtonText$$$(closeButton, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("close"));
     transactionFormPanel.add(closeButton,
         new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null,

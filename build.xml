@@ -88,7 +88,7 @@
 
     </then>
     <else>
-      <input message="where is your tomcat deploy dir?" addproperty="tomcat.deploy.dir"/>
+      <input message="where is your tomcat deploy dir relative to this one?" addproperty="tomcat.deploy.dir"/>
       <propertyfile file="${property.file}">
         <entry key="tomcat.deploy.dir" value="${tomcat.deploy.dir}"/>
       </propertyfile>
@@ -196,10 +196,10 @@
     </unzip>
     <delete dir="${client.classes}/META-INF"/>
     <copy todir="${client.classes}">
-      <!--includes="Envelope.class, us/lump/lib/util/ChildFirstClassLoader.class"/>-->
+      <!--includes="Envelope.class, net/lump/lib/util/ChildFirstClassLoader.class"/>-->
       <fileset dir="${classes}"
-               includes="security.policy, Envelope.class, us/lump/**/*"
-               excludes="us/lump/envelope/server/**/*"/>
+               includes="security.policy, Envelope.class, net/lump/**/*"
+               excludes="net/lump/envelope/server/**/*"/>
     </copy>
   </target>
 
@@ -285,7 +285,7 @@
 
     <copy todir="${war.dir}/WEB-INF/lib">
       <fileset dir="${lib}" includes="*.jar, *.pack.gz *.png" excludes="servlet-api.jar"/>
-      <fileset dir="src/us/lump/envelope/client/ui/images"
+      <fileset dir="src/net/lump/envelope/client/ui/images"
                includes="envelope_32.png, envelope.ico, envelope.icns"/>
     </copy>
     <copy todir="${war.dir}">

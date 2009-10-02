@@ -1,4 +1,4 @@
-package us.lump.envelope.client.ui.components;
+package net.lump.envelope.client.ui.components;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +11,7 @@ import java.awt.geom.Line2D;
  * A little spinning line.
  *
  * @author Troy Bowman
- * @version $Id: Spinner.java,v 1.5 2008/09/12 00:21:47 troy Test $
+ * @version $Id: Spinner.java,v 1.6 2009/10/02 22:06:23 troy Exp $
  */
 
 public class Spinner extends JComponent {

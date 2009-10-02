@@ -1,7 +1,7 @@
-package us.lump.envelope.client.ui.prefs;
+package net.lump.envelope.client.ui.prefs;
 
-import us.lump.envelope.client.ui.defs.Strings;
-import static us.lump.envelope.client.ui.prefs.ServerSettings.Field.*;
+import net.lump.envelope.client.ui.defs.Strings;
+import static net.lump.envelope.client.ui.prefs.ServerSettings.Field.*;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;

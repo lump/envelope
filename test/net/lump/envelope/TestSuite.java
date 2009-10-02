@@ -1,16 +1,16 @@
-package us.lump.envelope;
+package net.lump.envelope;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
 import org.apache.log4j.BasicConfigurator;
-import us.lump.envelope.client.TestQuery;
-import us.lump.envelope.client.TestSecurity;
-import us.lump.envelope.client.portal.SecurityPortal;
-import us.lump.envelope.client.ui.prefs.LoginSettings;
-import us.lump.envelope.client.ui.prefs.ServerSettings;
-import us.lump.envelope.shared.exception.AbortException;
-import us.lump.lib.TestMoney;
-import us.lump.lib.util.TestEncryption;
+import net.lump.envelope.client.TestQuery;
+import net.lump.envelope.client.TestSecurity;
+import net.lump.envelope.client.portal.SecurityPortal;
+import net.lump.envelope.client.ui.prefs.LoginSettings;
+import net.lump.envelope.client.ui.prefs.ServerSettings;
+import net.lump.envelope.shared.exception.AbortException;
+import net.lump.lib.TestMoney;
+import net.lump.lib.util.TestEncryption;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
@@ -24,7 +24,7 @@ import java.security.NoSuchAlgorithmException;
  * A JUnit class which runs all tests.
  *
  * @author Troy Bowman
- * @version $Id: TestSuite.java,v 1.12 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: TestSuite.java,v 1.13 2009/10/02 22:06:23 troy Exp $
  */
 public class TestSuite extends TestCase {
   public static final String USER = "bowmantest";

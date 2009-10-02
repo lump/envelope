@@ -1,8 +1,8 @@
-package us.lump.envelope.client.ui.components;
+package net.lump.envelope.client.ui.components;
 
-import us.lump.envelope.client.ui.defs.Strings;
-import us.lump.envelope.client.ui.images.ImageResource;
-import us.lump.lib.util.Revision;
+import net.lump.envelope.client.ui.defs.Strings;
+import net.lump.envelope.client.ui.images.ImageResource;
+import net.lump.lib.util.Revision;
 
 import javax.swing.*;
 import java.awt.*;

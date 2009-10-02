@@ -1,4 +1,4 @@
-package us.lump.lib;
+package net.lump.lib;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -12,7 +12,7 @@ import java.text.ParseException;
  * and formatting.
  *
  * @author Troy Bowman
- * @version $Id: Money.java,v 1.5 2009/07/06 21:45:29 troy Exp $
+ * @version $Id: Money.java,v 1.6 2009/10/02 22:06:23 troy Exp $
  */
 public class Money extends BigDecimal implements Serializable {
   
