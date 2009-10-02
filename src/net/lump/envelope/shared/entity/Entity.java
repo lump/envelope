@@ -1,4 +1,4 @@
-package us.lump.envelope.shared.entity;
+package net.lump.envelope.shared.entity;
 
 import javax.persistence.*;
 import java.sql.Timestamp;

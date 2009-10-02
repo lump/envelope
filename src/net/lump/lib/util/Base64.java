@@ -1,4 +1,4 @@
-package us.lump.lib.util;
+package net.lump.lib.util;
 
 /**
  * Static methods for translating Base64 encoded strings to byte arrays and

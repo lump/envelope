@@ -1,4 +1,4 @@
-package us.lump.envelope.shared.entity;
+package net.lump.envelope.shared.entity;
 
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
@@ -16,7 +16,7 @@ import java.sql.Timestamp;
  * should match the account balance.
  *
  * @author Troy Bowman
- * @version $Id: Category.java,v 1.2 2009/07/13 18:38:06 troy Exp $
+ * @version $Id: Category.java,v 1.3 2009/10/02 22:06:23 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "categories")
@@ -108,7 +108,7 @@ public class Category extends Identifiable<Integer, Timestamp> implements Compar
       "from allocations a, transactions t " +
       "where a.category = id " +
       "and a.transaction = t.id and year(t.date) = year(now()))")
-  @Type(type = "us.lump.envelope.shared.entity.type.MoneyType")
+  @Type(type = "net.lump.envelope.shared.entity.type.MoneyType")
   public Money getBalance() {
     return balance;
   }
@@ -121,7 +121,7 @@ public class Category extends Identifiable<Integer, Timestamp> implements Compar
       "from allocations a, transactions t " +
       "where a.category = id " +
       "and a.transaction = t.id and year(t.date) = year(now()) and t.reconciled != 0)")
-  @Type(type = "us.lump.envelope.shared.entity.type.MoneyType")
+  @Type(type = "net.lump.envelope.shared.entity.type.MoneyType")
   public Money getReconciledBalance() {
     return reconciledBalance;
   }

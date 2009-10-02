@@ -1,4 +1,4 @@
-package us.lump.lib.util;
+package net.lump.lib.util;
 
 import javax.crypto.*;
 import java.io.*;
@@ -13,7 +13,7 @@ import java.security.spec.X509EncodedKeySpec;
  * signing and encryption.
  *
  * @author Troy Bowman
- * @version $Id: Encryption.java,v 1.11 2009/04/10 22:49:28 troy Exp $
+ * @version $Id: Encryption.java,v 1.12 2009/10/02 22:06:23 troy Exp $
  */
 
 public final class Encryption {

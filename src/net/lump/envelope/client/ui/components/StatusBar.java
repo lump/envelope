@@ -1,7 +1,7 @@
-package us.lump.envelope.client.ui.components;
+package net.lump.envelope.client.ui.components;
 
-import us.lump.envelope.client.thread.StatusElement;
-import us.lump.envelope.client.ui.defs.Strings;
+import net.lump.envelope.client.thread.StatusElement;
+import net.lump.envelope.client.ui.defs.Strings;
 
 import javax.swing.*;
 import java.awt.*;
@@ -11,7 +11,7 @@ import java.util.Vector;
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Id: StatusBar.java,v 1.8 2008/09/12 00:21:47 troy Test $
+ * @version $Id: StatusBar.java,v 1.9 2009/10/02 22:06:23 troy Exp $
  */
 
 public class StatusBar extends JPanel {

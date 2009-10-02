@@ -1,14 +1,14 @@
-package us.lump.envelope.client;
+package net.lump.envelope.client;
 
 import junit.framework.TestCase;
 import org.hibernate.criterion.DetachedCriteria;
 import org.hibernate.criterion.Restrictions;
 import org.junit.Test;
-import us.lump.envelope.TestSuite;
-import us.lump.envelope.client.portal.HibernatePortal;
-import us.lump.envelope.shared.entity.Account;
-import us.lump.envelope.shared.entity.Budget;
-import us.lump.envelope.shared.entity.Identifiable;
+import net.lump.envelope.TestSuite;
+import net.lump.envelope.client.portal.HibernatePortal;
+import net.lump.envelope.shared.entity.Account;
+import net.lump.envelope.shared.entity.Budget;
+import net.lump.envelope.shared.entity.Identifiable;
 
 /** Test Hibernate Operations. */
 public class TestHibernate extends TestCase {

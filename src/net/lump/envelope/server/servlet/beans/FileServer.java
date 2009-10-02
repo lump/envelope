@@ -1,8 +1,8 @@
-package us.lump.envelope.server.servlet.beans;
+package net.lump.envelope.server.servlet.beans;
 
 import org.apache.log4j.Logger;
-import us.lump.envelope.server.servlet.jnlp.Jnlp;
-import us.lump.lib.util.Interval;
+import net.lump.envelope.server.servlet.jnlp.Jnlp;
+import net.lump.lib.util.Interval;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -22,7 +22,7 @@ import java.util.zip.GZIPOutputStream;
  * Serves static files.
  *
  * @author troy
- * @version $Id: FileServer.java,v 1.4 2009/06/28 16:21:35 troy Exp $
+ * @version $Id: FileServer.java,v 1.5 2009/10/02 22:06:23 troy Exp $
  */
 public class FileServer {
 
@@ -33,10 +33,10 @@ public class FileServer {
   private String contentType = null;
 
   static {
-    blackList.add("us/lump/envelope/server/dao");
-    blackList.add("us/lump/envelope/server/http");
-    blackList.add("us/lump/envelope/server/log");
-    blackList.add("us/lump/envelope/server/rmi/Controlled.class");
+    blackList.add("net/lump/envelope/server/dao");
+    blackList.add("net/lump/envelope/server/http");
+    blackList.add("net/lump/envelope/server/log");
+    blackList.add("net/lump/envelope/server/rmi/Controlled.class");
   }
 
   public FileServer(HttpServletRequest rq, HttpServletResponse rp) throws IOException, ServletException {
@@ -269,7 +269,7 @@ public class FileServer {
       else if (query.matches("^info/uptime$")) returnValue = Interval.span(ManagementFactory.getRuntimeMXBean().getUptime());
       else if (query.matches("^info/security.policy$")) returnValue = "grant { permission java.security.AllPermission; };";
       else if (query.matches("^log4j.properties$")) returnValue =
-          "log4j.rootLogger=INFO, console\n" + "log4j.logger.us.lump=INFO\n" + "log4j.logger.envelope=INFO\n"
+          "log4j.rootLogger=INFO, console\n" + "log4j.logger.net.lump=INFO\n" + "log4j.logger.envelope=INFO\n"
               + "log4j.logger.org.hibernate=INFO\n" + "log4j.appender.console=org.apache.log4j.ConsoleAppender\n"
               + "log4j.appender.console.layout=org.apache.log4j.PatternLayout\n"
               + "log4j.appender.console.layout.ConversionPattern=%d [%t] %p %c{2} %m%n\n"

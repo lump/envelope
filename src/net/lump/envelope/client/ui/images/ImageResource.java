@@ -1,4 +1,4 @@
-package us.lump.envelope.client.ui.images;
+package net.lump.envelope.client.ui.images;
 
 import javax.swing.*;
 import java.awt.*;

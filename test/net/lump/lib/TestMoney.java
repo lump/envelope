@@ -1,4 +1,4 @@
-package us.lump.lib;
+package net.lump.lib;
 
 import junit.framework.TestCase;
 import org.junit.Test;
@@ -7,7 +7,7 @@ import org.junit.Test;
  * Tests MoneyType.
  *
  * @author Troy Bowman
- * @version $Id: TestMoney.java,v 1.3 2007/08/18 23:20:11 troy Test $
+ * @version $Id: TestMoney.java,v 1.4 2009/10/02 22:06:23 troy Exp $
  */
 public class TestMoney extends TestCase {
 

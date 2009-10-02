@@ -1,4 +1,4 @@
-package us.lump.envelope.shared.entity;
+package net.lump.envelope.shared.entity;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;

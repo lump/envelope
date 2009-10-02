@@ -1,4 +1,4 @@
-package us.lump.envelope.shared.entity.type;
+package net.lump.envelope.shared.entity.type;
 
 import org.hibernate.EntityMode;
 import org.hibernate.HibernateException;
@@ -14,20 +14,20 @@ import java.sql.Types;
  * A MoneyType type for Hibernate.
  *
  * @author Troy Bowman
- * @version $Id: MoneyType.java,v 1.1 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: MoneyType.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 public class MoneyType extends ImmutableType implements Serializable {
   public Object fromStringValue(String xml) {
-    return new us.lump.lib.Money(xml);
+    return new net.lump.lib.Money(xml);
   }
 
   public Object get(ResultSet rs, String name)
       throws HibernateException, SQLException {
-    return new us.lump.lib.Money(rs.getString(name));
+    return new net.lump.lib.Money(rs.getString(name));
   }
 
   public int getHashCode(Object x, EntityMode entityMode) {
-    return ((us.lump.lib.Money)x).intValue();
+    return ((net.lump.lib.Money)x).intValue();
   }
 
   public String getName() {
@@ -35,13 +35,13 @@ public class MoneyType extends ImmutableType implements Serializable {
   }
 
   public Class getReturnedClass() {
-    return us.lump.lib.Money.class;
+    return net.lump.lib.Money.class;
   }
 
   public boolean isEqual(Object x, Object y) {
     return x == y
-           || (x != null && y != null && ((us.lump.lib.Money)x)
-        .compareTo((us.lump.lib.Money)y) == 0);
+           || (x != null && y != null && ((net.lump.lib.Money)x)
+        .compareTo((net.lump.lib.Money)y) == 0);
   }
 
   public void set(PreparedStatement st, Object value, int index)

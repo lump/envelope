@@ -1,4 +1,4 @@
-package us.lump.envelope.shared.command.security;
+package net.lump.envelope.shared.command.security;
 
 //
 // Crypt
@@ -31,7 +31,7 @@ import java.security.MessageDigest;
  * A static DES and MD5 password encryption library.
  *
  * @author Troy Bowman
- * @version $Id: Crypt.java,v 1.1 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: Crypt.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 
 public final class Crypt {

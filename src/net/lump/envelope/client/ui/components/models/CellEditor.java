@@ -1,4 +1,4 @@
-package us.lump.envelope.client.ui.components.models;
+package net.lump.envelope.client.ui.components.models;
 
 /*
  * @(#)DefaultCellEditor.java	1.53 08/02/04
@@ -7,9 +7,9 @@ package us.lump.envelope.client.ui.components.models;
  * SUN PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 
-import us.lump.envelope.client.ui.defs.Colors;
-import us.lump.envelope.shared.entity.Category;
-import us.lump.lib.Money;
+import net.lump.envelope.client.ui.defs.Colors;
+import net.lump.envelope.shared.entity.Category;
+import net.lump.lib.Money;
 
 import javax.swing.*;
 import javax.swing.table.TableCellEditor;

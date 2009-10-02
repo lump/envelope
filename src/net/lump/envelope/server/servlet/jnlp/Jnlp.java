@@ -1,7 +1,7 @@
-package us.lump.envelope.server.servlet.jnlp;
+package net.lump.envelope.server.servlet.jnlp;
 
-import us.lump.envelope.client.Main;
-import us.lump.lib.util.Revision;
+import net.lump.envelope.client.Main;
+import net.lump.lib.util.Revision;
 
 import java.io.DataInputStream;
 import java.io.IOException;

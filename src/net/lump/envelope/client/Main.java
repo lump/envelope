@@ -1,8 +1,8 @@
-package us.lump.envelope.client;
+package net.lump.envelope.client;
 
 import com.incors.plaf.alloy.themes.bedouin.BedouinTheme;
 import org.apache.log4j.BasicConfigurator;
-import us.lump.envelope.client.ui.MainFrame;
+import net.lump.envelope.client.ui.MainFrame;
 
 import javax.swing.*;
 
@@ -10,7 +10,7 @@ import javax.swing.*;
  * Main class.
  *
  * @author troy
- * @version $Id: Main.java,v 1.21 2009/07/06 21:45:29 troy Exp $
+ * @version $Id: Main.java,v 1.22 2009/10/02 22:06:23 troy Exp $
  */
 public class Main implements Runnable {
   private static Main singleton;

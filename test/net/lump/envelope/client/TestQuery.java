@@ -1,15 +1,15 @@
-package us.lump.envelope.client;
+package net.lump.envelope.client;
 
 import junit.framework.TestCase;
 import org.junit.Test;
-import us.lump.envelope.TestSuite;
-import us.lump.envelope.client.portal.SecurityPortal;
+import net.lump.envelope.TestSuite;
+import net.lump.envelope.client.portal.SecurityPortal;
 
 /**
  * Test queries.
  *
  * @author troy
- * @version $Id: TestQuery.java,v 1.5 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: TestQuery.java,v 1.6 2009/10/02 22:06:23 troy Exp $
  */
 public class TestQuery extends TestCase {
 

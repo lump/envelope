@@ -1,4 +1,4 @@
-package us.lump.lib.util;
+package net.lump.lib.util;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;

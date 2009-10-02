@@ -1,4 +1,4 @@
-package us.lump.envelope.client.ui.defs;
+package net.lump.envelope.client.ui.defs;
 
 import org.apache.log4j.Logger;
 
@@ -10,7 +10,7 @@ import java.util.ResourceBundle;
  * Strings interface, for i18n.
  *
  * @author Troy Bowman
- * @version $Id: Strings.java,v 1.2 2007/08/18 23:20:11 troy Test $
+ * @version $Id: Strings.java,v 1.3 2009/10/02 22:06:23 troy Exp $
  */
 public class Strings {
   private ResourceBundle stringProperties;

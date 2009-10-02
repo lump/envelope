@@ -1,9 +1,9 @@
-package us.lump.envelope.client.portal;
+package net.lump.envelope.client.portal;
 
-import us.lump.envelope.client.ui.prefs.LoginSettings;
-import us.lump.envelope.shared.command.Command;
-import us.lump.envelope.shared.command.security.Challenge;
-import us.lump.envelope.shared.exception.AbortException;
+import net.lump.envelope.client.ui.prefs.LoginSettings;
+import net.lump.envelope.shared.command.Command;
+import net.lump.envelope.shared.command.security.Challenge;
+import net.lump.envelope.shared.exception.AbortException;
 
 import javax.swing.*;
 import java.security.PublicKey;
@@ -12,7 +12,7 @@ import java.security.PublicKey;
  * Security methods.
  *
  * @author Troy Bowman
- * @version $Id: SecurityPortal.java,v 1.14 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: SecurityPortal.java,v 1.15 2009/10/02 22:06:23 troy Exp $
  */
 
 public class SecurityPortal extends Portal {

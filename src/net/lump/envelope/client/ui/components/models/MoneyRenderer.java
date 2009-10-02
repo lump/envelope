@@ -1,8 +1,8 @@
-package us.lump.envelope.client.ui.components.models;
+package net.lump.envelope.client.ui.components.models;
 
-import us.lump.envelope.client.ui.defs.Colors;
-import us.lump.envelope.client.ui.defs.Fonts;
-import us.lump.lib.Money;
+import net.lump.envelope.client.ui.defs.Colors;
+import net.lump.envelope.client.ui.defs.Fonts;
+import net.lump.lib.Money;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;

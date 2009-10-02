@@ -1,10 +1,10 @@
-package us.lump.envelope.client.thread;
+package net.lump.envelope.client.thread;
 
 /**
  * Status element.
  *
  * @author Troy Bowman
- * @version $Id: StatusElement.java,v 1.6 2009/04/10 22:49:27 troy Exp $
+ * @version $Id: StatusElement.java,v 1.7 2009/10/02 22:06:23 troy Exp $
  */
 
 public class StatusElement {

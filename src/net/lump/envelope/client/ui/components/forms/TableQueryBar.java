@@ -1,4 +1,4 @@
-package us.lump.envelope.client.ui.components.forms;
+package net.lump.envelope.client.ui.components.forms;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -115,7 +115,7 @@ public class TableQueryBar {
     endDateLabel = new JLabel();
     endDateLabel.setHorizontalAlignment(4);
     endDateLabel.setHorizontalTextPosition(4);
-    this.$$$loadLabelText$$$(endDateLabel, ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("to"));
+    this.$$$loadLabelText$$$(endDateLabel, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("to"));
     queryPanel.add(endDateLabel,
         new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, 1, 1, null, null, null, 0,
             false));
@@ -123,7 +123,7 @@ public class TableQueryBar {
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null, null, 0, false));
     refreshButton = new JButton();
     this.$$$loadButtonText$$$(refreshButton,
-        ResourceBundle.getBundle("us/lump/envelope/client/ui/defs/Strings").getString("refresh"));
+        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("refresh"));
     queryPanel.add(refreshButton, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
         null, 0, false));

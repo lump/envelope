@@ -1,4 +1,4 @@
-package us.lump.lib.util;
+package net.lump.lib.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -9,7 +9,7 @@ import java.util.zip.GZIPOutputStream;
  * Compression utility class.
  *
  * @author Troy Bowman
- * @version $Id: Compression.java,v 1.5 2008/09/20 05:29:59 troy Test $
+ * @version $Id: Compression.java,v 1.6 2009/10/02 22:06:23 troy Exp $
  */
 
 public class Compression {

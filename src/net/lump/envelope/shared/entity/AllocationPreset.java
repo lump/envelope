@@ -1,4 +1,4 @@
-package us.lump.envelope.shared.entity;
+package net.lump.envelope.shared.entity;
 
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
@@ -11,7 +11,7 @@ import java.sql.Timestamp;
  * A record which maintains an allocation preset.
  *
  * @author troy
- * @version $Id: AllocationPreset.java,v 1.1 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: AllocationPreset.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "allocation_presets")

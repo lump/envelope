@@ -1,13 +1,13 @@
-package us.lump.envelope.client;
+package net.lump.envelope.client;
 
 import org.apache.log4j.Logger;
 import org.hibernate.criterion.*;
-import us.lump.envelope.client.portal.HibernatePortal;
-import us.lump.envelope.client.ui.components.Hierarchy;
-import us.lump.envelope.shared.entity.*;
-import us.lump.envelope.shared.exception.AbortException;
-import us.lump.envelope.shared.exception.EnvelopeException;
-import us.lump.lib.Money;
+import net.lump.envelope.client.portal.HibernatePortal;
+import net.lump.envelope.client.ui.components.Hierarchy;
+import net.lump.envelope.shared.entity.*;
+import net.lump.envelope.shared.exception.AbortException;
+import net.lump.envelope.shared.exception.EnvelopeException;
+import net.lump.lib.Money;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -17,7 +17,7 @@ import java.util.List;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.23 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: CriteriaFactory.java,v 1.24 2009/10/02 22:06:23 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {

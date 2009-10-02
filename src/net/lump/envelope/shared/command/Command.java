@@ -1,9 +1,9 @@
-package us.lump.envelope.shared.command;
+package net.lump.envelope.shared.command;
 
 import org.hibernate.criterion.DetachedCriteria;
-import us.lump.envelope.shared.command.security.Credentials;
-import us.lump.envelope.shared.entity.Identifiable;
-import us.lump.lib.util.Encryption;
+import net.lump.envelope.shared.command.security.Credentials;
+import net.lump.envelope.shared.entity.Identifiable;
+import net.lump.lib.util.Encryption;
 
 import javax.swing.event.EventListenerList;
 import java.io.Serializable;
@@ -19,7 +19,7 @@ import java.util.List;
  * A command.  Commands are used by the client to be able to issue remote requests.
  *
  * @author Troy Bowman
- * @version $Id: Command.java,v 1.1 2009/07/13 17:21:44 troy Exp $
+ * @version $Id: Command.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 public class Command implements Serializable {
   /**
@@ -37,7 +37,7 @@ public class Command implements Serializable {
    * command, and each command has a bit associated with it for bitwise operations.
    *
    * @author Troy Bowman
-   * @version $Id: Command.java,v 1.1 2009/07/13 17:21:44 troy Exp $
+   * @version $Id: Command.java,v 1.2 2009/10/02 22:06:23 troy Exp $
    */
   public enum Name {
 

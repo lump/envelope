@@ -1,6 +1,6 @@
-package us.lump.envelope.server.servlet.beans;
+package net.lump.envelope.server.servlet.beans;
 
-import us.lump.envelope.server.dao.DAO;
+import net.lump.envelope.server.dao.DAO;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -14,7 +14,7 @@ import java.util.prefs.Preferences;
  * Configure stuff.
  *
  * @author troy
- * @version $Id: ServerPrefs.java,v 1.3 2009/06/28 16:21:35 troy Exp $
+ * @version $Id: ServerPrefs.java,v 1.4 2009/10/02 22:06:23 troy Exp $
  */
 public class ServerPrefs {
 
@@ -101,7 +101,7 @@ public class ServerPrefs {
       boolean authorized = false;
       String authString = rq.getHeader("authorization");
       if (authString != null) {
-        String[] creds = (new String(us.lump.lib.util.Base64.base64ToByteArray(
+        String[] creds = (new String(net.lump.lib.util.Base64.base64ToByteArray(
             authString.replaceAll("[Bb]asic\\s*", "")))).split(":");
         if (creds[0].equalsIgnoreCase(username) && creds[1].equals(password))
           authorized = true;

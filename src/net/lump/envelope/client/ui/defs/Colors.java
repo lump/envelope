@@ -1,4 +1,4 @@
-package us.lump.envelope.client.ui.defs;
+package net.lump.envelope.client.ui.defs;
 
 import java.awt.*;
 import java.io.IOException;
@@ -10,7 +10,7 @@ import java.util.Properties;
  * Keeps our color definitions.
  *
  * @author troy
- * @version $Id: Colors.java,v 1.3 2008/07/21 21:59:18 troy Test $
+ * @version $Id: Colors.java,v 1.4 2009/10/02 22:06:23 troy Exp $
  */
 public class Colors {
   private HashMap<String, Color> colors = new HashMap<String, Color>();

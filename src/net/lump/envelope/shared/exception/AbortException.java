@@ -1,4 +1,4 @@
-package us.lump.envelope.shared.exception;
+package net.lump.envelope.shared.exception;
 
 /**
  * Tell client stuff to stop processing.
