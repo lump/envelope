@@ -16,6 +16,8 @@
  */
 package net.lump.lib.util;
 
+import com.toedter.calendar.JDateChooser;
+
 import javax.swing.*;
 import javax.swing.text.*;
 import java.awt.event.ActionEvent;
@@ -83,7 +85,7 @@ public class EmacsKeyBindings {
           DefaultEditorKit.beginAction),
       new JTextComponent.KeyBinding(
           KeyStroke.getKeyStroke(KeyEvent.VK_LESS,
-                                 InputEvent.ALT_MASK + InputEvent.SHIFT_MASK),
+              InputEvent.ALT_MASK + InputEvent.SHIFT_MASK),
           DefaultEditorKit.endAction),
       new JTextComponent.KeyBinding(
           KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.ALT_MASK),
@@ -96,59 +98,58 @@ public class EmacsKeyBindings {
           DefaultEditorKit.backwardAction),
       new JTextComponent.KeyBinding(KeyStroke.getKeyStroke(
           KeyEvent.VK_V, InputEvent.CTRL_MASK),
-                                    DefaultEditorKit.pageDownAction),
+          DefaultEditorKit.pageDownAction),
       new JTextComponent.KeyBinding(
           KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.ALT_MASK),
           DefaultEditorKit.pageUpAction),
   };
 
   /**
-   * Activates Emacs keybindings for <code>JTextArea</code>,
-   * <code>JTextPane</code>, <code>JTextField</code> and
+   * Activates Emacs keybindings for <code>JTextArea</code>, <code>JTextPane</code>, <code>JTextField</code> and
    * <code>JEditorPane</code>.
    */
   public static void loadEmacsKeyBindings() {
-    JTextComponent[] jtcs =
-        {new JTextArea(), new JTextPane(), new JTextField(), new JEditorPane()};
 
-    for (JTextComponent jtc : jtcs) {
+    for (JTextComponent jtc : new JTextComponent[]{
+        new JTextArea(), new JTextPane(), new JTextField(), new JEditorPane(),
+        (JTextComponent)new JDateChooser().getDateEditor().getUiComponent()}) {
       Keymap k = jtc.getKeymap();
 
       JTextComponent.loadKeymap(k, EMACS_KEY_BINDINGS, jtc.getActions());
 
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_D,
-                                                     InputEvent.ALT_MASK),
-                              new KillWordAction(killWordAction));
+          InputEvent.ALT_MASK),
+          new KillWordAction(killWordAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE,
-                                                     InputEvent.ALT_MASK),
-                              new BackwardKillWordAction(backwardKillWordAction));
+          InputEvent.ALT_MASK),
+          new BackwardKillWordAction(backwardKillWordAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE,
-                                                     InputEvent.CTRL_MASK),
-                              new SetMarkCommandAction(setMarkCommandAction));
+          InputEvent.CTRL_MASK),
+          new SetMarkCommandAction(setMarkCommandAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_W,
-                                                     InputEvent.ALT_MASK),
-                              new KillRingSaveAction(killRingSaveAction));
+          InputEvent.ALT_MASK),
+          new KillRingSaveAction(killRingSaveAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_W,
-                                                     InputEvent.CTRL_MASK),
-                              new KillRegionAction(killRegionAction));
+          InputEvent.CTRL_MASK),
+          new KillRegionAction(killRegionAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_K,
-                                                     InputEvent.CTRL_MASK),
-                              new KillLineAction(killLineAction));
+          InputEvent.CTRL_MASK),
+          new KillLineAction(killLineAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_Y,
-                                                     InputEvent.CTRL_MASK),
-                              new YankAction("emacs-yank"));
+          InputEvent.CTRL_MASK),
+          new YankAction("emacs-yank"));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_Y,
-                                                     InputEvent.ALT_MASK),
-                              new YankPopAction("emacs-yank-pop"));
+          InputEvent.ALT_MASK),
+          new YankPopAction("emacs-yank-pop"));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_C,
-                                                     InputEvent.ALT_MASK),
-                              new CapitalizeWordAction(capitalizeWordAction));
+          InputEvent.ALT_MASK),
+          new CapitalizeWordAction(capitalizeWordAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_L,
-                                                     InputEvent.ALT_MASK),
-                              new DowncaseWordAction(downcaseWordAction));
+          InputEvent.ALT_MASK),
+          new DowncaseWordAction(downcaseWordAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_U,
-                                                     InputEvent.ALT_MASK),
-                              new UpcaseWordAction(upcaseWordAction));
+          InputEvent.ALT_MASK),
+          new UpcaseWordAction(upcaseWordAction));
     }
   }
 
@@ -247,7 +248,8 @@ public class EmacsKeyBindings {
           if (start == end && jtc.isEditable()) {
             Document doc = jtc.getDocument();
             doc.remove(end, 1);
-          } else {
+          }
+          else {
             jtc.setSelectionStart(start);
             jtc.setSelectionEnd(end);
             YankAction.add(jtc.getSelectedText());
@@ -318,9 +320,8 @@ public class EmacsKeyBindings {
 
 
     /**
-     * Uniquely adds <code>item</code> to killring, i.e. if <code>item</code> is
-     * already in killring, it's moved to the front, otherwise it's added as
-     * first element.
+     * Uniquely adds <code>item</code> to killring, i.e. if <code>item</code> is already in killring, it's moved to the front,
+     * otherwise it's added as first element.
      */
     public static void add(String item) {
       for (Iterator i = killring.iterator(); i.hasNext();) {
@@ -333,8 +334,7 @@ public class EmacsKeyBindings {
     }
 
     /**
-     * Returns killring successor of <code>item</code> and adds
-     * <code>item</code> to killring.
+     * Returns killring successor of <code>item</code> and adds <code>item</code> to killring.
      *
      * @param predecessor
      *
@@ -356,7 +356,8 @@ public class EmacsKeyBindings {
             String result = (String)i.next();
             killring.addFirst(predecessor);
             return result;
-          } else {
+          }
+          else {
             break;
           }
         }
@@ -384,7 +385,8 @@ public class EmacsKeyBindings {
         if (toYank != null) {
           jtc.replaceSelection(toYank);
           YankAction.end = jtc.getCaretPosition();
-        } else {
+        }
+        else {
           jtc.getToolkit().beep();
         }
       }
@@ -400,8 +402,8 @@ public class EmacsKeyBindings {
     }
 
     /**
-     * At first the same code as in {@link DowncaseWordAction} is performed, to
-     * ensure the word is in lower case, then the first letter is capialized.
+     * At first the same code as in {@link DowncaseWordAction} is performed, to ensure the word is in lower case, then the first
+     * letter is capialized.
      */
     public void actionPerformed(ActionEvent event) {
       JTextComponent jtc = getTextComponent(event);
