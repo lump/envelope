@@ -1,6 +1,5 @@
 package net.lump.envelope.client.ui;
 
-import org.apache.log4j.BasicConfigurator;
 import net.lump.envelope.client.State;
 import net.lump.envelope.client.thread.StatusElement;
 import net.lump.envelope.client.ui.components.AboutBox;
@@ -13,6 +12,7 @@ import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.client.ui.images.ImageResource;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.util.EmacsKeyBindings;
+import org.apache.log4j.BasicConfigurator;
 
 import javax.swing.*;
 import java.awt.*;
@@ -24,7 +24,7 @@ import java.beans.PropertyChangeListener;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.40 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: MainFrame.java,v 1.41 2009/10/03 00:29:09 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
