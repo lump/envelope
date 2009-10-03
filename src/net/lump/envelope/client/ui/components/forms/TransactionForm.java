@@ -16,6 +16,7 @@ import net.lump.envelope.client.ui.components.models.AllocationFormTableModel;
 import net.lump.envelope.client.ui.components.models.CellEditor;
 import net.lump.envelope.client.ui.components.models.MoneyRenderer;
 import net.lump.envelope.client.ui.components.models.TransactionTableModel;
+import net.lump.envelope.client.ui.defs.Fonts;
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.shared.command.OutputEvent;
 import net.lump.envelope.shared.command.OutputListener;
@@ -52,7 +53,7 @@ import java.util.ResourceBundle;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.20 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.21 2009/10/03 01:53:27 troy Exp $
  */
 public class TransactionForm {
   private JButton saveButton;
@@ -120,7 +121,8 @@ public class TransactionForm {
         new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     entityLabel = new JLabel();
-    this.$$$loadLabelText$$$(entityLabel, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("paid.to"));
+    this.$$$loadLabelText$$$(entityLabel,
+        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("paid.to"));
     transactionInfoPanel.add(entityLabel,
         new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -591,7 +593,7 @@ public class TransactionForm {
     }
     if (editingTransaction != null)
       amount.setText(expense ? editingTransaction.getAmount().negate().toFormattedString()
-                             : editingTransaction.getAmount().toFormattedString());
+                     : editingTransaction.getAmount().toFormattedString());
 
   }
 
@@ -705,7 +707,9 @@ public class TransactionForm {
     Long today = System.currentTimeMillis();
     today = today - (today % 86400000);
 
-    transactionDate = new JDateChooser(new Date(today), "MMM d, yyyy", new JTextFieldDateEditor());
+    transactionDate = new JDateChooser(new Date(today), "MM/dd/yyyy", new JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
+    transactionDate.setFont(Fonts.fixed.getFont());
+
 
     transactionDate.setPreferredSize(
         new Dimension(transactionDate.getPreferredSize().width + 30, transactionDate.getPreferredSize().height));
