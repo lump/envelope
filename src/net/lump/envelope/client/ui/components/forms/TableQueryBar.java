@@ -5,9 +5,14 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
+import net.lump.envelope.client.ui.defs.Fonts;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.Date;
 import java.util.ResourceBundle;
 
@@ -37,6 +42,24 @@ public class TableQueryBar {
     table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
     table.getTableHeader().setReorderingAllowed(false);
     table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+    KeyListener refreshKeyListener = new KeyListener() {
+
+      public void keyTyped(KeyEvent e) {}
+
+      public void keyReleased(KeyEvent e) {}
+
+      public void keyPressed(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+          for (ActionListener al : refreshButton.getActionListeners()) {
+            al.actionPerformed(new ActionEvent(e.getSource(), e.getID(), refreshButton.getText()));
+          }
+        }
+      }
+    };
+
+    beginDate.getDateEditor().getUiComponent().addKeyListener(refreshKeyListener);
+    endDate.getDateEditor().getUiComponent().addKeyListener(refreshKeyListener);
 
 //    table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
 //      public void valueChanged(ListSelectionEvent e) {
@@ -96,8 +119,12 @@ public class TableQueryBar {
   private void createUIComponents() {
     Long today = System.currentTimeMillis();
     today = ((today - (today % 86400000)) + 86400000);
-    beginDate = new JDateChooser(new Date(today - (86400000L * 90)), "MMM d, yyyy", new JTextFieldDateEditor());
-    endDate = new JDateChooser(new Date(today), "MMM d, yyyy", new JTextFieldDateEditor());
+    beginDate = new JDateChooser(new Date(today - (86400000L * 90)), "MM/dd/yyyy", new
+        JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
+    beginDate.setFont(Fonts.fixed.getFont());
+
+    endDate = new JDateChooser(new Date(today), "MM/dd/yyyy", new JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
+    endDate.setFont(Fonts.fixed.getFont());
     beginDate.setPreferredSize(new Dimension(beginDate.getPreferredSize().width + 10, beginDate.getPreferredSize().height));
     endDate.setPreferredSize(new Dimension(endDate.getPreferredSize().width + 10, endDate.getPreferredSize().height));
   }
@@ -116,9 +143,8 @@ public class TableQueryBar {
     endDateLabel.setHorizontalAlignment(4);
     endDateLabel.setHorizontalTextPosition(4);
     this.$$$loadLabelText$$$(endDateLabel, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("to"));
-    queryPanel.add(endDateLabel,
-        new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, 1, 1, null, null, null, 0,
-            false));
+    queryPanel.add(endDateLabel, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, 1, 1,
+        null, null, null, 0, false));
     queryPanel.add(endDate, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null, null, 0, false));
     refreshButton = new JButton();
