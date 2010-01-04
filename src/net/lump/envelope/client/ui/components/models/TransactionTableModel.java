@@ -28,7 +28,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * A table model which lists transactions.
  *
  * @author Troy Bowman
- * @version $Id: TransactionTableModel.java,v 1.42 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: TransactionTableModel.java,v 1.43 2010/01/04 06:07:24 troy Exp $
  */
 public class TransactionTableModel extends AbstractTableModel {
   private Vector<Object[]> transactions = new Vector<Object[]>();
@@ -48,7 +48,7 @@ public class TransactionTableModel extends AbstractTableModel {
 
   private BlockingQueue<Task> q = new LinkedBlockingQueue<Task>();
 
-  public static enum COLUMN {
+  public enum COLUMN {
     C,
     Date,
     Amount,
@@ -134,33 +134,33 @@ public class TransactionTableModel extends AbstractTableModel {
             List retval = hp.detachedCriteriaQueryList(
                 cf.getTransactions(TransactionTableModel.this.thing, beginDate, endDate),
                 new OutputListener() {
-              public void commandOutputOccurred(OutputEvent event) {
-                synchronized (finished) {
-                  StatusBar sb = StatusBar.getInstance();
+                  public void commandOutputOccurred(OutputEvent event) {
+                    synchronized (finished) {
+                      StatusBar sb = StatusBar.getInstance();
 
-                  if (sb.getProgress().isVisible()) {
-                    if (sb.getProgress().getMinimum() != 0) sb.getProgress().setMinimum(0);
-                    if (sb.getProgress().getMaximum() != event.getTotal().intValue())
-                      sb.getProgress().setMaximum(event.getTotal().intValue());
-                    sb.getProgress().setValue(event.getIndex().intValue());
+                      if (sb.getProgress().isVisible()) {
+                        if (sb.getProgress().getMinimum() != 0) sb.getProgress().setMinimum(0);
+                        if (sb.getProgress().getMaximum() != event.getTotal().intValue())
+                          sb.getProgress().setMaximum(event.getTotal().intValue());
+                        sb.getProgress().setValue(event.getIndex().intValue());
+                      }
+                      else if (startDate < (System.currentTimeMillis() - 150)) sb.getProgress().setVisible(true);
+
+                      statusElement.setValue(
+                          Strings.get("reading") + " " + TransactionTableModel.this.thing + " row " + (event.getIndex() + 1L));
+                      StatusBar.getInstance().updateLabel();
+
+                      updateTableFor(event.getIndex().intValue(), (Object[])event.getPayload());
+                      rowCount = event.getIndex().intValue() + 1;
+
+                      if (event.getIndex().equals(event.getTotal() - 1)) {
+                        finished[0] = Boolean.TRUE;
+                        if (sb.getProgress().isVisible()) sb.getProgress().setVisible(false);
+                        finished.notifyAll();
+                      }
+                    }
                   }
-                  else if (startDate < (System.currentTimeMillis() - 150)) sb.getProgress().setVisible(true);
-
-                  statusElement.setValue(
-                      Strings.get("reading") + " " + TransactionTableModel.this.thing + " row " + (event.getIndex() + 1L));
-                  StatusBar.getInstance().updateLabel();
-
-                  updateTableFor(event.getIndex().intValue(), (Object[])event.getPayload());
-                  rowCount = event.getIndex().intValue() + 1;
-
-                  if (event.getIndex().equals(event.getTotal() - 1)) {
-                    finished[0] = Boolean.TRUE;
-                    if (sb.getProgress().isVisible()) sb.getProgress().setVisible(false);
-                    finished.notifyAll();
-                  }
-                }
-              }
-            });
+                });
 
             if (retval.size() == 0) rowCount = 0;
 
@@ -213,10 +213,10 @@ public class TransactionTableModel extends AbstractTableModel {
     Money balance = rowNumber == 0 ? beginningReconciledBalance : (Money)transactions.get(rowNumber - 1)[COLUMN.Balance.ordinal()];
 
     // calculate balance column
-    balance = new Money(balance.add((Money)row[COLUMN.Amount.ordinal()]));
+    balance = balance.add((Money)row[COLUMN.Amount.ordinal()]);
 
     // only add reconciled balance if it tx is reconciled
-    if ((Boolean)row[COLUMN.C.ordinal()]) reconciled = new Money(reconciled.add((Money)row[COLUMN.Amount.ordinal()]));
+    if ((Boolean)row[COLUMN.C.ordinal()]) reconciled = reconciled.add((Money)row[COLUMN.Amount.ordinal()]);
 
     // create our new row
     final Object[] newRow = new Object[]{row[0], row[1], row[2], new Money(balance), new Money(reconciled), row[3], row[4], row[5]};
@@ -282,7 +282,7 @@ public class TransactionTableModel extends AbstractTableModel {
 // and re-total the reconciled column
       for (int x = row; x < transactions.size(); x++) {
         if ((Boolean)transactions.get(x)[COLUMN.C.ordinal()])
-          reconciled = new Money(reconciled.add((Money)transactions.get(x)[COLUMN.Amount.ordinal()]));
+          reconciled = reconciled.add((Money)transactions.get(x)[COLUMN.Amount.ordinal()]);
         transactions.get(x)[COLUMN.Reconciled.ordinal()] = new Money(reconciled);
         fireTableCellUpdated(x, COLUMN.Reconciled.ordinal());
       }

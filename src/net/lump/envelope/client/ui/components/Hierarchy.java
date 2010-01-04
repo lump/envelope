@@ -10,7 +10,6 @@ import net.lump.envelope.client.ui.components.models.TransactionTableModel;
 import net.lump.envelope.client.ui.defs.Colors;
 import net.lump.envelope.client.ui.defs.Fonts;
 import net.lump.envelope.client.ui.defs.Strings;
-import static net.lump.envelope.client.ui.images.ImageResource.icon.*;
 import net.lump.envelope.shared.entity.Account;
 import net.lump.envelope.shared.entity.Budget;
 import net.lump.envelope.shared.entity.Category;
@@ -31,12 +30,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
+import static net.lump.envelope.client.ui.images.ImageResource.icon.*;
+
 
 /**
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.34 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.35 2010/01/04 06:07:24 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -374,7 +375,7 @@ public class Hierarchy extends JTree {
             if (total > 1000) mainLabel.setIcon(envelope_overflow.get());
           }
           mainLabel.setText(((CategoryTotal)o).name);
-          balanceLabel.setText(((CategoryTotal)o).balance.toFormattedString());
+          balanceLabel.setText(((CategoryTotal)o).balance.toString());
           if (((CategoryTotal)o).balance.floatValue() < 0)
             balanceLabel.setForeground(Colors.getColor("red"));
         }

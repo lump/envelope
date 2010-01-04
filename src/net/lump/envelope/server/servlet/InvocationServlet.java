@@ -26,7 +26,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: InvocationServlet.java,v 1.4 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: InvocationServlet.java,v 1.5 2010/01/04 06:07:24 troy Exp $
  */
 public class InvocationServlet extends HttpServlet {
 
@@ -78,8 +78,9 @@ public class InvocationServlet extends HttpServlet {
           // we found a boundary with content, lets read it.
           HashMap<String, String> headers = new HashMap<String, String>();
           String header = readUpTo(bis, true, dnlp).toString();
+          Pattern pKV = Pattern.compile("^(.*?):\\s+(.*?)$");
           for (String line : header.split(nlp.pattern())) {
-            Matcher mKV = Pattern.compile("^(.*?):\\s+(.*?)$").matcher(line);
+            Matcher mKV = pKV.matcher(line);
             if (mKV.matches() && mKV.group(1) != null && mKV.group(2) != null)
               headers.put(mKV.group(1).toLowerCase(), mKV.group(2));
           }
@@ -229,7 +230,7 @@ public class InvocationServlet extends HttpServlet {
 
         Controller c = new Controller(rp, os);
         try {
-           c.invoke(command);
+          c.invoke(command);
         } catch (RemoteException r) {
           rp.addHeader("Single-Object", Boolean.TRUE.toString());
           rp.addIntHeader("Object-Count", 1);

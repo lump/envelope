@@ -25,7 +25,7 @@ public class MoneyTextField extends JTextField {
       public boolean verify(JComponent input) {
         JTextField i = (JTextField)input;
         try {
-          i.setText(new Money(i.getText()).toFormattedString());
+          i.setText(new Money(i.getText()).toString());
           return true;
         }
         catch (Exception e) {

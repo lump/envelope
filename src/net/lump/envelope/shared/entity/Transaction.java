@@ -1,8 +1,8 @@
 package net.lump.envelope.shared.entity;
 
+import net.lump.lib.Money;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import net.lump.lib.Money;
 
 import javax.persistence.*;
 import java.sql.Date;
@@ -15,7 +15,7 @@ import java.util.List;
  * A transaction.
  *
  * @author Troy Bowman
- * @version $Id: Transaction.java,v 1.2 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: Transaction.java,v 1.3 2010/01/04 06:07:24 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
@@ -36,10 +36,10 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
 
   public String toString() {
     String out = MessageFormat.format("{0,date,short} {1} {2}/{3}",
-                                      date,
-                                      getAmount().toFormattedString(),
-                                      entity,
-                                      description);
+        date,
+        getAmount().toString(),
+        entity,
+        description);
     for (Allocation a : allocations)
       out += System.getProperty("line.separator") + a.toString();
     return out;
