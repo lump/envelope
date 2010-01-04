@@ -7,7 +7,7 @@ import org.junit.Test;
  * Tests MoneyType.
  *
  * @author Troy Bowman
- * @version $Id: TestMoney.java,v 1.4 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: TestMoney.java,v 1.5 2010/01/04 06:07:24 troy Exp $
  */
 public class TestMoney extends TestCase {
 
@@ -48,7 +48,7 @@ public class TestMoney extends TestCase {
 
     for (int x = 0; x < in.length; x++) {
       Money money = new Money(in[x]);
-      assertEquals(out[x], money.toFormattedString());
+      assertEquals(out[x], money.toString());
     }
 
 // seeing what happens for everything

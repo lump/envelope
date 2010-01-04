@@ -23,7 +23,7 @@ public class MoneyRenderer extends DefaultTableCellRenderer {
       int row,
       int col) {
     JLabel label = new JLabel(
-        value == null ? "" : ((Money)value).toFormattedString(),
+        value == null ? "" : value.toString(),
         SwingConstants.RIGHT);
     label.setFont(Fonts.fixed.getFont());
     label.setBorder(

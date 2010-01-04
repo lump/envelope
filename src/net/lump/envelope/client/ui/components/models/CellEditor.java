@@ -9,7 +9,6 @@ package net.lump.envelope.client.ui.components.models;
 
 import net.lump.envelope.client.ui.defs.Colors;
 import net.lump.envelope.shared.entity.Category;
-import net.lump.lib.Money;
 
 import javax.swing.*;
 import javax.swing.table.TableCellEditor;
@@ -45,8 +44,8 @@ public class CellEditor extends AbstractCellEditor
   /** The delegate class which handles all methods sent from the <code>CellEditor</code>. */
   protected EditorDelegate delegate;
   /**
-   * An integer specifying the number of clicks needed to start editing. Even if <code>clickCountToStart</code> is defined as
-   * zero, it will not initiate until a click occurs.
+   * An integer specifying the number of clicks needed to start editing. Even if <code>clickCountToStart</code> is defined as zero,
+   * it will not initiate until a click occurs.
    */
   protected int clickCountToStart = 1;
 
@@ -64,11 +63,7 @@ public class CellEditor extends AbstractCellEditor
     this.clickCountToStart = 1;
     delegate = new EditorDelegate() {
       public void setValue(Object value) {
-        textField.setText((value != null)
-                          ? value instanceof Money
-                            ? ((Money)value).toFormattedString()
-                            : value.toString()
-                          : "");
+        textField.setText((value != null) ? value.toString() : "");
         textField.selectAll();
         textField.setBorder(BorderFactory.createLineBorder(Colors.getColor("black")));
       }
@@ -287,6 +282,7 @@ public class CellEditor extends AbstractCellEditor
 
   //  Implementing the CellEditor Interface
 //
+
   /** Implements the <code>TableCellEditor</code> interface. */
   public Component getTableCellEditorComponent(JTable table, Object value,
       boolean isSelected,
@@ -346,8 +342,8 @@ public class CellEditor extends AbstractCellEditor
     }
 
     /**
-     * Returns true if <code>anEvent</code> is <b>not</b> a <code>MouseEvent</code>.  Otherwise, it returns true if the
-     * necessary number of clicks have occurred, and returns false otherwise.
+     * Returns true if <code>anEvent</code> is <b>not</b> a <code>MouseEvent</code>.  Otherwise, it returns true if the necessary
+     * number of clicks have occurred, and returns false otherwise.
      *
      * @param anEvent the event
      *

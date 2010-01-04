@@ -28,7 +28,7 @@ import java.util.zip.InflaterInputStream;
  * A http client invoker.
  *
  * @author troy
- * @version $Id: HttpClient.java,v 1.14 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: HttpClient.java,v 1.15 2010/01/04 06:07:24 troy Exp $
  */
 public class HttpClient {
 
@@ -189,7 +189,7 @@ public class HttpClient {
           command.fireOutput(new OutputEvent(command, (long)count, (long)x, s));
           // allow the UI event thread to catch up
           // sleep 1 ms every 5 rows
-          if (x % 5 == 0) try { Thread.sleep(3); } catch (InterruptedException ignore) { }
+          if (x % 3 == 0) try { Thread.sleep(1); } catch (InterruptedException ignore) { }
 
         }
       }

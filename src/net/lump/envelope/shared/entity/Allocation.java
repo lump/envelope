@@ -1,7 +1,7 @@
 package net.lump.envelope.shared.entity;
 
-import org.hibernate.annotations.Type;
 import net.lump.lib.Money;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
@@ -9,11 +9,10 @@ import java.text.MessageFormat;
 import java.util.Collection;
 
 /**
- * A many-to-one list of Allocations for a Transaction.  Allocations are tied to
- * Categories, which are tied to Accounts.
+ * A many-to-one list of Allocations for a Transaction.  Allocations are tied to Categories, which are tied to Accounts.
  *
  * @author Troy Bowman
- * @version $Id: Allocation.java,v 1.3 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: Allocation.java,v 1.4 2010/01/04 06:07:24 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
@@ -28,9 +27,7 @@ public class Allocation extends Identifiable<Integer, Timestamp> {
   private Money amount;
 
   public String toString() {
-    String out = MessageFormat.format("{0}@{1}",
-                                      amount.toFormattedString(),
-                                      category.toString());
+    String out = MessageFormat.format("{0}@{1}", amount.toString(), category.toString());
 //    for (Tag t : tags)
 //      out += System.getProperty("line.separator") + "\t" + t.toString();
     return out;
@@ -126,7 +123,7 @@ public class Allocation extends Identifiable<Integer, Timestamp> {
    * @return Transaction
    */
   @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    @JoinColumn(name = "transaction")
+  @JoinColumn(name = "transaction")
   public Transaction getTransaction() {
     return transaction;
   }

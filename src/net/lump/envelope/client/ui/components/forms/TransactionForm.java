@@ -42,7 +42,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.Comparator;
@@ -53,7 +52,7 @@ import java.util.ResourceBundle;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.21 2009/10/03 01:53:27 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.22 2010/01/04 06:07:24 troy Exp $
  */
 public class TransactionForm {
   private JButton saveButton;
@@ -525,12 +524,12 @@ public class TransactionForm {
 
       // if it's new, just return
       if (formState != FormState.New) {
-        if ((new Money(amount.getText()).compareTo(new BigDecimal(0)) > 0 && typeExpenseRadio.isSelected())
+        if ((new Money(amount.getText()).compareTo(new Money(0)) > 0 && typeExpenseRadio.isSelected())
             || (!editingTransaction.getDate().equals(transactionDate.getDate()))
             || (!editingTransaction.getEntity().equals(entity.getSelectedItem()))
             || (!editingTransaction.getDescription().equals(description.getText()))
             || (typeExpenseRadio.isSelected()
-                ? !(new Money(editingTransaction.getAmount().negate()).equals(new Money(amount.getText())))
+                ? !(editingTransaction.getAmount().negate()).equals(new Money(amount.getText()))
                 : !editingTransaction.getAmount().equals(new Money(amount.getText()))))
           formState = FormState.Edited;
         else {
@@ -592,9 +591,8 @@ public class TransactionForm {
         tableModel.fireTableRowsUpdated(0, tableModel.getTransaction().getAllocations().size() - 1);
     }
     if (editingTransaction != null)
-      amount.setText(expense ? editingTransaction.getAmount().negate().toFormattedString()
-                     : editingTransaction.getAmount().toFormattedString());
-
+      amount.setText(expense ? editingTransaction.getAmount().negate().toString()
+                             : editingTransaction.getAmount().toString());
   }
 
   public void loadTransactionForId(final int id) {
@@ -629,7 +627,7 @@ public class TransactionForm {
                 try {
                   tableModel.setTransaction(editingTransaction, originalTransaction);
 
-                  amount.setText(editingTransaction.getAmount().toFormattedString());
+                  amount.setText(editingTransaction.getAmount().toString());
 
                   if (editingTransaction.getAmount().doubleValue() > 0) setView(false);
                   else setView(true);
