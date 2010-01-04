@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.18 2009/05/31 21:45:30 troy Exp $
+# $Id: migrate.pl,v 1.19 2010/01/04 17:14:46 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -56,11 +56,12 @@ print "Budget id: $budget_id\n";
 $accounts = {
     Checking => { id => undef, type => 'Debit', rate => 0.005 },
     Savings => { id => undef, type => 'Debit', rate => 0.0141 },
-    DSavings => { id => undef, type => 'Debit', rate => 0.0475 },
-    Tacoma => { id => undef, type => 'Loan', rate => 0.0 },
+#    DSavings => { id => undef, type => 'Debit', rate => 0.0475 },
+#    Tacoma => { id => undef, type => 'Loan', rate => 0.0 },
 };
 
-for my $account (qw(Checking Savings DSavings Tacoma)) {
+#for my $account (qw(Checking Savings DSavings Tacoma)) {
+for my $account (qw(Checking Savings)) {
   my $entry = $accounts->{$account};
   $dbs->{dest}->{connection}->do("replace into accounts values (null, null, ?, ?, ?, ?, 0)", 
                                   undef, $budget_id, $account, $entry->{type}, $entry->{rate});
@@ -142,7 +143,7 @@ while (my $row = $sth->fetchrow_hashref()) {
 
   my $account_id = $accounts->{Checking}->{id};
   if ($row->{category} eq "Savings") { $account_id = $accounts->{Savings}->{id} }
-  elsif ($row->{category} eq "Tithing") { $account_id = $accounts->{DSavings}->{id}; $row->{deducted} = 0 }
+#  elsif ($row->{category} eq "Tithing") { $account_id = $accounts->{DSavings}->{id}; $row->{deducted} = 0 }
   $dsth->execute($account_id, $row->{category})
     or die $dsth->errstr;
   print "inserted account $account_id, $row->{category}\n";
@@ -188,7 +189,7 @@ my $last = {};
 my $last_id = undef;
 print "Inserting transactions(X) and allocations(a) tag(t) (skipping beginning balance(-))";
 while (my $row = $sth->fetchrow_hashref()) {
-  if ($row->{date} =~ /^200[456789]-01-01$/ and $row->{subcategory} eq "Beginning Balance") {
+  if ($row->{date} =~ /^20[01][0-9]-01-01$/ and $row->{subcategory} eq "Beginning Balance") {
     print "-";
     next;
   }
