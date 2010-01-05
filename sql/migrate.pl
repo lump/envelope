@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.19 2010/01/04 17:14:46 troy Exp $
+# $Id: migrate.pl,v 1.20 2010/01/05 01:13:40 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -47,7 +47,7 @@ for my $db (keys %$dbs) {
 # }
 
 
-$dbs->{dest}->{connection}->do("replace into budgets values (null, null, 'Bowman')") 
+$dbs->{dest}->{connection}->do("replace into budgets values (null, null, 'Bowman')")
   or die $dbs->{source}->{connection}->errstr;
 ($budget_id) = $dbs->{dest}->{connection}->selectrow_array("select id from budgets where id is null")
   or die $dbs->{source}->{connection}->errstr;
@@ -63,7 +63,7 @@ $accounts = {
 #for my $account (qw(Checking Savings DSavings Tacoma)) {
 for my $account (qw(Checking Savings)) {
   my $entry = $accounts->{$account};
-  $dbs->{dest}->{connection}->do("replace into accounts values (null, null, ?, ?, ?, ?, 0)", 
+  $dbs->{dest}->{connection}->do("replace into accounts values (null, null, ?, ?, ?, ?, 0)",
                                   undef, $budget_id, $account, $entry->{type}, $entry->{rate});
   ($entry->{id}) = $dbs->{dest}->{connection}->selectrow_array("select id from accounts where id is null")
     or die $dbs->{source}->{connection}->errstr;
@@ -163,7 +163,7 @@ for my $account (keys %$accounts) {
   $sth->execute($accounts->{$account}->{id}) or die $sth->errstr;
   while (my $row = $sth->fetchrow_hashref()) {
     $categories->{$row->{name}} = $row;
-  } 
+  }
 }
 $sth->finish;
 
@@ -183,26 +183,43 @@ values (?, ?)")
   or die $dbs->{source}->{connection}->errstr;;
 
 
-$sth = $dbs->{source}->{connection}->prepare("select * from transactions where budgetname = 'bowman' order by date, to_from, subcategory desc, stamp") or die $dbs->{source}->{connection}->errstr;;
+$sth = $dbs->{source}->{connection}->prepare("select * from transactions where budgetname = 'bowman' order by date, description, stamp") or die $dbs->{source}->{connection}->errstr;;
 $sth->execute or die $sth->errstr;
 my $last = {};
 my $last_id = undef;
 print "Inserting transactions(X) and allocations(a) tag(t) (skipping beginning balance(-))";
 while (my $row = $sth->fetchrow_hashref()) {
+  # skip beginning balances because we don't use those anymore
+  next if ($row->{amount} == 0 and $row->{date} =~ /^2003-01-01$/);
   if ($row->{date} =~ /^20[01][0-9]-01-01$/ and $row->{subcategory} eq "Beginning Balance") {
     print "-";
     next;
   }
-  next if ($row->{amount} == 0 and $row->{date} =~ /^2003-01-01$/);
 
   # transactions
   if ($row->{to_from} eq undef) { $row->{to_from} = "" }
   if ($row->{description} eq undef) { $row->{description} = "" }
-  unless ($row->{subcategory} =~ /^Payday|Adjustment$/
-      and $last->{subcategory} =~ /^Payday|Adjustment$/
-      and ($row->{to_from} =~ /^SOS|ArosNet|America First|Original Amount|$/ and $row->{to_from} eq $last->{to_from})
-      and ($row->{date} eq $last->{date})
-      and $last_id ne undef) {
+  unless (
+          (
+           (
+            $row->{subcategory} =~ /^Payday|Adjustment$/
+            and $last->{subcategory} =~ /^Payday|Adjustment$/
+            and ($row->{to_from} =~ /^SOS|ArosNet|America First|Original Amount|$/
+            and $row->{to_from} eq $last->{to_from})
+           )
+           or
+           ($last->{to_from} eq $row->{to_from} and $last->{description} eq $row->{description})
+           or
+           ($last->{description} =~ /^Discover\s+.*/i and $row->{description} =~ /^Discover\s+.*/i)
+           or
+           ($last->{description} =~ /^From ATM\s+.*/i and $row->{description} =~ /^From ATM\s+.*/i)
+           or
+           ($last->{description} =~ /^check\s*#(\d+).*/i and $row->{description} =~ /^check\s*#$1.*/i)
+           or
+           ($last->{description} =~ /^part\s+of\s*(\d+)/i and $row->{description} =~ /^part\s+of\s*$1/i)
+          )
+          and ($row->{date} eq $last->{date})
+          and $last_id ne undef) {
     my @params = ($row->{stamp}, $row->{date}, $row->{to_from}, $row->{description}, $row->{reconciled},
                   exists $categories->{$row->{to_from}} ? 1 : 0);
     unless ($dtrans->execute(@params)) {
