@@ -6,13 +6,12 @@ import org.hibernate.annotations.Type;
 import javax.persistence.*;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
-import java.util.Collection;
 
 /**
  * A many-to-one list of Allocations for a Transaction.  Allocations are tied to Categories, which are tied to Accounts.
  *
  * @author Troy Bowman
- * @version $Id: Allocation.java,v 1.4 2010/01/04 06:07:24 troy Exp $
+ * @version $Id: Allocation.java,v 1.5 2010/01/06 06:58:01 troy Exp $
  */
 @javax.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
@@ -22,14 +21,11 @@ public class Allocation extends Identifiable<Integer, Timestamp> {
   private Integer id;
   private Timestamp stamp;
   private Category category;
-  private Collection<Tag> tags;
   private Transaction transaction;
   private Money amount;
 
   public String toString() {
     String out = MessageFormat.format("{0}@{1}", amount.toString(), category.toString());
-//    for (Tag t : tags)
-//      out += System.getProperty("line.separator") + "\t" + t.toString();
     return out;
   }
 
@@ -85,35 +81,6 @@ public class Allocation extends Identifiable<Integer, Timestamp> {
    */
   public void setCategory(Category category) {
     this.category = category;
-  }
-
-  /**
-   * The tags associated with this allocation.
-   *
-   * @return
-   */
-//  @ManyToMany(
-//      targetEntity = Tag.class,
-//      cascade = {CascadeType.PERSIST, CascadeType.MERGE},
-//      fetch = javax.persistence.FetchType.LAZY
-//  )
-//  @JoinTable(
-//      name = "allocation_tag",
-//      joinColumns = {@JoinColumn(name = "allocation")},
-//      inverseJoinColumns = {@JoinColumn(name = "tag")}
-//  )
-//  @Fetch(value = FetchMode.SUBSELECT)
-//  public Collection<Tag> getTags() {
-//    return tags;
-//  }
-
-  /**
-   * Set the tags associated with this Allocation.
-   *
-   * @param tag Collection
-   */
-  public void setTags(Collection<Tag> tag) {
-    this.tags = tag;
   }
 
 
@@ -179,9 +146,6 @@ public class Allocation extends Identifiable<Integer, Timestamp> {
     if (transaction != null
         ? !transaction.equals(that.transaction)
         : that.transaction != null) return false;
-    if (tags != null
-        ? !tags.equals(that.tags)
-        : that.tags != null) return false;
 
     return true;
   }
@@ -193,10 +157,6 @@ public class Allocation extends Identifiable<Integer, Timestamp> {
     result = 31 * result + (category != null ? category.hashCode() : 0);
     result = 31 * result + (transaction != null ? transaction.hashCode() : 0);
     result = 31 * result + (amount != null ? amount.hashCode() : 0);
-
-//    if (this.getTags() != null)
-//      for (Tag a : this.getTags())
-//        result = 31 * result + (a != null ? a.hashCode() : 0);
 
     return result;
   }
