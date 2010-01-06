@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.20 2010/01/05 01:13:40 troy Exp $
+# $Id: migrate.pl,v 1.21 2010/01/06 06:47:55 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -69,24 +69,6 @@ for my $account (qw(Checking Savings)) {
     or die $dbs->{source}->{connection}->errstr;
   print "$account id: $entry->{id}\n";
 }
-
-my %tag_ids = ();
-$dsth = $dbs->{dest}->{connection}->prepare("insert into tags (budget, name) values (?, ?)");
-
-$sth = $dbs->{source}->{connection}->prepare("select distinct subcategory from transactions where subcategory is not null order by subcategory")
-  or die $dbs->{source}->{connection}->errstr;;
-$sth->execute or die $sth->errstr;
-while (my $row = $sth->fetchrow_hashref()) {
-  next if ($row->{subcategory} =~ /^.*? and .*?$/
-           and $row->{subcategory} !~ /^Yard/);
-
-  $dsth->execute($budget_id, $row->{subcategory});
-  my ($last_id) = $dbs->{dest}->{connection}->selectrow_array("select id from tags where id is null");
-  $tag_ids{$row->{subcategory}} = $last_id;
-  print "Inserted tag $budget_id, $row->{subcategory} as $last_id\n";
-}
-$sth->finish;
-$dsth->finish;
 
 $dsth = $dbs->{dest}->{connection}->prepare("
 insert into users (budget,name,real_name,crypt_password,permissions)
@@ -177,93 +159,110 @@ insert into allocations (stamp, category, transaction, amount)
 values (?, ?, ?, ?)")
   or die $dbs->{source}->{connection}->errstr;;
 
-$dtag = $dbs->{dest}->{connection}->prepare("
-insert into allocation_tag (allocation, tag)
-values (?, ?)")
-  or die $dbs->{source}->{connection}->errstr;;
-
-
-$sth = $dbs->{source}->{connection}->prepare("select * from transactions where budgetname = 'bowman' order by date, description, stamp") or die $dbs->{source}->{connection}->errstr;;
+my ($transaction_count) = $dbs->{source}->{connection}->selectrow_array("select count(*) from transactions where budgetname = 'bowman'");
+$sth = $dbs->{source}->{connection}->prepare("select * from transactions where budgetname = 'bowman' order by date, to_from, description, stamp") or die $dbs->{source}->{connection}->errstr;;
 $sth->execute or die $sth->errstr;
-my $last = {};
-my $last_id = undef;
-print "Inserting transactions(X) and allocations(a) tag(t) (skipping beginning balance(-))";
+
+my $transaction = undef;
+my @allocations = ();
+
+print "Inserting transactions(X) and allocations(a) (skipping beginning balance(-))\n";
+my $rownum = 0;
 while (my $row = $sth->fetchrow_hashref()) {
+  $rownum ++;
   # skip beginning balances because we don't use those anymore
-  next if ($row->{amount} == 0 and $row->{date} =~ /^2003-01-01$/);
-  if ($row->{date} =~ /^20[01][0-9]-01-01$/ and $row->{subcategory} eq "Beginning Balance") {
+  if (($row->{amount} == 0 and $row->{date} =~ /^2003-01-01$/)
+      or ($row->{date} =~ /^20[01][0-9]-01-01$/ and $row->{subcategory} eq "Beginning Balance")) {
     print "-";
     next;
   }
 
-  # transactions
+  # sanify nulls in to_from and description
   if ($row->{to_from} eq undef) { $row->{to_from} = "" }
   if ($row->{description} eq undef) { $row->{description} = "" }
-  unless (
-          (
-           (
-            $row->{subcategory} =~ /^Payday|Adjustment$/
-            and $last->{subcategory} =~ /^Payday|Adjustment$/
-            and ($row->{to_from} =~ /^SOS|ArosNet|America First|Original Amount|$/
-            and $row->{to_from} eq $last->{to_from})
-           )
-           or
-           ($last->{to_from} eq $row->{to_from} and $last->{description} eq $row->{description})
-           or
-           ($last->{description} =~ /^Discover\s+.*/i and $row->{description} =~ /^Discover\s+.*/i)
-           or
-           ($last->{description} =~ /^From ATM\s+.*/i and $row->{description} =~ /^From ATM\s+.*/i)
-           or
-           ($last->{description} =~ /^check\s*#(\d+).*/i and $row->{description} =~ /^check\s*#$1.*/i)
-           or
-           ($last->{description} =~ /^part\s+of\s*(\d+)/i and $row->{description} =~ /^part\s+of\s*$1/i)
-          )
-          and ($row->{date} eq $last->{date})
-          and $last_id ne undef) {
-    my @params = ($row->{stamp}, $row->{date}, $row->{to_from}, $row->{description}, $row->{reconciled},
-                  exists $categories->{$row->{to_from}} ? 1 : 0);
-    unless ($dtrans->execute(@params)) {
-      print "transaction: " . (join ",", @params) . "\n";
-      die $dtrans->errstr;
+
+  # evaluate if this transaction is the same as the last one.
+  my $same = 0;
+  if ($row->{date} eq $transaction->{date} and $transaction ne undef) {
+    $same = 1 if ($row->{subcategory} =~ /^Payday|Adjustment$/
+                  and $transaction->{subcategory} =~ /^Payday|Adjustment$/
+                  and ($transaction->{to_from} =~ /^SOS|ArosNet|America First|Original Amount|$/
+                  and $row->{to_from} eq $transaction->{to_from}));
+    $same = 1 if ($transaction->{to_from} eq $row->{to_from} and $transaction->{description} eq $row->{description});
+    $same = 1 if ($transaction->{description} =~ /^Discover\s+.*/i and $row->{description} =~ /^Discover\s+.*/i);
+    $same = 1 if ($transaction->{description} =~ /^From ATM\s+.*/i and $row->{description} =~ /^From ATM\s+.*/i);
+    $same = 1 if ($transaction->{description} =~ /^check\s*#(\d+(?:\.\d+)?).*/i and $row->{description} =~ /^check\s*#$1.*/i);
+    $same = 1 if ($transaction->{description} =~ /^part\s+of\s*(\d+(?:\.\d+)?)/i and $row->{description} =~ /^part\s+of\s*$1/i);
+  }
+
+  # if this row is considered the same transaction as the last row or the last row, add it to the allocation list
+  if ($same) {
+    if ($row->{description} =~ /^part\s+of\s*\d+(?:\.\d+)?\s+(?:-\s*)?(.+?)$/i) {
+      $transaction->{new_description} .= "; $1"
     }
-    print "X";
-    ($last_id) = $dbs->{dest}->{connection}->selectrow_array("select id from transactions where id is null");
-  }
-
-  # allocations
-  my @params = ($row->{stamp}, $categories->{$row->{category}}->{id}, $last_id, $row->{amount});
-  unless ($dalloc->execute(@params)) {
-    print "allocation: " . (join ",", @params) . "\n";
-    die $dalloc->errstr;
-  }
-  my ($allocation_id) = $dbs->{dest}->{connection}->selectrow_array("select id from allocations where id is null");
-  print "a";
-
-
-  # tags
-  my @tags = ();
-  if ($row->{subcategory} =~ /^.*? and .*?$/ and $row->{subcategory} !~ /^Yard/) {
-    for my $subcategory (split / and /, $row->{subcategory}) {
-      if (exists $tag_ids{$subcategory}) {
-        push @tags, $tag_ids{$subcategory}
-      }
+    if ($row->{description} =~ /^Discover(?:\s+Card)\s+(?:-\s*)?(.+?)$/i) {
+      $transaction->{new_description} .= "; $1"
     }
+    push @allocations, $row;
   }
+  # if this row isn't the same, we've got another transaction, process our queue now.
   else {
-    @tags = ($tag_ids{$row->{subcategory}}) if exists $tag_ids{$row->{subcategory}};
+    if ($transaction ne undef and exists $transaction->{stamp} and length $transaction->{stamp}) {
+      insert_transaction($transaction, @allocations);
+    }
+
+    $row->{new_description} = $row->{description};
+    # nuke part of, as the description is no longer part of anything, it's joined.
+    $row->{new_description} =~ s/^part\s+of\s*\d+(?:\.\d+)?(?:\s*\-\s*)?\s*//i;
+
+    # next transaction to work with is the new one we just got
+    $transaction = $row;
+    # clear allocations for next transaction
+    @allocations = ();
+    # push the current row into allocations
+    push @allocations, $row;
   }
 
-  for my $tag_id (@tags) {
-    $dtag->execute($allocation_id, $tag_id);
-    print "t"
+  # enter final transaction on last row
+  if ($rownum == $transaction_count) {
+    insert_transaction($transaction, @allocations);
   }
-
-  $last = $row;
 }
 print "\n";
 $sth->finish;
 $dtrans->finish;
 $dalloc->finish;
 
+sub insert_transaction {
+  my ($transaction, @allocations) = @_;
 
+  print "\ninserting $transaction->{new_description} $transaction->{to_from} $transaction->{subcategory}\n";
+  # add the transaction
+  my @params = ($transaction->{stamp},
+                $transaction->{date},
+                $transaction->{to_from},
+                $transaction->{new_description},
+                $transaction->{reconciled},
+                exists $categories->{$transaction->{to_from}} ? 1 : 0);
 
+  unless ($dtrans->execute(@params)) {
+    print "transaction: " . (join ",", @params) . "\n";
+    die $dtrans->errstr;
+  }
+
+  print "X";
+  # the transaction id for the allocations
+  my ($last_id) = $dbs->{dest}->{connection}->selectrow_array("select id from transactions where id is null");
+
+  # add allocations to this transaction
+  for my $allocation (@allocations) {
+  # allocations
+    my @params = ($allocation->{stamp}, $categories->{$allocation->{category}}->{id}, $last_id, $allocation->{amount});
+    unless ($dalloc->execute(@params)) {
+      print "allocation: " . (join ",", @params) . "\n";
+      die $dalloc->errstr;
+    }
+  #my ($allocation_id) = $dbs->{dest}->{connection}->selectrow_array("select id from allocations where id is null");
+   print "a";
+  }
+}
