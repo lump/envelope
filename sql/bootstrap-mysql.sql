@@ -1,5 +1,5 @@
 --
--- $Id: bootstrap-mysql.sql,v 1.5 2010/01/06 06:58:01 troy Exp $
+-- $Id: bootstrap-mysql.sql,v 1.6 2010/01/06 07:00:30 troy Exp $
 --
 
 -- this can be run like this:
@@ -188,16 +188,16 @@ insert into categories values(null, null, 0, 'Electricity');
 insert into allocation_presets values (null, null, 0, "Pay Day", (select id from categories where id is null), 70, 'fixed',0);
 -- insert into category_allocation_settings values (null, null, 0, (select id from categories where id is null),70,'fpm',0);
 
---create table tags (
+-- create table tags (
 --  `id` int(11) NOT NULL auto_increment primary key,
 --  `stamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
 --  `budget` int not null,
 --  `name` varchar(64) not null,
 --  constraint tags_budget foreign key (budget) references budgets(id) ON UPDATE CASCADE ON DELETE RESTRICT
---)ENGINE=INNODB;
---insert into tags values (null, null, 0, 'Adjustment');
---update tags set id = 0;
---alter table tags auto_increment = 0;
+-- )ENGINE=INNODB;
+-- insert into tags values (null, null, 0, 'Adjustment');
+-- update tags set id = 0;
+-- alter table tags auto_increment = 0;
 
 create table transactions (
   `id` int(11) NOT NULL auto_increment primary key,
@@ -213,12 +213,12 @@ update transactions set id = 0;
 alter table transactions auto_increment = 0;
 insert into transactions values (1, null, now(), 'Beginning Balance', 'Starting Balance', 0, 0);
 
---create table allocation_tag (
+-- create table allocation_tag (
 --  `allocation` int(11) NOT NULL,
 --  `tag` int(11) NOT NULL
---)ENGINE=INNODB;
---insert into allocation_tag values (0, 0);
---insert into allocation_tag values (1, 0);
+-- )ENGINE=INNODB;
+-- insert into allocation_tag values (0, 0);
+-- insert into allocation_tag values (1, 0);
 
 create table allocations (
   `id` int(11) NOT NULL auto_increment primary key,
