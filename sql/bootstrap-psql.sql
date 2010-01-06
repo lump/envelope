@@ -1,5 +1,5 @@
 --
--- $Id: bootstrap-psql.sql,v 1.3 2009/04/29 01:29:54 troy Exp $
+-- $Id: bootstrap-psql.sql,v 1.4 2010/01/06 06:58:01 troy Exp $
 --
 
 -- this script creates the budget role, schema, database, and tables.
@@ -144,14 +144,14 @@ insert into category_allocation_settings (allocation_setting, category, allocati
 insert into categories (account, name) values(0, 'Electricity');
 insert into category_allocation_settings (allocation_setting, category, allocation, allocation_type, auto_deduct) values (0, (currval('categories_id_seq')),70,'fpm',false);
 
-create table tags (
-  id serial unique primary key not null,
-  stamp timestamp default now() not null,
-  budget int not null,
-  name varchar(64) not null,
-  constraint tags_budget foreign key (budget) references budgets(id) ON UPDATE CASCADE ON DELETE RESTRICT
-);
-insert into tags values (0, now(), 0, 'Adjustment');
+--create table tags (
+--  id serial unique primary key not null,
+--  stamp timestamp default now() not null,
+--  budget int not null,
+--  name varchar(64) not null,
+--  constraint tags_budget foreign key (budget) references budgets(id) ON UPDATE CASCADE ON DELETE RESTRICT
+--);
+--insert into tags values (0, now(), 0, 'Adjustment');
 
 create table transactions (
   id serial unique primary key not null,
@@ -165,12 +165,12 @@ create table transactions (
 insert into transactions values (0, now(), now(), 'Beginning Balance', 'Starting Balance');
 insert into transactions (entity, description) values ('Beginning Balance', 'Starting Balance');
 
-create table allocation_tag (
-  allocation int NOT NULL,
-  tag int NOT NULL
-);
-insert into allocation_tag values (0, 0);
-insert into allocation_tag values (1, 0);
+--create table allocation_tag (
+--  allocation int NOT NULL,
+--  tag int NOT NULL
+--);
+--insert into allocation_tag values (0, 0);
+--insert into allocation_tag values (1, 0);
 
 create table allocations (
   id serial unique primary key not null,

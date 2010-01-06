@@ -1,5 +1,9 @@
 package net.lump.envelope.server.dao;
 
+import net.lump.envelope.server.ThreadInfo;
+import net.lump.envelope.shared.entity.*;
+import net.lump.envelope.shared.entity.Transaction;
+import net.lump.envelope.shared.exception.EnvelopeException;
 import org.apache.log4j.Logger;
 import org.hibernate.*;
 import org.hibernate.cfg.AnnotationConfiguration;
@@ -7,10 +11,6 @@ import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.impl.SessionImpl;
-import net.lump.envelope.server.ThreadInfo;
-import net.lump.envelope.shared.entity.*;
-import net.lump.envelope.shared.entity.Transaction;
-import net.lump.envelope.shared.exception.EnvelopeException;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -24,7 +24,7 @@ import java.util.Properties;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.30 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: DAO.java,v 1.31 2010/01/06 06:58:01 troy Exp $
  */
 public abstract class DAO {
   final Logger logger;
@@ -46,6 +46,7 @@ public abstract class DAO {
    * @throws java.io.IOException*/
   /**
    * Initialize the session factory in the DAO.
+   *
    * @param config a properties that configures hibernate
    */
   public static void initialize(Properties config) {
@@ -59,7 +60,6 @@ public abstract class DAO {
 //          .addAnnotatedClass(CategoryAllocationSetting.class)
           .addAnnotatedClass(Transaction.class)
           .addAnnotatedClass(Allocation.class)
-          .addAnnotatedClass(Tag.class)
           .addAnnotatedClass(User.class)
           .addProperties(config).buildSessionFactory();
     }
