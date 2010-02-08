@@ -11,7 +11,7 @@ import java.awt.geom.Line2D;
  * A little spinning line.
  *
  * @author Troy Bowman
- * @version $Id: Spinner.java,v 1.6 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: Spinner.java,v 1.7 2010/02/08 06:56:30 troy Exp $
  */
 
 public class Spinner extends JComponent {
@@ -26,6 +26,7 @@ public class Spinner extends JComponent {
   Thread animator;
   boolean twirling = false;
   private static Color[] shades;
+  private long lastDraw = 0;
 
   static {
     int y = 16;
@@ -91,18 +92,26 @@ public class Spinner extends JComponent {
 
   public void paintComponent(Graphics g1) {
     super.paintComponent(g1);
+    long now = System.currentTimeMillis();
 
     Graphics2D g = (Graphics2D)g1;
     g.transform(translate);
     g.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                       RenderingHints.VALUE_ANTIALIAS_ON);
+        RenderingHints.VALUE_ANTIALIAS_ON);
     g.setStroke(stroke);
-    if (twirling) {
-      rotate.rotate(Math.toRadians(step));
-      if (blurBacklog < shades.length) blurBacklog++;
-    } else if (blurBacklog > 0) {
-      blurBacklog--;
+
+    if (now > (lastDraw + 33)) {
+      lastDraw = now;
+
+      if (twirling) {
+        rotate.rotate(Math.toRadians(step));
+        if (blurBacklog < shades.length) blurBacklog++;
+      }
+      else if (blurBacklog > 0) {
+        blurBacklog--;
+      }
     }
+
     g.transform(rotate);
 
     if (blurBacklog > 0) {
