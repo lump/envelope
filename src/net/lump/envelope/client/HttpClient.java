@@ -28,7 +28,7 @@ import java.util.zip.InflaterInputStream;
  * A http client invoker.
  *
  * @author troy
- * @version $Id: HttpClient.java,v 1.15 2010/01/04 06:07:24 troy Exp $
+ * @version $Id: HttpClient.java,v 1.16 2010/02/15 05:51:52 troy Exp $
  */
 public class HttpClient {
 
@@ -181,6 +181,8 @@ public class HttpClient {
       final ObjectInputStream ois = new ObjectInputStream(is);
       assert seqId == command.getSeqId() : "sequence identifier didn't match";
       output = new ArrayList<Serializable>(count);
+      long drawTime = System.currentTimeMillis();
+//      int lastRows = 0;
       for (int x = 0; x < count; x++) {
         Serializable s = (Serializable)ois.readObject();
         if (s instanceof RemoteException) throw (RemoteException)s;
@@ -188,9 +190,12 @@ public class HttpClient {
           output.add(s);
           command.fireOutput(new OutputEvent(command, (long)count, (long)x, s));
           // allow the UI event thread to catch up
-          // sleep 1 ms every 5 rows
-          if (x % 3 == 0) try { Thread.sleep(1); } catch (InterruptedException ignore) { }
-
+//          if (System.currentTimeMillis() > (drawTime + 1)) {
+//            System.out.println("drawing after " + (x - lastRows) + " rows");
+            try { Thread.sleep(1); } catch (InterruptedException ignore) { }
+//            drawTime = System.currentTimeMillis();
+//            lastRows = x;
+//          }
         }
       }
     } finally {

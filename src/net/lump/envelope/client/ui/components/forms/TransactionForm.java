@@ -52,7 +52,7 @@ import java.util.ResourceBundle;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.22 2010/01/04 06:07:24 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.23 2010/02/15 05:51:52 troy Exp $
  */
 public class TransactionForm {
   private JButton saveButton;
@@ -61,9 +61,8 @@ public class TransactionForm {
   private JRadioButton typeIncomeRadio;
   private JComboBox entity;
   private JTextField description;
-  private JTable totalsTable;
   private JPanel transactionFormPanel;
-  private JPanel splitpaneAndButtonsPanel;
+  private JPanel splitpanePanel;
   private JSplitPane transactionAllocationSplit;
   private JPanel transactionInfoPanel;
   private JLabel dateLabel;
@@ -71,19 +70,17 @@ public class TransactionForm {
   private JLabel descriptionLabel;
   private JLabel amountLabel;
   private JLabel typeLabel;
-  private JPanel totalsPanel;
   private JPanel allocationsPanel;
   private JScrollPane allocationsScrollPane;
-  private JScrollPane totalsScrollPane;
   private JDateChooser transactionDate;
   private MoneyTextField amount;
   private JButton newButton;
   private JButton closeButton;
-  private JComboBox presetsComboBox;
-  private JButton presetsLoadButton;
-  private JButton presetsSaveButton;
-  private JCheckBox presetsCheckBox;
   private JLabel formStatus;
+  private JPanel buttonPanel;
+  private JPanel totalsPanel;
+  private JCheckBox reconciledBox;
+  private GridLayout totalsGridLayout;
   private FormState state = FormState.Empty;
 
   private AllocationFormTableModel tableModel;
@@ -95,56 +92,56 @@ public class TransactionForm {
   private void $$$setupUI$$$() {
     createUIComponents();
     transactionFormPanel = new JPanel();
-    transactionFormPanel.setLayout(new GridLayoutManager(2, 5, new Insets(0, 0, 0, 0), -1, -1));
-    final JScrollPane scrollPane1 = new JScrollPane();
-    transactionFormPanel.add(scrollPane1, new GridConstraints(0, 0, 1, 5, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
-        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-    splitpaneAndButtonsPanel = new JPanel();
-    splitpaneAndButtonsPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-    scrollPane1.setViewportView(splitpaneAndButtonsPanel);
+    transactionFormPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+    transactionFormPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null));
+    splitpanePanel = new JPanel();
+    splitpanePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), 0, 0));
+    transactionFormPanel.add(splitpanePanel,
+        new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+    splitpanePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null));
     transactionAllocationSplit = new JSplitPane();
-    splitpaneAndButtonsPanel.add(transactionAllocationSplit,
+    splitpanePanel.add(transactionAllocationSplit,
         new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0,
             false));
     transactionInfoPanel = new JPanel();
-    transactionInfoPanel.setLayout(new GridLayoutManager(6, 3, new Insets(0, 0, 0, 0), -1, -1));
+    transactionInfoPanel.setLayout(new GridLayoutManager(10, 2, new Insets(0, 0, 0, 0), 1, 5));
     transactionAllocationSplit.setLeftComponent(transactionInfoPanel);
     transactionInfoPanel.setBorder(BorderFactory.createTitledBorder(
         ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("transaction")));
     dateLabel = new JLabel();
     this.$$$loadLabelText$$$(dateLabel, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("date"));
     transactionInfoPanel.add(dateLabel,
-        new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+        new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     entityLabel = new JLabel();
     this.$$$loadLabelText$$$(entityLabel,
         ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("paid.to"));
     transactionInfoPanel.add(entityLabel,
-        new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+        new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     entity = new JComboBox();
     entity.setEditable(true);
-    transactionInfoPanel.add(entity, new GridConstraints(2, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
-        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
+    transactionInfoPanel.add(entity, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
         null, 0, false));
     descriptionLabel = new JLabel();
     this.$$$loadLabelText$$$(descriptionLabel,
         ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("description"));
     transactionInfoPanel.add(descriptionLabel,
-        new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+        new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     description = new JTextField();
     transactionInfoPanel.add(description,
-        new GridConstraints(3, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
-            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
-            new Dimension(150, -1), null, 0, false));
+        new GridConstraints(4, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, 1,
+            GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
     amountLabel = new JLabel();
     amountLabel.setText("Amount");
     transactionInfoPanel.add(amountLabel,
-        new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+        new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     typeExpenseRadio = new JRadioButton();
     this.$$$loadButtonText$$$(typeExpenseRadio,
@@ -153,105 +150,84 @@ public class TransactionForm {
         new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
             null, null, 0, false));
-    totalsPanel = new JPanel();
-    totalsPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-    transactionInfoPanel.add(totalsPanel, new GridConstraints(5, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-    totalsPanel.setBorder(
-        BorderFactory.createTitledBorder(ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("totals")));
-    totalsScrollPane = new JScrollPane();
-    totalsPanel.add(totalsScrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-    totalsTable = new JTable();
-    totalsScrollPane.setViewportView(totalsTable);
     amount = new MoneyTextField();
     amount.setColumns(15);
-    transactionInfoPanel.add(amount, new GridConstraints(4, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+    transactionInfoPanel.add(amount, new GridConstraints(5, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
     transactionInfoPanel.add(transactionDate,
-        new GridConstraints(1, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+        new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
     typeLabel = new JLabel();
     typeLabel.setText("Type");
     transactionInfoPanel.add(typeLabel,
-        new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+        new GridConstraints(0, 0, 2, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-    typeIncomeRadio = new JRadioButton();
-    this.$$$loadButtonText$$$(typeIncomeRadio,
-        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("income"));
-    transactionInfoPanel.add(typeIncomeRadio,
-        new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
-            null, null, 0, false));
-    allocationsPanel = new JPanel();
-    allocationsPanel.setLayout(new GridLayoutManager(2, 4, new Insets(0, 0, 0, 0), -1, -1));
-    transactionAllocationSplit.setRightComponent(allocationsPanel);
-    allocationsPanel.setBorder(BorderFactory.createTitledBorder(
-        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("allocations")));
-    allocationsScrollPane = new JScrollPane();
-    allocationsPanel.add(allocationsScrollPane,
-        new GridConstraints(1, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-    allocationsTable = new JTable();
-    allocationsScrollPane.setViewportView(allocationsTable);
-    presetsComboBox = new JComboBox();
-    presetsComboBox.setEditable(true);
-    allocationsPanel.add(presetsComboBox,
-        new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
-            GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-    presetsLoadButton = new JButton();
-    this.$$$loadButtonText$$$(presetsLoadButton,
-        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("load"));
-    allocationsPanel.add(presetsLoadButton,
-        new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
-            null, null, 0, false));
-    presetsSaveButton = new JButton();
-    this.$$$loadButtonText$$$(presetsSaveButton,
-        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("save"));
-    allocationsPanel.add(presetsSaveButton,
-        new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
-            null, null, 0, false));
-    presetsCheckBox = new JCheckBox();
-    this.$$$loadButtonText$$$(presetsCheckBox,
-        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("presets"));
-    allocationsPanel.add(presetsCheckBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+    final Spacer spacer1 = new Spacer();
+    transactionInfoPanel.add(spacer1,
+        new GridConstraints(7, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
+            GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+    buttonPanel = new JPanel();
+    buttonPanel.setLayout(new GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));
+    transactionInfoPanel.add(buttonPanel, new GridConstraints(9, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+    closeButton = new JButton();
+    this.$$$loadButtonText$$$(closeButton, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("close"));
+    buttonPanel.add(closeButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
+        null, 0, false));
+    newButton = new JButton();
+    this.$$$loadButtonText$$$(newButton, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("new"));
+    buttonPanel.add(newButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
         null, 0, false));
     saveButton = new JButton();
     saveButton.setEnabled(false);
     saveButton.setText("Save");
-    transactionFormPanel.add(saveButton,
-        new GridConstraints(1, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
-            null, null, 0, false));
-    newButton = new JButton();
-    this.$$$loadButtonText$$$(newButton, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("new"));
-    transactionFormPanel.add(newButton,
-        new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
-            null, null, 0, false));
-    closeButton = new JButton();
-    this.$$$loadButtonText$$$(closeButton, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("close"));
-    transactionFormPanel.add(closeButton,
-        new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
+    buttonPanel.add(saveButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
+        null, 0, false));
+    final Spacer spacer2 = new Spacer();
+    buttonPanel.add(spacer2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+        GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+    final Spacer spacer3 = new Spacer();
+    buttonPanel.add(spacer3, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+        GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+    typeIncomeRadio = new JRadioButton();
+    this.$$$loadButtonText$$$(typeIncomeRadio,
+        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("income"));
+    transactionInfoPanel.add(typeIncomeRadio,
+        new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
             null, null, 0, false));
     formStatus = new JLabel();
     formStatus.setText("");
-    transactionFormPanel.add(formStatus,
-        new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+    transactionInfoPanel.add(formStatus,
+        new GridConstraints(8, 0, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-    final Spacer spacer1 = new Spacer();
-    transactionFormPanel.add(spacer1,
-        new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
-            GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+    reconciledBox = new JCheckBox();
+    this.$$$loadButtonText$$$(reconciledBox,
+        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("reconciled"));
+    transactionInfoPanel.add(reconciledBox, new GridConstraints(6, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
+        null, 0, false));
+    allocationsPanel = new JPanel();
+    allocationsPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), 0, 0));
+    transactionAllocationSplit.setRightComponent(allocationsPanel);
+    allocationsPanel.setBorder(BorderFactory.createTitledBorder(
+        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("allocations")));
+    allocationsScrollPane = new JScrollPane();
+    allocationsPanel.add(allocationsScrollPane,
+        new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+    allocationsTable = new JTable();
+    allocationsScrollPane.setViewportView(allocationsTable);
+    allocationsPanel.add(totalsPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
   }
 
   /** @noinspection ALL */
@@ -380,10 +356,14 @@ public class TransactionForm {
       }
     });
 
-    totalsTable.setDefaultRenderer(Money.class, new MoneyRenderer());
-    transactionAllocationSplit.setResizeWeight(0.5);
-    transactionAllocationSplit.getLeftComponent().setMinimumSize(new Dimension(200, 0));
-    transactionAllocationSplit.getRightComponent().setMinimumSize(new Dimension(200, 0));
+//    transactionAllocationSplit.getLeftComponent()
+//        .setMinimumSize(transactionInfoPanel.getLayout().minimumLayoutSize(transactionInfoPanel));
+//    allocationsTable.setMinimumSize(new Dimension(200, 200));
+    transactionAllocationSplit.getRightComponent().setMinimumSize(new Dimension(200, 200));
+//    transactionAllocationSplit.setResizeWeight(0.25);
+
+
+//    transactionAllocationSplit.getRightComponent().setMinimumSize(allocationsPanel.getLayout().minimumLayoutSize(allocationsPanel));
     transactionAllocationSplit.setContinuousLayout(true);
     transactionAllocationSplit.setOneTouchExpandable(false);
 
@@ -406,15 +386,6 @@ public class TransactionForm {
         checkEdited();
       }
     };
-
-    Action presetsCheckBoxAction = new AbstractAction() {
-      public void actionPerformed(ActionEvent e) {
-        enableDisablePresets();
-      }
-    };
-
-    presetsCheckBox.addActionListener(presetsCheckBoxAction);
-    enableDisablePresets();
 
     typeExpenseRadio.setFont(typeExpenseRadio.getFont().deriveFont(Font.PLAIN));
     typeIncomeRadio.setFont(typeExpenseRadio.getFont().deriveFont(Font.PLAIN));
@@ -448,8 +419,8 @@ public class TransactionForm {
 //        }
 //      }
 //    }
-//    splitpaneAndButtonsPanel.setMinimumSize(new Dimension(0, 300));
-    splitpaneAndButtonsPanel.setMinimumSize(new Dimension(0, 300));
+
+//    splitpanePanel.setMinimumSize(new Dimension(0, 300));
 
 
     final JTable table = TableQueryBar.getInstance().getTable();
@@ -593,6 +564,7 @@ public class TransactionForm {
     if (editingTransaction != null)
       amount.setText(expense ? editingTransaction.getAmount().negate().toString()
                              : editingTransaction.getAmount().toString());
+    transactionAllocationSplit.resetToPreferredSizes();
   }
 
   public void loadTransactionForId(final int id) {
@@ -649,7 +621,13 @@ public class TransactionForm {
 
                   entity.setSelectedItem(editingTransaction.getEntity());
 
+                  reconciledBox.setSelected(originalTransaction.getReconciled());
+                  amount.setEnabled(!originalTransaction.getReconciled());
+
                   setFormState(FormState.Display);
+
+                  transactionAllocationSplit.resetToPreferredSizes();
+
 
                 } catch (AbortException ignore) {}
               }
@@ -664,14 +642,6 @@ public class TransactionForm {
       ThreadPool.getInstance().execute(r);
     }
   }
-
-
-  private void enableDisablePresets() {
-    presetsComboBox.setEnabled(presetsCheckBox.isSelected());
-    presetsLoadButton.setEnabled(presetsCheckBox.isSelected());
-    presetsSaveButton.setEnabled(presetsCheckBox.isSelected());
-  }
-
 
   public synchronized void refreshEntities() throws AbortException {
     entity.removeAllItems();
@@ -707,8 +677,9 @@ public class TransactionForm {
 
     transactionDate = new JDateChooser(new Date(today), "MM/dd/yyyy", new JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
     transactionDate.setFont(Fonts.fixed.getFont());
-
-
+    totalsGridLayout = new GridLayout(0, 2);
+    totalsPanel = new JPanel(totalsGridLayout);
+    totalsPanel.removeAll();
     transactionDate.setPreferredSize(
         new Dimension(transactionDate.getPreferredSize().width + 30, transactionDate.getPreferredSize().height));
   }

@@ -24,7 +24,7 @@ import java.beans.PropertyChangeListener;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.41 2009/10/03 00:29:09 troy Exp $
+ * @version $Id: MainFrame.java,v 1.42 2010/02/15 05:51:52 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -104,6 +104,8 @@ public class MainFrame extends JFrame {
     tableContentSplitPane.setBottomComponent(transactionForm.getTransactionFormPanel());
     transactionForm.getTransactionFormPanel().setVisible(false);
     tableContentSplitPane.setDividerSize(0);
+//    tableContentSplitPane.getBottomComponent().setMinimumSize(transactionForm.getTransactionFormPanel()
+//        .getLayout().minimumLayoutSize(transactionForm.getTransactionFormPanel()));
 
     viewTransaction.addActionListener(new AbstractAction() {
       public void actionPerformed(ActionEvent e) {

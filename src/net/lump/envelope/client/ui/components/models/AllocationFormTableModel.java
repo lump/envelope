@@ -1,8 +1,5 @@
 package net.lump.envelope.client.ui.components.models;
 
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
 import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.portal.HibernatePortal;
 import net.lump.envelope.shared.entity.Allocation;
@@ -10,6 +7,9 @@ import net.lump.envelope.shared.entity.Category;
 import net.lump.envelope.shared.entity.Transaction;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.Money;
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Element;
 
 import javax.swing.*;
 import javax.swing.event.TableModelListener;
@@ -22,7 +22,7 @@ import java.util.List;
  * This provides the model for the allocation list in the form.
  *
  * @author Troy Bowman
- * @version $Id: AllocationFormTableModel.java,v 1.7 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: AllocationFormTableModel.java,v 1.8 2010/02/15 05:51:52 troy Exp $
  */
 public class AllocationFormTableModel extends AbstractTableModel {
 
@@ -48,8 +48,8 @@ public class AllocationFormTableModel extends AbstractTableModel {
 
   enum Columns {
     Category(Category.class, true),
-    Allocation(Money.class, true),
-    Projected(Money.class, false);
+    Allocation(Money.class, true);
+//    Projected(Money.class, false);
 
     final Class columnClass;
     final Boolean editable;
@@ -63,7 +63,7 @@ public class AllocationFormTableModel extends AbstractTableModel {
 
 
   public AllocationFormTableModel(JTable table) {
-    this(table, Mode.Complex, false);
+    this(table, Mode.Simple, false);
   }
 
   public AllocationFormTableModel(JTable table, Mode mode, boolean expense) {
@@ -214,13 +214,13 @@ public class AllocationFormTableModel extends AbstractTableModel {
           case Allocation:
             retval = expense ? editAllocation.getAmount().negate() : editAllocation.getAmount();
             break;
-          case Projected:
-            Money balance = getBalance(editAllocation);
-            Money amount = editAllocation.getAmount();
-            if (originalAllocation != null)
-              amount = amount.subtract(originalAllocation.getAmount());
-            retval = balance.add(amount);
-            break;
+//          case Projected:
+//            Money balance = getBalance(editAllocation);
+//            Money amount = editAllocation.getAmount();
+//            if (originalAllocation != null)
+//              amount = amount.subtract(originalAllocation.getAmount());
+//            retval = balance.add(amount);
+//            break;
         }
     }
 
