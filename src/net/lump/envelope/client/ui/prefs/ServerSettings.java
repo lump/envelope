@@ -1,7 +1,6 @@
 package net.lump.envelope.client.ui.prefs;
 
 import net.lump.envelope.client.ui.defs.Strings;
-import static net.lump.envelope.client.ui.prefs.ServerSettings.Field.*;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -12,6 +11,8 @@ import java.text.MessageFormat;
 import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static net.lump.envelope.client.ui.prefs.ServerSettings.Field.*;
 
 public class ServerSettings {
   private static ServerSettings singleton;
@@ -69,7 +70,7 @@ public class ServerSettings {
     c.setDoInput(true);
 
     BufferedReader r = new BufferedReader(new InputStreamReader(c.getInputStream()));
-    
+
     String output = "";
     String line;
     while ((line = r.readLine()) != null) {
@@ -102,7 +103,7 @@ public class ServerSettings {
   public void setCompress(boolean flag) {
     prefs.putBoolean(compress.name(), flag);
   }
-  
+
   public URL getCodeBase() throws MalformedURLException {
     return new URL("http://" + getHostName() + ":" + getPort() + getContext() + "/");
   }
