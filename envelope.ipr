@@ -182,6 +182,7 @@
         <option name="myName" value="Project Default" />
         <option name="myLocal" value="false" />
         <inspection_tool class="SynchronizeOnNonFinalField" enabled="false" level="WARNING" enabled_by_default="false" />
+        <inspection_tool class="ThrowableInstanceNeverThrown" enabled="false" level="WARNING" enabled_by_default="false" />
       </profile>
     </profiles>
     <option name="PROJECT_PROFILE" value="Project Default" />
@@ -406,9 +407,9 @@
       </CLASSES>
       <JAVADOC />
       <SOURCES>
-        <root url="jar://$PROJECT_DIR$/lib/src/hibernate-annotations-src.zip!/" />
-        <root url="jar://$PROJECT_DIR$/lib/src/hibernate-3.2-src.zip!/" />
-        <root url="jar://$PROJECT_DIR$/lib/src/ehcache-1.2.3-src.zip!/src" />
+        <root url="jar://$PROJECT_DIR$/lib/src/ehcache-1.5.0-sources.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/src/hibernate-annotations-3.5.3-src.zip!/" />
+        <root url="jar://$PROJECT_DIR$/lib/src/hibernate-3.5.3-src.zip!/" />
       </SOURCES>
       <jarDirectory url="file://$PROJECT_DIR$/lib" recursive="false" />
     </library>

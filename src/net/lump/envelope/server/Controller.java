@@ -27,7 +27,7 @@ import java.util.List;
  * The methods used by the controller.
  *
  * @author Troy Bowman
- * @version $Id: Controller.java,v 1.9 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: Controller.java,v 1.10 2010/07/28 04:25:04 troy Exp $
  */
 public class Controller {
   final Logger logger = Logger.getLogger(Controller.class);
@@ -131,16 +131,21 @@ public class Controller {
       // we have to handle the results here before the transaction is over.
       if (returnValue instanceof ScrollableResults) {
         ScrollableResults sr = (ScrollableResults)returnValue;
-        try {
+        try {sr.afterLast();
           sr.last();
           int count = sr.getRowNumber() + 1;
           rp.addHeader("Single-Object", Boolean.FALSE.toString());
           rp.addIntHeader("Object-Count", count);
           sr.beforeFirst();
           ObjectOutputStream oos = new ObjectOutputStream(os);
-          while (sr.next()) {
-            oos.writeObject(sr.get().length == 1 ? sr.get()[0] : sr.get());
-          }
+          if (count > 100)
+            while (sr.next()) oos.writeObject(sr.get().length == 1 ? sr.get()[0] : sr.get());
+          else
+            while (sr.next()) {
+              oos.writeObject(sr.get().length == 1 ? sr.get()[0] : sr.get());
+              oos.flush();
+            }
+
           oos.flush();
         } finally {
           sr.close();
@@ -184,7 +189,7 @@ public class Controller {
         throw new IllegalArgumentException("Could not instantiate " + command.getName().getFacet().name(), e);
       if (e instanceof InvocationTargetException) {
         if (e.getCause() instanceof EnvelopeException) throw (EnvelopeException)e.getCause();
-        throw new IllegalArgumentException("Could not invoke " + command.getName().name());
+        throw new IllegalArgumentException("Could not invoke " + command.getName().name(), e.getCause());
       }
 
       throw new RemoteException("wrapped throwable", e);

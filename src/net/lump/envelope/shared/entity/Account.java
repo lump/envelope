@@ -12,13 +12,13 @@ import java.util.List;
  * An account object.
  *
  * @author Troy Bowman
- * @version $Id: Account.java,v 1.3 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: Account.java,v 1.4 2010/07/28 04:25:04 troy Exp $
  */
 @javax.persistence.Entity
 @Table(name = "accounts")
 public class Account extends Identifiable<Integer, Timestamp>
     implements Comparable<Account> {
-//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.3 $".replaceAll("\\D", ""));
+//  public static final long serialVersionUID = Long.parseLong("$Revision: 1.4 $".replaceAll("\\D", ""));
 
   /** The type of an Account. */
   public static enum AccountType {
@@ -39,7 +39,7 @@ public class Account extends Identifiable<Integer, Timestamp>
   private AccountType type;
   private List<Category> categories;
   private BigDecimal rate;
-  private Money limit;
+  private Money celing;
 
   public String toString() {
     return name;
@@ -116,14 +116,14 @@ public class Account extends Identifiable<Integer, Timestamp>
     this.rate = rate;
   }
 
-  @Column(name = "limit", nullable = false)
+  @Column(name = "ceiling", nullable = false)
   @Type(type = "net.lump.envelope.shared.entity.type.MoneyType")
-  public Money getLimit() {
-    return limit;
+  public Money getCeling() {
+    return celing;
   }
 
-  public void setLimit(Money limit) {
-    this.limit = limit;
+  public void setCeling(Money celing) {
+    this.celing = celing;
   }
 
   /* this relies on an inefficent and inflexible paradigm.  buzzword. bzzzt.
@@ -164,9 +164,9 @@ public class Account extends Identifiable<Integer, Timestamp>
     if (id != null
         ? !id.equals(account.id)
         : account.id != null) return false;
-    if (limit != null
-        ? !limit.equals(account.limit)
-        : account.limit != null) return false;
+    if (celing != null
+        ? !celing.equals(account.celing)
+        : account.celing != null) return false;
     if (name != null
         ? !name.equals(account.name)
         : account.name != null) return false;
@@ -189,7 +189,7 @@ public class Account extends Identifiable<Integer, Timestamp>
     result = 31 * result + (name != null ? name.hashCode() : 0);
     result = 31 * result + (type != null ? type.ordinal() : 0);
     result = 31 * result + (rate != null ? rate.hashCode() : 0);
-    result = 31 * result + (limit != null ? limit.hashCode() : 0);
+    result = 31 * result + (celing != null ? celing.hashCode() : 0);
     return result;
   }
 

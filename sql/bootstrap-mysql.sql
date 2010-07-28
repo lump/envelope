@@ -1,5 +1,5 @@
 --
--- $Id: bootstrap-mysql.sql,v 1.6 2010/01/06 07:00:30 troy Exp $
+-- $Id: bootstrap-mysql.sql,v 1.7 2010/07/28 04:25:04 troy Exp $
 --
 
 -- this can be run like this:
@@ -27,7 +27,7 @@ create table accounts (
   `name` varchar(64) not null,
   `type` enum('Debit','Credit','Loan') not null default 'Debit',
   `rate` double not null default 0.0,
-  `limit` double not null default 0.0,
+  `ceiling` double not null default 0.0,
   unique index name_type (`name`,`type`),
   constraint accounts_budget foreign key (budget) references budgets(id) ON UPDATE CASCADE ON DELETE RESTRICT
 )ENGINE=INNODB;

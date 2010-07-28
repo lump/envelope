@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.21 2010/01/06 06:47:55 troy Exp $
+# $Id: migrate.pl,v 1.22 2010/07/28 04:25:04 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -200,7 +200,7 @@ while (my $row = $sth->fetchrow_hashref()) {
     if ($row->{description} =~ /^part\s+of\s*\d+(?:\.\d+)?\s+(?:-\s*)?(.+?)$/i) {
       $transaction->{new_description} .= "; $1"
     }
-    if ($row->{description} =~ /^Discover(?:\s+Card)\s+(?:-\s*)?(.+?)$/i) {
+    if ($row->{description} =~ /^discover(?:\s+Card)?\s+(?:-\s*)?(.+?)$/i) {
       $transaction->{new_description} .= "; $1"
     }
     push @allocations, $row;

@@ -26,7 +26,7 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: InvocationServlet.java,v 1.5 2010/01/04 06:07:24 troy Exp $
+ * @version $Id: InvocationServlet.java,v 1.6 2010/07/28 04:25:04 troy Exp $
  */
 public class InvocationServlet extends HttpServlet {
 
@@ -231,10 +231,15 @@ public class InvocationServlet extends HttpServlet {
         Controller c = new Controller(rp, os);
         try {
           c.invoke(command);
-        } catch (RemoteException r) {
+        } catch (Exception e) {
+          if (!(e instanceof RemoteException)) {
+            Throwable tmp = e.getCause();
+            while (tmp.getCause() != null) tmp = tmp.getCause();
+            e = new RemoteException("Unexpected exception", tmp);
+          }
           rp.addHeader("Single-Object", Boolean.TRUE.toString());
           rp.addIntHeader("Object-Count", 1);
-          new ObjectOutputStream(os).writeObject(r);
+          new ObjectOutputStream(os).writeObject(e);
           os.flush();
         }
 

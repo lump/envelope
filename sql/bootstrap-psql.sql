@@ -1,5 +1,5 @@
 --
--- $Id: bootstrap-psql.sql,v 1.4 2010/01/06 06:58:01 troy Exp $
+-- $Id: bootstrap-psql.sql,v 1.5 2010/07/28 04:25:04 troy Exp $
 --
 
 -- this script creates the budget role, schema, database, and tables.
@@ -32,7 +32,7 @@ create table accounts (
   name varchar(64) not null,
   type account_type not null default 'Debit',
   rate numeric not null default 0.0,
-  "limit" numeric not null default 0.0,
+  ceiling numeric not null default 0.0,
   constraint name_type unique (name, type),
   constraint accounts_budget foreign key (budget) references budgets(id) ON UPDATE CASCADE ON DELETE RESTRICT
 );
