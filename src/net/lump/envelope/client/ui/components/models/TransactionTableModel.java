@@ -13,6 +13,7 @@ import net.lump.envelope.shared.command.OutputEvent;
 import net.lump.envelope.shared.command.OutputListener;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.Money;
+import net.lump.lib.util.ByteFormat;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -28,7 +29,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * A table model which lists transactions.
  *
  * @author Troy Bowman
- * @version $Id: TransactionTableModel.java,v 1.43 2010/01/04 06:07:24 troy Exp $
+ * @version $Id: TransactionTableModel.java,v 1.44 2010/09/20 23:18:23 troy Exp $
  */
 public class TransactionTableModel extends AbstractTableModel {
   private Vector<Object[]> transactions = new Vector<Object[]>();
@@ -147,7 +148,9 @@ public class TransactionTableModel extends AbstractTableModel {
                       else if (startDate < (System.currentTimeMillis() - 150)) sb.getProgress().setVisible(true);
 
                       statusElement.setValue(
-                          Strings.get("reading") + " " + TransactionTableModel.this.thing + " row " + (event.getIndex() + 1L));
+                          Strings.get("reading") + " " + TransactionTableModel.this.thing + " " + (event.getIndex() + 1L)
+                          + " rows, " + ByteFormat.getInstance().formatBytes(event.getBytesRead(), false) + ", "
+                          + ByteFormat.getInstance().formatBytes(event.getBytesPerSecond(), false) + "/s");
                       StatusBar.getInstance().updateLabel();
 
                       updateTableFor(event.getIndex().intValue(), (Object[])event.getPayload());
