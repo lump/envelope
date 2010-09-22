@@ -1,7 +1,6 @@
 package net.lump.envelope.client.ui.components.models;
 
 import net.lump.envelope.client.ui.defs.Colors;
-import net.lump.envelope.client.ui.defs.Fonts;
 import net.lump.lib.Money;
 
 import javax.swing.*;
@@ -25,7 +24,7 @@ public class MoneyRenderer extends DefaultTableCellRenderer {
     JLabel label = new JLabel(
         value == null ? "" : value.toString(),
         SwingConstants.RIGHT);
-    label.setFont(Fonts.fixed.getFont());
+    //label.setFont(Fonts.fixed.getFont());
     label.setBorder(
         new CompoundBorder(
             new EmptyBorder(new Insets(1, 4, 1, 4)),

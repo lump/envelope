@@ -6,7 +6,7 @@ import java.awt.*;
  * .
  *
  * @author troy
- * @version $Id: Fonts.java,v 1.5 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: Fonts.java,v 1.6 2010/09/22 19:27:37 troy Exp $
  */
 public enum Fonts {
 
@@ -16,6 +16,8 @@ public enum Fonts {
   sans_14_bold(new Font("Lucida Grande", Font.BOLD, 14), new Font("SansSerif", Font.PLAIN, 14)),
   sans_10_bold(new Font("Lucida Grande", Font.BOLD, 10), new Font("SansSerif", Font.PLAIN, 10)),
   fixed(
+      new Font("SansSerif", Font.PLAIN, 12),
+      new Font("Consolas", Font.PLAIN, 13),
       new Font("Bitstream Vera Sans Mono", Font.PLAIN, 12),
       new Font("Andale Mono", Font.PLAIN, 12),
       new Font("Monaco", Font.PLAIN, 12),

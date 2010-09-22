@@ -5,7 +5,6 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
-import net.lump.envelope.client.ui.defs.Fonts;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,10 +15,6 @@ import java.awt.event.KeyListener;
 import java.util.Date;
 import java.util.ResourceBundle;
 
-/**
- * Created by IntelliJ IDEA. User: troy Date: Jul 7, 2008 Time: 10:39:36 PM To change this template use File | Settings | File
- * Templates.
- */
 public class TableQueryBar {
   private JPanel queryPanel;
   private JDateChooser beginDate;
@@ -121,10 +116,10 @@ public class TableQueryBar {
     today = ((today - (today % 86400000)) + 86400000);
     beginDate = new JDateChooser(new Date(today - (86400000L * 90)), "MM/dd/yyyy", new
         JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
-    beginDate.setFont(Fonts.fixed.getFont());
+    //beginDate.setFont(Fonts.fixed.getFont());
 
     endDate = new JDateChooser(new Date(today), "MM/dd/yyyy", new JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
-    endDate.setFont(Fonts.fixed.getFont());
+    //endDate.setFont(Fonts.fixed.getFont());
     beginDate.setPreferredSize(new Dimension(beginDate.getPreferredSize().width + 10, beginDate.getPreferredSize().height));
     endDate.setPreferredSize(new Dimension(endDate.getPreferredSize().width + 10, endDate.getPreferredSize().height));
   }
@@ -143,8 +138,9 @@ public class TableQueryBar {
     endDateLabel.setHorizontalAlignment(4);
     endDateLabel.setHorizontalTextPosition(4);
     this.$$$loadLabelText$$$(endDateLabel, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("to"));
-    queryPanel.add(endDateLabel, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, 1, 1,
-        null, null, null, 0, false));
+    queryPanel.add(endDateLabel,
+        new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, 1, 1, null, null, null, 0,
+            false));
     queryPanel.add(endDate, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null, null, 0, false));
     refreshButton = new JButton();
@@ -166,6 +162,9 @@ public class TableQueryBar {
     tableQueryPanel.add(tableScrollPane, BorderLayout.CENTER);
     table = new JTable();
     tableScrollPane.setViewportView(table);
+    final JPanel panel1 = new JPanel();
+    panel1.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+    tableQueryPanel.add(panel1, BorderLayout.SOUTH);
   }
 
   /** @noinspection ALL */

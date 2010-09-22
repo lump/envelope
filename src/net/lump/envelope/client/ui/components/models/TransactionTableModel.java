@@ -29,7 +29,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  * A table model which lists transactions.
  *
  * @author Troy Bowman
- * @version $Id: TransactionTableModel.java,v 1.44 2010/09/20 23:18:23 troy Exp $
+ * @version $Id: TransactionTableModel.java,v 1.45 2010/09/22 19:27:37 troy Exp $
  */
 public class TransactionTableModel extends AbstractTableModel {
   private Vector<Object[]> transactions = new Vector<Object[]>();
@@ -149,8 +149,8 @@ public class TransactionTableModel extends AbstractTableModel {
 
                       statusElement.setValue(
                           Strings.get("reading") + " " + TransactionTableModel.this.thing + " " + (event.getIndex() + 1L)
-                          + " rows, " + ByteFormat.getInstance().formatBytes(event.getBytesRead(), false) + ", "
-                          + ByteFormat.getInstance().formatBytes(event.getBytesPerSecond(), false) + "/s");
+                          + " rows, " + ByteFormat.getInstance().formatBytes(event.getBytesRead(), true) + ", "
+                          + ByteFormat.getInstance().formatBytes(event.getBytesPerSecond(), true) + "/s");
                       StatusBar.getInstance().updateLabel();
 
                       updateTableFor(event.getIndex().intValue(), (Object[])event.getPayload());

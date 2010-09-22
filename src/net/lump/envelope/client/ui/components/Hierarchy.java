@@ -8,7 +8,6 @@ import net.lump.envelope.client.ui.components.forms.TableQueryBar;
 import net.lump.envelope.client.ui.components.models.MoneyRenderer;
 import net.lump.envelope.client.ui.components.models.TransactionTableModel;
 import net.lump.envelope.client.ui.defs.Colors;
-import net.lump.envelope.client.ui.defs.Fonts;
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.shared.entity.Account;
 import net.lump.envelope.shared.entity.Budget;
@@ -37,7 +36,7 @@ import static net.lump.envelope.client.ui.images.ImageResource.icon.*;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.35 2010/01/04 06:07:24 troy Exp $
+ * @version $Id: Hierarchy.java,v 1.36 2010/09/22 19:27:37 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;
@@ -126,7 +125,8 @@ public class Hierarchy extends JTree {
           Dimension checkWidth = new JCheckBox().getPreferredSize();
           int dateWidth =
               table.getFontMetrics(table.getFont()).stringWidth("MMM MM, MMMM");
-          int amountWidth = table.getFontMetrics(Fonts.fixed.getFont())
+          //int amountWidth = table.getFontMetrics(Fonts.fixed.getFont())
+          int amountWidth = table.getFontMetrics(table.getFont())
               .stringWidth("$0,000,000.00");
           table.getColumnModel().getColumn(0).setMaxWidth(checkWidth.width);
 
