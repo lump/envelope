@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.22 2010/07/28 04:25:04 troy Exp $
+# $Id: migrate.pl,v 1.23 2010/12/23 17:19:10 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -190,6 +190,7 @@ while (my $row = $sth->fetchrow_hashref()) {
                   and $row->{to_from} eq $transaction->{to_from}));
     $same = 1 if ($transaction->{to_from} eq $row->{to_from} and $transaction->{description} eq $row->{description});
     $same = 1 if ($transaction->{description} =~ /^Discover\s+.*/i and $row->{description} =~ /^Discover\s+.*/i);
+    $same = 1 if ($transaction->{description} =~ /^American Express\s+.*/i and $row->{description} =~ /^American Express\s+.*/i);
     $same = 1 if ($transaction->{description} =~ /^From ATM\s+.*/i and $row->{description} =~ /^From ATM\s+.*/i);
     $same = 1 if ($transaction->{description} =~ /^check\s*#(\d+(?:\.\d+)?).*/i and $row->{description} =~ /^check\s*#$1.*/i);
     $same = 1 if ($transaction->{description} =~ /^part\s+of\s*(\d+(?:\.\d+)?)/i and $row->{description} =~ /^part\s+of\s*$1/i);
