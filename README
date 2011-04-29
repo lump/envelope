@@ -1,0 +1,12 @@
+
+Envelope
+
+This is an envelope-based budget.  The idea is that you pre-allocate
+funds into the budget, and you should only spend money in a category
+if there are available funds to cover it.  All of the balances in
+accounts should add up and reconcile to the current balance of the
+bank account you're budgeting.
+
+The the current state of this project is very unstable and not all 
+features have been implemented.
+
