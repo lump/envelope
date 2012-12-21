@@ -201,7 +201,7 @@ while (my $row = $sth->fetchrow_hashref()) {
     if ($row->{description} =~ /^part\s+of\s*\d+(?:\.\d+)?\s+(?:-\s*)?(.+?)$/i) {
       $transaction->{new_description} .= "; $1"
     }
-    if ($row->{description} =~ /^(?:discover(?:\s+Card)|american express)?\s+(?:-\s*)?(.+?)$/i) {
+    if ($row->{description} =~ /^(?:discover(?:\s+Card)?|american express)?\s+(?:-\s*)?(.+?)$/i) {
       $transaction->{new_description} .= "; $1"
     }
     push @allocations, $row;
