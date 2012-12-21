@@ -110,11 +110,8 @@ public class Hierarchy extends JTree {
           sanifyDates(tqb);
 
           JTable table = tqb.getTable();
-          if (tm == null) {
-            tm = new TransactionTableModel(
-                o, tqb.getBeginDate(), tqb.getEndDate(),
-                tqb.getTable());
-          }
+          if (tm == null)  tm = new TransactionTableModel(o, tqb.getBeginDate(), tqb.getEndDate(), tqb.getTable());
+
           else tm.queue(o, tqb.getBeginDate(), tqb.getEndDate());
           if (!table.getModel().equals(tm)) table.setModel(tm);
 

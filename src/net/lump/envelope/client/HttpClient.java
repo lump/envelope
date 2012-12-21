@@ -219,8 +219,10 @@ public class HttpClient {
           // allow the UI event thread to catch up
 //          if (System.currentTimeMillis() > (drawTime + 1)) {
 //            System.out.println("drawing after " + (x - lastRows) + " rows");
-          try { Thread.sleep(1); } catch (InterruptedException ignore) { }
-//          if (x % 2 == 0) try { Thread.sleep(1); } catch (InterruptedException ignore) { }
+
+//          try { Thread.sleep(1); } catch (InterruptedException ignore) { }
+
+          if (x % 3 == 0) try { Thread.sleep(1); } catch (InterruptedException ignore) { }
 //            drawTime = System.currentTimeMillis();
 //            lastRows = x;
 //          }

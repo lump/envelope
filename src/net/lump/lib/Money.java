@@ -20,6 +20,8 @@ public class Money implements Serializable, Comparable<Money> {
   private static final NumberFormat format = java.text.NumberFormat.getCurrencyInstance();
   private static final Pattern vanilla = Pattern.compile("^-?\\d+(\\.\\d+)?$");
 
+  public static final Money ZERO = new Money(0);
+
   /**
    * Attempts to parse the string with the current locale's Currency NumberFormat parser.  If that fails, it falls back to the
    * BigDecimal parser.

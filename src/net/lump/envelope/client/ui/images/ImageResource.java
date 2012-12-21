@@ -25,7 +25,10 @@ public class ImageResource {
     budget,
     budget_closed,
     account,
-    account_closed;
+    account_closed,
+    inbox,
+    outbox,
+    ;
 
     public static final String png = "png";
     public static final String ico = "ico";
