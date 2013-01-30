@@ -49,7 +49,7 @@ for my $db (keys %$dbs) {
 
 $dbs->{dest}->{connection}->do("replace into budgets values (null, null, 'Bowman')")
   or die $dbs->{source}->{connection}->errstr;
-($budget_id) = $dbs->{dest}->{connection}->selectrow_array("select id from budgets where id is null")
+($budget_id) = $dbs->{dest}->{connection}->selectrow_array("select id from budgets where id = last_insert_id()")
   or die $dbs->{source}->{connection}->errstr;
 print "Budget id: $budget_id\n";
 
@@ -65,7 +65,7 @@ for my $account (qw(Checking Savings)) {
   my $entry = $accounts->{$account};
   $dbs->{dest}->{connection}->do("replace into accounts values (null, null, ?, ?, ?, ?, 0)",
                                   undef, $budget_id, $account, $entry->{type}, $entry->{rate});
-  ($entry->{id}) = $dbs->{dest}->{connection}->selectrow_array("select id from accounts where id is null")
+  ($entry->{id}) = $dbs->{dest}->{connection}->selectrow_array("select id from accounts where id = last_insert_id()")
     or die $dbs->{source}->{connection}->errstr;
   print "$account id: $entry->{id}\n";
 }
@@ -110,7 +110,7 @@ $dsth = $dbs->{dest}->{connection}->prepare("insert into categories (account, na
 $dsth2 = $dbs->{dest}->{connection}->prepare("
 insert into allocation_presets
 (budget, name, category, allocation, allocation_type, auto_deduct)
-values (?, 'Pay Day', (select id from categories where id is null), ?, ?, ?)")
+values (?, 'Pay Day', (select id from categories where id = last_insert_id()), ?, ?, ?)")
   or die $dbs->{source}->{connection}->errstr;
 
 $sth = $dbs->{source}->{connection}->prepare("select * from categories where budgetname = 'bowman'") or die $dbs->{source}->{connection}->errstr;;
@@ -253,7 +253,7 @@ sub insert_transaction {
 
   print "X";
   # the transaction id for the allocations
-  my ($last_id) = $dbs->{dest}->{connection}->selectrow_array("select id from transactions where id is null");
+  my ($last_id) = $dbs->{dest}->{connection}->selectrow_array("select id from transactions where id = last_insert_id()");
 
   # add allocations to this transaction
   for my $allocation (@allocations) {
