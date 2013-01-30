@@ -28,7 +28,7 @@ import java.util.zip.InflaterInputStream;
  * A http client invoker.
  *
  * @author troy
- * @version $Id: HttpClient.java,v 1.16 2010/02/15 05:51:52 troy Exp $
+ * @version $Id: HttpClient.java,v 1.17 2010/09/20 23:18:23 troy Exp $
  */
 public class HttpClient {
 
@@ -143,7 +143,32 @@ public class HttpClient {
       // signal end of parts
       out.flush();
 
-      InputStream is = connection.getInputStream();
+
+      class BytesReadMonitor implements MonitorInputStream.BytesReadListener {
+        long startTime = System.currentTimeMillis();
+        long bytesRead = 0L;
+
+        public void bytesRead(long bytes) {
+          bytesRead = bytes;
+        }
+
+        /**
+         * @return an average of the bytes read per second since the last time bytes per sec was polled.
+         */
+        public double getBytesPerSec() {
+          long elapsedMillis = System.currentTimeMillis() - startTime;
+          return (elapsedMillis > 0) ? (bytesRead / (new Long(elapsedMillis).doubleValue() / 1000)) : 0.0D;
+        }
+
+        /**
+         * @return how many bytes have been read thus far.
+         */
+        public long bytesRead() { return bytesRead; }
+      }
+
+      BytesReadMonitor bytesReadMonitor = new BytesReadMonitor();
+      
+      InputStream is = new MonitorInputStream(connection.getInputStream(), true, bytesReadMonitor);
 
       // handle an encrypted body
       String encryptionAlgorithm = connection.getHeaderField("content-encryption");
@@ -188,11 +213,16 @@ public class HttpClient {
         if (s instanceof RemoteException) throw (RemoteException)s;
         else {
           output.add(s);
-          command.fireOutput(new OutputEvent(command, (long)count, (long)x, s));
+          command.fireOutput(new OutputEvent(command, (long)count, (long)x, s,
+              bytesReadMonitor.bytesRead(),
+              bytesReadMonitor.getBytesPerSec()));
           // allow the UI event thread to catch up
 //          if (System.currentTimeMillis() > (drawTime + 1)) {
 //            System.out.println("drawing after " + (x - lastRows) + " rows");
-            try { Thread.sleep(1); } catch (InterruptedException ignore) { }
+
+//          try { Thread.sleep(1); } catch (InterruptedException ignore) { }
+
+          if (x % 3 == 0) try { Thread.sleep(1); } catch (InterruptedException ignore) { }
 //            drawTime = System.currentTimeMillis();
 //            lastRows = x;
 //          }

@@ -1,7 +1,6 @@
 package net.lump.envelope.client.ui.components;
 
 import net.lump.envelope.client.ui.defs.Colors;
-import net.lump.envelope.client.ui.defs.Fonts;
 import net.lump.lib.Money;
 
 import javax.swing.*;
@@ -17,7 +16,7 @@ public class MoneyTextField extends JTextField {
   public MoneyTextField(String value) {
     super(value, 15);
 
-    setFont(Fonts.fixed.getFont());
+    //setFont(Fonts.fixed.getFont());
 
     setHorizontalAlignment(JTextField.RIGHT);
 

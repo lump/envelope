@@ -6,6 +6,7 @@ import net.lump.envelope.server.dao.Security;
 import net.lump.envelope.server.servlet.beans.ServerPrefs;
 import net.lump.envelope.shared.command.Command;
 import net.lump.lib.util.Base64;
+import org.apache.log4j.Logger;
 
 import javax.crypto.*;
 import javax.servlet.ServletException;
@@ -26,11 +27,12 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: InvocationServlet.java,v 1.5 2010/01/04 06:07:24 troy Exp $
+ * @version $Id: InvocationServlet.java,v 1.7 2010/09/20 23:18:23 troy Exp $
  */
 public class InvocationServlet extends HttpServlet {
 
   private static final int READLIMIT = 104857600;
+  private static final Logger logger = Logger.getLogger(InvocationServlet.class);
 
   public InvocationServlet() {
     super();
@@ -39,8 +41,11 @@ public class InvocationServlet extends HttpServlet {
   public void init() {
     try {
       DAO.initialize(ServerPrefs.getInstance().getProps(DAO.class));
-    } catch (MalformedURLException ignore) {
-    } catch (IOException ignore) {}
+    } catch (MalformedURLException m) {
+      logger.error(m);
+    } catch (IOException io) {
+      logger.error(io);
+    }
   }
 
   @SuppressWarnings({"unchecked", "ConstantConditions"}) @Override
@@ -231,10 +236,15 @@ public class InvocationServlet extends HttpServlet {
         Controller c = new Controller(rp, os);
         try {
           c.invoke(command);
-        } catch (RemoteException r) {
+        } catch (Exception e) {
+          if (!(e instanceof RemoteException)) {
+            Throwable tmp = e.getCause();
+            while (tmp.getCause() != null) tmp = tmp.getCause();
+            e = new RemoteException("Unexpected exception", tmp);
+          }
           rp.addHeader("Single-Object", Boolean.TRUE.toString());
           rp.addIntHeader("Object-Count", 1);
-          new ObjectOutputStream(os).writeObject(r);
+          new ObjectOutputStream(os).writeObject(e);
           os.flush();
         }
 

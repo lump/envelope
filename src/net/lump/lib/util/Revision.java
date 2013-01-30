@@ -20,7 +20,7 @@ public enum Revision {
   Date,
   /** A standard header containing the full pathname of the rcs file, the revision number, the date (UTC), the author, the state, and the locker (if locked). Files will normally never be locked when you use cvsnt. */
   Header,
-  /** Same as $Header: /export/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.11 2009/10/02 22:06:23 troy Exp $, except that the rcs filename is without a path. */
+  /** Same as $Header: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.11 2009/10/02 22:06:23 troy Exp $, except that the rcs filename is without a path. */
   Id,
   /** Tag name used to check out this file. The keyword is expanded only if one checks out with an explicit tag name. For example, when running the command cvs co -r first, the keyword expands to Name: first. */
   Name,
@@ -40,12 +40,12 @@ public enum Revision {
   private final String[] REVS = new String[]{
       "$Author: troy $",
       "$Date: 2009/10/02 22:06:23 $",
-      "$Header: /export/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.11 2009/10/02 22:06:23 troy Exp $",
+      "$Header: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.11 2009/10/02 22:06:23 troy Exp $",
       "$Id: Revision.java,v 1.11 2009/10/02 22:06:23 troy Exp $",
       "$Name:  $",
       "$Locker:  $",
       "$Revision: 1.11 $",
-      "$Source: /export/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v $",
+      "$Source: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v $",
       "$State: Exp $",
   };
 

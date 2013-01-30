@@ -8,11 +8,13 @@ import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.thread.ThreadPool;
 import net.lump.envelope.client.ui.components.Hierarchy;
 import net.lump.envelope.client.ui.components.StatusBar;
+import net.lump.envelope.client.ui.components.forms.TableQueryBar;
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.shared.command.OutputEvent;
 import net.lump.envelope.shared.command.OutputListener;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.Money;
+import net.lump.lib.util.ByteFormat;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -28,12 +30,14 @@ import java.util.concurrent.LinkedBlockingQueue;
  * A table model which lists transactions.
  *
  * @author Troy Bowman
- * @version $Id: TransactionTableModel.java,v 1.43 2010/01/04 06:07:24 troy Exp $
+ * @version $Id: TransactionTableModel.java,v 1.45 2010/09/22 19:27:37 troy Exp $
  */
 public class TransactionTableModel extends AbstractTableModel {
   private Vector<Object[]> transactions = new Vector<Object[]>();
   private Money beginningBalance = new Money(0);
   private Money beginningReconciledBalance = new Money(0);
+  private Money incomeBalance = new Money(0);
+  private Money outgoingBalance = new Money(0);
   private boolean isTransaction;
   private Date beginDate;
   private Date endDate;
@@ -58,6 +62,10 @@ public class TransactionTableModel extends AbstractTableModel {
     Description,
     TransactionID,
     AllocationID
+  }
+
+  public boolean isTransaction() {
+    return isTransaction;
   }
 
   public void setSelectionCache(Integer i) {
@@ -108,6 +116,10 @@ public class TransactionTableModel extends AbstractTableModel {
                 || TransactionTableModel.this.thing instanceof Hierarchy.CategoryTotal))
               throw new IllegalArgumentException("only AccountTotal or CategoryTotal aceptable as first argument");
 
+            incomeBalance = new Money(0);
+            TableQueryBar.getInstance().setInboxLabel(incomeBalance.toString());
+            outgoingBalance = new Money(0);
+            TableQueryBar.getInstance().setOutboxLabel(outgoingBalance.toString());
             startDate = System.currentTimeMillis();
 
             CriteriaFactory cf = CriteriaFactory.getInstance();
@@ -147,7 +159,9 @@ public class TransactionTableModel extends AbstractTableModel {
                       else if (startDate < (System.currentTimeMillis() - 150)) sb.getProgress().setVisible(true);
 
                       statusElement.setValue(
-                          Strings.get("reading") + " " + TransactionTableModel.this.thing + " row " + (event.getIndex() + 1L));
+                          Strings.get("reading") + " " + TransactionTableModel.this.thing + " " + (event.getIndex() + 1L)
+                          + " rows, " + ByteFormat.getInstance().formatBytes(event.getBytesRead(), true) + ", "
+                          + ByteFormat.getInstance().formatBytes(event.getBytesPerSecond(), true) + "/s");
                       StatusBar.getInstance().updateLabel();
 
                       updateTableFor(event.getIndex().intValue(), (Object[])event.getPayload());
@@ -212,8 +226,19 @@ public class TransactionTableModel extends AbstractTableModel {
     Money reconciled = rowNumber == 0 ? beginningBalance : (Money)transactions.get(rowNumber - 1)[COLUMN.Reconciled.ordinal()];
     Money balance = rowNumber == 0 ? beginningReconciledBalance : (Money)transactions.get(rowNumber - 1)[COLUMN.Balance.ordinal()];
 
+    Money amount = (Money)row[COLUMN.Amount.ordinal()];
     // calculate balance column
-    balance = balance.add((Money)row[COLUMN.Amount.ordinal()]);
+
+    balance = balance.add(amount);
+
+    if (amount.compareTo(Money.ZERO) > 0) {
+      incomeBalance = incomeBalance.add(amount);
+      TableQueryBar.getInstance().setInboxLabel(incomeBalance.toString());
+    }
+    else if (amount.compareTo(Money.ZERO) < 0) {
+      outgoingBalance = outgoingBalance.add(amount.abs());
+      TableQueryBar.getInstance().setOutboxLabel(outgoingBalance.toString());
+    }
 
     // only add reconciled balance if it tx is reconciled
     if ((Boolean)row[COLUMN.C.ordinal()]) reconciled = reconciled.add((Money)row[COLUMN.Amount.ordinal()]);
@@ -224,9 +249,10 @@ public class TransactionTableModel extends AbstractTableModel {
     if (rowNumber < transactions.size()) transactions.set(rowNumber, newRow);
     else transactions.add(rowNumber, newRow);
 
-    final boolean reselect = (selectionCache != null && newRow[COLUMN.TransactionID.ordinal()].equals(selectionCache));
-    // make sure table updates happen on swing thread to avoid deadlocks
 
+    final boolean reselect = (selectionCache != null && newRow[COLUMN.TransactionID.ordinal()].equals(selectionCache));
+
+    // make sure table updates happen on swing thread to avoid deadlocks
     SwingUtilities.invokeLater(new Runnable() {
       public void run() {
         fireTableRowsInserted(rowNumber, rowNumber);

@@ -1,0 +1,17 @@
+rmi-envelope.iws
+envelope.iws
+classes
+client-classes
+server-classes
+.build.properties
+Envelope.class
+client.jar
+client.jar.pack.gz
+doc
+envelope-server.jar
+envelope.war
+names
+server.jar
+servlet-2_3-fcs-docs.zip
+test-classes
+

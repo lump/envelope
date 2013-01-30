@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-# $Id: migrate.pl,v 1.21 2010/01/06 06:47:55 troy Exp $
+# $Id: migrate.pl,v 1.24 2010/12/23 19:19:02 troy Exp $
 #
 # migrate troy's existing live envelope database
 # requires a fresh database (boostrap.sql)
@@ -190,6 +190,7 @@ while (my $row = $sth->fetchrow_hashref()) {
                   and $row->{to_from} eq $transaction->{to_from}));
     $same = 1 if ($transaction->{to_from} eq $row->{to_from} and $transaction->{description} eq $row->{description});
     $same = 1 if ($transaction->{description} =~ /^Discover\s+.*/i and $row->{description} =~ /^Discover\s+.*/i);
+    $same = 1 if ($transaction->{description} =~ /^American Express\s+.*/i and $row->{description} =~ /^American Express\s+.*/i);
     $same = 1 if ($transaction->{description} =~ /^From ATM\s+.*/i and $row->{description} =~ /^From ATM\s+.*/i);
     $same = 1 if ($transaction->{description} =~ /^check\s*#(\d+(?:\.\d+)?).*/i and $row->{description} =~ /^check\s*#$1.*/i);
     $same = 1 if ($transaction->{description} =~ /^part\s+of\s*(\d+(?:\.\d+)?)/i and $row->{description} =~ /^part\s+of\s*$1/i);
@@ -200,7 +201,7 @@ while (my $row = $sth->fetchrow_hashref()) {
     if ($row->{description} =~ /^part\s+of\s*\d+(?:\.\d+)?\s+(?:-\s*)?(.+?)$/i) {
       $transaction->{new_description} .= "; $1"
     }
-    if ($row->{description} =~ /^Discover(?:\s+Card)\s+(?:-\s*)?(.+?)$/i) {
+    if ($row->{description} =~ /^(?:discover(?:\s+Card)?|american express)?\s+(?:-\s*)?(.+?)$/i) {
       $transaction->{new_description} .= "; $1"
     }
     push @allocations, $row;

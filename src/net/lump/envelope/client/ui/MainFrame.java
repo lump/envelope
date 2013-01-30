@@ -24,7 +24,7 @@ import java.beans.PropertyChangeListener;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.42 2010/02/15 05:51:52 troy Exp $
+ * @version $Id: MainFrame.java,v 1.43 2010/09/22 19:27:37 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;
@@ -36,9 +36,7 @@ public class MainFrame extends JFrame {
   JCheckBoxMenuItem viewTransaction;
   int savedTransactionFormSplitterLocation = 0;
 
-  //content
   private JScrollPane treeScrollPane = new JScrollPane();
-  private JPanel contentPane = new JPanel(new BorderLayout());
   private JSplitPane tableContentSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, Box.createVerticalGlue(), null);
   private JSplitPane treeContentSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeScrollPane, tableContentSplitPane);
 
@@ -94,7 +92,7 @@ public class MainFrame extends JFrame {
 
 
     this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    this.setLayout(new BorderLayout());
+    this.setLayout(new BorderLayout(0,0));
     this.getContentPane().add(BorderLayout.CENTER, treeContentSplitPane);
     this.getContentPane().add(BorderLayout.SOUTH, status);
 

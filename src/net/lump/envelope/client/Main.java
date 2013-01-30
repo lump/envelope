@@ -1,8 +1,8 @@
 package net.lump.envelope.client;
 
 import com.incors.plaf.alloy.themes.bedouin.BedouinTheme;
-import org.apache.log4j.BasicConfigurator;
 import net.lump.envelope.client.ui.MainFrame;
+import org.apache.log4j.BasicConfigurator;
 
 import javax.swing.*;
 
@@ -10,7 +10,7 @@ import javax.swing.*;
  * Main class.
  *
  * @author troy
- * @version $Id: Main.java,v 1.22 2009/10/02 22:06:23 troy Exp $
+ * @version $Id: Main.java,v 1.23 2010/09/22 19:27:37 troy Exp $
  */
 public class Main implements Runnable {
   private static Main singleton;
@@ -33,11 +33,16 @@ public class Main implements Runnable {
 //    }
 
 
-//    try {
-//       try nimbus first, since it's the coolest
-//      UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
-//    }
-//    catch (Exception e) {
+    try {
+     //  try nimbus first, since it's the coolest
+      UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+      //UIManager.getLookAndFeelDefaults().put("Table.cellNoFocusBorder", new Insets(0,0,0,0));
+      //UIManager.getLookAndFeelDefaults().put("InternalFrame.contentMargins", new Insets(0,0,0,0));
+      //UIManager.getLookAndFeelDefaults().put("Table.focusCellHighlightBorder", new Insets(0,0,0,0));
+      //Insets buttonInsets = new Insets(3, 6, 3, 6);
+      //UIManager.getLookAndFeelDefaults().put("Button.contentMargins", buttonInsets);
+    }
+    catch (Exception e) {
       try {
         // try alloy next, since it is clean and nice
         // borrow the jetbrains license for now, until we get serious
@@ -53,7 +58,7 @@ public class Main implements Runnable {
           // nevermind
         }
       }
-//    }
+    }
   }
 
   // for possibly applet starting which are already using a http classloader

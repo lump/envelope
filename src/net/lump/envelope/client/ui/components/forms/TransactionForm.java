@@ -16,7 +16,6 @@ import net.lump.envelope.client.ui.components.models.AllocationFormTableModel;
 import net.lump.envelope.client.ui.components.models.CellEditor;
 import net.lump.envelope.client.ui.components.models.MoneyRenderer;
 import net.lump.envelope.client.ui.components.models.TransactionTableModel;
-import net.lump.envelope.client.ui.defs.Fonts;
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.shared.command.OutputEvent;
 import net.lump.envelope.shared.command.OutputListener;
@@ -52,7 +51,7 @@ import java.util.ResourceBundle;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.24 2010/02/27 00:30:56 troy Exp $
+ * @version $Id: TransactionForm.java,v 1.25 2010/09/22 19:27:36 troy Exp $
  */
 public class TransactionForm {
   private JButton saveButton;
@@ -110,8 +109,8 @@ public class TransactionForm {
     transactionInfoPanel = new JPanel();
     transactionInfoPanel.setLayout(new GridLayoutManager(9, 3, new Insets(0, 0, 0, 0), 1, 5));
     transactionAllocationSplit.setLeftComponent(transactionInfoPanel);
-    transactionInfoPanel.setBorder(BorderFactory.createTitledBorder(
-        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("transaction")));
+    transactionInfoPanel.setBorder(BorderFactory
+        .createTitledBorder(ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("transaction")));
     dateLabel = new JLabel();
     this.$$$loadLabelText$$$(dateLabel, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("date"));
     transactionInfoPanel.add(dateLabel,
@@ -216,8 +215,8 @@ public class TransactionForm {
     allocationsPanel = new JPanel();
     allocationsPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), 0, 0));
     transactionAllocationSplit.setRightComponent(allocationsPanel);
-    allocationsPanel.setBorder(BorderFactory.createTitledBorder(
-        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("allocations")));
+    allocationsPanel.setBorder(BorderFactory
+        .createTitledBorder(ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("allocations")));
     allocationsScrollPane = new JScrollPane();
     allocationsPanel.add(allocationsScrollPane,
         new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
@@ -606,8 +605,9 @@ public class TransactionForm {
 
                   transactionDate.setDate(editingTransaction.getDate());
 
-                  try { description.setDocument(new LimitDocument(Transaction.class.getMethod("getDescription"))); }
-                  catch (NoSuchMethodException ignore) {}
+                  try {
+                    description.setDocument(new LimitDocument(Transaction.class.getMethod("getDescription")));
+                  } catch (NoSuchMethodException ignore) {}
 
                   description.setText(editingTransaction.getDescription());
 
@@ -676,7 +676,7 @@ public class TransactionForm {
     today = today - (today % 86400000);
 
     transactionDate = new JDateChooser(new Date(today), "MM/dd/yyyy", new JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
-    transactionDate.setFont(Fonts.fixed.getFont());
+    //transactionDate.setFont(Fonts.fixed.getFont());
     totalsGridLayout = new GridLayout(0, 2);
     totalsPanel = new JPanel(totalsGridLayout);
     totalsPanel.removeAll();
