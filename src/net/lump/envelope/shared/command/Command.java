@@ -52,6 +52,7 @@ public class Command implements Serializable {
     detachedCriteriaQueryList(Dao.Generic, DetachedCriteria.class, Boolean.class),
     detachedCriteriaQueryUnique(Dao.Generic, DetachedCriteria.class, Boolean.class),
     get(Dao.Generic, Class.class, Serializable.class),
+    load(Dao.Generic, Class.class, Serializable.class),
     save(Dao.Generic, Identifiable.class),
     saveOrUpdate(Dao.Generic, Identifiable.class),
 //    merge(Dao.Generic, Identifiable.class),

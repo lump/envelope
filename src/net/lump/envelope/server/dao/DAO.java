@@ -5,12 +5,17 @@ import net.lump.envelope.shared.entity.*;
 import net.lump.envelope.shared.entity.Transaction;
 import net.lump.envelope.shared.exception.EnvelopeException;
 import org.apache.log4j.Logger;
+import org.apache.log4j.Priority;
 import org.hibernate.*;
 import org.hibernate.cfg.AnnotationConfiguration;
+import org.hibernate.cfg.Configuration;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
-import org.hibernate.impl.SessionImpl;
+import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.internal.SessionImpl;
+import org.hibernate.service.ServiceRegistry;
+import org.hibernate.service.ServiceRegistryBuilder;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -27,16 +32,16 @@ import java.util.Properties;
  * @version $Id: DAO.java,v 1.31 2010/01/06 06:58:01 troy Exp $
  */
 public abstract class DAO {
-  final Logger logger;
+  static final Logger logger = Logger.getLogger(DAO.class.getName());
 
   private static SessionFactory sessionFactory = null;
+  private static ServiceRegistry serviceRegistry = null;
 
   private static final int cacheSize = 32;
   private static final int cacheTtl = 4;
   private static final int cacheTti = 5;
 
   {
-    logger = Logger.getLogger(this.getClass());
     if (!this.isActive()) begin();
   }
 
@@ -51,7 +56,10 @@ public abstract class DAO {
    */
   public static void initialize(Properties config) {
     if (sessionFactory == null) {
-      sessionFactory = new AnnotationConfiguration()
+      try {
+        System.getProperties().setProperty(
+            "hibernate.cache.region.factory_class","net.sf.ehcache.hibernate.EhCacheRegionFactory");
+      Configuration c = new AnnotationConfiguration()
           .addAnnotatedClass(Account.class)
           .addAnnotatedClass(Budget.class)
           .addAnnotatedClass(Category.class)
@@ -61,7 +69,12 @@ public abstract class DAO {
           .addAnnotatedClass(Transaction.class)
           .addAnnotatedClass(Allocation.class)
           .addAnnotatedClass(User.class)
-          .addProperties(config).buildSessionFactory();
+          .addProperties(config);
+      sessionFactory = c.buildSessionFactory();
+      } catch (Exception e) {
+        logger.log(Priority.FATAL, e);
+      }
+
     }
   }
 
@@ -84,22 +97,18 @@ public abstract class DAO {
   }
 
   @SuppressWarnings({"unchecked"})
-  public static <T extends Serializable, S extends Serializable> T getIdentifier(
-      Identifiable<T, S> c) {
-    return (T)getSessionFactory().getClassMetadata(c.getClass())
-        .getIdentifier(c, EntityMode.POJO);
+  public static <T extends Serializable, S extends Serializable> T getIdentifier(Identifiable<T, S> c) {
+    return (T)getSessionFactory().getClassMetadata(c.getClass()).getIdentifier(c, (SessionImplementor)getSessionFactory().getCurrentSession());
   }
 
   public static void setIdentifier(Serializable c, Serializable value) {
-    getSessionFactory().getClassMetadata(c.getClass())
-        .setIdentifier(c, value, EntityMode.POJO);
+    Session s = getSessionFactory().getCurrentSession();
+    getSessionFactory().getClassMetadata(c.getClass()).setIdentifier(c, value, (SessionImplementor)getSessionFactory().getCurrentSession());
   }
 
   @SuppressWarnings({"unchecked"})
-  public static <T extends Serializable, S extends Serializable> S getVersion(
-      Identifiable<T, S> c) {
-    return (S)getSessionFactory().getClassMetadata(c.getClass())
-        .getVersion(c, EntityMode.POJO);
+  public static <T extends Serializable, S extends Serializable> S getVersion(Identifiable<T, S> c) {
+    return (S)getSessionFactory().getClassMetadata(c.getClass()).getVersion(c);
   }
 
 
@@ -115,8 +124,9 @@ public abstract class DAO {
     for (T i : l) delete(i);
   }
 
-  protected <T extends Identifiable> void evict(T i) {
+  protected <T extends Identifiable> T evict(T i) {
     getCurrentSession().evict(i);
+    return i;
   }
 
   protected <T extends Identifiable> void evict(T[] is) {
@@ -211,21 +221,20 @@ public abstract class DAO {
     return getCurrentSession().save(o);
   }
 
+  @SuppressWarnings("unchecked")
   public <T extends Identifiable> Serializable saveOrUpdate(T o) {
-    if (o.getId() == null)
-      return getCurrentSession().save(o);
-    else {
-      getCurrentSession().update(o);
-      return o.getId();
-    }
+    getCurrentSession().saveOrUpdate(o);
+    getCurrentSession().flush();
+    T out = (T)getCurrentSession().get(o.getClass(), o.getId());
+    evict(out);
+    return out;
   }
 
   public <T extends Identifiable> List<Serializable> saveOrUpdateList(T[] os) {
     return saveOrUpdateList(Arrays.asList(os));
   }
 
-  public <T extends Identifiable> List<Serializable> saveOrUpdateList(
-      Iterable<T> os) {
+  public <T extends Identifiable> List<Serializable> saveOrUpdateList(Iterable<T> os) {
     List<Serializable> out = new ArrayList<Serializable>();
     for (T o : os) out.add(saveOrUpdate(o));
     return out;
@@ -400,19 +409,21 @@ public abstract class DAO {
    *
    * @throws SQLException if the session is closed.
    */
+  /*
   Connection getConnection() throws SQLException {
     Connection c =
         ((SessionImpl)getCurrentSession()).getJDBCContext().borrowConnection();
     if (c.isClosed()) throw new SessionException("Session is closed!");
     return c;
   }
+  */
 
   protected void finalize() throws Throwable {
     try {
       if (isActive() && !wasRolledBack() && isDirty()) {
         commit();
       }
-      if (!getConnection().isClosed()) {
+      if (isConnected()) {
         close();
         disconnect();
       }

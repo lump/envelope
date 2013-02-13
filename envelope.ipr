@@ -614,7 +614,7 @@
       <module fileurl="file://$PROJECT_DIR$/envelope.iml" filepath="$PROJECT_DIR$/envelope.iml" />
     </modules>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_5" assert-keyword="true" jdk-15="true" project-jdk-name="1.7" project-jdk-type="JavaSDK">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_7" assert-keyword="true" jdk-15="true" project-jdk-name="1.7" project-jdk-type="JavaSDK">
     <output url="file://$PROJECT_DIR$/classes" />
   </component>
   <component name="RUBY_DOC_SETTINGS">
@@ -653,9 +653,8 @@
       </CLASSES>
       <JAVADOC />
       <SOURCES>
-        <root url="jar://$PROJECT_DIR$/lib/src/ehcache-1.5.0-sources.jar!/" />
-        <root url="jar://$PROJECT_DIR$/lib/src/hibernate-annotations-3.5.3-src.zip!/" />
-        <root url="jar://$PROJECT_DIR$/lib/src/hibernate-3.5.3-src.zip!/" />
+        <root url="jar://$PROJECT_DIR$/lib/src/ehcache-2.4.3.src.jar!/" />
+        <root url="jar://$PROJECT_DIR$/lib/src/hibernate-4.1.9-src.jar!/" />
       </SOURCES>
       <jarDirectory url="file://$PROJECT_DIR$/lib" recursive="false" />
     </library>

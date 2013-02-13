@@ -2,6 +2,7 @@ package net.lump.envelope.server.dao;
 
 import org.hibernate.CacheMode;
 import org.hibernate.Criteria;
+import org.hibernate.Hibernate;
 import org.hibernate.ScrollableResults;
 import org.hibernate.criterion.DetachedCriteria;
 import net.lump.envelope.shared.entity.Identifiable;
@@ -14,6 +15,15 @@ public class Generic extends DAO {
   @Override
   public <T extends Identifiable> T get(Class<T> t, Serializable id) {
     T obj = super.get(t, id);
+    Hibernate.initialize(obj);
+    super.evict(obj);
+    return obj;
+  }
+
+  @Override
+  public <T extends Identifiable> T load(Class<T> t, Serializable id) {
+    T obj = super.load(t, id);
+    Hibernate.initialize(obj);
     super.evict(obj);
     return obj;
   }

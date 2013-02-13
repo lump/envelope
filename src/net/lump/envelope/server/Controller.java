@@ -139,7 +139,8 @@ public class Controller {
           sr.beforeFirst();
           ObjectOutputStream oos = new ObjectOutputStream(os);
           if (count > 100)
-            while (sr.next()) oos.writeObject(sr.get().length == 1 ? sr.get()[0] : sr.get());
+            while (sr.next())
+              oos.writeObject(sr.get().length == 1 ? sr.get()[0] : sr.get());
           else
             while (sr.next()) {
               oos.writeObject(sr.get().length == 1 ? sr.get()[0] : sr.get());

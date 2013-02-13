@@ -5,6 +5,7 @@ import net.lump.envelope.shared.command.Command;
 import net.lump.envelope.shared.command.OutputListener;
 import net.lump.envelope.shared.entity.Identifiable;
 import net.lump.envelope.shared.exception.AbortException;
+import sun.reflect.generics.scope.ClassScope;
 
 import java.io.Serializable;
 import java.util.List;
@@ -40,7 +41,14 @@ public class HibernatePortal extends Portal {
     return (List)invoke(new Command(Command.Name.detachedCriteriaQueryList, ol, dc, cache));
   }
 
+  public <T extends Identifiable> T saveOrUpdate(T i) throws AbortException {
+    return (T)invoke(new Command(Command.Name.saveOrUpdate, null, i));
+  }
 
+  public <T extends Identifiable> T load(Class<T> cless, Serializable id)
+      throws AbortException {
+    return (T)invoke(new Command(Command.Name.load, null, cless, id));
+  }
   public <T extends Identifiable> T get(Class<T> cless, Serializable id)
       throws AbortException {
     return (T)invoke(new Command(Command.Name.get, null, cless, id));

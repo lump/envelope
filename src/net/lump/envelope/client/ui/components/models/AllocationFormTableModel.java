@@ -216,9 +216,9 @@ public class AllocationFormTableModel extends AbstractTableModel {
             break;
 //          case Projected:
 //            Money balance = getBalance(editAllocation);
-//            Money amount = editAllocation.getAmount();
+//            Money amount = editAllocation.getNetAmount();
 //            if (originalAllocation != null)
-//              amount = amount.subtract(originalAllocation.getAmount());
+//              amount = amount.subtract(originalAllocation.getNetAmount());
 //            retval = balance.add(amount);
 //            break;
         }

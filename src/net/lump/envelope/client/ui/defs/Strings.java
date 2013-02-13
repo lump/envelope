@@ -18,9 +18,8 @@ public class Strings {
   private static Strings strings;
 
   private Strings() {
-    stringProperties =
-        ResourceBundle.getBundle(this.getClass().getName(),
-                                 Locale.getDefault());
+    stringProperties = ResourceBundle.getBundle(
+        this.getClass().getName(), Locale.getDefault());
     logger = Logger.getLogger(this.getClass());
   }
 

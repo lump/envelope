@@ -94,6 +94,12 @@ public class CriteriaFactory {
     return retval;
   }
 
+  public Transaction getTransactionById(Integer id) throws AbortException {
+    return (Transaction)new HibernatePortal().detachedCriteriaQueryUnique(
+        DetachedCriteria.forClass(Transaction.class)
+        .add(Restrictions.eq("id", id)));
+  }
+
   public List<Hierarchy.CategoryTotal> getCategoriesForAccount(Account account)
       throws AbortException {
     List<Hierarchy.CategoryTotal> retval =

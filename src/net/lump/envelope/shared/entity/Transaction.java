@@ -3,13 +3,14 @@ package net.lump.envelope.shared.entity;
 import net.lump.lib.Money;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.IndexColumn;
+import org.hibernate.collection.internal.PersistentList;
 
 import javax.persistence.*;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  * A transaction.
@@ -37,7 +38,7 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
   public String toString() {
     String out = MessageFormat.format("{0,date,short} {1} {2}/{3}",
         date,
-        getAmount().toString(),
+        getNetAmount().toString(),
         entity,
         description);
     for (Allocation a : allocations)
@@ -78,14 +79,19 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
     this.date = date;
   }
 
-  @OneToMany(mappedBy = "transaction")
-  @Fetch(value = FetchMode.JOIN)
+  @OneToMany(mappedBy = "transaction", fetch = FetchType.EAGER)
+  @Fetch(value = FetchMode.SELECT )
   public List<Allocation> getAllocations() {
     return allocations;
   }
 
   public void setAllocations(List<Allocation> allocations) {
     this.allocations = allocations;
+    /*
+    this.allocations.clear();
+    if (allocations != null)
+      this.allocations.addAll(allocations);
+      */
   }
 
   @Column(name = "entity", nullable = false, length = 128)
@@ -126,11 +132,11 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
   }
 
   @Transient
-  public Money getAmount() {
+  public Money getNetAmount() {
     Money total = new Money(0);
 
     for (Allocation a : this.getAllocations())
-      total = new Money(total.add(a.getAmount()).toString());
+      total = total.add(a.getAmount());
 
     return total;
   }
@@ -142,9 +148,6 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
 
     Transaction that = (Transaction)o;
 
-    if (allocations != null
-        ? !allocations.equals(that.allocations)
-        : that.allocations != null) return false;
     if (date != null
         ? !date.equals(that.date)
         : that.date != null) return false;
@@ -163,9 +166,36 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
     if (stamp != null
         ? !stamp.equals(that.stamp)
         : that.stamp != null) return false;
-    return !(entity != null
-             ? !entity.equals(that.entity)
-             : that.entity != null);
+    if (entity != null
+        ? !entity.equals(that.entity)
+        : that.entity != null) return false;
+
+    if (allocations != null) {
+      if (that.allocations == null) return false;
+
+      // PersistentSTUPIDBag doesn't have a decent equals
+      ArrayList thisList = new ArrayList<Allocation>(this.allocations);
+      ArrayList thatList = new ArrayList<Allocation>(allocations);
+
+      Comparator<Allocation> indexSort =
+          new Comparator<Allocation>() {
+            public int compare(Allocation one, Allocation other) {
+              return one.getId().compareTo(other.getId());
+            }
+          };
+
+      //noinspection unchecked
+      Collections.sort(thisList, indexSort);
+      //noinspection unchecked
+      Collections.sort(thatList, indexSort);
+
+      if (!Arrays.equals(thisList.toArray(), thatList.toArray()))
+        return false;
+    }
+    else if (that.allocations != null) return false;
+
+    return true;
+
   }
 
   public int hashCode() {
