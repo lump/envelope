@@ -1,4 +1,4 @@
-package net.lump.envelope.client.ui.components.models;
+package net.lump.envelope.client.ui.components;
 
 import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.portal.HibernatePortal;
@@ -6,8 +6,6 @@ import net.lump.envelope.client.portal.TransactionPortal;
 import net.lump.envelope.client.thread.StatusElement;
 import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.thread.ThreadPool;
-import net.lump.envelope.client.ui.components.Hierarchy;
-import net.lump.envelope.client.ui.components.StatusBar;
 import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBar;
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.shared.command.OutputEvent;

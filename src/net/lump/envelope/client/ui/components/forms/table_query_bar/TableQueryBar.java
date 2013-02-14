@@ -5,7 +5,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
-import net.lump.envelope.client.ui.components.models.TransactionTableModel;
+import net.lump.envelope.client.ui.components.TransactionTableModel;
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.client.ui.images.ImageResource;
 import net.lump.lib.Money;

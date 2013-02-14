@@ -8,7 +8,7 @@ import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
-public class FormDescription extends FormEntry<JTextField, Transaction, String> {
+public class FormDescription extends Changeable<JTextField, Transaction, String> {
   JTextField field;
   Transaction transaction;
   Runnable saverOrUpdate;

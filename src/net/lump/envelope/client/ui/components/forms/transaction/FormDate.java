@@ -11,7 +11,7 @@ import java.sql.Date;
  * @author troy
  * @version $Id$
  */
-public class FormDate extends FormEntry<JDateChooser, Transaction, Date> {
+public class FormDate extends Changeable<JDateChooser, Transaction, Date> {
 
   Transaction transaction;
   JDateChooser jDateChooser;

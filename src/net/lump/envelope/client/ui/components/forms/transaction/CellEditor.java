@@ -1,4 +1,4 @@
-package net.lump.envelope.client.ui.components.models;
+package net.lump.envelope.client.ui.components.forms.transaction;
 
 /*
  * @(#)DefaultCellEditor.java	1.53 08/02/04

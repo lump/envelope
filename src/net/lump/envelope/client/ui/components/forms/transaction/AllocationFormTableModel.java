@@ -1,4 +1,4 @@
-package net.lump.envelope.client.ui.components.models;
+package net.lump.envelope.client.ui.components.forms.transaction;
 
 import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.portal.HibernatePortal;

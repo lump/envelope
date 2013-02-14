@@ -10,7 +10,7 @@ import java.awt.event.ActionListener;
  * @author troy
  * @version $Id$
  */
-abstract class FormEntry<C extends JComponent, E extends Identifiable, V> {
+abstract class Changeable<C extends JComponent, E extends Identifiable, V> {
 
   int dirtyDelay = 250;
   Timer dirtyTimer = null;
