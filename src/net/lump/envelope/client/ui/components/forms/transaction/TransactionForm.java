@@ -84,8 +84,8 @@ public class TransactionForm {
   private Timer dirtyTimer = null;
 
   private BlockingQueue<StatusRunnable> updateQueue = new LinkedBlockingQueue<StatusRunnable>();
-  FormDate formDate;
-  FormDescription formDescription;
+  ChangeableDateChooser changeableDateChooser;
+  ChangeableJTextField changeableJTextField;
 
   ItemListener entityItemChangeListener = new ItemListener() {
     public void itemStateChanged(ItemEvent e) {
@@ -449,8 +449,8 @@ public class TransactionForm {
             originalTransaction = hp.saveOrUpdate(editingTransaction);
             formIsDirty = false;
             editingTransaction = ObjectUtil.deepCopy(originalTransaction);
-            formDate.setTransaction(editingTransaction);
-            formDescription.setTransaction(editingTransaction);
+            changeableDateChooser.setTransaction(editingTransaction);
+            changeableJTextField.setTransaction(editingTransaction);
           } catch (AbortException ignore) { }
         }
       };
@@ -514,8 +514,8 @@ public class TransactionForm {
               }
             };
 
-            formDate = new FormDate(transactionDate, editingTransaction, saveOrUpdate);
-            formDescription = new FormDescription(description, editingTransaction, saveOrUpdate);
+            changeableDateChooser = new ChangeableDateChooser(transactionDate, editingTransaction, saveOrUpdate);
+            changeableJTextField = new ChangeableJTextField(description, editingTransaction, saveOrUpdate);
 
             SwingUtilities.invokeAndWait(new Runnable() {
               public void run() {

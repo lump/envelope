@@ -8,12 +8,12 @@ import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
-public class FormDescription extends Changeable<JTextField, Transaction, String> {
+public class ChangeableJTextField extends Changeable<JTextField, String> {
   JTextField field;
   Transaction transaction;
   Runnable saverOrUpdate;
 
-  public FormDescription(JTextField f, Transaction t, Runnable r) {
+  public ChangeableJTextField(JTextField f, Transaction t, Runnable r) {
     this.field = f;
     this.transaction = t;
     this.saverOrUpdate = r;
@@ -53,10 +53,6 @@ public class FormDescription extends Changeable<JTextField, Transaction, String>
 
   @Override public JTextField getComponent() {
     return this.field;
-  }
-
-  @Override public Transaction getEntity() {
-    return this.transaction;
   }
 
   @Override public String getValue() {

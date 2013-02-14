@@ -1,6 +1,6 @@
 package net.lump.envelope.client.ui.components.forms.transaction;
 
-import net.lump.envelope.shared.entity.Identifiable;
+import net.lump.envelope.shared.entity.Transaction;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -10,7 +10,7 @@ import java.awt.event.ActionListener;
  * @author troy
  * @version $Id$
  */
-abstract class Changeable<C extends JComponent, E extends Identifiable, V> {
+abstract class Changeable<C extends JComponent, V> {
 
   int dirtyDelay = 250;
   Timer dirtyTimer = null;
@@ -20,11 +20,11 @@ abstract class Changeable<C extends JComponent, E extends Identifiable, V> {
    * Gives a Runnable that will handle a change event in this scope.
    * @return Runnable
    */
-  Runnable getDataChangeHandler() {
+  Runnable getDataChangeHandler(final Transaction transaction) {
     return new Runnable() {
       public void run() {
         if (hasValidInput())
-          scheduleDirtyTimer(dirtyDelay);
+          scheduleDirtyTimer(dirtyDelay, transaction);
       }
     };
   }
@@ -33,13 +33,13 @@ abstract class Changeable<C extends JComponent, E extends Identifiable, V> {
    * Schedules the dirty timer to debounce many update events.
    * @param delay the time that must pass without any updates for the timer to fire.
    */
-  void scheduleDirtyTimer(final int delay) {
+  void scheduleDirtyTimer(final int delay, final Transaction transaction) {
     if (dirtyTimer != null && dirtyTimer.isRunning())
       dirtyTimer.stop();
     else {
       dirtyTimer = new Timer(delay, new ActionListener(){
         public void actionPerformed(ActionEvent e) {
-          updateAction();
+          updateAction(transaction);
         }
       });
     }
@@ -52,8 +52,8 @@ abstract class Changeable<C extends JComponent, E extends Identifiable, V> {
   /**
    * This will sync the form with the data bean and run the update if the input is valid.
    */
-  void updateAction() {
-    if (hasValidInput() && saveState()) {
+  void updateAction(Transaction transaction) {
+    if (hasValidInput() && saveState(transaction)) {
       getSaveOrUpdate().run();
     }
   }
@@ -81,6 +81,12 @@ abstract class Changeable<C extends JComponent, E extends Identifiable, V> {
   abstract void addDataChangeListener(Runnable dataChange);
 
   /**
+   * Gives the component.
+   * @return
+   */
+  abstract public JComponent getComponent();
+
+  /**
    * Tests the entry for valid input.  If the input is valid, it is considered ready to send.
    * @return
    */
@@ -93,14 +99,14 @@ abstract class Changeable<C extends JComponent, E extends Identifiable, V> {
   abstract public V getValue();
 
   /**
-   * Gets the value from the entity.
+   * Gets the appropriate value from the entity.
    * @return V
    */
-  abstract public V getState();
+  abstract public V getState(Transaction transaction);
 
   /**
-   * Saves the component's state to the entity
+   * Saves the component's state to the provided transaction.
    * @return true if they were different and the save was required.
    */
-  abstract public boolean saveState();
+  abstract public boolean saveState(Transaction transaction);
 }

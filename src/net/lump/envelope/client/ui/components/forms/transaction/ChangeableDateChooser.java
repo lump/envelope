@@ -11,15 +11,13 @@ import java.sql.Date;
  * @author troy
  * @version $Id$
  */
-public class FormDate extends Changeable<JDateChooser, Transaction, Date> {
+public class ChangeableDateChooser extends Changeable<JDateChooser, Date> {
 
-  Transaction transaction;
   JDateChooser jDateChooser;
   Runnable saveOrUpdate;
 
-  public FormDate(JDateChooser c, Transaction t, final Runnable saveOrUpdate) {
+  public ChangeableDateChooser(JDateChooser c, final Runnable saveOrUpdate) {
     this.jDateChooser = c;
-    this.transaction = t;
     this.saveOrUpdate = saveOrUpdate;
 
     addDataChangeListener(getDataChangeHandler());
@@ -40,10 +38,6 @@ public class FormDate extends Changeable<JDateChooser, Transaction, Date> {
     );
   }
 
-  public void setTransaction(Transaction t) {
-    transaction = t;
-  }
-
   public boolean hasValidInput() {
     return jDateChooser.getDate() != null;
   }
@@ -52,21 +46,17 @@ public class FormDate extends Changeable<JDateChooser, Transaction, Date> {
     return jDateChooser;
   }
 
-  public Transaction getEntity() {
-    return transaction;
-  }
-
   public Date getValue() {
     return new java.sql.Date(jDateChooser.getDate().getTime());
   }
 
-  public Date getState() {
+  public Date getState(Transaction transaction) {
     return transaction.getDate();
   }
 
-  public boolean saveState() {
+  public boolean saveState(Transaction transaction) {
     if (transaction != null && getValue() != null) {
-      if (getValue().equals(getState())) return false;
+      if (getValue().equals(getState(transaction))) return false;
       transaction.setDate(getValue());
       return true;
     }
