@@ -1,4 +1,4 @@
-package net.lump.envelope.client.ui.components.forms;
+package net.lump.envelope.client.ui.components.forms.table_query_bar;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -11,7 +11,6 @@ import net.lump.envelope.client.ui.images.ImageResource;
 import net.lump.lib.Money;
 
 import javax.swing.*;
-import javax.swing.plaf.IconUIResource;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;

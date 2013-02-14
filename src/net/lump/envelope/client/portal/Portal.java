@@ -1,7 +1,7 @@
 package net.lump.envelope.client.portal;
 
 import net.lump.envelope.client.HttpClient;
-import net.lump.envelope.client.ui.components.forms.Preferences;
+import net.lump.envelope.client.ui.components.forms.preferences.Preferences;
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.client.ui.prefs.LoginSettings;
 import net.lump.envelope.shared.command.Command;

@@ -1,4 +1,4 @@
-package net.lump.envelope.client.ui.components.forms.entries;
+package net.lump.envelope.client.ui.components.forms.transaction;
 
 import com.toedter.calendar.JDateChooser;
 import net.lump.envelope.shared.entity.Transaction;

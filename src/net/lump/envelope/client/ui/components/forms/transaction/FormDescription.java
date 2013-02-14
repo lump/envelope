@@ -1,6 +1,5 @@
-package net.lump.envelope.client.ui.components.forms.entries;
+package net.lump.envelope.client.ui.components.forms.transaction;
 
-import net.lump.envelope.client.ui.components.forms.entries.FormEntry;
 import net.lump.envelope.shared.entity.Transaction;
 
 import javax.swing.*;

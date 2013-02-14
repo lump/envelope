@@ -4,7 +4,7 @@ import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.State;
 import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.thread.ThreadPool;
-import net.lump.envelope.client.ui.components.forms.TableQueryBar;
+import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBar;
 import net.lump.envelope.client.ui.components.models.MoneyRenderer;
 import net.lump.envelope.client.ui.components.models.TransactionTableModel;
 import net.lump.envelope.client.ui.defs.Colors;

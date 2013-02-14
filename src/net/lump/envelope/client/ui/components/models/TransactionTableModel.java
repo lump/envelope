@@ -8,7 +8,7 @@ import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.thread.ThreadPool;
 import net.lump.envelope.client.ui.components.Hierarchy;
 import net.lump.envelope.client.ui.components.StatusBar;
-import net.lump.envelope.client.ui.components.forms.TableQueryBar;
+import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBar;
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.shared.command.OutputEvent;
 import net.lump.envelope.shared.command.OutputListener;

@@ -1,4 +1,4 @@
-package net.lump.envelope.client.ui.components.forms;
+package net.lump.envelope.client.ui.components.forms.transaction;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -13,13 +13,11 @@ import net.lump.envelope.client.thread.ThreadPool;
 import net.lump.envelope.client.ui.MainFrame;
 import net.lump.envelope.client.ui.components.MoneyTextField;
 import net.lump.envelope.client.ui.components.StatusBar;
-import net.lump.envelope.client.ui.components.forms.entries.FormDate;
-import net.lump.envelope.client.ui.components.forms.entries.FormDescription;
+import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBar;
 import net.lump.envelope.client.ui.components.models.AllocationFormTableModel;
 import net.lump.envelope.client.ui.components.models.CellEditor;
 import net.lump.envelope.client.ui.components.models.MoneyRenderer;
 import net.lump.envelope.client.ui.components.models.TransactionTableModel;
-import net.lump.envelope.client.ui.defs.Colors;
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.shared.command.OutputEvent;
 import net.lump.envelope.shared.command.OutputListener;
@@ -37,8 +35,6 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
@@ -76,6 +72,8 @@ public class TransactionForm {
   private MoneyTextField amount;
   private JPanel totalsPanel;
   private JCheckBox reconciledBox;
+  private JPanel messagePanel;
+  private JLabel messageLabel;
   private GridLayout totalsGridLayout;
 
   private AllocationFormTableModel tableModel;
@@ -121,7 +119,7 @@ public class TransactionForm {
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0,
             false));
     transactionInfoPanel = new JPanel();
-    transactionInfoPanel.setLayout(new GridLayoutManager(7, 3, new Insets(0, 0, 0, 0), 1, 5));
+    transactionInfoPanel.setLayout(new GridLayoutManager(8, 3, new Insets(0, 0, 0, 0), 1, 5));
     transactionAllocationSplit.setLeftComponent(transactionInfoPanel);
     transactionInfoPanel.setBorder(BorderFactory
         .createTitledBorder(ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("transaction")));
@@ -194,6 +192,15 @@ public class TransactionForm {
     transactionInfoPanel.add(reconciledBox, new GridConstraints(5, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
         null, 0, false));
+    messagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+    transactionInfoPanel.add(messagePanel, new GridConstraints(7, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+    messageLabel = new JLabel();
+    messageLabel.setText("");
+    messagePanel.add(messageLabel,
+        new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     allocationsPanel = new JPanel();
     allocationsPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), 0, 0));
     transactionAllocationSplit.setRightComponent(allocationsPanel);
