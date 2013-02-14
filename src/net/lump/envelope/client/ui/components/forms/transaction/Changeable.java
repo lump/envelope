@@ -16,6 +16,10 @@ abstract class Changeable<C extends JComponent, E extends Identifiable, V> {
   Timer dirtyTimer = null;
 
 
+  /**
+   * Gives a Runnable that will handle a change event in this scope.
+   * @return Runnable
+   */
   Runnable getDataChangeHandler() {
     return new Runnable() {
       public void run() {
@@ -25,6 +29,10 @@ abstract class Changeable<C extends JComponent, E extends Identifiable, V> {
     };
   }
 
+  /**
+   * Schedules the dirty timer to debounce many update events.
+   * @param delay the time that must pass without any updates for the timer to fire.
+   */
   void scheduleDirtyTimer(final int delay) {
     if (dirtyTimer != null && dirtyTimer.isRunning())
       dirtyTimer.stop();
@@ -40,23 +48,54 @@ abstract class Changeable<C extends JComponent, E extends Identifiable, V> {
     dirtyTimer.start();
   }
 
+
+  /**
+   * This will sync the form with the data bean and run the update if the input is valid.
+   */
   void updateAction() {
     if (hasValidInput() && saveState()) {
       getSaveOrUpdate().run();
     }
   }
 
+  /**
+   * Sets the delay to debounce in milliseconds.
+   * @param delay
+   */
   void setDirtyDelay(int delay) {
     this.dirtyDelay = delay;
   }
 
+  /**
+   * Gives the saveOrUpdate Runnable, which will be run when things in the right scope when things are finally ready.
+   * @return Runnable
+   */
   abstract Runnable getSaveOrUpdate();
+
+
+  /**
+   * Assigns the provided Runnable to the appropriate listeners for change monitoring.
+   *
+   * @param dataChange
+   */
   abstract void addDataChangeListener(Runnable dataChange);
 
+  /**
+   * Tests the entry for valid input.  If the input is valid, it is considered ready to send.
+   * @return
+   */
   abstract public boolean hasValidInput();
-  abstract public C getComponent();
-  abstract public E getEntity();
+
+  /**
+   * Gets the value from the form.
+   * @return V
+   */
   abstract public V getValue();
+
+  /**
+   * Gets the value from the entity.
+   * @return V
+   */
   abstract public V getState();
 
   /**
