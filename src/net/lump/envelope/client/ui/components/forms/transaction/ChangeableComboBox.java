@@ -3,31 +3,52 @@ package net.lump.envelope.client.ui.components.forms.transaction;
 import javax.swing.*;
 
 public class ChangeableComboBox extends Changeable<JComboBox, String>{
-  @Override Runnable getSaveOrUpdate() {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+  private jComboBox;
+
+  public ChangeableComboBox(JComboBox c, final Runnable saveOrUpdate) {
+    this.jComboBox = c;
+    this.saveOrUpdate = saveOrUpdate;
+
+    addDataChangeListener(getDataChangeHandler());
   }
 
-  @Override void addDataChangeListener(Runnable dataChange) {
-    //To change body of implemented methods use File | Settings | File Templates.
+  @Override public Runnable getSaveOrUpdate() {
+    return saveOrUpdate;
   }
 
-  @Override public JComponent getComponent() {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+  @Override public void addDataChangeListener(final Runnable dataChange) {
+    jDateChooser.getDateEditor().addPropertyChangeListener(
+        new PropertyChangeListener() {
+          public void propertyChange(PropertyChangeEvent e) {
+            if ("date".equals(e.getPropertyName()))
+              dataChange.run();
+          }
+        }
+    );
   }
 
-  @Override public boolean hasValidInput() {
-    return false;  //To change body of implemented methods use File | Settings | File Templates.
+  public boolean hasValidInput() {
+    return jDateChooser.getDate() != null;
   }
 
-  @Override public String getValue() {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+  public JDateChooser getComponent() {
+    return jDateChooser;
   }
 
-  @Override public String getState() {
-    return null;  //To change body of implemented methods use File | Settings | File Templates.
+  public Date getValue() {
+    return new java.sql.Date(jDateChooser.getDate().getTime());
   }
 
-  @Override public boolean saveState() {
-    return false;  //To change body of implemented methods use File | Settings | File Templates.
+  public String getState() {
+    return getTransaction().getTransfer();
+  }
+
+  public boolean saveState() {
+    if (getTransaction() != null && getValue() != null) {
+      if (getValue().equals(getState())) return false;
+      getTransaction().setDate(getValue());
+      return true;
+    }
+    return false;
   }
 }

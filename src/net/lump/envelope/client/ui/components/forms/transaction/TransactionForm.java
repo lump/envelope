@@ -87,6 +87,341 @@ public class TransactionForm {
   ChangeableDateChooser changeableDateChooser;
   ChangeableJTextField changeableJTextField;
 
+  private void scheduleDirtyTimer(int delay) {
+    if (dirtyTimer != null && dirtyTimer.isRunning()) {
+      dirtyTimer.stop();
+      System.out.println("stopping timer");
+    }
+    else {
+      dirtyTimer = new Timer(delay, new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+          System.out.println("timer fired at " + System.currentTimeMillis());
+          sendChanges();
+        }
+      });
+    }
+
+    dirtyTimer.setRepeats(false);
+    dirtyTimer.setInitialDelay(delay);
+    System.out.println("starting timer for " + delay + " at " + System.currentTimeMillis());
+    dirtyTimer.start();
+  }
+
+  public TransactionForm() {
+    $$$setupUI$$$();
+
+    tableModel = new AllocationFormTableModel(allocationsTable);
+    allocationsTable.setModel(tableModel);
+    allocationsTable.setDefaultRenderer(Money.class, new MoneyRenderer());
+    allocationsTable.setDefaultRenderer(Category.class, new DefaultTableCellRenderer() {
+      public Component getTableCellRendererComponent(JTable table,
+          Object value,
+          boolean isSelected,
+          boolean hasFocus,
+          int row,
+          int col) {
+        Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
+        if (hasFocus) table.editCellAt(row, col);
+        return c;
+      }
+    });
+
+    allocationsTable.setSurrendersFocusOnKeystroke(false);
+    categoriesComboBox.setLightWeightPopupEnabled(true);
+    CellEditor categoryCellEditor = new CellEditor(categoriesComboBox);
+    MoneyTextField moneyEditor = new MoneyTextField();
+    CellEditor amountCellEditor = new CellEditor(moneyEditor);
+    categoryCellEditor.setClickCountToStart(0);
+    amountCellEditor.setClickCountToStart(0);
+    allocationsTable.setDefaultEditor(Category.class, categoryCellEditor);
+    allocationsTable.setDefaultEditor(Money.class, amountCellEditor);
+
+    allocationsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    allocationsTable.setRowSelectionAllowed(false);
+    allocationsTable.setColumnSelectionAllowed(false);
+    allocationsTable.setCellSelectionEnabled(false);
+//    allocationsTable.getActionMap()
+    allocationsTable.getActionMap().put(KeyStroke.getKeyStroke("DOWN"),
+        allocationsTable.getActionMap().get("selectNextRow"));
+    allocationsTable.getActionMap().put(KeyStroke.getKeyStroke("UP"),
+        allocationsTable.getActionMap().get("selectPreviousRow"));
+
+
+    allocationsTable.addMouseListener(new MouseListener() {
+
+      public void mouseClicked(MouseEvent e) {
+        System.out.println("e = " + e);
+      }
+
+      public void mousePressed(MouseEvent e) { }
+
+      public void mouseReleased(MouseEvent e) { }
+
+      public void mouseEntered(MouseEvent e) { }
+
+      public void mouseExited(MouseEvent e) { }
+    });
+
+//    transactionAllocationSplit.getLeftComponent()
+//        .setMinimumSize(transactionInfoPanel.getLayout().minimumLayoutSize(transactionInfoPanel));
+//    allocationsTable.setMinimumSize(new Dimension(200, 200));
+    transactionAllocationSplit.getRightComponent().setMinimumSize(new Dimension(200, 200));
+//    transactionAllocationSplit.setResizeWeight(0.25);
+
+
+//    transactionAllocationSplit.getRightComponent().setMinimumSize(allocationsPanel.getLayout().minimumLayoutSize(allocationsPanel));
+    transactionAllocationSplit.setContinuousLayout(true);
+    transactionAllocationSplit.setOneTouchExpandable(false);
+
+    entity.setFont(entity.getFont().deriveFont(Font.PLAIN));
+
+    ButtonGroup transactionTypeButtonGroup = new ButtonGroup();
+    transactionTypeButtonGroup.add(typeExpenseRadio);
+    transactionTypeButtonGroup.add(typeIncomeRadio);
+
+    typeExpenseRadio.setFont(typeExpenseRadio.getFont().deriveFont(Font.PLAIN));
+    typeIncomeRadio.setFont(typeExpenseRadio.getFont().deriveFont(Font.PLAIN));
+
+
+    typeExpenseRadio.setAction(new AbstractAction(Strings.get("expense")) {
+      public void actionPerformed(ActionEvent e) {
+        setView(true);
+      }
+    });
+    typeIncomeRadio.setAction(new AbstractAction(Strings.get("income")) {
+      public void actionPerformed(ActionEvent e) {
+        setView(false);
+      }
+    });
+
+    transactionTypeButtonGroup.setSelected(typeExpenseRadio.getModel(), true);
+    typeExpenseRadio.doClick();
+
+    transactionDate.setDate(new Date());
+
+    final JTable table = TableQueryBar.getInstance().getTable();
+    table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+      public void valueChanged(ListSelectionEvent e) {
+        if (e.getValueIsAdjusting()) return;
+        if (table.getSelectedRow() < 0) return;
+        loadTransactionForId(((TransactionTableModel)table.getModel()).getTransactionId(table.getSelectedRow()));
+      }
+    });
+
+    table.addMouseListener(new MouseListener() {
+      public void mouseClicked(MouseEvent e) {
+        if (e.getClickCount() == 2) {
+          MainFrame.getInstance().setTransactionViewShowing(true);
+          loadTransactionForId(((TransactionTableModel)table.getModel()).getTransactionId(table.getSelectedRow()));
+
+        }
+      }
+
+      public void mousePressed(MouseEvent e) {}
+
+      public void mouseReleased(MouseEvent e) {}
+
+      public void mouseEntered(MouseEvent e) {}
+
+      public void mouseExited(MouseEvent e) {}
+    });
+
+
+    Runnable r = new Runnable() {
+      public void run() {
+        StatusRunnable sr;
+        while (true) {
+          while (updateQueue.size() > 1) {
+            try {
+              updateQueue.take(); // throw away stuff
+            } catch (InterruptedException ignore) {}
+          }
+          // take the next
+          try {
+            sr = updateQueue.take();
+            StatusBar.getInstance().addTask(sr.getElement());
+            sr.run();
+            StatusBar.getInstance().removeTask(sr.getElement());
+          } catch (InterruptedException ignore) {}
+        }
+      }
+    };
+
+    new Thread(r, "FormFiller").start();
+
+  }
+
+  private void sendChanges() {
+    if (editingTransaction != null
+        && originalTransaction != null
+        && (formIsDirty || !editingTransaction.equals(originalTransaction))) {
+
+      StatusRunnable r = new StatusRunnable("Updating transaction " + originalTransaction.getId()) {
+        @Override public void run() {
+          HibernatePortal hp = new HibernatePortal();
+          try {
+            originalTransaction = hp.saveOrUpdate(editingTransaction);
+            formIsDirty = false;
+            editingTransaction = ObjectUtil.deepCopy(originalTransaction);
+            changeableDateChooser.setTransaction(editingTransaction);
+            changeableJTextField.setTransaction(editingTransaction);
+          } catch (AbortException ignore) { }
+        }
+      };
+      ThreadPool.getInstance().execute(r);
+    }
+  }
+
+  public void setView(boolean expense) {
+    this.expense = expense;
+    refresh();
+  }
+
+  public void refresh() {
+    typeExpenseRadio.setSelected(expense);
+    typeIncomeRadio.setSelected(!expense);
+    entityLabel.setText(expense ? Strings.get("paid.to") : Strings.get("received.from"));
+    amountLabel.setText(expense ? Strings.get("total.amount") : Strings.get("net.amount"));
+    if (tableModel != null) {
+      tableModel.setExpense(expense);
+      if (tableModel.getTransaction() != null && tableModel.getTransaction().getAllocations() != null)
+        tableModel.fireTableRowsUpdated(0, tableModel.getTransaction().getAllocations().size() - 1);
+    }
+    if (editingTransaction != null)
+      amount.setText(expense ? editingTransaction.getNetAmount().negate().toString()
+                             : editingTransaction.getNetAmount().toString());
+
+    transactionAllocationSplit.resetToPreferredSizes();
+  }
+
+  public void loadTransactionForId(final int id) {
+    if (!MainFrame.getInstance().isTransactionViewShowing()) return;
+    if (editingTransaction == null || !editingTransaction.getId().equals(id)) {
+      StatusRunnable r = new StatusRunnable(MessageFormat.format(Strings.get("retrieving.transaction"), id)) {
+        public void run() {
+
+          try {
+            final HibernatePortal hp = new HibernatePortal();
+
+            hp.detachedCriteriaQueryList(
+                CriteriaFactory.getInstance().getCategoriesforBudget(State.getInstance().getBudget()),
+                true,
+                new OutputListener() {
+                  public void commandOutputOccurred(OutputEvent event) {
+                    if (event.getIndex() == 0) categoriesComboBox.removeAllItems();
+                    categoriesComboBox.addItem(event.getPayload());
+                  }
+                });
+
+            originalTransaction = hp.load(Transaction.class, id);
+//            originalTransaction = CriteriaFactory.getInstance().getTransactionById(id);
+            Collections.sort(originalTransaction.getAllocations(), new Comparator<Allocation>() {
+              public int compare(Allocation one, Allocation other) {
+                return one.getCategory().getName().compareTo(other.getCategory().getName());
+              }
+            });
+            editingTransaction = ObjectUtil.deepCopy(originalTransaction);
+
+            Runnable saveOrUpdate = new Runnable() {
+              public void run() {
+                sendChanges();
+              }
+            };
+
+            changeableDateChooser = new ChangeableDateChooser(transactionDate, editingTransaction, saveOrUpdate);
+            changeableJTextField = new ChangeableJTextField(description, editingTransaction, saveOrUpdate);
+
+            SwingUtilities.invokeAndWait(new Runnable() {
+              public void run() {
+                try {
+                  tableModel.setTransaction(editingTransaction, originalTransaction);
+                  amount.setText(editingTransaction.getNetAmount().toString());
+
+                  transactionDate.setDate(editingTransaction.getDate());
+
+                  try {
+                    description.setDocument(new LimitDocument(Transaction.class.getMethod("getDescription")));
+                  } catch (NoSuchMethodException ignore) {}
+
+                  description.setText(editingTransaction.getDescription());
+
+                  entity.removeItemListener(entityItemChangeListener);
+                  refreshEntities();
+
+                  try {
+                    ((JTextField)entity.getEditor().getEditorComponent())
+                        .setDocument(new LimitDocument(Transaction.class.getMethod("getEntity")));
+                  } catch (NoSuchMethodException ignore) {}
+
+                  entity.setSelectedItem(editingTransaction.getEntity());
+                  entity.addItemListener(entityItemChangeListener);
+
+                  reconciledBox.setSelected(originalTransaction.getReconciled());
+                  amount.setEnabled(!originalTransaction.getReconciled());
+
+                  transactionAllocationSplit.resetToPreferredSizes();
+
+                  if (editingTransaction.getNetAmount().doubleValue() > 0) setView(false);
+                  else setView(true);
+
+                } catch (AbortException ignore) {}
+              }
+            });
+          } catch (AbortException ignore) {
+          } catch (InvocationTargetException ignore) {
+          } catch (InterruptedException ignore) {
+          }
+
+        }
+      };
+
+      updateQueue.add(r);
+
+    }
+  }
+
+  public synchronized void refreshEntities() throws AbortException {
+    entity.removeAllItems();
+    for (String e : State.getInstance().entities()) {
+      entity.addItem(e);
+    }
+  }
+
+  public JPanel getTransactionFormPanel() {
+    return transactionFormPanel;
+  }
+
+  class LimitDocument extends PlainDocument {
+    Method method;
+
+    public LimitDocument(Method method) {
+      this.method = method;
+    }
+
+    public void insertString(int offset, String str, AttributeSet attr) throws BadLocationException {
+      if (str == null) return;
+      if (method.isAnnotationPresent(Column.class)) {
+        if ((getLength() + str.length()) <= method.getAnnotation(Column.class).length()) {
+          super.insertString(offset, str, attr);
+        }
+      }
+    }
+  }
+
+  private void createUIComponents() {
+    Long today = System.currentTimeMillis();
+    today = today - (today % 86400000);
+
+    transactionDate = new JDateChooser(new Date(today), "MM/dd/yyyy", new JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
+    //transactionDate.setFont(Fonts.fixed.getFont());
+    totalsGridLayout = new GridLayout(0, 2);
+    totalsPanel = new JPanel(totalsGridLayout);
+    totalsPanel.removeAll();
+    transactionDate.setPreferredSize(
+        new Dimension(transactionDate.getPreferredSize().width + 30, transactionDate.getPreferredSize().height));
+  }
+
+
   ItemListener entityItemChangeListener = new ItemListener() {
     public void itemStateChanged(ItemEvent e) {
       if (!originalTransaction.getEntity().equals(e.getItem())) {
@@ -267,344 +602,4 @@ public class TransactionForm {
 
   /** @noinspection ALL */
   public JComponent $$$getRootComponent$$$() { return transactionFormPanel; }
-
-  abstract class DirtyKeyListener implements KeyListener {
-    public void keyPressed(KeyEvent e) {}
-
-    public void keyReleased(KeyEvent e) {}
-  }
-
-  private void scheduleDirtyTimer(int delay) {
-    if (dirtyTimer != null && dirtyTimer.isRunning()) {
-      dirtyTimer.stop();
-      System.out.println("stopping timer");
-    }
-    else {
-      dirtyTimer = new Timer(delay, new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          System.out.println("timer fired at " + System.currentTimeMillis());
-          sendChanges();
-        }
-      });
-    }
-
-    dirtyTimer.setRepeats(false);
-    dirtyTimer.setInitialDelay(delay);
-    System.out.println("starting timer for " + delay + " at " + System.currentTimeMillis());
-    dirtyTimer.start();
-  }
-
-  public TransactionForm() {
-    $$$setupUI$$$();
-
-    tableModel = new AllocationFormTableModel(allocationsTable);
-    allocationsTable.setModel(tableModel);
-    allocationsTable.setDefaultRenderer(Money.class, new MoneyRenderer());
-    allocationsTable.setDefaultRenderer(Category.class, new DefaultTableCellRenderer() {
-      public Component getTableCellRendererComponent(JTable table,
-          Object value,
-          boolean isSelected,
-          boolean hasFocus,
-          int row,
-          int col) {
-        Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
-        if (hasFocus) table.editCellAt(row, col);
-        return c;
-      }
-    });
-
-    allocationsTable.setSurrendersFocusOnKeystroke(false);
-    categoriesComboBox.setLightWeightPopupEnabled(true);
-    CellEditor categoryCellEditor = new CellEditor(categoriesComboBox);
-    MoneyTextField moneyEditor = new MoneyTextField();
-    CellEditor amountCellEditor = new CellEditor(moneyEditor);
-    categoryCellEditor.setClickCountToStart(0);
-    amountCellEditor.setClickCountToStart(0);
-    allocationsTable.setDefaultEditor(Category.class, categoryCellEditor);
-    allocationsTable.setDefaultEditor(Money.class, amountCellEditor);
-
-    allocationsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-    allocationsTable.setRowSelectionAllowed(false);
-    allocationsTable.setColumnSelectionAllowed(false);
-    allocationsTable.setCellSelectionEnabled(false);
-//    allocationsTable.getActionMap()
-    allocationsTable.getActionMap().put(KeyStroke.getKeyStroke("DOWN"),
-        allocationsTable.getActionMap().get("selectNextRow"));
-    allocationsTable.getActionMap().put(KeyStroke.getKeyStroke("UP"),
-        allocationsTable.getActionMap().get("selectPreviousRow"));
-
-
-    allocationsTable.addMouseListener(new MouseListener() {
-
-      public void mouseClicked(MouseEvent e) {
-        System.out.println("e = " + e);
-      }
-
-      public void mousePressed(MouseEvent e) { }
-
-      public void mouseReleased(MouseEvent e) { }
-
-      public void mouseEntered(MouseEvent e) { }
-
-      public void mouseExited(MouseEvent e) { }
-    });
-
-//    transactionAllocationSplit.getLeftComponent()
-//        .setMinimumSize(transactionInfoPanel.getLayout().minimumLayoutSize(transactionInfoPanel));
-//    allocationsTable.setMinimumSize(new Dimension(200, 200));
-    transactionAllocationSplit.getRightComponent().setMinimumSize(new Dimension(200, 200));
-//    transactionAllocationSplit.setResizeWeight(0.25);
-
-
-//    transactionAllocationSplit.getRightComponent().setMinimumSize(allocationsPanel.getLayout().minimumLayoutSize(allocationsPanel));
-    transactionAllocationSplit.setContinuousLayout(true);
-    transactionAllocationSplit.setOneTouchExpandable(false);
-
-    entity.setFont(entity.getFont().deriveFont(Font.PLAIN));
-
-    ButtonGroup transactionTypeButtonGroup = new ButtonGroup();
-    transactionTypeButtonGroup.add(typeExpenseRadio);
-    transactionTypeButtonGroup.add(typeIncomeRadio);
-
-    typeExpenseRadio.setFont(typeExpenseRadio.getFont().deriveFont(Font.PLAIN));
-    typeIncomeRadio.setFont(typeExpenseRadio.getFont().deriveFont(Font.PLAIN));
-
-
-    typeExpenseRadio.setAction(new AbstractAction(Strings.get("expense")) {
-      public void actionPerformed(ActionEvent e) {
-        setView(true);
-      }
-    });
-    typeIncomeRadio.setAction(new AbstractAction(Strings.get("income")) {
-      public void actionPerformed(ActionEvent e) {
-        setView(false);
-      }
-    });
-
-    transactionTypeButtonGroup.setSelected(typeExpenseRadio.getModel(), true);
-    typeExpenseRadio.doClick();
-
-    transactionDate.setDate(new Date());
-
-    final JTable table = TableQueryBar.getInstance().getTable();
-    table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-      public void valueChanged(ListSelectionEvent e) {
-        if (e.getValueIsAdjusting()) return;
-        if (table.getSelectedRow() < 0) return;
-        loadTransactionForId(((TransactionTableModel)table.getModel()).getTransactionId(table.getSelectedRow()));
-      }
-    });
-
-    table.addMouseListener(new MouseListener() {
-      public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() == 2) {
-          MainFrame.getInstance().setTransactionViewShowing(true);
-          loadTransactionForId(((TransactionTableModel)table.getModel()).getTransactionId(table.getSelectedRow()));
-
-        }
-      }
-
-      public void mousePressed(MouseEvent e) {}
-
-      public void mouseReleased(MouseEvent e) {}
-
-      public void mouseEntered(MouseEvent e) {}
-
-      public void mouseExited(MouseEvent e) {}
-    });
-
-
-    Runnable r = new Runnable() {
-      public void run() {
-        StatusRunnable sr;
-        while (true) {
-          while (updateQueue.size() > 1) {
-            try {
-              updateQueue.take(); // throw away stuff
-            } catch (InterruptedException ignore) {}
-          }
-          // take the next
-          try {
-            sr = updateQueue.take();
-            StatusBar.getInstance().addTask(sr.getElement());
-            sr.run();
-            StatusBar.getInstance().removeTask(sr.getElement());
-          } catch (InterruptedException ignore) {}
-        }
-      }
-    };
-
-    new Thread(r, "FormFiller").start();
-  }
-
-  private void sendChanges() {
-    if (editingTransaction != null
-        && originalTransaction != null
-        && (formIsDirty || !editingTransaction.equals(originalTransaction))) {
-
-      StatusRunnable r = new StatusRunnable("Updating transaction " + originalTransaction.getId()) {
-        @Override public void run() {
-          HibernatePortal hp = new HibernatePortal();
-          try {
-            originalTransaction = hp.saveOrUpdate(editingTransaction);
-            formIsDirty = false;
-            editingTransaction = ObjectUtil.deepCopy(originalTransaction);
-            changeableDateChooser.setTransaction(editingTransaction);
-            changeableJTextField.setTransaction(editingTransaction);
-          } catch (AbortException ignore) { }
-        }
-      };
-      ThreadPool.getInstance().execute(r);
-    }
-  }
-
-  public void setView(boolean expense) {
-    this.expense = expense;
-    refresh();
-  }
-
-  public void refresh() {
-    typeExpenseRadio.setSelected(expense);
-    typeIncomeRadio.setSelected(!expense);
-    entityLabel.setText(expense ? Strings.get("paid.to") : Strings.get("received.from"));
-    amountLabel.setText(expense ? Strings.get("total.amount") : Strings.get("net.amount"));
-    if (tableModel != null) {
-      tableModel.setExpense(expense);
-      if (tableModel.getTransaction() != null && tableModel.getTransaction().getAllocations() != null)
-        tableModel.fireTableRowsUpdated(0, tableModel.getTransaction().getAllocations().size() - 1);
-    }
-    if (editingTransaction != null)
-      amount.setText(expense ? editingTransaction.getNetAmount().negate().toString()
-                             : editingTransaction.getNetAmount().toString());
-
-    transactionAllocationSplit.resetToPreferredSizes();
-  }
-
-  public void loadTransactionForId(final int id) {
-    if (!MainFrame.getInstance().isTransactionViewShowing()) return;
-    if (editingTransaction == null || !editingTransaction.getId().equals(id)) {
-      StatusRunnable r = new StatusRunnable(MessageFormat.format(Strings.get("retrieving.transaction"), id)) {
-        public void run() {
-
-          try {
-            final HibernatePortal hp = new HibernatePortal();
-
-            hp.detachedCriteriaQueryList(
-                CriteriaFactory.getInstance().getCategoriesforBudget(State.getInstance().getBudget()),
-                true,
-                new OutputListener() {
-                  public void commandOutputOccurred(OutputEvent event) {
-                    if (event.getIndex() == 0) categoriesComboBox.removeAllItems();
-                    categoriesComboBox.addItem(event.getPayload());
-                  }
-                });
-
-            originalTransaction = hp.load(Transaction.class, id);
-//            originalTransaction = CriteriaFactory.getInstance().getTransactionById(id);
-            Collections.sort(originalTransaction.getAllocations(), new Comparator<Allocation>() {
-              public int compare(Allocation one, Allocation other) {
-                return one.getCategory().getName().compareTo(other.getCategory().getName());
-              }
-            });
-            editingTransaction = ObjectUtil.deepCopy(originalTransaction);
-
-            Runnable saveOrUpdate = new Runnable() {
-              public void run() {
-                sendChanges();
-              }
-            };
-
-            changeableDateChooser = new ChangeableDateChooser(transactionDate, editingTransaction, saveOrUpdate);
-            changeableJTextField = new ChangeableJTextField(description, editingTransaction, saveOrUpdate);
-
-            SwingUtilities.invokeAndWait(new Runnable() {
-              public void run() {
-                try {
-                  tableModel.setTransaction(editingTransaction, originalTransaction);
-                  amount.setText(editingTransaction.getNetAmount().toString());
-
-                  transactionDate.setDate(editingTransaction.getDate());
-
-                  try {
-                    description.setDocument(new LimitDocument(Transaction.class.getMethod("getDescription")));
-                  } catch (NoSuchMethodException ignore) {}
-
-                  description.setText(editingTransaction.getDescription());
-
-                  entity.removeItemListener(entityItemChangeListener);
-                  refreshEntities();
-
-                  try {
-                    ((JTextField)entity.getEditor().getEditorComponent())
-                        .setDocument(new LimitDocument(Transaction.class.getMethod("getEntity")));
-                  } catch (NoSuchMethodException ignore) {}
-
-                  entity.setSelectedItem(editingTransaction.getEntity());
-                  entity.addItemListener(entityItemChangeListener);
-
-                  reconciledBox.setSelected(originalTransaction.getReconciled());
-                  amount.setEnabled(!originalTransaction.getReconciled());
-
-                  transactionAllocationSplit.resetToPreferredSizes();
-
-                  if (editingTransaction.getNetAmount().doubleValue() > 0) setView(false);
-                  else setView(true);
-
-                } catch (AbortException ignore) {}
-              }
-            });
-          } catch (AbortException ignore) {
-          } catch (InvocationTargetException ignore) {
-          } catch (InterruptedException ignore) {
-          }
-
-        }
-      };
-
-      updateQueue.add(r);
-
-    }
-  }
-
-  public synchronized void refreshEntities() throws AbortException {
-    entity.removeAllItems();
-    for (String e : State.getInstance().entities()) {
-      entity.addItem(e);
-    }
-  }
-
-  public JPanel getTransactionFormPanel() {
-    return transactionFormPanel;
-  }
-
-  class LimitDocument extends PlainDocument {
-    Method method;
-
-    public LimitDocument(Method method) {
-      this.method = method;
-    }
-
-    public void insertString(int offset, String str, AttributeSet attr) throws BadLocationException {
-      if (str == null) return;
-      if (method.isAnnotationPresent(Column.class)) {
-        if ((getLength() + str.length()) <= method.getAnnotation(Column.class).length()) {
-          super.insertString(offset, str, attr);
-        }
-      }
-    }
-  }
-
-  private void createUIComponents() {
-    Long today = System.currentTimeMillis();
-    today = today - (today % 86400000);
-
-    transactionDate = new JDateChooser(new Date(today), "MM/dd/yyyy", new JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
-    //transactionDate.setFont(Fonts.fixed.getFont());
-    totalsGridLayout = new GridLayout(0, 2);
-    totalsPanel = new JPanel(totalsGridLayout);
-    totalsPanel.removeAll();
-    transactionDate.setPreferredSize(
-        new Dimension(transactionDate.getPreferredSize().width + 30, transactionDate.getPreferredSize().height));
-  }
-
 }

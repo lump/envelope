@@ -10,12 +10,10 @@ import java.awt.event.KeyListener;
 
 public class ChangeableJTextField extends Changeable<JTextField, String> {
   JTextField field;
-  Transaction transaction;
   Runnable saverOrUpdate;
 
-  public ChangeableJTextField(JTextField f, Transaction t, Runnable r) {
+  public ChangeableJTextField(JTextField f, Runnable r) {
     this.field = f;
-    this.transaction = t;
     this.saverOrUpdate = r;
     setDirtyDelay(500);
 
@@ -43,10 +41,6 @@ public class ChangeableJTextField extends Changeable<JTextField, String> {
     });
   }
 
-  public void setTransaction(Transaction t) {
-    transaction = t;
-  }
-
   @Override public boolean hasValidInput() {
     return true;
   }
@@ -60,13 +54,13 @@ public class ChangeableJTextField extends Changeable<JTextField, String> {
   }
 
   @Override public String getState() {
-    return transaction.getDescription();
+    return getTransaction().getDescription();
   }
 
   @Override public boolean saveState() {
-    if (transaction != null && getValue() != null) {
+    if (getTransaction() != null && getValue() != null) {
       if (getValue().equals(getState())) return false;
-      transaction.setDescription(getValue());
+      getTransaction().setDescription(getValue());
       return true;
     }
     return false;

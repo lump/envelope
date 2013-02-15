@@ -15,31 +15,27 @@ abstract class Changeable<C extends JComponent, V> {
   int dirtyDelay = 250;
   Timer dirtyTimer = null;
 
-
-  /**
-   * Gives a Runnable that will handle a change event in this scope.
-   * @return Runnable
-   */
-  Runnable getDataChangeHandler(final Transaction transaction) {
-    return new Runnable() {
-      public void run() {
-        if (hasValidInput())
-          scheduleDirtyTimer(dirtyDelay, transaction);
-      }
-    };
+  {
+    addDataChangeListener(
+        new Runnable() {
+          public void run() {
+            if (hasValidInput())
+              scheduleDirtyTimer(dirtyDelay);
+          }
+        });
   }
 
   /**
    * Schedules the dirty timer to debounce many update events.
    * @param delay the time that must pass without any updates for the timer to fire.
    */
-  void scheduleDirtyTimer(final int delay, final Transaction transaction) {
+  void scheduleDirtyTimer(final int delay) {
     if (dirtyTimer != null && dirtyTimer.isRunning())
       dirtyTimer.stop();
     else {
       dirtyTimer = new Timer(delay, new ActionListener(){
         public void actionPerformed(ActionEvent e) {
-          updateAction(transaction);
+          updateAction();
         }
       });
     }
@@ -48,12 +44,20 @@ abstract class Changeable<C extends JComponent, V> {
     dirtyTimer.start();
   }
 
+  public Transaction getTransaction() {
+    return ChangeableForm.getInstance().getEditingTransaction();
+  }
+
+  public Transaction getOriginalTransaction() {
+    return ChangeableForm.getInstance().getOriginalTransaction();
+  }
+
 
   /**
    * This will sync the form with the data bean and run the update if the input is valid.
    */
-  void updateAction(Transaction transaction) {
-    if (hasValidInput() && saveState(transaction)) {
+  void updateAction() {
+    if (hasValidInput() && saveState()) {
       getSaveOrUpdate().run();
     }
   }
@@ -102,11 +106,11 @@ abstract class Changeable<C extends JComponent, V> {
    * Gets the appropriate value from the entity.
    * @return V
    */
-  abstract public V getState(Transaction transaction);
+  abstract public V getState();
 
   /**
    * Saves the component's state to the provided transaction.
    * @return true if they were different and the save was required.
    */
-  abstract public boolean saveState(Transaction transaction);
+  abstract public boolean saveState();
 }

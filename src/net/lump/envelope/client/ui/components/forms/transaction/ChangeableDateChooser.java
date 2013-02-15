@@ -1,7 +1,6 @@
 package net.lump.envelope.client.ui.components.forms.transaction;
 
 import com.toedter.calendar.JDateChooser;
-import net.lump.envelope.shared.entity.Transaction;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -20,7 +19,6 @@ public class ChangeableDateChooser extends Changeable<JDateChooser, Date> {
     this.jDateChooser = c;
     this.saveOrUpdate = saveOrUpdate;
 
-    addDataChangeListener(getDataChangeHandler());
   }
 
   @Override public Runnable getSaveOrUpdate() {
@@ -50,14 +48,14 @@ public class ChangeableDateChooser extends Changeable<JDateChooser, Date> {
     return new java.sql.Date(jDateChooser.getDate().getTime());
   }
 
-  public Date getState(Transaction transaction) {
-    return transaction.getDate();
+  public Date getState() {
+    return getTransaction().getDate();
   }
 
-  public boolean saveState(Transaction transaction) {
-    if (transaction != null && getValue() != null) {
-      if (getValue().equals(getState(transaction))) return false;
-      transaction.setDate(getValue());
+  public boolean saveState() {
+    if (getTransaction() != null && getValue() != null) {
+      if (getValue().equals(getState())) return false;
+      getTransaction().setDate(getValue());
       return true;
     }
     return false;
