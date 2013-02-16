@@ -18,6 +18,7 @@ public class Money implements Serializable, Comparable<Money> {
 
   private BigDecimal value = BigDecimal.ZERO;
   private static final NumberFormat format = java.text.NumberFormat.getCurrencyInstance();
+  private static final NumberFormat genericFormat = java.text.NumberFormat.getInstance();
   private static final Pattern vanilla = Pattern.compile("^-?\\d+(\\.\\d+)?$");
 
   public static final Money ZERO = new Money(0);
@@ -29,23 +30,23 @@ public class Money implements Serializable, Comparable<Money> {
    * @param val the value
    */
   public Money(String val) {
+
     // there's no such thing as null money.  If it's null, set it to zero if it's not already.
     if (val == null) value = BigDecimal.ZERO;
     else {
-      if (vanilla.matcher(val).matches())
-        value = new BigDecimal(val);
-      else
-        try {
-          // try to use the current locale's currency to parse the string
-          Number n = format.parse(val);
-          value = n == null ? BigDecimal.ZERO : new BigDecimal(n.toString());
-        }
-        catch (ParseException pe) {
-          // fail over to plain BigDecimal parsing
+      try { // try generic locale format first
+        value = new BigDecimal(String.valueOf(genericFormat.parse(val).doubleValue()));
+      } catch (ParseException e) {
+        try { // try currency format second
+          value = new BigDecimal(format.parse(val).toString());
+        } catch (ParseException e2) {
+          // try a generic bigdecimal parse
           value = new BigDecimal(val);
+          // and give up
         }
+      }
     }
-    value = value.setScale(format.getMaximumFractionDigits());
+    value = value.setScale(format.getMaximumFractionDigits(), RoundingMode.HALF_UP);
   }
 
   /**
