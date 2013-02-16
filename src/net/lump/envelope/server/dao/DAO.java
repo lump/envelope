@@ -2,20 +2,20 @@ package net.lump.envelope.server.dao;
 
 import net.lump.envelope.server.ThreadInfo;
 import net.lump.envelope.shared.entity.*;
-import net.lump.envelope.shared.entity.Transaction;
 import net.lump.envelope.shared.exception.EnvelopeException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
-import org.hibernate.*;
+import org.hibernate.Criteria;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
 import org.hibernate.cfg.AnnotationConfiguration;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.Restrictions;
 import org.hibernate.engine.spi.SessionImplementor;
-import org.hibernate.internal.SessionImpl;
 import org.hibernate.service.ServiceRegistry;
-import org.hibernate.service.ServiceRegistryBuilder;
 
 import java.io.Serializable;
 import java.sql.Connection;

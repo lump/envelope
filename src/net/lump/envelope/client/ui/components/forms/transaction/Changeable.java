@@ -1,7 +1,5 @@
 package net.lump.envelope.client.ui.components.forms.transaction;
 
-import net.lump.envelope.shared.entity.Transaction;
-
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -15,14 +13,9 @@ abstract class Changeable<C extends JComponent, V> {
   int dirtyDelay = 250;
   Timer dirtyTimer = null;
 
-  {
-    addDataChangeListener(
-        new Runnable() {
-          public void run() {
-            if (hasValidInput())
-              scheduleDirtyTimer(dirtyDelay);
-          }
-        });
+  public void handleDataChange() {
+    if (hasValidInput())
+      scheduleDirtyTimer(dirtyDelay);
   }
 
   /**
@@ -44,15 +37,6 @@ abstract class Changeable<C extends JComponent, V> {
     dirtyTimer.start();
   }
 
-  public Transaction getTransaction() {
-    return ChangeableForm.getInstance().getEditingTransaction();
-  }
-
-  public Transaction getOriginalTransaction() {
-    return ChangeableForm.getInstance().getOriginalTransaction();
-  }
-
-
   /**
    * This will sync the form with the data bean and run the update if the input is valid.
    */
@@ -71,18 +55,14 @@ abstract class Changeable<C extends JComponent, V> {
   }
 
   /**
-   * Gives the saveOrUpdate Runnable, which will be run when things in the right scope when things are finally ready.
-   * @return Runnable
+   * Assigns the provided Runnable to the appropriate listeners for change monitoring.
    */
-  abstract Runnable getSaveOrUpdate();
-
+  abstract void addDataChangeListener();
 
   /**
-   * Assigns the provided Runnable to the appropriate listeners for change monitoring.
-   *
-   * @param dataChange
+   * Removes the data change listner.
    */
-  abstract void addDataChangeListener(Runnable dataChange);
+  abstract void removeDataChangeListener();
 
   /**
    * Gives the component.
@@ -113,4 +93,9 @@ abstract class Changeable<C extends JComponent, V> {
    * @return true if they were different and the save was required.
    */
   abstract public boolean saveState();
+
+  /**
+   * Fill this method in with that which saves this entity to the database;
+   */
+  abstract public Runnable getSaveOrUpdate();
 }

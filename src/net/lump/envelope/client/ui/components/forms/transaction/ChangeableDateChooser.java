@@ -10,34 +10,35 @@ import java.sql.Date;
  * @author troy
  * @version $Id$
  */
-public class ChangeableDateChooser extends Changeable<JDateChooser, Date> {
+abstract public class ChangeableDateChooser extends Changeable<JDateChooser, Date> {
 
   JDateChooser jDateChooser;
-  Runnable saveOrUpdate;
 
-  public ChangeableDateChooser(JDateChooser c, final Runnable saveOrUpdate) {
+  final PropertyChangeListener propertyChangeListener = new PropertyChangeListener() {
+    public void propertyChange(PropertyChangeEvent e) {
+      if ("date".equals(e.getPropertyName()))
+        handleDataChange();
+    }
+  };
+
+  public ChangeableDateChooser(JDateChooser c) {
     this.jDateChooser = c;
-    this.saveOrUpdate = saveOrUpdate;
-
+    addDataChangeListener();
   }
 
-  @Override public Runnable getSaveOrUpdate() {
-    return saveOrUpdate;
-  }
-
-  @Override public void addDataChangeListener(final Runnable dataChange) {
-    jDateChooser.getDateEditor().addPropertyChangeListener(
-        new PropertyChangeListener() {
-          public void propertyChange(PropertyChangeEvent e) {
-            if ("date".equals(e.getPropertyName()))
-              dataChange.run();
-          }
-        }
-    );
-  }
 
   public boolean hasValidInput() {
     return jDateChooser.getDate() != null;
+  }
+
+  /** Assigns the provided Runnable to the appropriate listeners for change monitoring. */
+  @Override void addDataChangeListener() {
+    jDateChooser.getDateEditor().addPropertyChangeListener(propertyChangeListener);
+  }
+
+  /** Removes the data change listner. */
+  @Override void removeDataChangeListener() {
+    jDateChooser.getDateEditor().removePropertyChangeListener(propertyChangeListener);
   }
 
   public JDateChooser getComponent() {
@@ -48,6 +49,7 @@ public class ChangeableDateChooser extends Changeable<JDateChooser, Date> {
     return new java.sql.Date(jDateChooser.getDate().getTime());
   }
 
+  /*
   public Date getState() {
     return getTransaction().getDate();
   }
@@ -60,4 +62,5 @@ public class ChangeableDateChooser extends Changeable<JDateChooser, Date> {
     }
     return false;
   }
+  */
 }

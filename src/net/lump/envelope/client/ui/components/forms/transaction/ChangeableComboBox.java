@@ -1,54 +1,43 @@
 package net.lump.envelope.client.ui.components.forms.transaction;
 
 import javax.swing.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
-public class ChangeableComboBox extends Changeable<JComboBox, String>{
-  private jComboBox;
+abstract public class ChangeableComboBox extends Changeable<JComboBox<String>, String>{
+  private JComboBox<String> jComboBox;
 
-  public ChangeableComboBox(JComboBox c, final Runnable saveOrUpdate) {
+  final ItemListener itemListener = new ItemListener() {
+    public void itemStateChanged(ItemEvent e) {
+      handleDataChange();
+    }
+  };
+
+  public ChangeableComboBox(JComboBox c) {
     this.jComboBox = c;
-    this.saveOrUpdate = saveOrUpdate;
-
-    addDataChangeListener(getDataChangeHandler());
-  }
-
-  @Override public Runnable getSaveOrUpdate() {
-    return saveOrUpdate;
-  }
-
-  @Override public void addDataChangeListener(final Runnable dataChange) {
-    jDateChooser.getDateEditor().addPropertyChangeListener(
-        new PropertyChangeListener() {
-          public void propertyChange(PropertyChangeEvent e) {
-            if ("date".equals(e.getPropertyName()))
-              dataChange.run();
-          }
-        }
-    );
+    addDataChangeListener();
   }
 
   public boolean hasValidInput() {
-    return jDateChooser.getDate() != null;
+    return jComboBox.getEditor().getItem() != null;
   }
 
-  public JDateChooser getComponent() {
-    return jDateChooser;
+  @Override void addDataChangeListener() {
+    jComboBox.addItemListener(itemListener);
   }
 
-  public Date getValue() {
-    return new java.sql.Date(jDateChooser.getDate().getTime());
+  @Override void removeDataChangeListener() {
+    jComboBox.removeItemListener(itemListener);
   }
 
-  public String getState() {
-    return getTransaction().getTransfer();
+  public JComboBox getComponent() {
+    return jComboBox;
   }
 
-  public boolean saveState() {
-    if (getTransaction() != null && getValue() != null) {
-      if (getValue().equals(getState())) return false;
-      getTransaction().setDate(getValue());
-      return true;
-    }
-    return false;
+  public String getValue() {
+    return (String)jComboBox.getSelectedItem();
   }
+/*
+
+  */
 }

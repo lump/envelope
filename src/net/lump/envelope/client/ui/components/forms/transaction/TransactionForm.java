@@ -9,34 +9,34 @@ import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.State;
 import net.lump.envelope.client.portal.HibernatePortal;
 import net.lump.envelope.client.thread.StatusRunnable;
-import net.lump.envelope.client.thread.ThreadPool;
 import net.lump.envelope.client.ui.MainFrame;
 import net.lump.envelope.client.ui.components.MoneyTextField;
 import net.lump.envelope.client.ui.components.StatusBar;
-import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBar;
 import net.lump.envelope.client.ui.components.TransactionTableModel;
+import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBar;
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.shared.command.OutputEvent;
 import net.lump.envelope.shared.command.OutputListener;
-import net.lump.envelope.shared.entity.Allocation;
 import net.lump.envelope.shared.entity.Category;
 import net.lump.envelope.shared.entity.Transaction;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.Money;
-import net.lump.lib.util.ObjectUtil;
 
 import javax.persistence.Column;
 import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.text.*;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.PlainDocument;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.ResourceBundle;
 import java.util.concurrent.BlockingQueue;
@@ -68,44 +68,20 @@ public class TransactionForm {
   private JDateChooser transactionDate;
   private MoneyTextField amount;
   private JPanel totalsPanel;
-  private JCheckBox reconciledBox;
-  private JPanel messagePanel;
+    private JPanel messagePanel;
   private JLabel messageLabel;
   private GridLayout totalsGridLayout;
 
   private AllocationFormTableModel tableModel;
-  private Transaction editingTransaction = null;
-  private Transaction originalTransaction = null;
   private JComboBox categoriesComboBox = new JComboBox();
+  private MutableTransaction mutableTransaction;
 
   private boolean expense = true;
 
-  private boolean formIsDirty = false;
-  private Timer dirtyTimer = null;
 
   private BlockingQueue<StatusRunnable> updateQueue = new LinkedBlockingQueue<StatusRunnable>();
   ChangeableDateChooser changeableDateChooser;
   ChangeableJTextField changeableJTextField;
-
-  private void scheduleDirtyTimer(int delay) {
-    if (dirtyTimer != null && dirtyTimer.isRunning()) {
-      dirtyTimer.stop();
-      System.out.println("stopping timer");
-    }
-    else {
-      dirtyTimer = new Timer(delay, new ActionListener() {
-        public void actionPerformed(ActionEvent e) {
-          System.out.println("timer fired at " + System.currentTimeMillis());
-          sendChanges();
-        }
-      });
-    }
-
-    dirtyTimer.setRepeats(false);
-    dirtyTimer.setInitialDelay(delay);
-    System.out.println("starting timer for " + delay + " at " + System.currentTimeMillis());
-    dirtyTimer.start();
-  }
 
   public TransactionForm() {
     $$$setupUI$$$();
@@ -251,26 +227,6 @@ public class TransactionForm {
 
   }
 
-  private void sendChanges() {
-    if (editingTransaction != null
-        && originalTransaction != null
-        && (formIsDirty || !editingTransaction.equals(originalTransaction))) {
-
-      StatusRunnable r = new StatusRunnable("Updating transaction " + originalTransaction.getId()) {
-        @Override public void run() {
-          HibernatePortal hp = new HibernatePortal();
-          try {
-            originalTransaction = hp.saveOrUpdate(editingTransaction);
-            formIsDirty = false;
-            editingTransaction = ObjectUtil.deepCopy(originalTransaction);
-            changeableDateChooser.setTransaction(editingTransaction);
-            changeableJTextField.setTransaction(editingTransaction);
-          } catch (AbortException ignore) { }
-        }
-      };
-      ThreadPool.getInstance().execute(r);
-    }
-  }
 
   public void setView(boolean expense) {
     this.expense = expense;
@@ -282,24 +238,27 @@ public class TransactionForm {
     typeIncomeRadio.setSelected(!expense);
     entityLabel.setText(expense ? Strings.get("paid.to") : Strings.get("received.from"));
     amountLabel.setText(expense ? Strings.get("total.amount") : Strings.get("net.amount"));
+
     if (tableModel != null) {
       tableModel.setExpense(expense);
-      if (tableModel.getTransaction() != null && tableModel.getTransaction().getAllocations() != null)
-        tableModel.fireTableRowsUpdated(0, tableModel.getTransaction().getAllocations().size() - 1);
+
+      if (tableModel.getAllocations() != null)
+        tableModel.fireTableRowsUpdated(0, tableModel.getAllocations().size() - 1);
     }
-    if (editingTransaction != null)
-      amount.setText(expense ? editingTransaction.getNetAmount().negate().toString()
-                             : editingTransaction.getNetAmount().toString());
+
+    if (mutableTransaction != null)
+      amount.setText(expense ? mutableTransaction.getNetAmount().negate().toString()
+                             : mutableTransaction.getNetAmount().toString());
 
     transactionAllocationSplit.resetToPreferredSizes();
   }
 
   public void loadTransactionForId(final int id) {
     if (!MainFrame.getInstance().isTransactionViewShowing()) return;
-    if (editingTransaction == null || !editingTransaction.getId().equals(id)) {
+    if (mutableTransaction == null || !mutableTransaction.getId().equals(id)) {
+
       StatusRunnable r = new StatusRunnable(MessageFormat.format(Strings.get("retrieving.transaction"), id)) {
         public void run() {
-
           try {
             final HibernatePortal hp = new HibernatePortal();
 
@@ -313,70 +272,18 @@ public class TransactionForm {
                   }
                 });
 
-            originalTransaction = hp.load(Transaction.class, id);
-//            originalTransaction = CriteriaFactory.getInstance().getTransactionById(id);
-            Collections.sort(originalTransaction.getAllocations(), new Comparator<Allocation>() {
-              public int compare(Allocation one, Allocation other) {
-                return one.getCategory().getName().compareTo(other.getCategory().getName());
-              }
-            });
-            editingTransaction = ObjectUtil.deepCopy(originalTransaction);
-
-            Runnable saveOrUpdate = new Runnable() {
-              public void run() {
-                sendChanges();
-              }
-            };
-
-            changeableDateChooser = new ChangeableDateChooser(transactionDate, editingTransaction, saveOrUpdate);
-            changeableJTextField = new ChangeableJTextField(description, editingTransaction, saveOrUpdate);
-
-            SwingUtilities.invokeAndWait(new Runnable() {
-              public void run() {
-                try {
-                  tableModel.setTransaction(editingTransaction, originalTransaction);
-                  amount.setText(editingTransaction.getNetAmount().toString());
-
-                  transactionDate.setDate(editingTransaction.getDate());
-
-                  try {
-                    description.setDocument(new LimitDocument(Transaction.class.getMethod("getDescription")));
-                  } catch (NoSuchMethodException ignore) {}
-
-                  description.setText(editingTransaction.getDescription());
-
-                  entity.removeItemListener(entityItemChangeListener);
-                  refreshEntities();
-
-                  try {
-                    ((JTextField)entity.getEditor().getEditorComponent())
-                        .setDocument(new LimitDocument(Transaction.class.getMethod("getEntity")));
-                  } catch (NoSuchMethodException ignore) {}
-
-                  entity.setSelectedItem(editingTransaction.getEntity());
-                  entity.addItemListener(entityItemChangeListener);
-
-                  reconciledBox.setSelected(originalTransaction.getReconciled());
-                  amount.setEnabled(!originalTransaction.getReconciled());
-
-                  transactionAllocationSplit.resetToPreferredSizes();
-
-                  if (editingTransaction.getNetAmount().doubleValue() > 0) setView(false);
-                  else setView(true);
-
-                } catch (AbortException ignore) {}
-              }
-            });
+            Transaction query = hp.load(Transaction.class, id);
+            if (mutableTransaction == null)
+              mutableTransaction = new MutableTransaction(query, TransactionForm.this);
+            else
+              mutableTransaction.importNew(query, TransactionForm.this);
           } catch (AbortException ignore) {
           } catch (InvocationTargetException ignore) {
           } catch (InterruptedException ignore) {
           }
-
         }
       };
-
       updateQueue.add(r);
-
     }
   }
 
@@ -390,46 +297,6 @@ public class TransactionForm {
   public JPanel getTransactionFormPanel() {
     return transactionFormPanel;
   }
-
-  class LimitDocument extends PlainDocument {
-    Method method;
-
-    public LimitDocument(Method method) {
-      this.method = method;
-    }
-
-    public void insertString(int offset, String str, AttributeSet attr) throws BadLocationException {
-      if (str == null) return;
-      if (method.isAnnotationPresent(Column.class)) {
-        if ((getLength() + str.length()) <= method.getAnnotation(Column.class).length()) {
-          super.insertString(offset, str, attr);
-        }
-      }
-    }
-  }
-
-  private void createUIComponents() {
-    Long today = System.currentTimeMillis();
-    today = today - (today % 86400000);
-
-    transactionDate = new JDateChooser(new Date(today), "MM/dd/yyyy", new JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
-    //transactionDate.setFont(Fonts.fixed.getFont());
-    totalsGridLayout = new GridLayout(0, 2);
-    totalsPanel = new JPanel(totalsGridLayout);
-    totalsPanel.removeAll();
-    transactionDate.setPreferredSize(
-        new Dimension(transactionDate.getPreferredSize().width + 30, transactionDate.getPreferredSize().height));
-  }
-
-
-  ItemListener entityItemChangeListener = new ItemListener() {
-    public void itemStateChanged(ItemEvent e) {
-      if (!originalTransaction.getEntity().equals(e.getItem())) {
-        editingTransaction.setEntity((String)entity.getEditor().getItem());
-        scheduleDirtyTimer(500);
-      }
-    }
-  };
 
   /** Method generated by IntelliJ IDEA GUI Designer >>> IMPORTANT!! <<< DO NOT edit this method OR call it in your code! */
   private void $$$setupUI$$$() {
@@ -451,7 +318,7 @@ public class TransactionForm {
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0,
             false));
     transactionInfoPanel = new JPanel();
-    transactionInfoPanel.setLayout(new GridLayoutManager(8, 3, new Insets(0, 0, 0, 0), 1, 5));
+    transactionInfoPanel.setLayout(new GridLayoutManager(7, 3, new Insets(0, 0, 0, 0), 1, 5));
     transactionAllocationSplit.setLeftComponent(transactionInfoPanel);
     transactionInfoPanel.setBorder(BorderFactory
         .createTitledBorder(ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("transaction")));
@@ -504,7 +371,7 @@ public class TransactionForm {
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
     final Spacer spacer1 = new Spacer();
     transactionInfoPanel.add(spacer1,
-        new GridConstraints(6, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
+        new GridConstraints(5, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1,
             GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
     typeIncomeRadio = new JRadioButton();
     this.$$$loadButtonText$$$(typeIncomeRadio,
@@ -518,14 +385,9 @@ public class TransactionForm {
     transactionInfoPanel.add(typeLabel,
         new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-    reconciledBox = new JCheckBox();
-    this.$$$loadButtonText$$$(reconciledBox,
-        ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("reconciled"));
-    transactionInfoPanel.add(reconciledBox, new GridConstraints(5, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
-        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
-        null, 0, false));
+    messagePanel = new JPanel();
     messagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-    transactionInfoPanel.add(messagePanel, new GridConstraints(7, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+    transactionInfoPanel.add(messagePanel, new GridConstraints(6, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
     messageLabel = new JLabel();
@@ -602,4 +464,99 @@ public class TransactionForm {
 
   /** @noinspection ALL */
   public JComponent $$$getRootComponent$$$() { return transactionFormPanel; }
+
+  public static class LimitDocument extends PlainDocument {
+    Method method;
+
+    public LimitDocument(Method method) {
+      this.method = method;
+    }
+
+    public void insertString(int offset, String str, AttributeSet attr) throws BadLocationException {
+      if (str == null) return;
+      if (method.isAnnotationPresent(Column.class)) {
+        if ((getLength() + str.length()) <= method.getAnnotation(Column.class).length()) {
+          super.insertString(offset, str, attr);
+        }
+      }
+    }
+  }
+
+  private void createUIComponents() {
+    Long today = System.currentTimeMillis();
+    today = today - (today % 86400000);
+
+    transactionDate = new JDateChooser(new Date(today), "MM/dd/yyyy", new JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
+    //transactionDate.setFont(Fonts.fixed.getFont());
+    totalsGridLayout = new GridLayout(0, 2);
+    totalsPanel = new JPanel(totalsGridLayout);
+    totalsPanel.removeAll();
+    transactionDate.setPreferredSize(
+        new Dimension(transactionDate.getPreferredSize().width + 30, transactionDate.getPreferredSize().height));
+
+  }
+
+/*
+  ItemListener entityItemChangeListener = new ItemListener() {
+    public void itemStateChanged(ItemEvent e) {
+      if (!originalTransaction.getEntity().equals(e.getItem())) {
+        editingTransaction.setEntity((String)entity.getEditor().getItem());
+        scheduleDirtyTimer(500);
+      }
+    }
+  };
+*/
+
+  public JTable getAllocationsTable() {
+    return allocationsTable;
+  }
+
+  public JRadioButton getTypeExpenseRadio() {
+    return typeExpenseRadio;
+  }
+
+  public JRadioButton getTypeIncomeRadio() {
+    return typeIncomeRadio;
+  }
+
+  public JComboBox getEntity() {
+    return entity;
+  }
+
+  public JTextField getDescription() {
+    return description;
+  }
+
+  public JPanel getTransactionInfoPanel() {
+    return transactionInfoPanel;
+  }
+
+  public JDateChooser getTransactionDate() {
+    return transactionDate;
+  }
+
+  public MoneyTextField getAmount() {
+    return amount;
+  }
+
+  public JPanel getTotalsPanel() {
+    return totalsPanel;
+  }
+
+  public JPanel getMessagePanel() {
+    return messagePanel;
+  }
+
+  public JLabel getMessageLabel() {
+    return messageLabel;
+  }
+
+  public AllocationFormTableModel getTableModel() {
+    return tableModel;
+  }
+
+  public JSplitPane getTransactionAllocationSplit() {
+    return transactionAllocationSplit;
+  }
+
 }

@@ -1,8 +1,5 @@
 package net.lump.envelope.client;
 
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
 import net.lump.envelope.client.ui.MainFrame;
 import net.lump.envelope.client.ui.components.Hierarchy;
 import net.lump.envelope.client.ui.prefs.LoginSettings;
@@ -10,6 +7,9 @@ import net.lump.envelope.shared.entity.Account;
 import net.lump.envelope.shared.entity.Budget;
 import net.lump.envelope.shared.entity.Category;
 import net.lump.envelope.shared.exception.AbortException;
+import net.sf.ehcache.Cache;
+import net.sf.ehcache.CacheManager;
+import net.sf.ehcache.Element;
 
 import java.util.HashMap;
 import java.util.List;
@@ -82,8 +82,7 @@ public class State {
       return (List<String>)element.getValue();
     else {
       java.util.List<String> entities;
-      entities = CriteriaFactory.getInstance()
-          .getEntitiesforBudget(State.getInstance().getBudget());
+      entities = CriteriaFactory.getInstance().getEntitiesforBudget(State.getInstance().getBudget());
       entityCache.put(new Element(ENTITIES, entities));
       return entities;
     }

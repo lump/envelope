@@ -4,7 +4,6 @@ import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.portal.HibernatePortal;
 import net.lump.envelope.shared.entity.Allocation;
 import net.lump.envelope.shared.entity.Category;
-import net.lump.envelope.shared.entity.Transaction;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.Money;
 import net.sf.ehcache.Cache;
@@ -15,7 +14,6 @@ import javax.swing.*;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -26,13 +24,11 @@ import java.util.List;
  */
 public class AllocationFormTableModel extends AbstractTableModel {
 
-  Transaction editingTransaction;
-  Transaction originalTransaction;
   JTable table;
+  List<Allocation> allocations;
 
   private static final String BALANCE_CACHE = "allocationFormBalanceCache";
-
-  private static final Cache balanceCache = new Cache(BALANCE_CACHE, 128, false, false, 30, 60);
+  private static final Cache balanceCache = new Cache(BALANCE_CACHE, 256, false, false, 30, 60);
 
   Mode mode;
   boolean expense = false;
@@ -60,16 +56,13 @@ public class AllocationFormTableModel extends AbstractTableModel {
     }
   }
 
-
-
   public AllocationFormTableModel(JTable table) {
     this(table, Mode.Simple, false);
   }
 
   public AllocationFormTableModel(JTable table, Mode mode, boolean expense) {
     this.table = table;
-    originalTransaction = new Transaction();
-    editingTransaction = new Transaction();
+    allocations = new ArrayList<Allocation>();
     setExpense(expense);
     setMode(mode);
   }
@@ -83,60 +76,44 @@ public class AllocationFormTableModel extends AbstractTableModel {
 
   }
 
-  @SuppressWarnings({"unchecked"}) private Money getBalance(Allocation allocation) {
-    Money retval = null;
-
-    if (editingTransaction != null
-        && editingTransaction.getAllocations() != null
-        && editingTransaction.getAllocations().size() > 0) {
-      Element e = balanceCache.get(editingTransaction.getId());
-      HashMap<Integer,Money> map = (e == null ? null : (HashMap<Integer,Money>)e.getValue());
-      if (allocation.getCategory() != null
-          && map != null
-          && map.size() > 0
-          && map.containsKey(allocation.getCategory().getId())
-          && map.get(allocation.getCategory().getId()) != null) {
-        retval = map.get(allocation.getCategory().getId());
+  private void populateCategoryBalances() {
+    Object categoryBalances = null;
+    try {
+      for (Object o : new HibernatePortal().detachedCriteriaQueryList(CriteriaFactory.getInstance().getAllBalances())) {
+        balanceCache.put(
+            new Element(
+                ((Category)((Object[])o)[0]).getId(),
+                (Money)(((Object[])o)[1] == null ? new Money(0) : ((Object[])o)[1])
+            )
+        );
       }
-      else {
-        try {
-          List<Category> categoryList = new ArrayList<Category>();
-
-          for (Allocation a : editingTransaction.getAllocations()) 
-            if (a.getCategory() != null) categoryList.add(a.getCategory());
-
-          Object q = new HibernatePortal().detachedCriteriaQueryList(
-              CriteriaFactory.getInstance().getBalances(categoryList));
-          if (q != null && q instanceof ArrayList) {
-            HashMap<Integer, Money> resultMap = new HashMap<Integer, Money>();
-            for (Object o : (ArrayList)q) {
-              resultMap.put(((Category)((Object[])o)[0]).getId(),
-                  (Money)(((Object[])o)[1] == null ? new Money(0) : ((Object[])o)[1]));
-            }
-            balanceCache.put(new Element(editingTransaction.getId(), resultMap));
-            retval = resultMap.get(allocation.getCategory() != null ? allocation.getCategory().getId() : null);
-          }
-        } catch (AbortException ignore) {}
-      }
-    }
-
-    return retval == null ? new Money(0) : retval;
+    } catch (AbortException ignore) {}
   }
 
-  public void setTransaction(Transaction editingTransaction, Transaction originalTransaction) {
-    int oldSize = this.editingTransaction.getAllocations() == null ? 0 : this.editingTransaction.getAllocations().size();
-    this.editingTransaction = editingTransaction;
-    this.originalTransaction = originalTransaction;
+  @SuppressWarnings({"unchecked"}) private Money getCategoryBalance(Allocation allocation) {
+    Money output = new Money(0);
+
+    Element e = balanceCache.get(allocation.getCategory().getId());
+    if (e != null)
+      output = (Money)e.getValue();
+    else {
+      populateCategoryBalances();
+      e = balanceCache.get(allocation.getCategory().getId());
+      if (e != null)
+        output = (Money)e.getValue();
+    }
+    return output;
+  }
+
+  public void setAllocations(List<Allocation> allocations) {
+    int oldSize = allocations == null ? 0 : allocations.size();
+    this.allocations = allocations;
 
     fireTableRowsUpdated(0, oldSize - 1);
-    if (oldSize > editingTransaction.getAllocations().size())
-      fireTableRowsDeleted(editingTransaction.getAllocations().size(), oldSize - 1);
-    if (oldSize < editingTransaction.getAllocations().size())
-      fireTableRowsInserted(oldSize, editingTransaction.getAllocations().size() - 1);
-  }
-
-  public Transaction getTransaction() {
-    return editingTransaction;
+    if (oldSize > allocations.size())
+      fireTableRowsDeleted(allocations.size(), oldSize - 1);
+    if (oldSize < allocations.size())
+      fireTableRowsInserted(oldSize, allocations.size() - 1);
   }
 
   @Override
@@ -146,13 +123,12 @@ public class AllocationFormTableModel extends AbstractTableModel {
 
   @Override
   public Class<?> getColumnClass(int columnIndex) {
-    if (editingTransaction.getAllocations() == null || editingTransaction.getAllocations().size() == 0) return null;
+    if (allocations == null || allocations.size() == 0) return null;
     return Columns.values()[columnIndex].columnClass;
   }
 
   public int getRowCount() {
-    if (editingTransaction.getAllocations() == null) return 0;
-    return editingTransaction.getAllocations().size();
+    return allocations == null ? 0 : allocations.size();
   }
 
   public int getColumnCount() {
@@ -181,12 +157,12 @@ public class AllocationFormTableModel extends AbstractTableModel {
     if (value == null) return;
     switch (Columns.values()[column]) {
       case Category:
-        editingTransaction.getAllocations().get(row).setCategory((Category)value);
+        allocations.get(row).setCategory((Category)value);
         break;
       case Allocation:
         try {
           Money m = value instanceof Money ? (Money)value : new Money(value.toString().trim());
-          editingTransaction.getAllocations().get(row).setAmount(expense ? m.negate() : m);
+          allocations.get(row).setAmount(expense ? m.negate() : m);
         } catch (NumberFormatException nfe) {
           return;
         }
@@ -196,23 +172,21 @@ public class AllocationFormTableModel extends AbstractTableModel {
   }
 
   public Object getValueAt(int row, int column) {
-    if (editingTransaction.getAllocations() == null) return null;
-    Allocation editAllocation = editingTransaction.getAllocations().get(row);
-    Allocation originalAllocation = originalTransaction.getAllocations().get(row);
+    if (allocations == null) return null;
+    Allocation allocation = allocations.get(row);
     Object retval = null;
-
 
     switch (mode) {
       case Simple:
-        retval = column == 0 ? editAllocation.getCategory() : editAllocation.getAmount();
+        retval = column == 0 ? allocation.getCategory() : allocation.getAmount();
         break;
       case Complex:
         switch (Columns.values()[column]) {
           case Category:
-            retval = editAllocation.getCategory();
+            retval = allocation.getCategory();
             break;
           case Allocation:
-            retval = expense ? editAllocation.getAmount().negate() : editAllocation.getAmount();
+            retval = expense ? allocation.getAmount().negate() : allocation.getAmount();
             break;
 //          case Projected:
 //            Money balance = getBalance(editAllocation);
@@ -225,5 +199,9 @@ public class AllocationFormTableModel extends AbstractTableModel {
     }
 
     return retval;
+  }
+
+  public List<Allocation> getAllocations() {
+    return allocations;
   }
 }

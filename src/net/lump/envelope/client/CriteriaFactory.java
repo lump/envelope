@@ -1,13 +1,13 @@
 package net.lump.envelope.client;
 
-import org.apache.log4j.Logger;
-import org.hibernate.criterion.*;
 import net.lump.envelope.client.portal.HibernatePortal;
 import net.lump.envelope.client.ui.components.Hierarchy;
 import net.lump.envelope.shared.entity.*;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.envelope.shared.exception.EnvelopeException;
 import net.lump.lib.Money;
+import org.apache.log4j.Logger;
+import org.hibernate.criterion.*;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -168,6 +168,13 @@ public class CriteriaFactory {
     if (categories.size() == 0) throw new IllegalArgumentException("need one or more categories");
     return DetachedCriteria.forClass(Allocation.class)
         .add(Restrictions.in("category", categories))
+        .setProjection(Projections.projectionList()
+            .add(Projections.groupProperty("category"))
+            .add(Projections.sum("amount")));
+  }
+
+  public DetachedCriteria getAllBalances() {
+    return DetachedCriteria.forClass(Allocation.class)
         .setProjection(Projections.projectionList()
             .add(Projections.groupProperty("category"))
             .add(Projections.sum("amount")));
