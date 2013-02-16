@@ -5,6 +5,7 @@ import net.lump.envelope.client.thread.StatusElement;
 import net.lump.envelope.client.ui.components.AboutBox;
 import net.lump.envelope.client.ui.components.Hierarchy;
 import net.lump.envelope.client.ui.components.StatusBar;
+import net.lump.envelope.client.ui.components.TransactionTableModel;
 import net.lump.envelope.client.ui.components.forms.preferences.Preferences;
 import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBar;
 import net.lump.envelope.client.ui.components.forms.transaction.TransactionForm;
@@ -19,6 +20,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * The main frame for the application.
@@ -231,12 +233,18 @@ public class MainFrame extends JFrame {
 
   public void doViewTransaction() {
     if (viewTransaction.isSelected()) {
-
       if (savedTransactionFormSplitterLocation == 0) tableContentSplitPane.setDividerLocation(0.4);
       else tableContentSplitPane.setDividerLocation(savedTransactionFormSplitterLocation);
-
       tableContentSplitPane.setDividerSize((Integer)UIManager.get("SplitPane.dividerSize"));
       transactionForm.getTransactionFormPanel().setVisible(true);
+
+      JTable table = TableQueryBar.getInstance().getTable();
+      if (table.getSelectedRow() != -1) {
+        int selectedId = ((TransactionTableModel)table.getModel()).getTransactionId(table.getSelectedRow());
+        if (transactionForm.getTransactionChangeHandler() == null
+            || !transactionForm.getTransactionChangeHandler().getTransaction().getId().equals(selectedId))
+          transactionForm.loadTransactionForId(selectedId);
+      }
     }
     else {
       savedTransactionFormSplitterLocation = tableContentSplitPane.getDividerLocation();

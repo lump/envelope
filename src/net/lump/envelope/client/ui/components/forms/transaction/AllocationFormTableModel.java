@@ -68,7 +68,11 @@ public class AllocationFormTableModel extends AbstractTableModel {
   }
 
   public void setExpense(boolean expense) {
-    this.expense = expense;
+    if (this.expense != expense) {
+      this.expense = expense;
+      if (allocations != null)
+        fireTableRowsUpdated(0, allocations.size() - 1);
+    }
   }
 
   public void setMode(Mode mode) {
@@ -106,14 +110,16 @@ public class AllocationFormTableModel extends AbstractTableModel {
   }
 
   public void setAllocations(List<Allocation> allocations) {
-    int oldSize = allocations == null ? 0 : allocations.size();
+    int oldSize = this.allocations == null ? 0 : this.allocations.size();
     this.allocations = allocations;
 
-    fireTableRowsUpdated(0, oldSize - 1);
-    if (oldSize > allocations.size())
-      fireTableRowsDeleted(allocations.size(), oldSize - 1);
-    if (oldSize < allocations.size())
-      fireTableRowsInserted(oldSize, allocations.size() - 1);
+    if (allocations != null) {
+      fireTableRowsUpdated(0, oldSize - 1);
+      if (oldSize > allocations.size())
+        fireTableRowsDeleted(allocations.size(), oldSize - 1);
+      if (oldSize < allocations.size())
+        fireTableRowsInserted(oldSize, allocations.size() - 1);
+    }
   }
 
   @Override
@@ -176,26 +182,21 @@ public class AllocationFormTableModel extends AbstractTableModel {
     Allocation allocation = allocations.get(row);
     Object retval = null;
 
-    switch (mode) {
-      case Simple:
-        retval = column == 0 ? allocation.getCategory() : allocation.getAmount();
+    switch (Columns.values()[column]) {
+      case Category:
+        retval = allocation.getCategory();
         break;
-      case Complex:
-        switch (Columns.values()[column]) {
-          case Category:
-            retval = allocation.getCategory();
-            break;
-          case Allocation:
-            retval = expense ? allocation.getAmount().negate() : allocation.getAmount();
-            break;
-//          case Projected:
-//            Money balance = getBalance(editAllocation);
-//            Money amount = editAllocation.getNetAmount();
-//            if (originalAllocation != null)
-//              amount = amount.subtract(originalAllocation.getNetAmount());
-//            retval = balance.add(amount);
-//            break;
-        }
+      case Allocation:
+        Money amount = allocation.getAmount();
+        retval = expense ? allocation.getAmount().negate() : allocation.getAmount();
+        break;
+//      case Projected:
+//        Money balance = getBalance(editAllocation);
+//        Money amount = editAllocation.getNetAmount();
+//        if (originalAllocation != null)
+//          amount = amount.subtract(originalAllocation.getNetAmount());
+//        retval = balance.add(amount);
+//        break;
     }
 
     return retval;

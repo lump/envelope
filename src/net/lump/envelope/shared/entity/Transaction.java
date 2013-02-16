@@ -141,6 +141,28 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
     return total;
   }
 
+  @Transient
+  public Money getIncomeAmount() {
+    Money total = new Money(0);
+
+    for (Allocation a : this.getAllocations())
+      if (a.getAmount().compareTo(Money.ZERO) > 0)
+        total = total.add(a.getAmount());
+
+    return total;
+  }
+
+  @Transient
+  public Money getDebitAmount() {
+    Money total = new Money(0);
+
+    for (Allocation a : this.getAllocations())
+      if (a.getAmount().compareTo(Money.ZERO) < 0)
+        total = total.add(a.getAmount());
+
+    return total;
+  }
+
   @SuppressWarnings({"RedundantIfStatement", "SimplifiableIfStatement"})
   public boolean equals(Object o) {
     if (this == o) return true;

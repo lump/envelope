@@ -15,6 +15,7 @@ import net.lump.envelope.client.ui.components.StatusBar;
 import net.lump.envelope.client.ui.components.TransactionTableModel;
 import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBar;
 import net.lump.envelope.client.ui.defs.Strings;
+import net.lump.envelope.client.ui.images.ImageResource;
 import net.lump.envelope.shared.command.OutputEvent;
 import net.lump.envelope.shared.command.OutputListener;
 import net.lump.envelope.shared.entity.Category;
@@ -26,6 +27,8 @@ import javax.persistence.Column;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -70,14 +73,14 @@ public class TransactionForm {
   private JPanel totalsPanel;
   private JPanel messagePanel;
   private JLabel messageLabel;
+  private JLabel inboxLabel;
+  private JLabel balanceLabel;
+  private JLabel outboxLabel;
   private GridLayout totalsGridLayout;
 
   private AllocationFormTableModel tableModel;
   private JComboBox categoriesComboBox = new JComboBox();
   private TransactionChangeHandler transactionChangeHandler;
-
-  private boolean expense = true;
-
 
   private BlockingQueue<StatusRunnable> updateQueue = new LinkedBlockingQueue<StatusRunnable>();
   ChangeableDateChooser changeableDateChooser;
@@ -85,6 +88,18 @@ public class TransactionForm {
 
   public TransactionForm() {
     $$$setupUI$$$();
+
+    inboxLabel.setIcon(ImageResource.icon.inbox_16.get());
+    inboxLabel.setToolTipText(Strings.get("incoming"));
+    setInboxLabel(Money.ZERO.toString());
+
+    balanceLabel.setIcon(ImageResource.icon.balance_16.get());
+    balanceLabel.setToolTipText(Strings.get("balance"));
+    setBalanceLabel(Money.ZERO.toString());
+
+    outboxLabel.setIcon(ImageResource.icon.outbox_16.get());
+    outboxLabel.setToolTipText(Strings.get("outgoing"));
+    setOutboxLabel(Money.ZERO.toString());
 
     tableModel = new AllocationFormTableModel(allocationsTable);
     allocationsTable.setModel(tableModel);
@@ -101,8 +116,24 @@ public class TransactionForm {
         return c;
       }
     });
-
     allocationsTable.setSurrendersFocusOnKeystroke(false);
+
+    tableModel.addTableModelListener(new TableModelListener() {
+      public void tableChanged(TableModelEvent e) {
+        if (transactionChangeHandler != null)
+          transactionChangeHandler.updateAllocationTotalLabels();
+      }
+    });
+
+//    allocationsTable.addPropertyChangeListener(new PropertyChangeListener() {
+//      public void propertyChange(PropertyChangeEvent evt) {
+//        System.out.println(evt.getPropertyName());
+//        setInboxLabel(tableModel.getIn().toString());
+//        setBalanceLabel(tableModel.getBalance().toString());
+//        setOutboxLabel(tableModel.getOut().toString());
+//      }
+//    });
+
     categoriesComboBox.setLightWeightPopupEnabled(true);
     CellEditor categoryCellEditor = new CellEditor(categoriesComboBox);
     MoneyTextField moneyEditor = new MoneyTextField();
@@ -161,12 +192,12 @@ public class TransactionForm {
 
     typeExpenseRadio.setAction(new AbstractAction(Strings.get("expense")) {
       public void actionPerformed(ActionEvent e) {
-        setView(true);
+        setViewIsExpense(true);
       }
     });
     typeIncomeRadio.setAction(new AbstractAction(Strings.get("income")) {
       public void actionPerformed(ActionEvent e) {
-        setView(false);
+        setViewIsExpense(false);
       }
     });
 
@@ -202,7 +233,6 @@ public class TransactionForm {
       public void mouseExited(MouseEvent e) {}
     });
 
-
     Runnable r = new Runnable() {
       public void run() {
         StatusRunnable sr;
@@ -227,31 +257,12 @@ public class TransactionForm {
 
   }
 
-
-  public void setView(boolean expense) {
-    this.expense = expense;
-    refresh();
-  }
-
-  public void refresh() {
-    typeExpenseRadio.setSelected(expense);
-    typeIncomeRadio.setSelected(!expense);
-    entityLabel.setText(expense ? Strings.get("paid.to") : Strings.get("received.from"));
-    amountLabel.setText(expense ? Strings.get("total.amount") : Strings.get("net.amount"));
-
-    if (tableModel != null) {
-      tableModel.setExpense(expense);
-
-      if (tableModel.getAllocations() != null)
-        tableModel.fireTableRowsUpdated(0, tableModel.getAllocations().size() - 1);
+  public void setViewIsExpense(boolean expense) {
+    if (transactionChangeHandler != null) {
+      transactionChangeHandler.setExpense(expense);
     }
-
-    if (transactionChangeHandler != null)
-      amount.setText(expense ? transactionChangeHandler.getTransaction().getNetAmount().negate().toString()
-                             : transactionChangeHandler.getTransaction().getNetAmount().toString());
-
-    transactionAllocationSplit.resetToPreferredSizes();
   }
+
 
   public void loadTransactionForId(final int id) {
     if (!MainFrame.getInstance().isTransactionViewShowing()) return;
@@ -296,6 +307,18 @@ public class TransactionForm {
 
   public JPanel getTransactionFormPanel() {
     return transactionFormPanel;
+  }
+
+  public void setInboxLabel(String inboxLabel) {
+    this.inboxLabel.setText(inboxLabel);
+  }
+
+  public void setBalanceLabel(String inboxLabel) {
+    this.balanceLabel.setText(inboxLabel);
+  }
+
+  public void setOutboxLabel(String inboxLabel) {
+    this.outboxLabel.setText(inboxLabel);
   }
 
   /** Method generated by IntelliJ IDEA GUI Designer >>> IMPORTANT!! <<< DO NOT edit this method OR call it in your code! */
@@ -349,7 +372,7 @@ public class TransactionForm {
         new GridConstraints(3, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, 1,
             GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
     amountLabel = new JLabel();
-    amountLabel.setText("Amount");
+    this.$$$loadLabelText$$$(amountLabel, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("amount"));
     transactionInfoPanel.add(amountLabel,
         new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -381,19 +404,19 @@ public class TransactionForm {
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null,
             null, null, 0, false));
     typeLabel = new JLabel();
-    typeLabel.setText("Type");
+    this.$$$loadLabelText$$$(typeLabel, ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("type"));
     transactionInfoPanel.add(typeLabel,
         new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     messagePanel = new JPanel();
-    messagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+    messagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(3, 3, 3, 3), -1, -1));
     transactionInfoPanel.add(messagePanel, new GridConstraints(6, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
     messageLabel = new JLabel();
     messageLabel.setText("");
     messagePanel.add(messageLabel,
-        new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+        new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     allocationsPanel = new JPanel();
     allocationsPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), 0, 0));
@@ -407,9 +430,25 @@ public class TransactionForm {
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
     allocationsTable = new JTable();
     allocationsScrollPane.setViewportView(allocationsTable);
+    totalsPanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
     allocationsPanel.add(totalsPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+    inboxLabel = new JLabel();
+    inboxLabel.setText("");
+    totalsPanel.add(inboxLabel,
+        new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+    balanceLabel = new JLabel();
+    balanceLabel.setText("");
+    totalsPanel.add(balanceLabel,
+        new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+    outboxLabel = new JLabel();
+    outboxLabel.setText("");
+    totalsPanel.add(outboxLabel,
+        new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
   }
 
   /** @noinspection ALL */
@@ -557,6 +596,14 @@ public class TransactionForm {
 
   public JSplitPane getTransactionAllocationSplit() {
     return transactionAllocationSplit;
+  }
+
+  public JLabel getEntityLabel() {
+    return entityLabel;
+  }
+
+  public TransactionChangeHandler getTransactionChangeHandler() {
+    return transactionChangeHandler;
   }
 
 }

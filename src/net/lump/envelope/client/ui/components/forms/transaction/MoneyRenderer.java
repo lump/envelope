@@ -41,7 +41,7 @@ public class MoneyRenderer extends DefaultTableCellRenderer {
     if (UIManager.getLookAndFeel().getID().equals("Nimbus") &&
         (original == null || original instanceof javax.swing.plaf.UIResource)) {
       Color alternateColor = (Color)UIManager.get("Table.alternateRowColor");
-      if (alternateColor != null && row % 2 == 0) {
+      if (alternateColor != null && row % 2 != 0) {
         label.setBackground(alternateColor);
         label.setOpaque(true);
       }
@@ -49,7 +49,6 @@ public class MoneyRenderer extends DefaultTableCellRenderer {
         label.setBackground(original);
         label.setOpaque(false);
       }
-
     }
 
     if (isSelected) {

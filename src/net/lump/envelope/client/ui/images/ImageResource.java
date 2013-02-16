@@ -27,7 +27,11 @@ public class ImageResource {
     account,
     account_closed,
     inbox,
+    inbox_16,
+    balance,
+    balance_16,
     outbox,
+    outbox_16,
     ;
 
     public static final String png = "png";
