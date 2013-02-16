@@ -19,10 +19,11 @@ import java.util.Comparator;
  * @author troy
  * @version $Id$
  */
-public class MutableTransaction extends Transaction {
+public class TransactionChangeHandler {
 
   final LimitedStack<Transaction> changeHistory = new LimitedStack<Transaction>();
   private Transaction pristine;
+  private Transaction editing;
   private TransactionForm form;
 
   Runnable saveOrUpdate = new Runnable() {
@@ -36,7 +37,7 @@ public class MutableTransaction extends Transaction {
   private ChangeableJTextField changeableDescription;
   private ChangeableMoneyTextField changeableAmount;
 
-  public MutableTransaction(Transaction t, TransactionForm tf) throws InvocationTargetException, InterruptedException {
+  public TransactionChangeHandler(Transaction t, TransactionForm tf) throws InvocationTargetException, InterruptedException {
 
     Collections.sort(t.getAllocations(), new Comparator<Allocation>() {
       public int compare(Allocation one, Allocation other) {
@@ -48,7 +49,6 @@ public class MutableTransaction extends Transaction {
   }
 
   public void importNew(Transaction t, TransactionForm tf) throws InvocationTargetException, InterruptedException {
-    pristine = t;
     form = tf;
     changeHistory.clear();
     changeHistory.push(t);
@@ -57,29 +57,12 @@ public class MutableTransaction extends Transaction {
   }
 
   private void saveAttributes(Transaction t) {
-    Transaction copied = ObjectUtil.deepCopy(t);
-    this.setId(copied.getId());
-    this.setStamp(copied.getStamp());
-    this.setDate(copied.getDate());
-    this.setAllocations(copied.getAllocations());
-    this.setEntity(copied.getEntity());
-    this.setDescription(copied.getDescription());
-    this.setReconciled(copied.getReconciled());
-    this.setTransfer(copied.getTransfer());
+    pristine = t;
+    editing = ObjectUtil.deepCopy(pristine);
   }
 
-  public Transaction toTransaction() {
-    Transaction out = new Transaction();
-    out.setAllocations(getAllocations());
-    out.setId(this.getId());
-    out.setStamp(this.getStamp());
-    out.setDate(this.getDate());
-    out.setAllocations(this.getAllocations());
-    out.setEntity(this.getEntity());
-    out.setDescription(this.getDescription());
-    out.setReconciled(this.getReconciled());
-    out.setTransfer(this.getTransfer());
-    return out;
+  public Transaction getTransaction() {
+    return editing;
   }
 
   private void setFormData() throws InvocationTargetException, InterruptedException {
@@ -91,22 +74,23 @@ public class MutableTransaction extends Transaction {
           if (changeableDescription != null) changeableDescription.removeDataChangeListener();
           if (changeableEntity != null) changeableEntity.removeDataChangeListener();
 
-          form.getTableModel().setAllocations(getAllocations());
+          form.getTableModel().setAllocations(editing.getAllocations());
 
-          form.getAmount().setText(getNetAmount().toString());
+          form.getAmount().setText(editing.getNetAmount().toString());
           changeableAmount = new ChangeableMoneyTextField(form.getAmount()) {
-            @Override public Money getState() { return MutableTransaction.this.getNetAmount(); }
+            @Override public Money getState() { return TransactionChangeHandler.this.editing.getNetAmount(); }
             @Override public boolean saveState() { return false; }
             @Override public Runnable getSaveOrUpdate() { return saveOrUpdate; }
+
           };
 
-          form.getTransactionDate().setDate(getDate());
+          form.getTransactionDate().setDate(editing.getDate());
           changeableDate = new ChangeableDateChooser(form.getTransactionDate()){
-            @Override public Date getState() { return MutableTransaction.this.getDate(); }
+            @Override public Date getState() { return TransactionChangeHandler.this.editing.getDate(); }
             @Override public boolean saveState() {
               if (getValue() != null) {
                 if (getValue().equals(getState())) return false;
-                MutableTransaction.this.setDate(getValue());
+                TransactionChangeHandler.this.editing.setDate(getValue());
                 return true;
               }
               return false;
@@ -117,13 +101,13 @@ public class MutableTransaction extends Transaction {
           try {
             form.getDescription().setDocument(new TransactionForm.LimitDocument(Transaction.class.getMethod("getDescription")));
           } catch (NoSuchMethodException ignore) {}
-          form.getDescription().setText(getDescription());
+          form.getDescription().setText(editing.getDescription());
           changeableDescription = new ChangeableJTextField(form.getDescription()) {
-            @Override public String getState() { return MutableTransaction.this.getDescription(); }
+            @Override public String getState() { return TransactionChangeHandler.this.editing.getDescription(); }
             @Override public boolean saveState() {
               if (getValue() != null) {
                 if (getValue().equals(getState())) return false;
-                MutableTransaction.this.setDescription(getValue());
+                TransactionChangeHandler.this.editing.setDescription(getValue());
                 return true;
               }
               return false;
@@ -138,13 +122,13 @@ public class MutableTransaction extends Transaction {
             ((JTextField)form.getEntity().getEditor().getEditorComponent())
                 .setDocument(new TransactionForm.LimitDocument(Transaction.class.getMethod("getEntity")));
           } catch (NoSuchMethodException ignore) {}
-          form.getEntity().setSelectedItem(getEntity());
+          form.getEntity().setSelectedItem(editing.getEntity());
           changeableEntity = new ChangeableComboBox(form.getEntity()) {
-            public String getState() { return MutableTransaction.this.getEntity(); }
+            public String getState() { return TransactionChangeHandler.this.editing.getEntity(); }
             public boolean saveState() {
               if (getValue() != null) {
                 if (getValue().equals(getState())) return false;
-                MutableTransaction.this.setEntity(getValue());
+                TransactionChangeHandler.this.editing.setEntity(getValue());
                 return true;
               }
               return false;
@@ -155,10 +139,10 @@ public class MutableTransaction extends Transaction {
             }
           };
 
-          form.getAmount().setEnabled(getReconciled());
+          form.getAmount().setEnabled(editing.getReconciled());
           form.getTransactionAllocationSplit().resetToPreferredSizes();
 
-          if (getNetAmount().doubleValue() > 0) form.setView(false);
+          if (editing.getNetAmount().doubleValue() > 0) form.setView(false);
           else form.setView(true);
 
         } catch (AbortException ignore) {
@@ -177,8 +161,8 @@ public class MutableTransaction extends Transaction {
         @Override public void run() {
           HibernatePortal hp = new HibernatePortal();
           try {
-            changeHistory.push(MutableTransaction.this.toTransaction());
-            saveAttributes(hp.saveOrUpdate(MutableTransaction.this.toTransaction()));
+            changeHistory.push(TransactionChangeHandler.this.getTransaction());
+            saveAttributes(hp.saveOrUpdate(TransactionChangeHandler.this.getTransaction()));
           } catch (AbortException ignore) { }
         }
       };

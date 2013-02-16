@@ -68,13 +68,13 @@ public class TransactionForm {
   private JDateChooser transactionDate;
   private MoneyTextField amount;
   private JPanel totalsPanel;
-    private JPanel messagePanel;
+  private JPanel messagePanel;
   private JLabel messageLabel;
   private GridLayout totalsGridLayout;
 
   private AllocationFormTableModel tableModel;
   private JComboBox categoriesComboBox = new JComboBox();
-  private MutableTransaction mutableTransaction;
+  private TransactionChangeHandler transactionChangeHandler;
 
   private boolean expense = true;
 
@@ -246,16 +246,16 @@ public class TransactionForm {
         tableModel.fireTableRowsUpdated(0, tableModel.getAllocations().size() - 1);
     }
 
-    if (mutableTransaction != null)
-      amount.setText(expense ? mutableTransaction.getNetAmount().negate().toString()
-                             : mutableTransaction.getNetAmount().toString());
+    if (transactionChangeHandler != null)
+      amount.setText(expense ? transactionChangeHandler.getTransaction().getNetAmount().negate().toString()
+                             : transactionChangeHandler.getTransaction().getNetAmount().toString());
 
     transactionAllocationSplit.resetToPreferredSizes();
   }
 
   public void loadTransactionForId(final int id) {
     if (!MainFrame.getInstance().isTransactionViewShowing()) return;
-    if (mutableTransaction == null || !mutableTransaction.getId().equals(id)) {
+    if (transactionChangeHandler == null || !transactionChangeHandler.getTransaction().getId().equals(id)) {
 
       StatusRunnable r = new StatusRunnable(MessageFormat.format(Strings.get("retrieving.transaction"), id)) {
         public void run() {
@@ -273,10 +273,10 @@ public class TransactionForm {
                 });
 
             Transaction query = hp.load(Transaction.class, id);
-            if (mutableTransaction == null)
-              mutableTransaction = new MutableTransaction(query, TransactionForm.this);
+            if (transactionChangeHandler == null)
+              transactionChangeHandler = new TransactionChangeHandler(query, TransactionForm.this);
             else
-              mutableTransaction.importNew(query, TransactionForm.this);
+              transactionChangeHandler.importNew(query, TransactionForm.this);
           } catch (AbortException ignore) {
           } catch (InvocationTargetException ignore) {
           } catch (InterruptedException ignore) {
