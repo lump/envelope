@@ -50,10 +50,8 @@ public class CriteriaFactory {
                 .createAlias("c.account", "acc")
                 .add(Restrictions.eq("acc.budget", budget))
                 .add(Restrictions.not(Restrictions.eq("entity", "")))
-                .setProjection(Projections.distinct(Projections.property(
-                    "entity")))
+                .setProjection(Projections.distinct(Projections.property("entity")))
                 .addOrder(Order.asc("entity")));
-
     return list;
   }
 

@@ -44,8 +44,9 @@ public class AllocationFormTableModel extends AbstractTableModel {
 
   enum Columns {
     Category(Category.class, true),
-    Allocation(Money.class, true);
-//    Projected(Money.class, false);
+    Allocation(Money.class, true),
+//   Projected(Money.class, false);
+    ;
 
     final Class columnClass;
     final Boolean editable;
@@ -204,5 +205,19 @@ public class AllocationFormTableModel extends AbstractTableModel {
 
   public List<Allocation> getAllocations() {
     return allocations;
+  }
+
+  public boolean hasEmptyRow() {
+    if (allocations.size() == 0) return false;
+
+    Allocation allocation = allocations.get(allocations.size()-1);
+    if (allocation.getCategory() == null && allocation.getAmount() == null)
+      return true;
+    else return false;
+  }
+
+  public void addEmptyRow() {
+    allocations.add(new Allocation());
+    fireTableRowsInserted(allocations.size()-1, allocations.size()-1);
   }
 }

@@ -311,4 +311,8 @@ public class MainFrame extends JFrame {
     prefs.putInt("windowSizeY", getHeight());
     System.exit(value);
   }
+
+  public TransactionForm getTransactionForm() {
+    return transactionForm;
+  }
 }

@@ -34,9 +34,9 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
@@ -55,7 +55,7 @@ public class TransactionForm {
   private JTable allocationsTable;
   private JRadioButton typeExpenseRadio;
   private JRadioButton typeIncomeRadio;
-  private JComboBox entity;
+  private JComboBox<String> entity;
   private JTextField description;
   private JPanel transactionFormPanel;
   private JPanel splitpanePanel;
@@ -71,11 +71,13 @@ public class TransactionForm {
   private JDateChooser transactionDate;
   private MoneyTextField amount;
   private JPanel totalsPanel;
-  private JPanel messagePanel;
-  private JLabel messageLabel;
+  private JPanel imbalanceMessagePanel;
+  private JLabel imbalanceMessageLabel;
   private JLabel inboxLabel;
   private JLabel balanceLabel;
   private JLabel outboxLabel;
+  private JPanel saveStatePanel;
+  private JLabel saveStateLabel;
   private GridLayout totalsGridLayout;
 
   private AllocationFormTableModel tableModel;
@@ -117,13 +119,61 @@ public class TransactionForm {
       }
     });
     allocationsTable.setSurrendersFocusOnKeystroke(false);
+    allocationsTable.setRowHeight(allocationsTable.getRowHeight() + 5);
+/*
+    allocationsTable.addFocusListener(new FocusListener() {
+      public void focusGained(FocusEvent e) {}
+      public void focusLost(FocusEvent e) {
+        if (allocationsTable.isEditing())
+          allocationsTable.getCellEditor().stopCellEditing();
+      }
+    });
+    */
+
+    allocationsTable.putClientProperty("terminateEditOnFocusLost", true);
+
+    allocationsTable.addFocusListener(new FocusListener() {
+      public void focusGained(FocusEvent e) {
+        System.out.println("focus gained " + e.getComponent().getName());
+      }
+
+      public void focusLost(FocusEvent e) {
+        System.out.println("focus lost " + e.getComponent().getName());
+      }
+    });
+
+    allocationsTable.addPropertyChangeListener(new PropertyChangeListener() {
+      public void propertyChange(PropertyChangeEvent evt) {
+        System.out.println("allocationtable property change: " + evt.getPropertyName() + " " + evt.getNewValue());
+        //To change body of implemented methods use File | Settings | File Templates.
+      }
+    });
 
     tableModel.addTableModelListener(new TableModelListener() {
       public void tableChanged(TableModelEvent e) {
-        if (transactionChangeHandler != null)
-          transactionChangeHandler.updateAllocationTotalLabels();
+        String type = "";
+        switch (e.getType()) {
+          case TableModelEvent.UPDATE:
+            type = "update";
+            break;
+          case TableModelEvent.INSERT:
+            type = "insert";
+            break;
+          case TableModelEvent.DELETE:
+            type = "delete";
+            break;
+          //case TableModelEvent.ALL_COLUMNS: type = "all columns"; break;
+          //case TableModelEvent.HEADER_ROW: type = "header row"; break;
+        }
+        System.out.println("table event: " + type + " row: " + e.getFirstRow() + " column: " + e.getColumn());
+
+        if (e.getType() == TableModelEvent.UPDATE)
+          if (transactionChangeHandler != null)
+            transactionChangeHandler.updateAllocationTotalLabels();
       }
     });
+
+    if (!tableModel.hasEmptyRow()) tableModel.addEmptyRow();
 
 //    allocationsTable.addPropertyChangeListener(new PropertyChangeListener() {
 //      public void propertyChange(PropertyChangeEvent evt) {
@@ -148,10 +198,8 @@ public class TransactionForm {
     allocationsTable.setColumnSelectionAllowed(false);
     allocationsTable.setCellSelectionEnabled(false);
 //    allocationsTable.getActionMap()
-    allocationsTable.getActionMap().put(KeyStroke.getKeyStroke("DOWN"),
-        allocationsTable.getActionMap().get("selectNextRow"));
-    allocationsTable.getActionMap().put(KeyStroke.getKeyStroke("UP"),
-        allocationsTable.getActionMap().get("selectPreviousRow"));
+    allocationsTable.getActionMap().put(KeyStroke.getKeyStroke("DOWN"), allocationsTable.getActionMap().get("selectNextRow"));
+    allocationsTable.getActionMap().put(KeyStroke.getKeyStroke("UP"), allocationsTable.getActionMap().get("selectPreviousRow"));
 
 
     allocationsTable.addMouseListener(new MouseListener() {
@@ -300,9 +348,8 @@ public class TransactionForm {
 
   public synchronized void refreshEntities() throws AbortException {
     entity.removeAllItems();
-    for (String e : State.getInstance().entities()) {
+    for (String e : State.getInstance().entities())
       entity.addItem(e);
-    }
   }
 
   public JPanel getTransactionFormPanel() {
@@ -341,7 +388,7 @@ public class TransactionForm {
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0,
             false));
     transactionInfoPanel = new JPanel();
-    transactionInfoPanel.setLayout(new GridLayoutManager(7, 3, new Insets(0, 0, 0, 0), 1, 5));
+    transactionInfoPanel.setLayout(new GridLayoutManager(8, 3, new Insets(0, 0, 0, 0), 1, 5));
     transactionAllocationSplit.setLeftComponent(transactionInfoPanel);
     transactionInfoPanel.setBorder(BorderFactory
         .createTitledBorder(ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("transaction")));
@@ -408,14 +455,26 @@ public class TransactionForm {
     transactionInfoPanel.add(typeLabel,
         new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-    messagePanel = new JPanel();
-    messagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(3, 3, 3, 3), -1, -1));
-    transactionInfoPanel.add(messagePanel, new GridConstraints(6, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-    messageLabel = new JLabel();
-    messageLabel.setText("");
-    messagePanel.add(messageLabel,
+    imbalanceMessagePanel = new JPanel();
+    imbalanceMessagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(3, 3, 3, 3), -1, -1));
+    transactionInfoPanel.add(imbalanceMessagePanel,
+        new GridConstraints(7, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+    imbalanceMessageLabel = new JLabel();
+    imbalanceMessageLabel.setText("");
+    imbalanceMessagePanel.add(imbalanceMessageLabel,
+        new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+    saveStatePanel = new JPanel();
+    saveStatePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+    transactionInfoPanel.add(saveStatePanel,
+        new GridConstraints(6, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+    saveStateLabel = new JLabel();
+    saveStateLabel.setText("");
+    saveStatePanel.add(saveStateLabel,
         new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     allocationsPanel = new JPanel();
@@ -428,7 +487,6 @@ public class TransactionForm {
         new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-    allocationsTable = new JTable();
     allocationsScrollPane.setViewportView(allocationsTable);
     totalsPanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
     allocationsPanel.add(totalsPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
@@ -533,6 +591,24 @@ public class TransactionForm {
     transactionDate.setPreferredSize(
         new Dimension(transactionDate.getPreferredSize().width + 30, transactionDate.getPreferredSize().height));
 
+    allocationsTable = new JTable() {
+      private final KeyStroke tabKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0);
+
+      public void changeSelection(int rowIndex, int columnIndex, boolean toggle, boolean extend) {
+        AWTEvent currentEvent = EventQueue.getCurrentEvent();
+        if (currentEvent instanceof KeyEvent) {
+          KeyEvent ke = (KeyEvent)currentEvent;
+          if (ke.getSource() != this)
+            return;
+          // focus change with keyboard
+          if (rowIndex == 0 && columnIndex == 0 && KeyStroke.getKeyStrokeForEvent(ke).equals(tabKeyStroke)) {
+            tableModel.addEmptyRow();
+            rowIndex = getRowCount() - 1;
+          }
+        }
+        super.changeSelection(rowIndex, columnIndex, toggle, extend);
+      }
+    };
   }
 
 /*
@@ -558,7 +634,7 @@ public class TransactionForm {
     return typeIncomeRadio;
   }
 
-  public JComboBox getEntity() {
+  public JComboBox<String> getEntity() {
     return entity;
   }
 
@@ -582,12 +658,12 @@ public class TransactionForm {
     return totalsPanel;
   }
 
-  public JPanel getMessagePanel() {
-    return messagePanel;
+  public JPanel getImbalanceMessagePanel() {
+    return imbalanceMessagePanel;
   }
 
-  public JLabel getMessageLabel() {
-    return messageLabel;
+  public JLabel getImbalanceMessageLabel() {
+    return imbalanceMessageLabel;
   }
 
   public AllocationFormTableModel getTableModel() {
@@ -606,4 +682,8 @@ public class TransactionForm {
     return transactionChangeHandler;
   }
 
+
+  public void setSaveStateLabel(String text) {
+    saveStateLabel.setText(text);
+  }
 }

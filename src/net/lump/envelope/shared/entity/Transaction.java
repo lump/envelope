@@ -136,7 +136,8 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
     Money total = new Money(0);
 
     for (Allocation a : this.getAllocations())
-      total = total.add(a.getAmount());
+      if (a.getAmount() != null)
+        total = total.add(a.getAmount());
 
     return total;
   }
@@ -146,7 +147,7 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
     Money total = new Money(0);
 
     for (Allocation a : this.getAllocations())
-      if (a.getAmount().compareTo(Money.ZERO) > 0)
+      if (a.getAmount() != null && a.getAmount().compareTo(Money.ZERO) > 0)
         total = total.add(a.getAmount());
 
     return total;
@@ -157,7 +158,7 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
     Money total = new Money(0);
 
     for (Allocation a : this.getAllocations())
-      if (a.getAmount().compareTo(Money.ZERO) < 0)
+      if (a.getAmount() != null && a.getAmount().compareTo(Money.ZERO) < 0)
         total = total.add(a.getAmount());
 
     return total;

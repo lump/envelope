@@ -16,6 +16,7 @@ import net.lump.lib.util.ObjectUtil;
 import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Date;
+import java.text.DateFormat;
 import java.util.Collections;
 import java.util.Comparator;
 
@@ -119,8 +120,8 @@ public class TransactionChangeHandler {
             @Override public boolean saveState() {
               if ((getValue() != null)
                   && (isExpense ? !getValue().negate().equals(amount) : !getValue().equals(amount))) {
-                  amount = isExpense ? getValue().negate() : getValue();
-                  return true;
+                amount = isExpense ? getValue().negate() : getValue();
+                return true;
               }
               return false;
             }
@@ -168,7 +169,7 @@ public class TransactionChangeHandler {
                 .setDocument(new TransactionForm.LimitDocument(Transaction.class.getMethod("getEntity")));
           } catch (NoSuchMethodException ignore) {}
           form.getEntity().setSelectedItem(editing.getEntity());
-          changeableEntity = new ChangeableComboBox(form.getEntity()) {
+          changeableEntity = new ChangeableComboBox(form.getEntity(), true) {
             public String getState() { return TransactionChangeHandler.this.editing.getEntity(); }
             public boolean saveState() {
               if (getValue() != null) {
@@ -214,18 +215,17 @@ public class TransactionChangeHandler {
       if (changeableAmount.hasValidInput()) {
         Money transactionAmount = isExpense() ? changeableAmount.getValue().negate() : changeableAmount.getValue();
 
-
         if (balance.compareTo(transactionAmount) != 0) {
-          form.getMessagePanel().setBackground(Colors.getColor("red"));
-          form.getMessagePanel().setBorder(BorderFactory.createLineBorder(Colors.getColor("black")));
-          form.getMessageLabel().setForeground(Colors.getColor("white"));
-          form.getMessageLabel().setFont(Fonts.sans_14_bold.getFont());
-          form.getMessageLabel().setText("Imbalance: " + transactionAmount.subtract(balance));
+          form.getImbalanceMessagePanel().setBackground(Colors.getColor("red"));
+          form.getImbalanceMessagePanel().setBorder(BorderFactory.createLineBorder(Colors.getColor("black")));
+          form.getImbalanceMessageLabel().setForeground(Colors.getColor("white"));
+          form.getImbalanceMessageLabel().setFont(Fonts.sans_14_bold.getFont());
+          form.getImbalanceMessageLabel().setText("Imbalance: " + transactionAmount.subtract(balance));
         }
         else {
-          form.getMessagePanel().setBackground(null);
-          form.getMessagePanel().setBorder(null);
-          form.getMessageLabel().setText(null);
+          form.getImbalanceMessagePanel().setBackground(null);
+          form.getImbalanceMessagePanel().setBorder(null);
+          form.getImbalanceMessageLabel().setText(null);
         }
       }
     }
@@ -244,6 +244,8 @@ public class TransactionChangeHandler {
           try {
             changeHistory.push(TransactionChangeHandler.this.getTransaction());
             saveAttributes(hp.saveOrUpdate(TransactionChangeHandler.this.getTransaction()));
+            DateFormat df = DateFormat.getTimeInstance();
+            form.setSaveStateLabel(Strings.get("saved.at") + " " + df.format(new java.util.Date()));
           } catch (AbortException ignore) { }
         }
       };

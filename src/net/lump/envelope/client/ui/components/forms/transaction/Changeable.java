@@ -1,5 +1,9 @@
 package net.lump.envelope.client.ui.components.forms.transaction;
 
+import net.lump.envelope.client.ui.MainFrame;
+import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBar;
+import net.lump.envelope.client.ui.defs.Strings;
+
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -14,8 +18,14 @@ abstract class Changeable<C extends JComponent, V> {
   Timer dirtyTimer = null;
 
   public void handleDataChange() {
-    if (hasValidInput())
+    TransactionForm form = MainFrame.getInstance().getTransactionForm();
+    if (hasValidInput()) {
+      form.setSaveStateLabel(Strings.get("save.pending"));
       scheduleDirtyTimer(dirtyDelay);
+    }
+    else {
+      form.setSaveStateLabel(Strings.get("waiting.for.valid.state"));
+    }
   }
 
   /**
@@ -41,9 +51,11 @@ abstract class Changeable<C extends JComponent, V> {
    * This will sync the form with the data bean and run the update if the input is valid.
    */
   void updateAction() {
-    if (hasValidInput() && saveState()) {
-      getSaveOrUpdate().run();
-    }
+    if (hasValidInput())
+      if (saveState())
+        getSaveOrUpdate().run();
+      else
+        MainFrame.getInstance().getTransactionForm().setSaveStateLabel(null);
   }
 
   /**
@@ -98,4 +110,5 @@ abstract class Changeable<C extends JComponent, V> {
    * Fill this method in with that which saves this entity to the database;
    */
   abstract public Runnable getSaveOrUpdate();
+
 }
