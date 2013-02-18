@@ -4,6 +4,7 @@ import net.lump.envelope.client.ui.components.MoneyTextField;
 import net.lump.envelope.client.ui.defs.Colors;
 import net.lump.lib.Money;
 
+import javax.swing.*;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
@@ -44,8 +45,9 @@ abstract public class ChangeableMoneyTextField extends Changeable<MoneyTextField
 
   @Override public boolean hasValidInput() {
     try {
-      Money m = new Money(field.getText());
-      field.setBackground(null);
+      new Money(field.getText());
+      field.setBackground(UIManager.getLookAndFeelDefaults().getColor("TextPane.background"));
+      field.setForeground(UIManager.getLookAndFeelDefaults().getColor("TextPane.foreground"));
       return true;
     }
     catch(NumberFormatException pe) {
