@@ -15,9 +15,6 @@ public class MoneyTextField extends JTextField {
 
   public MoneyTextField(String value) {
     super(value, 15);
-
-    //setFont(Fonts.fixed.getFont());
-
     setHorizontalAlignment(JTextField.RIGHT);
 
     setInputVerifier(new InputVerifier() {
@@ -28,8 +25,6 @@ public class MoneyTextField extends JTextField {
           return true;
         }
         catch (Exception e) {
-          i.setForeground(Colors.getColor("red"));
-          i.setBackground(Colors.getColor("light_red"));
           return false;
         }
       }
