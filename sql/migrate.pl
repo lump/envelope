@@ -181,6 +181,10 @@ while (my $row = $sth->fetchrow_hashref()) {
   if ($row->{to_from} eq undef) { $row->{to_from} = "" }
   if ($row->{description} eq undef) { $row->{description} = "" }
 
+  if ($row->{category} =~ /^(Car Payment|Car Maintenance)$/) {
+    $row->{description} = $row->{subcategory} . ": " . $row->{description};
+  }
+
   # evaluate if this transaction is the same as the last one.
   my $same = 0;
   if ($row->{date} eq $transaction->{date} and $transaction ne undef) {
@@ -214,7 +218,7 @@ while (my $row = $sth->fetchrow_hashref()) {
 
     $row->{new_description} = $row->{description};
     # nuke part of, as the description is no longer part of anything, it's joined.
-    $row->{new_description} =~ s/^part\s+of\s*\d+(?:\.\d+)?(?:\s*\-\s*)?\s*//i;
+    $row->{new_description} =~ s/^(?:part\s+of\s*\d+(?:\.\d+)?|)(?:discover(?:\s+Card)?|american express)?(?:\s*\-\s*)?\s*//i;
 
     # next transaction to work with is the new one we just got
     $transaction = $row;
@@ -237,7 +241,7 @@ $dalloc->finish;
 sub insert_transaction {
   my ($transaction, @allocations) = @_;
 
-  print "\ninserting $transaction->{new_description} $transaction->{to_from} $transaction->{subcategory}\n";
+  print "\ninserting (desc: $transaction->{new_description}) (entity: $transaction->{to_from}) (subcategory: $transaction->{subcategory})\n";
   # add the transaction
   my @params = ($transaction->{stamp},
                 $transaction->{date},
