@@ -189,6 +189,7 @@
                          forms_rt.jar,
                          commons*.jar,
                          ehcache*.jar,
+                         slf4j-api*.jar,
                          alloy.jar,
                          ui.jar,
                          hibernate*.jar,
@@ -218,6 +219,9 @@
                    value="${os.name} ${os.version} ${os.arch}"/>
         <attribute name="Built-On-VM" value="${java.version} ${java.vendor}"/>
         <attribute name="Built-On-Host" value="${env.COMPUTERNAME}"/>
+        <attribute name="Permissions" value="all-permissions"/>
+        <attribute name="Application-Name" value="Envelope Budget"/>
+        <attribute name="Codebase" value="*"/>
         <!--<attribute name="Class-Path" value="http://localhost:7041/"/>-->
       </manifest>
     </jar>
