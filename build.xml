@@ -193,6 +193,7 @@
                          alloy.jar,
                          ui.jar,
                          hibernate*.jar,
+                         jboss-logging*.jar,
                          jcalendar*.jar"/>
     </unzip>
     <delete dir="${client.classes}/META-INF"/>
