@@ -40,7 +40,7 @@ public class Jnlp {
 //          }
 //
     jnlp = jnlp.replaceAll("\\{jars\\}",
-                           "<jar href=\"lib/client.jar.pack.gz\">\n");
+                           "<jar href=\"lib/client.jar\">\n");
 
   }
 
