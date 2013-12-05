@@ -11,7 +11,7 @@
   </security>
   <application-desc main-class="{main-class}"/>
   <resources>
-    <j2se version="1.6+" java-vm-args="-Xmx512m"/>
+    <j2se version="1.7+" java-vm-args="-Xmx512m"/>
     <property name="codebase" value="{host}:{port}"/>
     <property name="context" value="{context}"/>
     <property name="java.security.policy"
