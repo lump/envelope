@@ -22,7 +22,7 @@ public class Allocation extends Identifiable<Integer, Timestamp> {
   private Timestamp stamp;
   private Category category;
   private Transaction transaction;
-  private Money amount;
+  private Money amount = Money.ZERO;
 
   public String toString() {
     String out = MessageFormat.format("{0}@{1}", amount.toString(), category.toString());

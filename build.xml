@@ -189,6 +189,7 @@
                          forms_rt.jar,
                          commons*.jar,
                          ehcache*.jar,
+                         slf4j-api*.jar,
                          alloy.jar,
                          ui.jar,
                          hibernate*.jar,
