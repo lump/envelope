@@ -10,6 +10,7 @@ import net.lump.envelope.client.State;
 import net.lump.envelope.client.portal.HibernatePortal;
 import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.ui.MainFrame;
+import net.lump.envelope.client.ui.components.AutoCompletionComboBox;
 import net.lump.envelope.client.ui.components.MoneyTextField;
 import net.lump.envelope.client.ui.components.StatusBar;
 import net.lump.envelope.client.ui.components.TransactionTableModel;
@@ -18,6 +19,7 @@ import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.client.ui.images.ImageResource;
 import net.lump.envelope.shared.command.OutputEvent;
 import net.lump.envelope.shared.command.OutputListener;
+import net.lump.envelope.shared.entity.Allocation;
 import net.lump.envelope.shared.entity.Category;
 import net.lump.envelope.shared.entity.Transaction;
 import net.lump.envelope.shared.exception.AbortException;
@@ -55,7 +57,7 @@ public class TransactionForm {
   private JTable allocationsTable;
   private JRadioButton typeExpenseRadio;
   private JRadioButton typeIncomeRadio;
-  private JComboBox<String> entity;
+  private AutoCompletionComboBox<String> entity;
   private JTextField description;
   private JPanel transactionFormPanel;
   private JPanel splitpanePanel;
@@ -81,7 +83,7 @@ public class TransactionForm {
   private GridLayout totalsGridLayout;
 
   private AllocationFormTableModel tableModel;
-  private JComboBox categoriesComboBox = new JComboBox();
+  private CompletingComboBox<Category> categoriesComboBox = new CompletingComboBox<Category>(true);
   private TransactionChangeHandler transactionChangeHandler;
 
   private BlockingQueue<StatusRunnable> updateQueue = new LinkedBlockingQueue<StatusRunnable>();
@@ -173,23 +175,17 @@ public class TransactionForm {
       }
     });
 
-    if (!tableModel.hasEmptyRow()) tableModel.addEmptyRow();
+    if (!tableModel.hasEmptyRow()) tableModel.addEmptyRow(new Allocation());
 
-//    allocationsTable.addPropertyChangeListener(new PropertyChangeListener() {
-//      public void propertyChange(PropertyChangeEvent evt) {
-//        System.out.println(evt.getPropertyName());
-//        setInboxLabel(tableModel.getIn().toString());
-//        setBalanceLabel(tableModel.getBalance().toString());
-//        setOutboxLabel(tableModel.getOut().toString());
-//      }
-//    });
 
-    categoriesComboBox.setLightWeightPopupEnabled(true);
-    CellEditor categoryCellEditor = new CellEditor(categoriesComboBox);
     MoneyTextField moneyEditor = new MoneyTextField();
     CellEditor amountCellEditor = new CellEditor(moneyEditor);
-    categoryCellEditor.setClickCountToStart(0);
     amountCellEditor.setClickCountToStart(0);
+
+//    CellEditor categoryCellEditor = new CellEditor(categoriesComboBox);
+//    categoryCellEditor.setClickCountToStart(0);
+    ComboBoxCellEditor categoryCellEditor = new ComboBoxCellEditor(categoriesComboBox);
+    categoriesComboBox.setLightWeightPopupEnabled(true);
     allocationsTable.setDefaultEditor(Category.class, categoryCellEditor);
     allocationsTable.setDefaultEditor(Money.class, amountCellEditor);
 
@@ -327,7 +323,7 @@ public class TransactionForm {
                 new OutputListener() {
                   public void commandOutputOccurred(OutputEvent event) {
                     if (event.getIndex() == 0) categoriesComboBox.removeAllItems();
-                    categoriesComboBox.addItem(event.getPayload());
+                    categoriesComboBox.addItem((Category)event.getPayload());
                   }
                 });
 
@@ -388,7 +384,7 @@ public class TransactionForm {
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0,
             false));
     transactionInfoPanel = new JPanel();
-    transactionInfoPanel.setLayout(new GridLayoutManager(8, 3, new Insets(0, 0, 0, 0), 1, 5));
+    transactionInfoPanel.setLayout(new GridLayoutManager(7, 3, new Insets(0, 0, 0, 0), 1, 5));
     transactionAllocationSplit.setLeftComponent(transactionInfoPanel);
     transactionInfoPanel.setBorder(BorderFactory
         .createTitledBorder(ResourceBundle.getBundle("net/lump/envelope/client/ui/defs/Strings").getString("transaction")));
@@ -403,7 +399,6 @@ public class TransactionForm {
     transactionInfoPanel.add(entityLabel,
         new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-    entity = new JComboBox();
     entity.setEditable(true);
     transactionInfoPanel.add(entity, new GridConstraints(2, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null,
@@ -455,17 +450,6 @@ public class TransactionForm {
     transactionInfoPanel.add(typeLabel,
         new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-    imbalanceMessagePanel = new JPanel();
-    imbalanceMessagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(3, 3, 3, 3), -1, -1));
-    transactionInfoPanel.add(imbalanceMessagePanel,
-        new GridConstraints(7, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
-            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
-            GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-    imbalanceMessageLabel = new JLabel();
-    imbalanceMessageLabel.setText("");
-    imbalanceMessagePanel.add(imbalanceMessageLabel,
-        new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
-            GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     saveStatePanel = new JPanel();
     saveStatePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
     transactionInfoPanel.add(saveStatePanel,
@@ -488,24 +472,34 @@ public class TransactionForm {
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
             GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
     allocationsScrollPane.setViewportView(allocationsTable);
-    totalsPanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+    totalsPanel.setLayout(new GridLayoutManager(2, 3, new Insets(0, 0, 0, 0), -1, -1));
     allocationsPanel.add(totalsPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
         GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
     inboxLabel = new JLabel();
     inboxLabel.setText("");
     totalsPanel.add(inboxLabel,
-        new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+        new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     balanceLabel = new JLabel();
     balanceLabel.setText("");
     totalsPanel.add(balanceLabel,
-        new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+        new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     outboxLabel = new JLabel();
     outboxLabel.setText("");
     totalsPanel.add(outboxLabel,
-        new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+        new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
+            GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+    imbalanceMessagePanel = new JPanel();
+    imbalanceMessagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+    totalsPanel.add(imbalanceMessagePanel, new GridConstraints(0, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+    imbalanceMessageLabel = new JLabel();
+    imbalanceMessageLabel.setText("");
+    imbalanceMessagePanel.add(imbalanceMessageLabel,
+        new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED,
             GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
   }
 
@@ -590,6 +584,8 @@ public class TransactionForm {
     totalsPanel.removeAll();
     transactionDate.setPreferredSize(
         new Dimension(transactionDate.getPreferredSize().width + 30, transactionDate.getPreferredSize().height));
+    entity = new AutoCompletionComboBox<String>(false);
+    entity.setEditable(true);
 
     allocationsTable = new JTable() {
       private final KeyStroke tabKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0);
@@ -602,7 +598,9 @@ public class TransactionForm {
             return;
           // focus change with keyboard
           if (rowIndex == 0 && columnIndex == 0 && KeyStroke.getKeyStrokeForEvent(ke).equals(tabKeyStroke)) {
-            tableModel.addEmptyRow();
+            Allocation a = new Allocation();
+            a.setTransaction(transactionChangeHandler.getTransaction());
+            tableModel.addEmptyRow(a);
             rowIndex = getRowCount() - 1;
           }
         }
@@ -634,7 +632,7 @@ public class TransactionForm {
     return typeIncomeRadio;
   }
 
-  public JComboBox<String> getEntity() {
+  public AutoCompletionComboBox<String> getEntity() {
     return entity;
   }
 
@@ -670,6 +668,7 @@ public class TransactionForm {
     return tableModel;
   }
 
+
   public JSplitPane getTransactionAllocationSplit() {
     return transactionAllocationSplit;
   }
@@ -682,8 +681,11 @@ public class TransactionForm {
     return transactionChangeHandler;
   }
 
-
   public void setSaveStateLabel(String text) {
     saveStateLabel.setText(text);
+  }
+
+  public CompletingComboBox<Category> getCategoriesComboBox() {
+    return categoriesComboBox;
   }
 }

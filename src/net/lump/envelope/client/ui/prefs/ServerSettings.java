@@ -40,7 +40,7 @@ public class ServerSettings {
   }
 
   public String getHostName() {
-    return prefs.get(host.name(), "localhost");
+    return prefs.get(host.name(), System.getProperty("codebase") == null ? "localhost" : System.getProperty("codebase") );
   }
 
   public void setHostName(final String hostName) {

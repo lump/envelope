@@ -13,6 +13,7 @@ import net.sf.ehcache.Element;
 import javax.swing.*;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableColumnModel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -216,8 +217,9 @@ public class AllocationFormTableModel extends AbstractTableModel {
     else return false;
   }
 
-  public void addEmptyRow() {
-    allocations.add(new Allocation());
+  public void addEmptyRow(Allocation a) {
+    allocations.add(a);
     fireTableRowsInserted(allocations.size()-1, allocations.size()-1);
   }
+
 }

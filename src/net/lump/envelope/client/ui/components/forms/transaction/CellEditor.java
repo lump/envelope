@@ -32,8 +32,7 @@ import java.util.EventObject;
  * @version 1.53 02/04/08
  */
 
-public class CellEditor extends AbstractCellEditor
-    implements TableCellEditor, TreeCellEditor {
+public class CellEditor extends AbstractCellEditor implements TableCellEditor, TreeCellEditor {
 
 //
 //  Instance Variables
@@ -118,11 +117,12 @@ public class CellEditor extends AbstractCellEditor
    *
    * @param comboBox a <code>JComboBox</code> object
    */
-  public CellEditor(final JComboBox comboBox) {
+  public CellEditor(final JComboBox<Category> comboBox) {
     editorComponent = comboBox;
     comboBox.putClientProperty("JComboBox.isTableCellEditor", Boolean.TRUE);
-    comboBox.setBorder(BorderFactory.createLineBorder(Colors.getColor("black")));
-//    comboBox.setBorder(BorderFactory.createEmptyBorder());
+    //comboBox.setBorder(BorderFactory.createLineBorder(Colors.getColor("black")));
+    comboBox.setBorder(BorderFactory.createEmptyBorder());
+
     delegate = new EditorDelegate() {
       public void setValue(Object value) {
         if (value instanceof Category) {
@@ -137,23 +137,23 @@ public class CellEditor extends AbstractCellEditor
       }
 
       @Override public void itemStateChanged(ItemEvent e) {
-        super.itemStateChanged(e);    //To change body of overridden methods use File | Settings | File Templates.
+        super.itemStateChanged(e);
       }
 
       @Override public boolean isCellEditable(EventObject anEvent) {
-        return super.isCellEditable(anEvent);    //To change body of overridden methods use File | Settings | File Templates.
+        return super.isCellEditable(anEvent);
       }
 
       @Override public boolean startCellEditing(EventObject anEvent) {
-        return super.startCellEditing(anEvent);    //To change body of overridden methods use File | Settings | File Templates.
+        return super.startCellEditing(anEvent);
       }
 
       @Override public void cancelCellEditing() {
-        super.cancelCellEditing();    //To change body of overridden methods use File | Settings | File Templates.
+        super.cancelCellEditing();
       }
 
       @Override public void actionPerformed(ActionEvent e) {
-        super.actionPerformed(e);    //To change body of overridden methods use File | Settings | File Templates.
+        super.actionPerformed(e);
       }
 
       public Object getCellEditorValue() {
@@ -284,9 +284,7 @@ public class CellEditor extends AbstractCellEditor
 //
 
   /** Implements the <code>TableCellEditor</code> interface. */
-  public Component getTableCellEditorComponent(JTable table, Object value,
-      boolean isSelected,
-      int row, int column) {
+  public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
     delegate.setValue(value);
     if (editorComponent instanceof JCheckBox) {
       //in order to avoid a "flashing" effect when clicking a checkbox

@@ -8,6 +8,7 @@ import net.lump.envelope.client.ui.defs.Colors;
 import net.lump.envelope.client.ui.defs.Fonts;
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.shared.entity.Allocation;
+import net.lump.envelope.shared.entity.Category;
 import net.lump.envelope.shared.entity.Transaction;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.Money;
@@ -40,9 +41,10 @@ public class TransactionChangeHandler {
   };
 
   private ChangeableDateChooser changeableDate;
-  private ChangeableComboBox changeableEntity;
+  private ChangeableComboBox<JComboBox<String>, String> changeableEntity;
   private ChangeableJTextField changeableDescription;
   private ChangeableMoneyTextField changeableAmount;
+  ChangeableComboBox<JComboBox<Category>, Category> changeableAllocationCategory;
 
   public TransactionChangeHandler(Transaction t, TransactionForm tf) throws InvocationTargetException, InterruptedException {
     importNew(t, tf);
@@ -109,8 +111,12 @@ public class TransactionChangeHandler {
           if (changeableDate != null) changeableDate.removeDataChangeListener();
           if (changeableDescription != null) changeableDescription.removeDataChangeListener();
           if (changeableEntity != null) changeableEntity.removeDataChangeListener();
+          if (changeableAllocationCategory != null) changeableAllocationCategory.removeDataChangeListener();
 
           form.getTableModel().setAllocations(editing.getAllocations());
+          int amountWidth = table.getFontMetrics(table.getFont()).stringWidth("$0,000,000.00");
+          form.getAllocationsTable().getColumnModel().getColumn(1).setMaxWidth(amountWidth);
+          form.getAllocationsTable().getColumnModel().getColumn(1).setMinWidth(amountWidth);
 
           form.getAmount().setEnabled(!editing.getReconciled());
           form.getAmount().setText(amount.toString());
@@ -169,7 +175,7 @@ public class TransactionChangeHandler {
                 .setDocument(new TransactionForm.LimitDocument(Transaction.class.getMethod("getEntity")));
           } catch (NoSuchMethodException ignore) {}
           form.getEntity().setSelectedItem(editing.getEntity());
-          changeableEntity = new ChangeableComboBox(form.getEntity(), true) {
+          changeableEntity = new ChangeableComboBox<JComboBox<String>, String>(form.getEntity()) {
             public String getState() { return TransactionChangeHandler.this.editing.getEntity(); }
             public boolean saveState() {
               if (getValue() != null) {
@@ -184,6 +190,23 @@ public class TransactionChangeHandler {
               return saveOrUpdate;
             }
           };
+
+          /*
+          changeableAllocationCategory =
+              new ChangeableComboBox<JComboBox<Category>, Category>(form.getCategoriesComboBox(), true, true) {
+                @Override public Category getState() {
+                  return null;
+                }
+
+                @Override public boolean saveState() {
+                  return false;
+                }
+
+                @Override public Runnable getSaveOrUpdate() {
+                  return null;
+                }
+              };
+              */
 
           form.getTransactionAllocationSplit().setDividerLocation(0.60D);
 //          form.getTransactionAllocationSplit().resetToPreferredSizes();
@@ -213,14 +236,12 @@ public class TransactionChangeHandler {
       out = editing.getDebitAmount().abs();
 
       if (changeableAmount.hasValidInput()) {
-        Money transactionAmount = isExpense() ? changeableAmount.getValue().negate() : changeableAmount.getValue();
-
-        if (balance.compareTo(transactionAmount) != 0) {
+        if (balance.compareTo(amount) != 0) {
           form.getImbalanceMessagePanel().setBackground(Colors.getColor("red"));
           form.getImbalanceMessagePanel().setBorder(BorderFactory.createLineBorder(Colors.getColor("black")));
           form.getImbalanceMessageLabel().setForeground(Colors.getColor("white"));
           form.getImbalanceMessageLabel().setFont(Fonts.sans_14_bold.getFont());
-          form.getImbalanceMessageLabel().setText("Imbalance: " + transactionAmount.subtract(balance));
+          form.getImbalanceMessageLabel().setText("Imbalance: " + amount.subtract(balance));
         }
         else {
           form.getImbalanceMessagePanel().setBackground(null);
@@ -231,7 +252,7 @@ public class TransactionChangeHandler {
     }
 
     form.setInboxLabel(in.toString());
-    form.setBalanceLabel(balance.toString());
+    form.setBalanceLabel(isExpense() ? balance.negate().toString() : balance.toString());
     form.setOutboxLabel(out.toString());
   }
 

@@ -631,6 +631,9 @@
   <component name="ProjectDetails">
     <option name="projectName" value="envelope" />
   </component>
+  <component name="ProjectDictionaryState">
+    <dictionary name="troy" />
+  </component>
   <component name="ProjectKey">
     <option name="state" value=":ext:troy@tao.lump.us:/export/cvsroot|envelope/envelope.ipr" />
   </component>
