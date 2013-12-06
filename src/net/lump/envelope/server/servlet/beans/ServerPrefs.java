@@ -54,7 +54,7 @@ public class ServerPrefs {
       if (!"ok".equals(prefs.get(klass.getSimpleName() + ".ok", null))) configured = false;
     }
 
-    String serverPassword = configs.get(ServelocarPrefs.class).get("configure.password", null);
+    String serverPassword = configs.get(ServerPrefs.class).get("configure.password", null);
     if (serverPassword == null || serverPassword.matches("^\\s*$")) configured = false;
 
   }
