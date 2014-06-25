@@ -1,10 +1,13 @@
 package net.lump.envelope.client.ui.components;
 
+import javax.swing.*;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.PlainDocument;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import javax.swing.*;
-import javax.swing.text.*;
 
 public class AutoCompletionComboBox<E> extends JComboBox {
   boolean strict = true;
@@ -297,7 +300,7 @@ public class AutoCompletionComboBox<E> extends JComboBox {
     }
 
     public void highlightCompletedText(int start) {
-      System.out.println("start: " + start + " length: " + getLength());
+//      System.out.println("start: " + start + " length: " + getLength());
       editor.setCaretPosition(editor.getText().length());
       editor.moveCaretPosition(start);
     }

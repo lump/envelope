@@ -33,16 +33,16 @@ public class Main implements Runnable {
 //    }
 
 
-//    try {
-     //  try nimbus first, since it's the coolest
-//      UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+    try {
+//       try nimbus first, since it's the coolest
+      UIManager.setLookAndFeel("com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
       //UIManager.getLookAndFeelDefaults().put("Table.cellNoFocusBorder", new Insets(0,0,0,0));
       //UIManager.getLookAndFeelDefaults().put("InternalFrame.contentMargins", new Insets(0,0,0,0));
       //UIManager.getLookAndFeelDefaults().put("Table.focusCellHighlightBorder", new Insets(0,0,0,0));
       //Insets buttonInsets = new Insets(3, 6, 3, 6);
       //UIManager.getLookAndFeelDefaults().put("Button.contentMargins", buttonInsets);
-//    }
-//    catch (Exception e) {
+    }
+    catch (Exception e) {
       try {
         // try alloy next, since it is clean and nice
         // borrow the jetbrains license for now, until we get serious
@@ -58,7 +58,7 @@ public class Main implements Runnable {
           // nevermind
         }
       }
-//    }
+    }
   }
 
   // for possibly applet starting which are already using a http classloader

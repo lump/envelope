@@ -13,7 +13,6 @@ import net.sf.ehcache.Element;
 import javax.swing.*;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableColumnModel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -211,10 +210,10 @@ public class AllocationFormTableModel extends AbstractTableModel {
   public boolean hasEmptyRow() {
     if (allocations.size() == 0) return false;
 
-    Allocation allocation = allocations.get(allocations.size()-1);
-    if (allocation.getCategory() == null && allocation.getAmount() == null)
-      return true;
-    else return false;
+    return (getValueAt(getRowCount() - 1, 0) == null || Money.ZERO.equals(getValueAt(getRowCount() - 1, 1)));
+
+//    Allocation allocation = allocations.get(allocations.size()-1);
+//    return allocation.getCategory() == null && allocation.getAmount() == null;
   }
 
   public void addEmptyRow(Allocation a) {

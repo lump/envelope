@@ -15,20 +15,17 @@ public class MoneyRenderer extends DefaultTableCellRenderer {
   }
 
 
-  public Component getTableCellRendererComponent(JTable table,
+  public Component getTableCellRendererComponent(
+      JTable table,
       Object value,
       boolean isSelected,
       boolean hasFocus,
       int row,
       int col) {
-    JLabel label = new JLabel(
-        value == null ? "" : value.toString(),
-        SwingConstants.RIGHT);
+
+    JLabel label = new JLabel(value == null ? "" : value.toString(), SwingConstants.RIGHT);
     //label.setFont(Fonts.fixed.getFont());
-    label.setBorder(
-        new CompoundBorder(
-            new EmptyBorder(new Insets(1, 4, 1, 4)),
-            label.getBorder()));
+    label.setBorder(new CompoundBorder(new EmptyBorder(new Insets(1, 4, 1, 4)), label.getBorder()));
 
     if (value != null && ((Money)value).doubleValue() < 0)
       label.setForeground(Colors.getColor("red"));

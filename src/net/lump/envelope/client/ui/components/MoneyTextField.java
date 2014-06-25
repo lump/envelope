@@ -1,6 +1,5 @@
 package net.lump.envelope.client.ui.components;
 
-import net.lump.envelope.client.ui.defs.Colors;
 import net.lump.lib.Money;
 
 import javax.swing.*;

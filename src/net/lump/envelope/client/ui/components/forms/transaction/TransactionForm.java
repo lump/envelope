@@ -37,8 +37,6 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
 import java.awt.*;
 import java.awt.event.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.text.MessageFormat;
@@ -109,12 +107,8 @@ public class TransactionForm {
     allocationsTable.setModel(tableModel);
     allocationsTable.setDefaultRenderer(Money.class, new MoneyRenderer());
     allocationsTable.setDefaultRenderer(Category.class, new DefaultTableCellRenderer() {
-      public Component getTableCellRendererComponent(JTable table,
-          Object value,
-          boolean isSelected,
-          boolean hasFocus,
-          int row,
-          int col) {
+      public Component
+      getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int col) {
         Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
         if (hasFocus) table.editCellAt(row, col);
         return c;
@@ -134,23 +128,6 @@ public class TransactionForm {
 
     allocationsTable.putClientProperty("terminateEditOnFocusLost", true);
 
-    allocationsTable.addFocusListener(new FocusListener() {
-      public void focusGained(FocusEvent e) {
-        System.out.println("focus gained " + e.getComponent().getName());
-      }
-
-      public void focusLost(FocusEvent e) {
-        System.out.println("focus lost " + e.getComponent().getName());
-      }
-    });
-
-    allocationsTable.addPropertyChangeListener(new PropertyChangeListener() {
-      public void propertyChange(PropertyChangeEvent evt) {
-        System.out.println("allocationtable property change: " + evt.getPropertyName() + " " + evt.getNewValue());
-        //To change body of implemented methods use File | Settings | File Templates.
-      }
-    });
-
     tableModel.addTableModelListener(new TableModelListener() {
       public void tableChanged(TableModelEvent e) {
         String type = "";
@@ -167,7 +144,6 @@ public class TransactionForm {
           //case TableModelEvent.ALL_COLUMNS: type = "all columns"; break;
           //case TableModelEvent.HEADER_ROW: type = "header row"; break;
         }
-        System.out.println("table event: " + type + " row: " + e.getFirstRow() + " column: " + e.getColumn());
 
         if (e.getType() == TableModelEvent.UPDATE)
           if (transactionChangeHandler != null)
@@ -178,13 +154,13 @@ public class TransactionForm {
     if (!tableModel.hasEmptyRow()) tableModel.addEmptyRow(new Allocation());
 
 
-    MoneyTextField moneyEditor = new MoneyTextField();
+    final MoneyTextField moneyEditor = new MoneyTextField();
     CellEditor amountCellEditor = new CellEditor(moneyEditor);
     amountCellEditor.setClickCountToStart(0);
 
 //    CellEditor categoryCellEditor = new CellEditor(categoriesComboBox);
 //    categoryCellEditor.setClickCountToStart(0);
-    ComboBoxCellEditor categoryCellEditor = new ComboBoxCellEditor(categoriesComboBox);
+    final ComboBoxCellEditor categoryCellEditor = new ComboBoxCellEditor(categoriesComboBox);
     categoriesComboBox.setLightWeightPopupEnabled(true);
     allocationsTable.setDefaultEditor(Category.class, categoryCellEditor);
     allocationsTable.setDefaultEditor(Money.class, amountCellEditor);
@@ -197,30 +173,83 @@ public class TransactionForm {
     allocationsTable.getActionMap().put(KeyStroke.getKeyStroke("DOWN"), allocationsTable.getActionMap().get("selectNextRow"));
     allocationsTable.getActionMap().put(KeyStroke.getKeyStroke("UP"), allocationsTable.getActionMap().get("selectPreviousRow"));
 
+//    allocationsTable.getInputMap(JTable.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+//        .put(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0), "selectNextColumnCell");
+//    allocationsTable.getActionMap()
+//        .put(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0), allocationsTable.getActionMap().get("selectNextColumnCell"));
 
-    allocationsTable.addMouseListener(new MouseListener() {
 
-      public void mouseClicked(MouseEvent e) {
-        System.out.println("e = " + e);
+    final Action traverseCell = allocationsTable.getActionMap().get("selectNextColumnCell");
+//    final Action startEditing = allocationsTable.getActionMap().get("startEditing");
+
+    Action handleTab = new AbstractAction() {
+      public void actionPerformed(ActionEvent e) {
+
+        if (allocationsTable.getCellEditor() instanceof ComboBoxCellEditor) {
+          categoryCellEditor.getComboBox().hidePopup();
+          categoryCellEditor.getComboBox().firePopupMenuWillBecomeInvisible();
+          categoryCellEditor.getComboBox().transferFocus();
+        }
+
+        if (allocationsTable.getCellEditor() != null) {
+          allocationsTable.getCellEditor().stopCellEditing();
+        }
+
+        traverseCell.actionPerformed(e);
+      }
+    };
+    allocationsTable
+        .getInputMap(JTable.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0), "tabTraverse");
+    allocationsTable.getActionMap().put("tabTraverse", handleTab);
+
+
+    categoryCellEditor.getComboBox().getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke("TAB"), "tabTraverse");
+    categoryCellEditor.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke("TAB"), "tabTraverse");
+//    categoryCellEditor.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke("TAB"), "none");
+//    categoryCellEditor.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke("TAB"), "none");
+//    categoryCellEditor.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("TAB"), "none");
+    //((InputMap)UIManager.get("Table.ancestorInputMap")).put(KeyStroke.getKeyStroke("TAB"), "none");
+
+
+//    categoryCellEditor.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke("TAB"), "none");
+//    moneyEditor.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke("TAB"), "none");
+
+   /*
+    categoryCellEditor
+        .getInputMap(JTable.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0), "tabTraverse");
+    categoryCellEditor.getActionMap().put("tabTraverse", handleTab);
+
+    moneyEditor.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0), "tabTraverse");
+    moneyEditor.getActionMap().put("tabTraverse", handleTab);
+    */
+
+    allocationsTable.addKeyListener(new KeyListener() {
+      public void keyTyped(final KeyEvent e) {
+        if (allocationsTable.getCellEditor() instanceof ComboBoxCellEditor) {
+          categoryCellEditor.getComboBox().grabFocus();
+          categoryCellEditor.getComboBox().showPopup();
+
+          categoryCellEditor.getComboBox().processKeyEvent(e);
+          categoryCellEditor.getComboBox().resetKeyboardActions();
+        }
       }
 
-      public void mousePressed(MouseEvent e) { }
+      public void keyPressed(final KeyEvent e) {
+        if (allocationsTable.getCellEditor() instanceof ComboBoxCellEditor) {
+          categoryCellEditor.getComboBox().processKeyEvent(e);
+        }
 
-      public void mouseReleased(MouseEvent e) { }
+      }
 
-      public void mouseEntered(MouseEvent e) { }
+      public void keyReleased(KeyEvent e) {
+        if (allocationsTable.getCellEditor() instanceof ComboBoxCellEditor) {
+          categoryCellEditor.getComboBox().processKeyEvent(e);
+        }
 
-      public void mouseExited(MouseEvent e) { }
+      }
     });
 
-//    transactionAllocationSplit.getLeftComponent()
-//        .setMinimumSize(transactionInfoPanel.getLayout().minimumLayoutSize(transactionInfoPanel));
-//    allocationsTable.setMinimumSize(new Dimension(200, 200));
     transactionAllocationSplit.getRightComponent().setMinimumSize(new Dimension(200, 200));
-//    transactionAllocationSplit.setResizeWeight(0.25);
-
-
-//    transactionAllocationSplit.getRightComponent().setMinimumSize(allocationsPanel.getLayout().minimumLayoutSize(allocationsPanel));
     transactionAllocationSplit.setContinuousLayout(true);
     transactionAllocationSplit.setOneTouchExpandable(false);
 
@@ -364,7 +393,9 @@ public class TransactionForm {
     this.outboxLabel.setText(inboxLabel);
   }
 
-  /** Method generated by IntelliJ IDEA GUI Designer >>> IMPORTANT!! <<< DO NOT edit this method OR call it in your code! */
+  /**
+   * Method generated by IntelliJ IDEA GUI Designer >>> IMPORTANT!! <<< DO NOT edit this method OR call it in your code!
+   */
   private void $$$setupUI$$$() {
     createUIComponents();
     transactionFormPanel = new JPanel();
@@ -589,6 +620,7 @@ public class TransactionForm {
 
     allocationsTable = new JTable() {
       private final KeyStroke tabKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0);
+      private final KeyStroke downKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0);
 
       public void changeSelection(int rowIndex, int columnIndex, boolean toggle, boolean extend) {
         AWTEvent currentEvent = EventQueue.getCurrentEvent();
@@ -597,14 +629,26 @@ public class TransactionForm {
           if (ke.getSource() != this)
             return;
           // focus change with keyboard
-          if (rowIndex == 0 && columnIndex == 0 && KeyStroke.getKeyStrokeForEvent(ke).equals(tabKeyStroke)) {
-            Allocation a = new Allocation();
-            a.setTransaction(transactionChangeHandler.getTransaction());
-            tableModel.addEmptyRow(a);
+          if (
+              (rowIndex == 0 && columnIndex == 0 && KeyStroke.getKeyStrokeForEvent(ke).equals(tabKeyStroke))
+                  ||
+                  (super.getSelectedRow() == (getRowCount() - 1) && KeyStroke.getKeyStrokeForEvent(ke).equals(downKeyStroke))
+              ) {
+
+            if (!tableModel.hasEmptyRow()) {
+              Allocation a = new Allocation();
+              a.setTransaction(transactionChangeHandler.getTransaction());
+              tableModel.addEmptyRow(a);
+            }
+
             rowIndex = getRowCount() - 1;
           }
         }
         super.changeSelection(rowIndex, columnIndex, toggle, extend);
+        super.changeSelection(rowIndex, columnIndex, toggle, extend);
+        super.changeSelection(rowIndex, columnIndex, toggle, extend);
+        super.changeSelection(rowIndex, columnIndex, toggle, extend);
+        scrollRectToVisible(getCellRect(rowIndex, columnIndex, true));
       }
     };
   }

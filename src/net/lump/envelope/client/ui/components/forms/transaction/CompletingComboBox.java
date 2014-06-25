@@ -1,14 +1,13 @@
 package net.lump.envelope.client.ui.components.forms.transaction;
 
 import javax.swing.*;
-import java.awt.event.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import javax.swing.JComboBox;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.PlainDocument;
+import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 public class CompletingComboBox<E> extends JComboBox {
 
@@ -43,12 +42,11 @@ public class CompletingComboBox<E> extends JComboBox {
     plainDocument.setText((String)getEditor().getItem());
     plainDocument.highlightCompletedText(0);
 
-
-    editor.addKeyListener(new KeyAdapter() {
+    /*this.addKeyListener(new KeyAdapter() {
       public void keyPressed(KeyEvent e) {
-        if (isDisplayable()) setPopupVisible(true);
+        if (!isPopupVisible() && isDisplayable()) setPopupVisible(true);
       }
-    });
+    });*/
   }
 
   ActionListener highlightListener = new ActionListener() {

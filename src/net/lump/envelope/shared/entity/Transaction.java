@@ -3,8 +3,6 @@ package net.lump.envelope.shared.entity;
 import net.lump.lib.Money;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.hibernate.annotations.IndexColumn;
-import org.hibernate.collection.internal.PersistentList;
 
 import javax.persistence.*;
 import java.sql.Date;
@@ -171,15 +169,15 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
 
     Transaction that = (Transaction)o;
 
+    if (id != null
+        ? !id.equals(that.id)
+        : that.id != null) return false;
     if (date != null
         ? !date.equals(that.date)
         : that.date != null) return false;
     if (description != null
         ? !description.equals(that.description)
         : that.description != null) return false;
-    if (id != null
-        ? !id.equals(that.id)
-        : that.id != null) return false;
     if (reconciled != null
         ? !reconciled.equals(that.reconciled)
         : that.reconciled != null) return false;

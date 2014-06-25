@@ -134,9 +134,12 @@ public class Allocation extends Identifiable<Integer, Timestamp> {
     if (amount != null
         ? !amount.equals(that.amount)
         : that.amount != null) return false;
-    if (category != null
-        ? !category.equals(that.category)
-        : that.category != null) return false;
+    if (category != null) {
+      if (that.category == null)
+        return false;
+      else
+        if (!category.getId().equals(that.category.getId())) return false;
+    }
     if (id != null
         ? !id.equals(that.id)
         : that.id != null) return false;

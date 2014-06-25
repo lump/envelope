@@ -1,7 +1,9 @@
 package net.lump.envelope.shared.entity;
 
-import org.hibernate.annotations.Type;
 import net.lump.lib.Money;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -98,7 +100,8 @@ public class Account extends Identifiable<Integer, Timestamp>
     this.type = type;
   }
 
-  @OneToMany(mappedBy = "account")
+  @OneToMany(mappedBy = "account", fetch = FetchType.EAGER)
+  @Fetch(value = FetchMode.SELECT )
   public List<Category> getCategories() {
     return this.categories;
   }
@@ -156,7 +159,7 @@ public class Account extends Identifiable<Integer, Timestamp>
     Account account = (Account)o;
 
     if (budget != null
-        ? !budget.equals(account.budget)
+        ? !budget.getId().equals(account.budget.getId())
         : account.budget != null) return false;
     if (categories != null
         ? !categories.equals(account.categories)

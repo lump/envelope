@@ -1,26 +1,23 @@
 package net.lump.envelope.client.ui.components.forms.transaction;
 
-import net.lump.envelope.shared.entity.Category;
-
-import java.awt.event.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.io.Serializable;
 import javax.swing.*;
-import javax.swing.AbstractCellEditor;
-import javax.swing.JComboBox;
 import javax.swing.table.TableCellEditor;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.PlainDocument;
+import java.awt.event.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.io.Serializable;
+import java.util.EventObject;
 
 public class ComboBoxCellEditor
     extends AbstractCellEditor implements ActionListener, TableCellEditor, Serializable {
 
   private JComboBox comboBox;
 
-  public ComboBoxCellEditor(JComboBox comboBox) {
+  public ComboBoxCellEditor(final JComboBox comboBox) {
     this.comboBox = comboBox;
     this.comboBox.putClientProperty("JComboBox.isTableCellEditor", Boolean.TRUE);
     // hitting enter in the combo box should stop cellediting (see below)
@@ -31,8 +28,25 @@ public class ComboBoxCellEditor
     addAutoStuff();
   }
 
+  public InputMap getInputMap(int condition) {
+    return comboBox.getInputMap(condition);
+  }
+
+  public ActionMap getActionMap() {
+    return comboBox.getActionMap();
+  }
+
+  void grabFocus() {
+    comboBox.grabFocus();
+  }
+
+  JComboBox getComboBox() {
+    return comboBox;
+  }
+
   private void setValue(Object value) {
     comboBox.setSelectedItem(value);
+    this.selectSelectedValue();
   }
 
   // Implementing ActionListener
@@ -85,7 +99,7 @@ public class ComboBoxCellEditor
 
   PropertyChangeListener configureModelPropertyListener = new PropertyChangeListener() {
     public void propertyChange(PropertyChangeEvent e) {
-      if (e.getPropertyName().equals("editor")) configureEditor((ComboBoxEditor) e.getNewValue());
+      if (e.getPropertyName().equals("editor")) configureEditor((ComboBoxEditor)e.getNewValue());
       if (e.getPropertyName().equals("model")) model = (ComboBoxModel) e.getNewValue();
     }
   };
@@ -133,9 +147,13 @@ public class ComboBoxCellEditor
     configureEditor(comboBox.getEditor());
 
     // Handle initially selected object
+    selectSelectedValue();
+  }
+
+  void selectSelectedValue() {
     Object selected = comboBox.getSelectedItem();
     if (selected!=null) plainDocument.setText(selected.toString());
-    plainDocument.setText((String)comboBox.getEditor().getItem());
+    plainDocument.setText(comboBox.getEditor().getItem().toString());
     plainDocument.highlightCompletedText(0);
   }
 
@@ -223,7 +241,7 @@ public class ComboBoxCellEditor
     }
 
     public void highlightCompletedText(int start) {
-      System.out.println("start: " + start + " length: " + getLength());
+//      System.out.println("start: " + start + " length: " + getLength());
       editor.setCaretPosition(editor.getText().length());
       editor.moveCaretPosition(start);
     }
@@ -260,5 +278,11 @@ public class ComboBoxCellEditor
 
   }
 
+  public boolean shouldSelectCell(EventObject anEvent) {
+    return true;
+  }
 
+  public boolean isCellEditable(EventObject anEvent) {
+    return true;
+  }
 }

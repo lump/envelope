@@ -138,12 +138,15 @@ public class Category extends Identifiable<Integer, Timestamp> implements Compar
 
     Category category = (Category)o;
 
-    if (account != null
-        ? !account.equals(category.account)
-        : category.account != null) return false;
     if (id != null
         ? !id.equals(category.id)
         : category.id != null) return false;
+    if (account != null) {
+      if (category.account == null)
+        return false;
+      else if (!account.getId().equals(category.account.getId()))
+        return false;
+    }
     if (name != null
         ? !name.equals(category.name)
         : category.name != null) return false;

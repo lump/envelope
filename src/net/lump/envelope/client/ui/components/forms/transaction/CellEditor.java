@@ -7,7 +7,6 @@ package net.lump.envelope.client.ui.components.forms.transaction;
  * SUN PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 
-import net.lump.envelope.client.ui.defs.Colors;
 import net.lump.envelope.shared.entity.Category;
 
 import javax.swing.*;
@@ -64,7 +63,7 @@ public class CellEditor extends AbstractCellEditor implements TableCellEditor, T
       public void setValue(Object value) {
         textField.setText((value != null) ? value.toString() : "");
         textField.selectAll();
-        textField.setBorder(BorderFactory.createLineBorder(Colors.getColor("black")));
+      //  textField.setBorder(BorderFactory.createLineBorder(Colors.getColor("black")));
       }
 
       public Object getCellEditorValue() {
@@ -169,10 +168,10 @@ public class CellEditor extends AbstractCellEditor implements TableCellEditor, T
       }
 
       public boolean stopCellEditing() {
-        if (comboBox.isEditable()) {
+//        if (comboBox.isEditable()) {
           // Commit edited value.
-          comboBox.actionPerformed(new ActionEvent(CellEditor.this, 0, ""));
-        }
+//          comboBox.actionPerformed(new ActionEvent(CellEditor.this, 0, ""));
+//        }
         return super.stopCellEditing();
       }
     };
@@ -367,7 +366,8 @@ public class CellEditor extends AbstractCellEditor implements TableCellEditor, T
      * @see #isCellEditable
      */
     public boolean shouldSelectCell(EventObject anEvent) {
-      return true;
+      //return true;
+      return false;
     }
 
     /**
