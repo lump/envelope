@@ -82,6 +82,7 @@ public class TransactionForm {
 
   private AllocationFormTableModel tableModel;
   private CompletingComboBox<Category> categoriesComboBox = new CompletingComboBox<Category>(true);
+  private MoneyTextField moneyEditor = new MoneyTextField();
   private TransactionChangeHandler transactionChangeHandler;
 
   private BlockingQueue<StatusRunnable> updateQueue = new LinkedBlockingQueue<StatusRunnable>();
@@ -153,8 +154,6 @@ public class TransactionForm {
 
     if (!tableModel.hasEmptyRow()) tableModel.addEmptyRow(new Allocation());
 
-
-    final MoneyTextField moneyEditor = new MoneyTextField();
     CellEditor amountCellEditor = new CellEditor(moneyEditor);
     amountCellEditor.setClickCountToStart(0);
 
@@ -731,5 +730,9 @@ public class TransactionForm {
 
   public CompletingComboBox<Category> getCategoriesComboBox() {
     return categoriesComboBox;
+  }
+
+  public MoneyTextField getMoneyTextEditor() {
+    return moneyEditor;
   }
 }

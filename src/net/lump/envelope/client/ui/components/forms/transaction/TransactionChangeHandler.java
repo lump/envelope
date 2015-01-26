@@ -45,6 +45,7 @@ public class TransactionChangeHandler {
   private ChangeableJTextField changeableDescription;
   private ChangeableMoneyTextField changeableAmount;
   ChangeableComboBox<JComboBox<Category>, Category> changeableAllocationCategory;
+  ChangeableMoneyTextField changeableAllocationMoney;
 
   public TransactionChangeHandler(Transaction t, TransactionForm tf) throws InvocationTargetException, InterruptedException {
     importNew(t, tf);
@@ -193,7 +194,7 @@ public class TransactionChangeHandler {
 
           /*
           changeableAllocationCategory =
-              new ChangeableComboBox<JComboBox<Category>, Category>(form.getCategoriesComboBox(), true, true) {
+              new ChangeableComboBox<JComboBox<Category>, Category>(form.getCategoriesComboBox()) {
                 @Override public Category getState() {
                   return null;
                 }
@@ -206,7 +207,23 @@ public class TransactionChangeHandler {
                   return null;
                 }
               };
-              */
+
+          changeableAllocationMoney = new ChangeableMoneyTextField(form.getAmount()) {
+            { super.setDirtyDelay(5); }
+            @Override public Money getState() { return TransactionChangeHandler.this.editing.getNetAmount(); }
+            @Override public boolean saveState() {
+              if ((getValue() != null)
+                  && (isExpense ? !getValue().negate().equals(amount) : !getValue().equals(amount))) {
+                amount = isExpense ? getValue().negate() : getValue();
+                return true;
+              }
+              return false;
+            }
+            @Override public Runnable getSaveOrUpdate() {
+              return new Runnable() { public void run () { updateAllocationTotalLabels(); } };
+            }
+          };
+          */
 
           form.getTransactionAllocationSplit().setDividerLocation(0.60D);
 //          form.getTransactionAllocationSplit().resetToPreferredSizes();

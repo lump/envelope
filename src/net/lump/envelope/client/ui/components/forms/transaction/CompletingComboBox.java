@@ -173,7 +173,7 @@ public class CompletingComboBox<E> extends JComboBox {
     }
 
     public void highlightCompletedText(int start) {
-      System.out.println("start: " + start + " length: " + getLength());
+      //System.out.println("start: " + start + " length: " + getLength());
       editor.setCaretPosition(editor.getText().length());
       editor.moveCaretPosition(start);
     }

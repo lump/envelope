@@ -1,7 +1,8 @@
 package net.lump.envelope.client.ui.components.forms.transaction;
 
 import javax.swing.*;
-import java.awt.event.*;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
 abstract class ChangeableComboBox<C extends JComboBox<V>, V> extends Changeable<C, V> {
 
@@ -35,6 +36,7 @@ abstract class ChangeableComboBox<C extends JComboBox<V>, V> extends Changeable<
   }
 
   public V getValue() {
+    //noinspection unchecked
     return (V)comboBox.getSelectedItem();
   }
 

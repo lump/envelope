@@ -552,7 +552,6 @@
           <option name="ARRAY_INITIALIZER_WRAP" value="1" />
           <option name="ASSIGNMENT_WRAP" value="1" />
           <option name="LABELED_STATEMENT_WRAP" value="0" />
-          <option name="WRAP_COMMENTS" value="true" />
           <option name="ASSERT_STATEMENT_WRAP" value="1" />
           <option name="ASSERT_STATEMENT_COLON_ON_NEXT_LINE" value="true" />
           <option name="METHOD_ANNOTATION_WRAP" value="1" />
@@ -697,4 +696,3 @@
     <option name="INSTRUMENT_CLASSES" value="false" />
   </component>
 </project>
-
