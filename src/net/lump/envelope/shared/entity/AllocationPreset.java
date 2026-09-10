@@ -93,7 +93,10 @@ public class AllocationPreset extends Identifiable<Integer, Timestamp> implement
     this.allocation = allocation;
   }
 
-  @Column(name = "type", nullable = false)
+  // the column is allocation_type, not type -- mapping it as "type" meant every
+  // query for a preset failed with Unknown column 'this_.type', so nothing about
+  // presets had ever run
+  @Column(name = "allocation_type", nullable = false)
   @Enumerated(value = jakarta.persistence.EnumType.STRING)
   public AllocationType getAllocationType() {
     return allocationType;
