@@ -31,7 +31,7 @@ public class AllocationPreset extends Identifiable<Integer, Timestamp> implement
   private Boolean autoDeduct;
 
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id", nullable = false)
   @Override
   public Integer getId() {

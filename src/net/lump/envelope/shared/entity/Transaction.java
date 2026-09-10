@@ -45,7 +45,7 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
   }
 
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id", nullable = false)
   @Override
   public Integer getId() {

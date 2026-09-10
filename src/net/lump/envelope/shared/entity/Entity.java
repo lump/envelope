@@ -21,7 +21,7 @@ public class Entity extends Identifiable<Integer, Timestamp> {
   private String phone;
 
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id", nullable = false)
   @Override
   public Integer getId() {

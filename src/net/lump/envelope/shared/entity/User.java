@@ -37,7 +37,7 @@ public class User extends Identifiable<Integer, Timestamp> {
     return MessageFormat.format("{0} ({1})", name, realName);
   }
 
-  @Id @GeneratedValue(strategy = GenerationType.AUTO) @Column(name = "id", nullable = false) @Override
+  @Id @GeneratedValue(strategy = GenerationType.IDENTITY) @Column(name = "id", nullable = false) @Override
   public Integer getId() {
     return id;
   }

@@ -37,7 +37,7 @@ public class AllocationSetting extends Identifiable<Integer, Timestamp> implemen
   }
 
   @Id
-  @GeneratedValue(strategy = GenerationType.AUTO)
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "id", nullable = false)
   @Override
   public Integer getId() {
