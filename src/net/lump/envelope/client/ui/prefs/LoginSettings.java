@@ -109,7 +109,7 @@ public class LoginSettings {
     if (!password.equals(PASSWORD_ALREADY_SET))
       this.password = Encryption.encodeAsym(
         getKeyPair().getPublic(),
-        password.getBytes());
+        password.getBytes(Crypt.PASSWORD_ENCODING));
     return this;
   }
 
@@ -209,9 +209,12 @@ public class LoginSettings {
           Encryption.decodeAsym(
             getKeyPair().getPrivate(),
             this.password
-          )
+          ),
+          Crypt.PASSWORD_ENCODING
         )
-      ).getBytes()
+        // the hash itself is ASCII, but pin it too rather than leave one
+        // conversion on this path reading the platform default
+      ).getBytes(Encryption.TRANS_ENCODING)
     );
 
     // response is encrypted with server's public key, so only that specific

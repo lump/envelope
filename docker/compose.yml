@@ -1,4 +1,4 @@
-# Envelope server stack: MariaDB + Tomcat, both containerised.
+# Envelope server: Tomcat, containerised.  The database is not.
 #
 #   cd docker && docker compose up -d
 #
@@ -6,55 +6,33 @@
 # into Tomcat's webapps, so a rebuild plus `docker compose restart tomcat` picks
 # up new code without rebuilding an image.
 #
+# The database is the native MariaDB on the host, which is where the migrated
+# budget lives.  It is reached at tiamat.lump:3306 -- and note that name resolves
+# differently depending on where you ask it: from inside a container it is the
+# host's LAN address, while on the host itself it is 127.0.1.1.  So reaching it
+# from a host shell says nothing about whether the container can; check from
+# inside a container.
+#
+# The schema lives in ../sql: load bootstrap-mysql.sql into a fresh database and
+# apply anything in ../sql/migrations to an existing one.  There used to be a
+# containerised MariaDB here that did that on first start; it was removed once
+# the data moved to the host.  Its data volume is not declared any more and so is
+# no longer managed by compose -- `docker volume ls` will still show
+# envelope_db-data until it is removed by hand.
+#
 # The Swing client runs on the host and talks to http://localhost:7041/envelope/.
 
 name: envelope
 
 services:
 
-  db:
-    image: mariadb:11.8
-    container_name: envelope-db
-    restart: unless-stopped
-    environment:
-      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpw}
-      MARIADB_USER: ${DB_USER:-budget}
-      MARIADB_PASSWORD: ${DB_PASSWORD:-tegdub}
-    ports:
-      # exposed on a non-default port so it cannot collide with a host mysqld
-      - "127.0.0.1:13306:3306"
-    volumes:
-      - db-data:/var/lib/mysql
-      # anything in here runs once, on first init of an empty data volume
-      - ./initdb:/docker-entrypoint-initdb.d:ro
-      # the authoritative schema, sourced by initdb/01-bootstrap.sh
-      - ../sql:/sql:ro
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-      start_period: 30s
-
   tomcat:
     image: tomcat:11.0-jdk25-temurin
     container_name: envelope-tomcat
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
       # ServerPrefs turns these into hibernate settings; see DAO.properties.
-      #
-      # This points at the *native* MariaDB on the host, not the db service below,
-      # because that is where the migrated budget lives.  Note that tiamat.lump
-      # resolves differently depending on where you ask: from inside a container it
-      # is the host's LAN address (172.17.2.245), while on the host itself it is
-      # 127.0.1.1 -- so testing this from a host shell proves nothing about whether
-      # the container can reach it.
-      #
-      # Set DB_URL to point back at the containerised database:
-      #   DB_URL=jdbc:mariadb://db:3306/envelope docker compose up -d
+      # DB_URL overrides the whole JDBC url, for pointing at a different server.
       DAO_HIBERNATE_CONNECTION_URL: ${DB_URL:-jdbc:mariadb://tiamat.lump:3306/envelope}
       DAO_HIBERNATE_CONNECTION_USERNAME: ${DB_USER:-budget}
       DAO_HIBERNATE_CONNECTION_PASSWORD: ${DB_PASSWORD:-tegdub}
@@ -82,6 +60,3 @@ services:
       timeout: 5s
       retries: 12
       start_period: 30s
-
-volumes:
-  db-data:

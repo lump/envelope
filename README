@@ -12,7 +12,9 @@ features have been implemented.
 
 ## Running
 
-The server (MariaDB + Tomcat) runs in Docker; the Swing client runs on the host.
+Tomcat runs in Docker; MariaDB runs natively on the host; the Swing client runs
+on the host.  Load sql/bootstrap-mysql.sql into a fresh database first, and apply
+anything in sql/migrations to an existing one.
 
     mvn package                 # builds target/envelope.war and target/envelope-client.jar
     cd docker && docker compose up -d

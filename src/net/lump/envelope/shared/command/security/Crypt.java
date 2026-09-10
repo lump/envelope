@@ -24,6 +24,8 @@ package net.lump.envelope.shared.command.security;
 // ----------------------------------------------------------------------------
 //
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 
@@ -35,6 +37,22 @@ import java.security.MessageDigest;
  */
 
 public final class Crypt {
+
+  /**
+   * The encoding a password is turned into bytes with before it is hashed.
+   *
+   * <p>These conversions used to take the platform default, which made the hash
+   * of a password containing any character outside ASCII depend on the locale and
+   * JVM the client happened to be running under: JDK 18 changed that default to
+   * UTF-8 (JEP 400), where older ones followed the locale, so two machines could
+   * disagree about the same password.  Pinning it makes the hash a function of
+   * the password alone.
+   *
+   * <p>UTF-8 rather than Encryption.TRANS_ENCODING, which is US-ASCII and would
+   * turn every accented character into a question mark.  ASCII passwords hash
+   * identically either way, which is why this stayed invisible.
+   */
+  public static final Charset PASSWORD_ENCODING = StandardCharsets.UTF_8;
   private static final String I_TO_A64 =
     "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
@@ -539,21 +557,27 @@ public final class Crypt {
     md5v1 = MessageDigest.getInstance("MD5");
 
     /* First we update one MD5 with the password, MAGIC string, and salt */
-    md5v1.update(password.getBytes());
-    md5v1.update(MAGIC.getBytes());
-    md5v1.update(salt.getBytes());
+    md5v1.update(password.getBytes(PASSWORD_ENCODING));
+    md5v1.update(MAGIC.getBytes(PASSWORD_ENCODING));
+    md5v1.update(salt.getBytes(PASSWORD_ENCODING));
 
     md5v2 = MessageDigest.getInstance("MD5");
 
     /* Now start a second MD5 with the password, salt, and password again */
-    md5v2.update(password.getBytes());
-    md5v2.update(salt.getBytes());
-    md5v2.update(password.getBytes());
+    md5v2.update(password.getBytes(PASSWORD_ENCODING));
+    md5v2.update(salt.getBytes(PASSWORD_ENCODING));
+    md5v2.update(password.getBytes(PASSWORD_ENCODING));
 
     byte[] md5v2Digest = md5v2.digest();
 
     final int md5Size = md5v2Digest.length; // XXX
-    int pwLength = password.length();
+    // md5-crypt counts the password in BYTES -- the reference implementation uses
+    // strlen -- not in characters.  Taking String.length() here made the hash of a
+    // password with any character outside ASCII disagree with every other
+    // implementation, `openssl passwd -1` included.  For ASCII the two are equal,
+    // which is why it went unnoticed.
+    byte[] pwBytes = password.getBytes(PASSWORD_ENCODING);
+    int pwLength = pwBytes.length;
 
     /* Update the first MD5 a few times starting at the first
     * character of the second MD5 digest using the smaller
@@ -575,7 +599,6 @@ public final class Crypt {
     * using either 0 (see above) or the first byte of the
     * password, depending on the lowest order bit's value
     */
-    byte[] pwBytes = password.getBytes();
     for (int i = pwLength; i > 0; i >>= 1) {
       if ((i & 1) == 1) {
         md5v1.update((byte)0);
@@ -597,7 +620,7 @@ public final class Crypt {
     * is introduced to slow things down.  It also further
     * mutates the result.
     */
-    byte[] saltBytes = salt.getBytes();
+    byte[] saltBytes = salt.getBytes(PASSWORD_ENCODING);
     for (int i = 0; i < 1000; i++) {
       md5v2.reset();
       if ((i & 1) == 1) {

@@ -105,7 +105,12 @@ server's `Challenge` carries the server's public key and, as the "challenge", on
 and carrying no nonce. The client computes `Crypt.crypt(salt, password)`, reproducing the stored
 md5-crypt hash, and RSA-encrypts it to the server key; the server decrypts and compares. Hashes
 are md5-crypt (`$1$`), though `Crypt.crypt()` also dispatches to DES crypt for 2-/13-char
-non-`$1$` salts.
+non-`$1$` salts. `Crypt.PASSWORD_ENCODING` pins the password's byte encoding to
+UTF-8 rather than taking the platform default, and the hash counts the password in bytes
+rather than characters — both only matter outside ASCII, but without them the same password
+hashed differently depending on the JVM's locale and matched no other md5-crypt
+implementation. `Crypt.crypt` now agrees with `openssl passwd -1` for non-ASCII passwords as
+well as ASCII ones.
 
 **Everything after login is a session, not re-authentication.** `authChallengeResponse` mints a
 session only once the hash verifies, binds it to the public key proven in that same handshake,
@@ -121,12 +126,20 @@ anything — `users.public_key` is now vestigial.
 
 ```
 mvn package                          # → target/envelope.war + target/envelope-client.jar
-cd docker && docker compose up -d    # MariaDB 11.8 + Tomcat 11
+cd docker && docker compose up -d    # Tomcat 11; the database is not containerised
 ```
 
 - Server: http://localhost:7041/envelope/  (health: `/envelope/info/ping` → `pong`)
 - Client: `java -jar target/envelope-client.jar`
 - Default logins (seeded by `sql/bootstrap-mysql.sql`): **admin / envelope**, **guest / guest**
+
+**The database is the native MariaDB on the host**, reached at `tiamat.lump:3306` and
+overridable with `DB_URL`. There used to be a containerised one, bootstrapped on first start
+by `docker/initdb/`; both were removed once the migrated budget moved to the host. Its data
+volume is no longer declared and so no longer managed by compose — `docker volume ls` still
+shows `envelope_db-data` until it is removed by hand. Note `tiamat.lump` resolves to
+`127.0.1.1` on the host and to the host's LAN address from inside a container, so testing
+that connection from a host shell says nothing about whether Tomcat can reach it.
 
 The war is **bind-mounted** into Tomcat (not baked into an image), so a code change is
 `mvn package` + `docker compose restart tomcat`. A client-only change needs neither — the
