@@ -1,8 +1,10 @@
 package net.lump.envelope.client.ui.components.forms.transaction;
 
+import net.lump.envelope.client.State;
 import net.lump.envelope.client.portal.HibernatePortal;
 import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.thread.ThreadPool;
+import net.lump.envelope.client.ui.components.Hierarchy;
 import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBar;
 import net.lump.envelope.client.ui.defs.Colors;
 import net.lump.envelope.client.ui.defs.Fonts;
@@ -115,6 +117,12 @@ public class TransactionChangeHandler {
           if (changeableAllocationCategory != null) changeableAllocationCategory.removeDataChangeListener();
 
           form.getTableModel().setAllocations(editing.getAllocations());
+          form.getTableModel().setEditListener(
+              new AllocationFormTableModel.EditListener() {
+                public void allocationEdited(Allocation allocation) {
+                  sendAllocationChange(allocation);
+                }
+              });
           int amountWidth = table.getFontMetrics(table.getFont()).stringWidth("$0,000,000.00");
           form.getAllocationsTable().getColumnModel().getColumn(1).setMaxWidth(amountWidth);
           form.getAllocationsTable().getColumnModel().getColumn(1).setMinWidth(amountWidth);
@@ -275,19 +283,89 @@ public class TransactionChangeHandler {
 
 
    private void sendChanges() {
-    if (!equals(pristine)) {
+    // This compared the handler itself against a Transaction, so it was never
+    // equal and every edit sent whether or not anything had changed.  Comparing
+    // the edited copy to the pristine one is what was meant.  Note that this only
+    // catches the transaction's own fields: Transaction.equals builds both sides
+    // of its allocation comparison from this.allocations, so allocation changes
+    // are invisible to it -- they come through sendAllocationChange instead.
+    if (!editing.equals(pristine)) {
       StatusRunnable r = new StatusRunnable("Updating transaction " + pristine.getId()) {
         @Override public void run() {
           HibernatePortal hp = new HibernatePortal();
           try {
             changeHistory.push(TransactionChangeHandler.this.getTransaction());
             saveAttributes(hp.saveOrUpdate(TransactionChangeHandler.this.getTransaction()));
-            DateFormat df = DateFormat.getTimeInstance();
-            form.setSaveStateLabel(Strings.get("saved.at") + " " + df.format(new java.util.Date()));
-          } catch (AbortException ignore) { }
+            setSavedLabel();
+          } catch (AbortException e) {
+            setSaveFailedLabel();
+          }
         }
       };
       ThreadPool.getInstance().execute(r);
     }
+  }
+
+  /**
+   * Persist one edited Allocation.
+   *
+   * <p>Allocations are saved individually rather than as part of their Transaction.
+   * {@code Transaction.allocations} is mapped {@code @OneToMany(mappedBy =
+   * "transaction")} with no cascade -- an inverse side that owns no foreign key --
+   * so {@code saveOrUpdate(Transaction)} succeeds and silently writes nothing for
+   * them.  The cascade runs the other way, up from Allocation to its Transaction
+   * and Category, which is why saving the Allocation on its own works.
+   */
+  void sendAllocationChange(final Allocation allocation) {
+    // rows that were never saved have no id yet; adding them is separate work
+    if (allocation.getId() == null) return;
+
+    StatusRunnable r = new StatusRunnable("Updating allocation " + allocation.getId()) {
+      @Override public void run() {
+        try {
+          Allocation saved = new HibernatePortal().saveOrUpdate(allocation);
+          // Take the new version stamp forward, or the next edit of this same row
+          // is refused as stale.  Only the stamp is copied: keeping our own object
+          // leaves the form's graph (and the table model's list) intact.
+          allocation.setStamp(saved.getStamp());
+          setSavedLabel();
+          refreshTotals();
+        } catch (AbortException e) {
+          setSaveFailedLabel();
+        }
+      }
+    };
+    ThreadPool.getInstance().execute(r);
+  }
+
+  /**
+   * Re-read the totals an allocation change invalidates: the form's own in/out/
+   * balance labels, and the account and category balances in the tree, which are
+   * sum(amount) projections over exactly the row that just moved.
+   */
+  private void refreshTotals() {
+    SwingUtilities.invokeLater(new Runnable() {
+      public void run() { updateAllocationTotalLabels(); }
+    });
+    try {
+      // refreshTree runs itself on the thread pool and keeps the selection
+      Hierarchy.getInstance().refreshTree(State.getInstance().getBudget());
+    } catch (AbortException e) {
+      // the tree is stale but the save itself stood; Portal already told the user
+    }
+  }
+
+  private void setSavedLabel() {
+    DateFormat df = DateFormat.getTimeInstance();
+    form.setSaveStateLabel(Strings.get("saved.at") + " " + df.format(new java.util.Date()));
+  }
+
+  /**
+   * Portal has already put a dialog in front of the user by the time an
+   * AbortException arrives, but the form's own label would otherwise sit on
+   * "Save Pending" and quietly claim the write is still coming.
+   */
+  private void setSaveFailedLabel() {
+    form.setSaveStateLabel(Strings.get("save.failed"));
   }
 }

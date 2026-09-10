@@ -57,6 +57,22 @@ public class AllocationFormTableModel extends AbstractTableModel {
     }
   }
 
+  /**
+   * Notified when a cell edit has actually changed an Allocation.  This model owns
+   * the in-memory mutation; persisting it is the listener's business, because an
+   * Allocation has to be saved on its own -- Transaction.allocations is a
+   * no-cascade inverse side, so saving the Transaction does not carry it.
+   */
+  public interface EditListener {
+    void allocationEdited(Allocation allocation);
+  }
+
+  private EditListener editListener;
+
+  public void setEditListener(EditListener editListener) {
+    this.editListener = editListener;
+  }
+
   public AllocationFormTableModel(JTable table) {
     this(table, Mode.Simple, false);
   }
@@ -162,20 +178,28 @@ public class AllocationFormTableModel extends AbstractTableModel {
   @Override
   public void setValueAt(Object value, int row, int column) {
     if (value == null) return;
+    Allocation allocation = allocations.get(row);
+
+    // Swing calls setValueAt whenever an editor stops, whether or not anything
+    // changed, so each branch returns early on a no-op rather than firing a save.
     switch (Columns.values()[column]) {
       case Category:
-        allocations.get(row).setCategory((Category)value);
+        if (value.equals(allocation.getCategory())) return;
+        allocation.setCategory((Category)value);
         break;
       case Allocation:
         try {
           Money m = value instanceof Money ? (Money)value : new Money(value.toString().trim());
-          allocations.get(row).setAmount(expense ? m.negate() : m);
+          Money amount = expense ? m.negate() : m;
+          if (amount.equals(allocation.getAmount())) return;
+          allocation.setAmount(amount);
         } catch (NumberFormatException nfe) {
           return;
         }
         break;
     }
     fireTableRowsUpdated(row, row);
+    if (editListener != null) editListener.allocationEdited(allocation);
   }
 
   public Object getValueAt(int row, int column) {
