@@ -335,15 +335,28 @@ $sth->finish;
 $dtrans->finish;
 $dalloc->finish;
 
+# A bulk import should not die three quarters of the way through because one
+# field came out a few characters over.  Clip it to the column, say so loudly
+# enough to be found in the log afterwards, and carry on.  The alternative is an
+# abort with thousands of rows already inserted and no way to resume.
+sub fit {
+  my ($value, $limit, $what) = @_;
+  return $value unless defined $value and length($value) > $limit;
+  printf "\n  ! %s clipped from %d to %d: %.60s...\n",
+         $what, length($value), $limit, $value;
+  return substr($value, 0, $limit);
+}
+
 sub insert_transaction {
   my ($transaction, @allocations) = @_;
 
   print "\ninserting (desc: $transaction->{new_description}) (entity: $transaction->{to_from}) (subcategory: $transaction->{subcategory})\n";
   # add the transaction
+  # widths track the schema: entity varchar(128), description varchar(1024)
   my @params = ($transaction->{stamp},
                 $transaction->{date},
-                $transaction->{to_from},
-                $transaction->{new_description},
+                fit($transaction->{to_from}, 128, "entity"),
+                fit($transaction->{new_description}, 1024, "description"),
                 $transaction->{reconciled},
                 exists $categories->{$transaction->{to_from}} ? 1 : 0);
 

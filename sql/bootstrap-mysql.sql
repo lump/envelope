@@ -204,7 +204,7 @@ create table transactions (
   `stamp` timestamp(3) NOT NULL default current_timestamp(3),
   `date` date not null,
   `entity` varchar(128) not null,
-  `description` varchar(255) not null,
+  `description` varchar(1024) not null,
   `reconciled` tinyint(4) not null default '0',
   `transfer` tinyint(4) not null default '0'
 )ENGINE=INNODB;

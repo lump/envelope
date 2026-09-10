@@ -101,7 +101,7 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
     this.entity = entity;
   }
 
-  @Column(name = "description", nullable = false, length = 255)
+  @Column(name = "description", nullable = false, length = 1024)
   public String getDescription() {
     return description;
   }

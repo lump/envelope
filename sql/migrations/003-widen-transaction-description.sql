@@ -1,0 +1,28 @@
+-- 003: widen transactions.description from 255 to 1024 characters.
+--
+-- The legacy import joins several source descriptions into one transaction when
+-- it decides they were the same purchase split across categories, appending
+-- "; <rest>" for each.  The source column is itself varchar(255) and its values
+-- run right up to it -- of 8,678 rows imported before this bit, the longest was
+-- 253 characters, with a cluster in the 230s and 240s -- so a two-way merge
+-- lands near 500 and a three-way near 760.  510 or 512 would sit on the edge of
+-- the two-way case; 1024 clears the four-way one.
+--
+-- There is no cost to the extra width.  VARCHAR stores only the bytes used plus
+-- a length prefix, and that prefix is 1 byte only while the column's maximum
+-- *byte* length is under 256.  These columns are utf8mb4, so varchar(255) is
+-- already 1020 bytes and already pays the 2-byte prefix: 512, 1024 and 4000 all
+-- cost exactly the same per row.  Size it for the data, not for round numbers.
+--
+-- transactions.entity is deliberately left at 128: the longest imported was 38,
+-- and unlike description it is never concatenated.
+--
+-- Applied to a live database with:
+--   mariadb -h localhost -u budget -p envelope \
+--     < sql/migrations/003-widen-transaction-description.sql
+--
+-- Transaction.getDescription()'s @Column(length = …) must match: the transaction
+-- form builds its text field from that annotation reflectively (LimitDocument),
+-- so leaving it at 255 would keep the form capped even once the column is wide.
+
+alter table transactions modify `description` varchar(1024) not null;
