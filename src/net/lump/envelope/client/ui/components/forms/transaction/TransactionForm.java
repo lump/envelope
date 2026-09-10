@@ -399,6 +399,13 @@ public class TransactionForm {
                   }
                 });
 
+            // the allocation menu is built on the event thread, so the presets are
+            // fetched here, off it, and parked in State
+            State.getInstance().setPresets(
+                hp.detachedCriteriaQueryList(
+                    CriteriaFactory.getInstance()
+                        .getPresetsForBudget(State.getInstance().getBudget())));
+
             Transaction query = hp.load(Transaction.class, id);
             if (transactionChangeHandler == null)
               transactionChangeHandler = new TransactionChangeHandler(query, TransactionForm.this);
@@ -767,6 +774,26 @@ public class TransactionForm {
       }
     });
     menu.add(add);
+
+    java.util.List<String> presetNames = State.getInstance().getPresetNames();
+    if (!presetNames.isEmpty()) {
+      JMenu presets = new JMenu(Strings.get("allocation.preset"));
+      JMenu use = new JMenu(Strings.get("use"));
+      for (String name : presetNames) {
+        final String presetName = name;
+        JMenuItem item = new JMenuItem(presetName);
+        item.addActionListener(new ActionListener() {
+          public void actionPerformed(ActionEvent e) {
+            if (transactionChangeHandler != null)
+              transactionChangeHandler.applyPreset(presetName);
+          }
+        });
+        use.add(item);
+      }
+      presets.add(use);
+      menu.add(presets);
+      menu.addSeparator();
+    }
 
     JMenuItem remove = new JMenuItem(Strings.get("delete.allocation"));
     remove.setEnabled(transactionChangeHandler != null && allocationContextRow != null);

@@ -109,6 +109,13 @@ public class CriteriaFactory {
     return retval;
   }
 
+  /** Every allocation preset row in a budget, grouped by name when read in order. */
+  public DetachedCriteria getPresetsForBudget(Budget budget) {
+    return DetachedCriteria.forClass(AllocationPreset.class)
+        .add(Restrictions.eq("budget", budget))
+        .addOrder(Order.asc("name"));
+  }
+
   public Transaction getTransactionById(Integer id) throws AbortException {
     return (Transaction)new HibernatePortal().detachedCriteriaQueryUnique(
         DetachedCriteria.forClass(Transaction.class)

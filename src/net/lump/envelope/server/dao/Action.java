@@ -2,6 +2,7 @@ package net.lump.envelope.server.dao;
 
 import net.lump.envelope.shared.entity.Account;
 import net.lump.envelope.shared.entity.Allocation;
+import net.lump.envelope.shared.entity.AllocationPreset;
 import net.lump.envelope.shared.entity.Budget;
 import net.lump.envelope.shared.entity.Category;
 import net.lump.envelope.shared.entity.Transaction;
@@ -11,7 +12,9 @@ import org.hibernate.Hibernate;
 import org.hibernate.LockMode;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Date;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -152,6 +155,116 @@ public class Action extends DAO {
     getCurrentSession().flush();
 
     delete(transaction);
+  }
+
+  private static final BigDecimal ONE_HUNDRED = new BigDecimal(100);
+
+  /**
+   * What one preset row is worth against a gross amount.
+   *
+   * <p>A percentage is stored as a whole number -- 7.60764626375748 means 7.6% --
+   * and deliberately carried to many places, so the product is taken at full
+   * precision and only the result is brought to the cent.  Money is only ever
+   * pennies; nothing here goes near a float.
+   */
+  private Money valueOf(AllocationPreset preset, Money gross) {
+    if (preset.getAllocationType() == AllocationPreset.AllocationType.fixed)
+      return new Money(preset.getAllocation().setScale(2, RoundingMode.HALF_UP));
+
+    return new Money(gross.toBigDecimal()
+        .multiply(preset.getAllocation())
+        .divide(ONE_HUNDRED, 2, RoundingMode.HALF_UP));
+  }
+
+  /**
+   * Put one amount on the transaction, reusing a row that carries no money before
+   * making a new one.  A transaction is born with a single zero allocation, and
+   * leaving that stranded beside the preset's rows is just litter.
+   */
+  private void place(Transaction transaction, Category category, Money amount,
+                     LinkedList<Allocation> spare) {
+    Allocation allocation;
+    if (spare.isEmpty()) {
+      allocation = new Allocation();
+      allocation.setTransaction(transaction);
+    }
+    else allocation = spare.removeFirst();
+
+    allocation.setCategory(category);
+    allocation.setAmount(amount);
+    getCurrentSession().saveOrUpdate(allocation);
+  }
+
+  /**
+   * Lay a named preset over a transaction, sized against a gross amount.
+   *
+   * <p>Each row contributes one allocation, except an auto-deduct row, which
+   * contributes a pair: the amount in and the same amount straight back out.  That
+   * is what actually happened -- the employee was paid and the money was removed
+   * before it ever arrived -- and recording both halves is what keeps the payment
+   * visible in the category's history while netting to nothing on the account.
+   *
+   * <p>Rows worth nothing are skipped rather than written as $0.00 allocations.
+   *
+   * <p>The result is not expected to balance: the allocations are what the preset
+   * says, and reconciling them against the transaction amount -- usually by
+   * putting the remainder somewhere like Stash or Savings -- is the user's to do,
+   * with the form's imbalance panel showing the gap.
+   *
+   * @param transactionId the transaction to lay the preset over
+   * @param presetName    which preset
+   * @param gross         the amount percentages are taken against
+   *
+   * @return the transaction, with its allocations as they now stand
+   */
+  public Transaction applyAllocationPreset(Integer transactionId, String presetName, Money gross)
+      throws EnvelopeException {
+    Transaction transaction = load(Transaction.class, transactionId);
+
+    @SuppressWarnings("unchecked")
+    List<Allocation> existing = getCurrentSession()
+        .createQuery("from Allocation a where a.transaction.id = :transactionId")
+        .setParameter("transactionId", transactionId)
+        .setLockMode("a", LockMode.PESSIMISTIC_WRITE)
+        .list();
+
+    // a transaction reaches its budget only through its allocations, so that is
+    // the only place the budget can be read from
+    if (existing.isEmpty())
+      throw new EnvelopeException(
+          EnvelopeException.Name.Invalid_Data,
+          "transaction " + transactionId + " has no allocations to take a budget from");
+    Budget budget = existing.get(0).getCategory().getAccount().getBudget();
+
+    @SuppressWarnings("unchecked")
+    List<AllocationPreset> rows = getCurrentSession()
+        .createQuery("from AllocationPreset p where p.budget.id = :budgetId and p.name = :name")
+        .setParameter("budgetId", budget.getId())
+        .setParameter("name", presetName)
+        .list();
+    if (rows.isEmpty())
+      throw new EnvelopeException(
+          EnvelopeException.Name.Invalid_Data,
+          "this budget has no preset called \"" + presetName + "\"");
+
+    LinkedList<Allocation> spare = new LinkedList<Allocation>();
+    for (Allocation a : existing)
+      if (a.getAmount() == null || a.getAmount().compareTo(Money.ZERO) == 0) spare.add(a);
+
+    for (AllocationPreset preset : rows) {
+      Money value = valueOf(preset, gross == null ? Money.ZERO : gross);
+      if (value.compareTo(Money.ZERO) == 0) continue;
+
+      place(transaction, preset.getCategory(), value, spare);
+      if (preset.isAutoDeduct())
+        place(transaction, preset.getCategory(), value.negate(), spare);
+    }
+
+    getCurrentSession().flush();
+    getCurrentSession().refresh(transaction);
+    Hibernate.initialize(transaction);
+    evict(transaction);
+    return transaction;
   }
 
   // ------------------------------------------------------------------------

@@ -53,4 +53,18 @@ public class TransactionPortal extends Portal {
   public void deleteTransaction(Integer transactionId) throws AbortException {
     invoke(new Command(Command.Name.deleteTransaction, null, transactionId));
   }
+
+  /**
+   * Lay a named allocation preset over a transaction, sized against a gross.
+   *
+   * <p>Done in one call rather than one save per row: a preset expands to dozens
+   * of allocations, and they should either all land or none of them should.
+   *
+   * @return the transaction, with its allocations as they now stand
+   */
+  public Transaction applyAllocationPreset(Integer transactionId, String presetName, Money gross)
+      throws AbortException {
+    return (Transaction)invoke(new Command(
+        Command.Name.applyAllocationPreset, null, transactionId, presetName, gross));
+  }
 }

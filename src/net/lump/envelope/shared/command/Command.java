@@ -97,6 +97,7 @@ public class Command implements Serializable {
     createCategory(Dao.Action, Integer.class, String.class),
     renameCategory(Dao.Action, Integer.class, String.class),
     deleteCategory(Dao.Action, Integer.class),
+    applyAllocationPreset(Dao.Action, Integer.class, String.class, Money.class),
 
     // NOTE: bit() is derived from ordinal(), so add new commands at the END --
     // inserting one in the middle renumbers every command after it.

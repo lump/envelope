@@ -475,6 +475,44 @@ public class TransactionChangeHandler {
   }
 
   /**
+   * Lay a named allocation preset over this transaction.
+   *
+   * <p>Done in one call rather than a save per row.  A preset expands to dozens of
+   * allocations -- and to two of them for every auto-deduct row, the amount in and
+   * the same amount straight back out -- so they should either all land or none of
+   * them should.  The server sizes the percentages against the amount showing on
+   * the form, which for a paycheck is the gross.
+   *
+   * <p>What comes back is not expected to balance.  Reconciling the preset against
+   * the transaction amount, usually by putting the remainder somewhere like Stash
+   * or Savings, is the user's to do; the imbalance panel shows the gap.
+   */
+  void applyPreset(final String presetName) {
+    if (editing == null || editing.getId() == null) return;
+    final Money gross = amount;
+
+    StatusRunnable r = new StatusRunnable("Applying preset " + presetName) {
+      @Override public void run() {
+        try {
+          Transaction applied = new TransactionPortal()
+              .applyAllocationPreset(editing.getId(), presetName, gross);
+          // rebuild the form on what came back rather than guessing at it locally
+          importNew(applied, form);
+          setSavedLabel();
+          refreshTotals();
+        } catch (AbortException e) {
+          setSaveFailedLabel();
+        } catch (InvocationTargetException e) {
+          setSaveFailedLabel();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    };
+    ThreadPool.getInstance().execute(r);
+  }
+
+  /**
    * Remove one allocation from this transaction.
    *
    * @param row the row index in the allocations table
