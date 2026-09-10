@@ -3,7 +3,7 @@ package net.lump.envelope.shared.entity;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 
@@ -13,7 +13,7 @@ import java.sql.Timestamp;
  * @author troy
  * @version $Id: AllocationPreset.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
-@javax.persistence.Entity
+@jakarta.persistence.Entity
 @Table(name = "allocation_presets")
 public class AllocationPreset extends Identifiable<Integer, Timestamp> implements Stampable<Timestamp> {
   public static enum AllocationType {
@@ -94,7 +94,7 @@ public class AllocationPreset extends Identifiable<Integer, Timestamp> implement
   }
 
   @Column(name = "type", nullable = false)
-  @Enumerated(value = javax.persistence.EnumType.STRING)
+  @Enumerated(value = jakarta.persistence.EnumType.STRING)
   public AllocationType getAllocationType() {
     return allocationType;
   }

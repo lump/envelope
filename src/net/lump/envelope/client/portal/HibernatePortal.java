@@ -5,7 +5,6 @@ import net.lump.envelope.shared.command.Command;
 import net.lump.envelope.shared.command.OutputListener;
 import net.lump.envelope.shared.entity.Identifiable;
 import net.lump.envelope.shared.exception.AbortException;
-import sun.reflect.generics.scope.ClassScope;
 
 import java.io.Serializable;
 import java.util.List;

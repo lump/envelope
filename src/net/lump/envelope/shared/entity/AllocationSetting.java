@@ -1,6 +1,6 @@
 package net.lump.envelope.shared.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
@@ -11,7 +11,7 @@ import java.text.MessageFormat;
  * @author Troy Bowman
  * @version $Id: AllocationSetting.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
-@javax.persistence.Entity
+@jakarta.persistence.Entity
 @Table(name = "allocation_settings")
 public class AllocationSetting extends Identifiable<Integer, Timestamp> implements Stampable<Timestamp> {
   public static enum AllocationSettingType {
@@ -80,7 +80,7 @@ public class AllocationSetting extends Identifiable<Integer, Timestamp> implemen
   }
 
   @Column(name = "type", nullable = false)
-  @Enumerated(value = javax.persistence.EnumType.STRING)
+  @Enumerated(value = jakarta.persistence.EnumType.STRING)
   public AllocationSettingType getType() {
     return type;
   }

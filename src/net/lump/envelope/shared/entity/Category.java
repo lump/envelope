@@ -5,7 +5,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /**
@@ -18,7 +18,7 @@ import java.sql.Timestamp;
  * @author Troy Bowman
  * @version $Id: Category.java,v 1.3 2009/10/02 22:06:23 troy Exp $
  */
-@javax.persistence.Entity
+@jakarta.persistence.Entity
 @Table(name = "categories")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class Category extends Identifiable<Integer, Timestamp> implements Comparable<Category> {

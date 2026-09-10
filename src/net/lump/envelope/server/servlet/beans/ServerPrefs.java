@@ -2,8 +2,8 @@ package net.lump.envelope.server.servlet.beans;
 
 import net.lump.envelope.server.dao.DAO;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
@@ -49,6 +49,23 @@ public class ServerPrefs {
         if (null == prefs.get((String)key, null)) prefs.put((String)key, config.getProperty((String)key));
       }
 
+      // A system property or environment variable overrides both the stored pref and
+      // the properties file, so a container can be pointed at a database without
+      // rebuilding the war or carrying a java.util.prefs backing store.  For key
+      // "hibernate.connection.url" on DAO that is -DDAO.hibernate.connection.url=...
+      // or DAO_HIBERNATE_CONNECTION_URL=...
+      // ".ok" is normally only set by submitting the /configure form, which a
+      // container cannot do for itself; it is overridable so the stack can come up
+      // unattended.
+      HashSet<String> overridable = new HashSet<String>();
+      for (Object key : config.keySet()) overridable.add((String)key);
+      overridable.add(klass.getSimpleName() + ".ok");
+
+      for (String key : overridable) {
+        String override = lookupOverride(klass, key);
+        if (override != null) prefs.put(key, override);
+      }
+
       configs.put(klass, prefs);
 
       if (!"ok".equals(prefs.get(klass.getSimpleName() + ".ok", null))) configured = false;
@@ -57,6 +74,26 @@ public class ServerPrefs {
     String serverPassword = configs.get(ServerPrefs.class).get("configure.password", null);
     if (serverPassword == null || serverPassword.matches("^\\s*$")) configured = false;
 
+  }
+
+  /**
+   * Find an external override for a config key, system property first, then
+   * environment variable.
+   *
+   * @param klass the config class the key belongs to
+   * @param key   the property name, e.g. "hibernate.connection.url"
+   *
+   * @return the override, or null if neither is set
+   */
+  private static String lookupOverride(Class klass, String key) {
+    String prefix = klass.getSimpleName() + ".";
+    // the ".ok" key already carries the class name, so don't double it up
+    String qualified = key.startsWith(prefix) ? key : prefix + key;
+
+    String value = System.getProperty(qualified);
+    if (value != null) return value;
+
+    return System.getenv(qualified.toUpperCase(Locale.ROOT).replaceAll("[.-]", "_"));
   }
 
   public boolean isConfigured() {

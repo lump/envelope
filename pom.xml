@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>net.lump</groupId>
+  <artifactId>envelope</artifactId>
+  <version>2.0.0-SNAPSHOT</version>
+  <packaging>war</packaging>
+  <name>Envelope Budget</name>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.release>25</maven.compiler.release>
+
+    <!-- 5.6.x is the last Hibernate line that still ships org.hibernate.criterion
+         (DetachedCriteria).  This app serializes DetachedCriteria across the wire as
+         part of its RPC protocol, so moving to Hibernate 6/7 means redesigning the
+         protocol.  The "-jakarta" artifact is the same code republished against
+         jakarta.persistence, which is what lets it sit under Tomcat 10+. -->
+    <hibernate.version>5.6.15.Final</hibernate.version>
+    <!-- Hibernate 5.6 ships byte-buddy 1.12, which cannot read Java 25 class files. -->
+    <bytebuddy.version>1.18.13</bytebuddy.version>
+    <log4j2.version>2.25.5</log4j2.version>
+  </properties>
+
+  <dependencies>
+
+    <!-- ==================== persistence ==================== -->
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-core-jakarta</artifactId>
+      <version>${hibernate.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>net.bytebuddy</groupId>
+      <artifactId>byte-buddy</artifactId>
+      <version>${bytebuddy.version}</version>
+    </dependency>
+
+    <!-- HikariCP replaces c3p0.  hibernate-hikaricp was never republished as
+         "-jakarta", but HikariCPConnectionProvider only implements a hibernate-core
+         SPI that is identical in both builds, so we take the provider class alone and
+         exclude its javax-flavoured hibernate-core. -->
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-hikaricp</artifactId>
+      <version>${hibernate.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.hibernate</groupId>
+          <artifactId>hibernate-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.zaxxer</groupId>
+          <artifactId>HikariCP</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.zaxxer</groupId>
+      <artifactId>HikariCP</artifactId>
+      <version>7.1.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mariadb.jdbc</groupId>
+      <artifactId>mariadb-java-client</artifactId>
+      <version>3.5.10</version>
+    </dependency>
+
+    <!-- ==================== server ==================== -->
+    <!-- provided: Tomcat supplies the servlet API -->
+    <dependency>
+      <groupId>jakarta.servlet</groupId>
+      <artifactId>jakarta.servlet-api</artifactId>
+      <version>6.1.0</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- ==================== client (Swing) ==================== -->
+    <!-- IntelliJ GUI-designer runtime.  The *.form files were already compiled into
+         $$$setupUI$$$ methods in the committed .java, so only the runtime is needed. -->
+    <dependency>
+      <groupId>com.intellij</groupId>
+      <artifactId>forms_rt</artifactId>
+      <version>7.0.3</version>
+    </dependency>
+    <dependency>
+      <groupId>com.toedter</groupId>
+      <artifactId>jcalendar</artifactId>
+      <version>1.4</version>
+    </dependency>
+    <!-- replaces the expired-licence Incors Alloy look-and-feel -->
+    <dependency>
+      <groupId>com.formdev</groupId>
+      <artifactId>flatlaf</artifactId>
+      <version>3.7.2</version>
+    </dependency>
+    <!-- client-side object cache (State, AllocationFormTableModel) -->
+    <dependency>
+      <groupId>net.sf.ehcache</groupId>
+      <artifactId>ehcache</artifactId>
+      <version>2.10.9.2</version>
+    </dependency>
+
+    <!-- ==================== logging ==================== -->
+    <!-- The code calls org.apache.log4j.* directly.  log4j-1.2-api is a Log4j2
+         re-implementation of that package, so no source changes are needed and the
+         CVE-ridden log4j 1.2.15 jar goes away. -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-1.2-api</artifactId>
+      <version>${log4j2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>${log4j2.version}</version>
+    </dependency>
+    <!-- routes Hibernate's slf4j output into the same place -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
+      <version>${log4j2.version}</version>
+    </dependency>
+
+    <!-- ==================== test ==================== -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <!-- the 2007 layout is kept as-is rather than reshuffled into src/main/java -->
+    <sourceDirectory>src</sourceDirectory>
+    <testSourceDirectory>test</testSourceDirectory>
+
+    <resources>
+      <resource>
+        <directory>src</directory>
+        <excludes>
+          <exclude>**/*.java</exclude>
+          <exclude>**/*.form</exclude>
+        </excludes>
+      </resource>
+      <resource>
+        <directory>web/WEB-INF/classes</directory>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.14.0</version>
+        <configuration>
+          <compilerArgs>
+            <arg>-Xlint:unchecked</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-war-plugin</artifactId>
+        <version>3.4.0</version>
+        <configuration>
+          <warName>envelope</warName>
+          <warSourceDirectory>web</warSourceDirectory>
+          <!-- Swing-only jars have no business in the server war -->
+          <packagingExcludes>
+            WEB-INF/lib/flatlaf-*.jar,
+            WEB-INF/lib/jcalendar-*.jar,
+            WEB-INF/lib/forms_rt-*.jar
+          </packagingExcludes>
+        </configuration>
+      </plugin>
+
+      <!-- runnable client: target/envelope-<version>-client.jar -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.7.1</version>
+        <executions>
+          <execution>
+            <id>client-jar</id>
+            <phase>package</phase>
+            <goals><goal>single</goal></goals>
+            <configuration>
+              <finalName>envelope</finalName>
+              <appendAssemblyId>true</appendAssemblyId>
+              <descriptors>
+                <descriptor>src/assembly/client.xml</descriptor>
+              </descriptors>
+              <archive>
+                <manifest>
+                  <mainClass>net.lump.envelope.client.Main</mainClass>
+                </manifest>
+                <manifestEntries>
+                  <Application-Name>Envelope Budget</Application-Name>
+                </manifestEntries>
+              </archive>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.2</version>
+        <configuration>
+          <!-- most of these tests need a live server + database; run them with -DskipTests=false -->
+          <skipTests>${skipTests}</skipTests>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>default-skip-tests</id>
+      <activation><activeByDefault>true</activeByDefault></activation>
+      <properties><skipTests>true</skipTests></properties>
+    </profile>
+  </profiles>
+</project>

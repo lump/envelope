@@ -5,7 +5,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import net.lump.envelope.shared.command.security.Permission;
 import net.lump.lib.util.Encryption;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -20,7 +20,7 @@ import java.text.MessageFormat;
  * @author Troy Bowman
  * @version $Id: User.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
-@javax.persistence.Entity
+@jakarta.persistence.Entity
 @Table(name = "users")
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 public class User extends Identifiable<Integer, Timestamp> {

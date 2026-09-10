@@ -1,6 +1,6 @@
 package net.lump.envelope.shared.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /**
@@ -9,7 +9,7 @@ import java.sql.Timestamp;
  * @author Troy Bowman
  * @version $Id: Budget.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
-@javax.persistence.Entity
+@jakarta.persistence.Entity
 @Table(name = "budgets")
 public class Budget extends Identifiable<Integer, Timestamp> {
   private Integer id;

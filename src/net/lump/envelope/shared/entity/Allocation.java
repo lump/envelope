@@ -3,7 +3,7 @@ package net.lump.envelope.shared.entity;
 import net.lump.lib.Money;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 
@@ -13,7 +13,7 @@ import java.text.MessageFormat;
  * @author Troy Bowman
  * @version $Id: Allocation.java,v 1.5 2010/01/06 06:58:01 troy Exp $
  */
-@javax.persistence.Entity
+@jakarta.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
 @Table(name = "allocations")
 @org.hibernate.annotations.Table(appliesTo = "allocations")

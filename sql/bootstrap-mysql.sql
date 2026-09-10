@@ -247,7 +247,12 @@ create table `users` (
   UNIQUE index `name` (`name`),
   constraint users_budget foreign key (budget) references budgets(id) on update cascade on delete restrict
 )ENGINE=INNODB;
-insert into users values (null, null,0,'admin','Admin Account','$1$INZEtT3S$D81Kp34n4Oea5Rs97lPOq0',7,NULL);
+-- Default accounts.  Passwords are md5-crypt ($1$) hashes produced by the app's
+-- own Crypt class (net.lump.envelope.shared.command.security.Crypt).
+--   admin / envelope
+--   guest / guest
+-- These are the out-of-the-box credentials; change them after first login.
+insert into users values (null, null,0,'admin','Admin Account','$1$Abcd1234$AJbrgGrHdGJ/qrnlrIkPT.',7,NULL);
 update users set id = 0;
 alter table users auto_increment = 0;
 insert into users values (null, null,0,'guest','Guest Account','$1$GOyqcoAk$KTE1zfxeTkoXJTcrFKyFi0',3,NULL);

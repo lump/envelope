@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Builds the runnable Swing client as a single fat jar:
+      target/envelope-client.jar
+
+  The 2007 build produced this by unzipping a hand-picked list of jars into
+  client-classes/ and re-jarring it.  Same idea, but the list is now whatever
+  Maven resolves at runtime scope.
+-->
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
+  <id>client</id>
+  <formats>
+    <format>jar</format>
+  </formats>
+  <includeBaseDirectory>false</includeBaseDirectory>
+
+  <!-- keep META-INF/services entries from every dependency instead of letting the
+       last one win; log4j2 and the JDBC driver both rely on them -->
+  <containerDescriptorHandlers>
+    <containerDescriptorHandler>
+      <handlerName>metaInf-services</handlerName>
+    </containerDescriptorHandler>
+  </containerDescriptorHandlers>
+
+  <dependencySets>
+    <dependencySet>
+      <outputDirectory>/</outputDirectory>
+      <useProjectArtifact>false</useProjectArtifact>
+      <unpack>true</unpack>
+      <scope>runtime</scope>
+      <unpackOptions>
+        <excludes>
+          <!-- other jars' signatures do not survive repacking -->
+          <exclude>META-INF/*.SF</exclude>
+          <exclude>META-INF/*.DSA</exclude>
+          <exclude>META-INF/*.RSA</exclude>
+          <exclude>META-INF/LICENSE*</exclude>
+          <exclude>META-INF/NOTICE*</exclude>
+          <exclude>META-INF/MANIFEST.MF</exclude>
+          <exclude>module-info.class</exclude>
+          <exclude>META-INF/versions/**/module-info.class</exclude>
+        </excludes>
+      </unpackOptions>
+    </dependencySet>
+  </dependencySets>
+
+  <fileSets>
+    <fileSet>
+      <directory>${project.build.outputDirectory}</directory>
+      <outputDirectory>/</outputDirectory>
+      <excludes>
+        <!-- servlet-side classes need the (provided) servlet API, which is not here -->
+        <exclude>net/lump/envelope/server/servlet/**</exclude>
+        <exclude>net/lump/envelope/server/Controller*</exclude>
+      </excludes>
+    </fileSet>
+  </fileSets>
+</assembly>

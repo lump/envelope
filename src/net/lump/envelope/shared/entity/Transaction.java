@@ -4,7 +4,7 @@ import net.lump.lib.Money;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
@@ -16,7 +16,7 @@ import java.util.*;
  * @author Troy Bowman
  * @version $Id: Transaction.java,v 1.3 2010/01/04 06:07:24 troy Exp $
  */
-@javax.persistence.Entity
+@jakarta.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
 @Table(name = "transactions")
 @org.hibernate.annotations.Table(

@@ -6,9 +6,6 @@ import junit.framework.TestCase;
 //import net.ofx.types.SignonRequestMessageSetV1;
 import org.junit.Test;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Marshaller;
-import java.io.FileOutputStream;
 
 //
 // TestBalance

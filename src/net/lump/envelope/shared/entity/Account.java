@@ -5,7 +5,7 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.List;
  * @author Troy Bowman
  * @version $Id: Account.java,v 1.4 2010/07/28 04:25:04 troy Exp $
  */
-@javax.persistence.Entity
+@jakarta.persistence.Entity
 @Table(name = "accounts")
 public class Account extends Identifiable<Integer, Timestamp>
     implements Comparable<Account> {
@@ -91,7 +91,7 @@ public class Account extends Identifiable<Integer, Timestamp>
   }
 
   @Column(name = "type", nullable = false)
-  @Enumerated(value = javax.persistence.EnumType.STRING)
+  @Enumerated(value = jakarta.persistence.EnumType.STRING)
   public AccountType getType() {
     return type;
   }

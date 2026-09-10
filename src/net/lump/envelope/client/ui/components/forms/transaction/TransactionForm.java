@@ -25,7 +25,7 @@ import net.lump.envelope.shared.entity.Transaction;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.Money;
 
-import javax.persistence.Column;
+import jakarta.persistence.Column;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;

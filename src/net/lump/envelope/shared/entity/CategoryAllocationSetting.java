@@ -3,7 +3,7 @@ package net.lump.envelope.shared.entity;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 
@@ -14,7 +14,7 @@ import java.sql.Timestamp;
  * @version $Id: CategoryAllocationSetting.java,v 1.1 2008/02/29 04:18:23 troy
  *          Exp $
  */
-@javax.persistence.Entity
+@jakarta.persistence.Entity
 @Table(name = "categories")
 public class CategoryAllocationSetting extends Identifiable<Integer, Timestamp> {
   public static enum AllocationType {
@@ -126,7 +126,7 @@ public class CategoryAllocationSetting extends Identifiable<Integer, Timestamp> 
    * @see AllocationType
    */
   @Column(name = "allocation_type", nullable = false)
-  @Enumerated(value = javax.persistence.EnumType.STRING)
+  @Enumerated(value = jakarta.persistence.EnumType.STRING)
   public AllocationType getAllocationType() {
     return allocationType;
   }

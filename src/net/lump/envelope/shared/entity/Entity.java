@@ -1,10 +1,10 @@
 package net.lump.envelope.shared.entity;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 import java.sql.Timestamp;
 
 /** An entity to or from which we do transactions with. */
-@javax.persistence.Entity
+@jakarta.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)
 @Table(name = "entities")
 @org.hibernate.annotations.Table(appliesTo = "entities")

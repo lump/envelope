@@ -10,7 +10,7 @@ import static net.lump.envelope.shared.exception.EnvelopeException.Name;
 import static net.lump.envelope.shared.exception.EnvelopeException.Name.Invalid_Session;
 import net.lump.lib.util.Interval;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -174,7 +174,7 @@ public class Controller {
 
     } catch (Exception e) {
       // rollback the transaction if it is active.
-      if (dao != null && dao.getTransaction().isActive() && !dao.getTransaction().wasRolledBack()) {
+      if (dao != null && dao.getTransaction().isActive() && !dao.wasRolledBack()) {
         dao.getTransaction().rollback();
         logger.warn("transaction was rolled back", e);
       }

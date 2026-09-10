@@ -1,49 +1,32 @@
 package net.lump.envelope.client.ui;
 
-import com.apple.eawt.Application;
-import com.apple.eawt.ApplicationAdapter;
-import com.apple.eawt.ApplicationEvent;
 import net.lump.envelope.client.ui.components.forms.preferences.Preferences;
 
+import java.awt.Desktop;
+
 /**
- * This is in its own class to prevent having to ship apple's ui.jar.
+ * macOS menu integration.
+ *
+ * <p>This used to drive com.apple.eawt.Application, which was Apple's own JDK
+ * extension and disappeared with Apple's JDK.  Java 9 absorbed the same three hooks
+ * into {@link java.awt.Desktop}, so this is now plain SE API -- and, unlike the old
+ * version, it is a no-op instead of a crash on platforms that don't support them.
  */
 public class AppleStuff {
 
-  Application application;
-  ApplicationAdapter applicationAdapter;
-
-
   AppleStuff() {
+    if (!Desktop.isDesktopSupported()) return;
+    Desktop desktop = Desktop.getDesktop();
 
-    application = Application.getApplication();
-    application.setEnabledPreferencesMenu(true);
-//    application.setDockIconBadge("Hi");
-
-    applicationAdapter = new com.apple.eawt.ApplicationAdapter() {
-      public void handleAbout(ApplicationEvent e) {
-        MainFrame.getInstance().aboutBox();
-        e.setHandled(true);
-      }
-
-      public void handleOpenApplication(ApplicationEvent e) {
-      }
-
-      public void handleOpenFile(ApplicationEvent e) {
-      }
-
-      public void handlePreferences(ApplicationEvent e) {
-        Preferences.getInstance().setVisible(true);
-      }
-
-      public void handlePrintFile(ApplicationEvent e) {
-      }
-
-      public void handleQuit(ApplicationEvent e) {
-        MainFrame.getInstance().exit(0);
-      }
-    };
-
-    application.addApplicationListener(applicationAdapter);
+    if (desktop.isSupported(Desktop.Action.APP_ABOUT)) {
+      desktop.setAboutHandler(e -> MainFrame.getInstance().aboutBox());
+    }
+    if (desktop.isSupported(Desktop.Action.APP_PREFERENCES)) {
+      desktop.setPreferencesHandler(
+          e -> Preferences.getInstance().setVisible(true));
+    }
+    if (desktop.isSupported(Desktop.Action.APP_QUIT_HANDLER)) {
+      desktop.setQuitHandler((e, response) -> MainFrame.getInstance().exit(0));
+    }
   }
 }

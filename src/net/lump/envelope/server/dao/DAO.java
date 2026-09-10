@@ -9,7 +9,7 @@ import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.cfg.AnnotationConfiguration;
+import org.hibernate.resource.transaction.spi.TransactionStatus;
 import org.hibernate.cfg.Configuration;
 import org.hibernate.criterion.Criterion;
 import org.hibernate.criterion.Order;
@@ -57,9 +57,9 @@ public abstract class DAO {
   public static void initialize(Properties config) {
     if (sessionFactory == null) {
       try {
-        System.getProperties().setProperty(
-            "hibernate.cache.region.factory_class","net.sf.ehcache.hibernate.EhCacheRegionFactory");
-      Configuration c = new AnnotationConfiguration()
+        // The ehcache 2 region factory that used to be forced in here no longer
+        // exists; the second-level cache is configured (off) in DAO.properties now.
+      Configuration c = new Configuration()
           .addAnnotatedClass(Account.class)
           .addAnnotatedClass(Budget.class)
           .addAnnotatedClass(Category.class)
@@ -354,7 +354,7 @@ public abstract class DAO {
    * @return boolean True if the transaction was (unequivocally) committed via this local transaction; false otherwise.
    */
   public boolean wasCommitted() {
-    return getTransaction().wasCommitted();
+    return getTransaction().getStatus() == TransactionStatus.COMMITTED;
   }
 
   /**
@@ -365,18 +365,21 @@ public abstract class DAO {
    * @return boolean True if the transaction was rolled back via this local transaction; false otherwise.
    */
   public boolean wasRolledBack() {
-    return getTransaction().wasRolledBack();
+    TransactionStatus status = getTransaction().getStatus();
+    return status == TransactionStatus.ROLLED_BACK
+           || status == TransactionStatus.MARKED_ROLLBACK
+           || status == TransactionStatus.ROLLING_BACK;
   }
 
   /**
    * End the session by releasing the JDBC connection and cleaning up. It is not strictly necessary to close the session but you
    * must at least disconnect() it.
    *
-   * @return the connection provided by the application or null.
+   * <p>Returned the JDBC connection before Hibernate 5; now void.
    */
-  public Connection close() {
+  public void close() {
     logger.debug("closing session");
-    return getCurrentSession().close();
+    getCurrentSession().close();
   }
 
   /**
@@ -386,11 +389,11 @@ public abstract class DAO {
    * connection was retrieved by Hibernate through its configured org.hibernate.connection.ConnectionProvider has no effect,
    * provided ConnectionReleaseMode.ON_CLOSE is not in effect.
    *
-   * @return the application-supplied connection or null
+   * <p>Returned the application-supplied connection before Hibernate 5; now void.
    */
-  public Connection disconnect() {
+  public void disconnect() {
     logger.debug("disconnecting from jdbc pool");
-    return getCurrentSession().disconnect();
+    getCurrentSession().disconnect();
   }
 
   /**
