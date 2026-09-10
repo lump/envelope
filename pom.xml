@@ -181,7 +181,7 @@
         </configuration>
       </plugin>
 
-      <!-- runnable client: target/envelope-<version>-client.jar -->
+      <!-- runnable fat client: target/envelope-client.jar -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
