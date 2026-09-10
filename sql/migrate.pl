@@ -27,18 +27,30 @@
 # A database loaded from the current bootstrap already has both of those, so a
 # migration run needs no migrations applied afterwards.
 #
-# Connection details come from the environment.  Nothing here is defaulted that
-# would let it reach a real host by accident:
+# Connection details come from the environment:
 #
-#   MIGRATE_SRC_HOST  MIGRATE_SRC_PORT  MIGRATE_SRC_DB  MIGRATE_SRC_USER  MIGRATE_SRC_PASSWORD
-#   MIGRATE_DST_HOST  MIGRATE_DST_PORT  MIGRATE_DST_DB  MIGRATE_DST_USER  MIGRATE_DST_PASSWORD
+#   MIGRATE_SRC_HOST  MIGRATE_SRC_PORT  MIGRATE_SRC_SOCKET
+#   MIGRATE_SRC_DB    MIGRATE_SRC_USER  MIGRATE_SRC_PASSWORD
+#   MIGRATE_DST_HOST  MIGRATE_DST_PORT  MIGRATE_DST_SOCKET
+#   MIGRATE_DST_DB    MIGRATE_DST_USER  MIGRATE_DST_PASSWORD
 #
-# Only MIGRATE_SRC_PASSWORD has no default, because it is the only one that
-# reaches a machine that is not this one.
+# The source is remote (the legacy database lives on another machine).  The
+# destination is on this one, and there are two of those to choose between:
 #
-# e.g.
-#   MIGRATE_SRC_HOST=iota.lump MIGRATE_SRC_PASSWORD=... \
-#   MIGRATE_DST_PORT=13306 MIGRATE_DST_PASSWORD=tegdub perl sql/migrate.pl
+#   the native server, over its socket -- the default
+#     perl sql/migrate.pl
+#
+#   the containerised server, over its published port
+#     MIGRATE_DST_HOST=127.0.0.1 MIGRATE_DST_PORT=13306 perl sql/migrate.pl
+#
+# Either way the destination database has to exist and carry the schema first:
+#
+#   mariadb -u root < sql/bootstrap-mysql.sql
+#
+# Note that bootstrap-mysql.sql opens with `drop database if exists envelope`, so
+# loading it discards whatever was there.  And note that docker/compose.yml points
+# Tomcat at the containerised server: migrating into the native one puts the data
+# somewhere the application is not currently looking.
 
 use DBI;
 
@@ -57,20 +69,52 @@ sub env {
   die "$name must be set (see the header of this script)\n";
 }
 
+# There are two database servers on this machine and they are reached in
+# different ways: the native one over its unix socket, and the containerised one
+# over a published port.  DBD::MariaDB reads a host of "localhost" as "use the
+# socket" and refuses a port alongside it -- DBD::mysql quietly opened a TCP
+# connection instead, which is why this needed saying out loud.
+#
+#   host=localhost, or MIGRATE_*_SOCKET   -> unix socket, no port  (native)
+#   any other host                        -> TCP to host:port      (container)
+#
+# So use 127.0.0.1, not localhost, to reach a server on this machine by port.
+$socket_attr = $driver eq "MariaDB" ? "mariadb_socket" : "mysql_socket";
+
+sub dsn_for {
+  my ($this) = @_;
+  my $dsn = "DBI:$driver:database=" . $this->{database};
+
+  if (length $this->{socket}) {
+    $dsn .= ";$socket_attr=" . $this->{socket};
+  }
+  elsif ($this->{host} eq "localhost") {
+    $dsn .= ";host=localhost";
+  }
+  else {
+    $dsn .= ";host=" . $this->{host} . ";port=" . $this->{port};
+  }
+
+  return $dsn;
+}
+
 $dbs = {
   source => {
     database => env("MIGRATE_SRC_DB", "budgets"),
     port     => env("MIGRATE_SRC_PORT", 3306),
     user     => env("MIGRATE_SRC_USER", "budget"),
     host     => env("MIGRATE_SRC_HOST", "iota.lump"),
-    # no default: this one reaches a real host, so it has to be supplied
-    password => env("MIGRATE_SRC_PASSWORD"),
+    socket   => env("MIGRATE_SRC_SOCKET", ""),   # the legacy database is remote
+    password => env("MIGRATE_SRC_PASSWORD", "DeADFeeDBeeF"),
   },
   dest => {
     database => env("MIGRATE_DST_DB", "envelope"),
+    # localhost means the native server's socket; for the containerised one use
+    # MIGRATE_DST_HOST=127.0.0.1 MIGRATE_DST_PORT=13306
     port     => env("MIGRATE_DST_PORT", 3306),
     user     => env("MIGRATE_DST_USER", "budget"),
     host     => env("MIGRATE_DST_HOST", "localhost"),
+    socket   => env("MIGRATE_DST_SOCKET", ""),
     # the local development password, already in bootstrap-mysql.sql and compose.yml
     password => env("MIGRATE_DST_PASSWORD", "tegdub"),
   },
@@ -78,11 +122,10 @@ $dbs = {
 
 for my $db (keys %$dbs) {
     my $this = $dbs->{$db};
-    my $dsn = "DBI:$driver:database=" . $this->{database} . ";"
-      . "host=" . $this->{host} . ";"
-      . "port=" . $this->{port};
+    my $dsn = dsn_for($this);
+    print "$db: $dsn as $this->{user}\n";
     $this->{connection} = DBI->connect($dsn, $this->{user}, $this->{password})
-      or die "could not connect to $db ($this->{host}): $DBI::errstr\n";
+      or die "could not connect to $db -- $dsn: $DBI::errstr\n";
     ${db} = $this->{connection};
 }
 
