@@ -28,7 +28,7 @@ create table accounts (
   `type` enum('Debit','Credit','Loan') not null default 'Debit',
   `rate` double not null default 0.0,
   `ceiling` double not null default 0.0,
-  unique index name_type (`name`,`type`),
+  unique index budget_name (`budget`,`name`),
   constraint accounts_budget foreign key (budget) references budgets(id) ON UPDATE CASCADE ON DELETE RESTRICT
 )ENGINE=INNODB;
 insert into accounts values (0, null, 0, 'Guest''s Checking','Debit', '0.0', '0.0');
