@@ -84,6 +84,8 @@ public class TransactionForm {
   private CompletingComboBox<Category> categoriesComboBox = new CompletingComboBox<Category>(true);
   private MoneyTextField moneyEditor = new MoneyTextField();
   private TransactionChangeHandler transactionChangeHandler;
+  /** row the allocation popup and the Delete key act on; -1 when off any row */
+  private int allocationContextRow = -1;
 
   private BlockingQueue<StatusRunnable> updateQueue = new LinkedBlockingQueue<StatusRunnable>();
   ChangeableDateChooser changeableDateChooser;
@@ -168,6 +170,37 @@ public class TransactionForm {
     allocationsTable.setRowSelectionAllowed(false);
     allocationsTable.setColumnSelectionAllowed(false);
     allocationsTable.setCellSelectionEnabled(false);
+
+    // --- adding and removing allocation rows ------------------------------
+    // This table has row selection switched off, so there is no "selected row" to
+    // act on; both affordances anchor on the row under the pointer, remembered on
+    // every press (which includes the press that raises the popup).
+    allocationsTable.addMouseListener(new MouseAdapter() {
+      @Override public void mousePressed(MouseEvent e) {
+        allocationContextRow = allocationsTable.rowAtPoint(e.getPoint());
+        showMenuIfTriggered(e);
+      }
+      @Override public void mouseReleased(MouseEvent e) { showMenuIfTriggered(e); }
+      private void showMenuIfTriggered(MouseEvent e) {
+        // the popup trigger is press on some platforms and release on others
+        if (e.isPopupTrigger()) {
+          allocationContextRow = allocationsTable.rowAtPoint(e.getPoint());
+          allocationRowMenu().show(allocationsTable, e.getX(), e.getY());
+        }
+      }
+    });
+
+    // WHEN_FOCUSED, so this only fires while the table itself holds focus.  With a
+    // cell editor open the editor has focus instead and Delete still edits text,
+    // which is why this is not bound at the ancestor level.
+    Action deleteRow = new AbstractAction() {
+      public void actionPerformed(ActionEvent e) { deleteAllocationRow(); }
+    };
+    allocationsTable.getInputMap(JComponent.WHEN_FOCUSED)
+        .put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "deleteAllocationRow");
+    allocationsTable.getInputMap(JComponent.WHEN_FOCUSED)
+        .put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "deleteAllocationRow");
+    allocationsTable.getActionMap().put("deleteAllocationRow", deleteRow);
 //    allocationsTable.getActionMap()
     allocationsTable.getActionMap().put(KeyStroke.getKeyStroke("DOWN"), allocationsTable.getActionMap().get("selectNextRow"));
     allocationsTable.getActionMap().put(KeyStroke.getKeyStroke("UP"), allocationsTable.getActionMap().get("selectPreviousRow"));
@@ -709,6 +742,37 @@ public class TransactionForm {
 
   public AllocationFormTableModel getTableModel() {
     return tableModel;
+  }
+
+  /** Right-click menu for the allocations table: add a row, or remove this one. */
+  private JPopupMenu allocationRowMenu() {
+    JPopupMenu menu = new JPopupMenu();
+
+    JMenuItem add = new JMenuItem(Strings.get("add.allocation"));
+    add.setEnabled(transactionChangeHandler != null);
+    add.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        if (transactionChangeHandler != null) transactionChangeHandler.addAllocation();
+      }
+    });
+    menu.add(add);
+
+    JMenuItem remove = new JMenuItem(Strings.get("delete.allocation"));
+    remove.setEnabled(transactionChangeHandler != null && allocationContextRow >= 0);
+    remove.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) { deleteAllocationRow(); }
+    });
+    menu.add(remove);
+
+    return menu;
+  }
+
+  /** Remove the row the pointer was last over, committing any open editor first. */
+  private void deleteAllocationRow() {
+    if (transactionChangeHandler == null || allocationContextRow < 0) return;
+    if (allocationsTable.isEditing() && allocationsTable.getCellEditor() != null)
+      allocationsTable.getCellEditor().stopCellEditing();
+    transactionChangeHandler.deleteAllocation(allocationContextRow);
   }
 
 

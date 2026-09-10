@@ -84,7 +84,10 @@ public class Command implements Serializable {
 
     // transaction
     updateReconciled(Dao.Action, Integer.class, Boolean.class),
+    deleteAllocation(Dao.Action, Integer.class),
 
+    // NOTE: bit() is derived from ordinal(), so add new commands at the END --
+    // inserting one in the middle renumbers every command after it.
     //more command definitions here...
     ;
 

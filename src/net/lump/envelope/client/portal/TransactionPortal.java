@@ -16,4 +16,14 @@ public class TransactionPortal extends Portal {
       throws AbortException {
     invoke(new Command(Command.Name.updateReconciled, null, transactionId, reconciled));
   }
+
+  /**
+   * Remove one Allocation.  The server refuses to remove a transaction's last
+   * allocation, so this can fail for a reason the caller should surface.
+   *
+   * @param allocationId the id of the Allocation to remove
+   */
+  public void deleteAllocation(Integer allocationId) throws AbortException {
+    invoke(new Command(Command.Name.deleteAllocation, null, allocationId));
+  }
 }

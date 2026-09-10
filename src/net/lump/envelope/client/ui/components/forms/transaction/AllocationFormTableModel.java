@@ -245,4 +245,41 @@ public class AllocationFormTableModel extends AbstractTableModel {
     fireTableRowsInserted(allocations.size()-1, allocations.size()-1);
   }
 
+  /**
+   * Drop one row.  The caller is responsible for having removed it from the
+   * database first -- this only updates what is on screen.
+   *
+   * <p>Takes the Allocation rather than a row index because the delete round trip
+   * is asynchronous and rows may have shifted by the time it returns, and matches
+   * on identity because Allocation.equals is not dependable for this (it compares
+   * the parent Transaction, and two rows can compare equal).
+   *
+   * @param allocation the row to remove
+   */
+  public void removeRow(Allocation allocation) {
+    if (allocations == null) return;
+    for (int i = 0; i < allocations.size(); i++)
+      if (allocations.get(i) == allocation) {
+        allocations.remove(i);
+        fireTableRowsDeleted(i, i);
+        return;
+      }
+  }
+
+  /**
+   * The Category to start a newly added row on.  Both category and amount are NOT
+   * NULL in the database, so a new row has to be born valid; the last row's
+   * category keeps the new one in the same account, which is nearly always what
+   * is wanted when splitting a transaction.
+   *
+   * @return a Category, or null if there is nothing to copy from
+   */
+  public Category defaultCategory() {
+    if (allocations == null) return null;
+    for (int i = allocations.size() - 1; i >= 0; i--)
+      if (allocations.get(i).getCategory() != null)
+        return allocations.get(i).getCategory();
+    return null;
+  }
+
 }

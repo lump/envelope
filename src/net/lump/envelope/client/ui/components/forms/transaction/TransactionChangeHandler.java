@@ -2,6 +2,7 @@ package net.lump.envelope.client.ui.components.forms.transaction;
 
 import net.lump.envelope.client.State;
 import net.lump.envelope.client.portal.HibernatePortal;
+import net.lump.envelope.client.portal.TransactionPortal;
 import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.thread.ThreadPool;
 import net.lump.envelope.client.ui.components.Hierarchy;
@@ -22,6 +23,8 @@ import java.sql.Date;
 import java.text.DateFormat;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 /**
  * @author troy
@@ -30,6 +33,15 @@ import java.util.Comparator;
 public class TransactionChangeHandler {
 
   final LimitedStack<Transaction> changeHistory = new LimitedStack<Transaction>();
+
+  /**
+   * Allocations with a save in flight, each mapped to whether it was edited again
+   * while that save was running.  Keyed by identity, because Allocation.equals
+   * compares the parent Transaction and two rows can compare equal.
+   */
+  private final Map<Allocation, Boolean> savesInFlight =
+      new IdentityHashMap<Allocation, Boolean>();
+
   private Transaction pristine;
   private Transaction editing;
   private Money amount;
@@ -317,17 +329,109 @@ public class TransactionChangeHandler {
    * and Category, which is why saving the Allocation on its own works.
    */
   void sendAllocationChange(final Allocation allocation) {
-    // rows that were never saved have no id yet; adding them is separate work
-    if (allocation.getId() == null) return;
+    // Category and amount are both NOT NULL, so a row that has not been filled in
+    // cannot be written yet; it saves as soon as it has both.
+    if (allocation.getCategory() == null || allocation.getAmount() == null) return;
 
-    StatusRunnable r = new StatusRunnable("Updating allocation " + allocation.getId()) {
+    // One save per row at a time.  The pool is (0, MAX_VALUE) over a
+    // SynchronousQueue, so every task starts at once and nothing would otherwise
+    // stop two edits of a row that has no id yet from both inserting it.
+    synchronized (savesInFlight) {
+      if (savesInFlight.containsKey(allocation)) {
+        savesInFlight.put(allocation, Boolean.TRUE);   // re-send once this lands
+        return;
+      }
+      savesInFlight.put(allocation, Boolean.FALSE);
+    }
+
+    final boolean insert = allocation.getId() == null;
+    StatusRunnable r = new StatusRunnable(insert
+        ? "Adding allocation to transaction " + editing.getId()
+        : "Updating allocation " + allocation.getId()) {
       @Override public void run() {
+        boolean saved_ok = false;
         try {
           Allocation saved = new HibernatePortal().saveOrUpdate(allocation);
-          // Take the new version stamp forward, or the next edit of this same row
-          // is refused as stale.  Only the stamp is copied: keeping our own object
-          // leaves the form's graph (and the table model's list) intact.
+          // On an insert this is where the generated id arrives; on an update, the
+          // new version stamp.  Carrying both forward is what stops the next edit
+          // of this row from inserting a duplicate or being refused as stale.
+          // Only these two fields are copied: keeping our own object leaves the
+          // form's graph (and the table model's list) intact.
+          allocation.setId(saved.getId());
           allocation.setStamp(saved.getStamp());
+          saved_ok = true;
+          setSavedLabel();
+          refreshTotals();
+        } catch (AbortException e) {
+          setSaveFailedLabel();
+        } finally {
+          boolean editedWhileSaving;
+          synchronized (savesInFlight) {
+            editedWhileSaving = Boolean.TRUE.equals(savesInFlight.remove(allocation));
+          }
+          // Only chase a change that arrived mid-save if this one worked.  After a
+          // failure the row is out of step with the database, and re-sending the
+          // same object would just fail the same way.
+          if (editedWhileSaving && saved_ok) sendAllocationChange(allocation);
+        }
+      }
+    };
+    ThreadPool.getInstance().execute(r);
+  }
+
+  /**
+   * Append a new allocation to this transaction and write it out.
+   *
+   * <p>The row is born valid rather than blank -- both of its columns are NOT NULL
+   * -- so it inserts immediately and has an id by the time the user types into it.
+   * Saving the Allocation is also what carries the association: its @ManyToOne
+   * cascades reach the Transaction and Category, while the Transaction's own
+   * collection would carry nothing.
+   */
+  void addAllocation() {
+    Category category = form.getTableModel().defaultCategory();
+    if (category == null) return;   // nothing to copy an account from
+
+    Allocation allocation = new Allocation();
+    allocation.setTransaction(editing);
+    allocation.setCategory(category);
+    allocation.setAmount(Money.ZERO);
+
+    // the model's list IS editing.getAllocations(), so this adds to both
+    form.getTableModel().addEmptyRow(allocation);
+    sendAllocationChange(allocation);
+  }
+
+  /**
+   * Remove one allocation from this transaction.
+   *
+   * @param row the row index in the allocations table
+   */
+  void deleteAllocation(int row) {
+    java.util.List<Allocation> rows = form.getTableModel().getAllocations();
+    if (rows == null || row < 0 || row >= rows.size()) return;
+    final Allocation allocation = rows.get(row);
+
+    // The server enforces this as well -- it must, since nothing stops another
+    // client -- but refusing here saves a round trip and gives a better reason.
+    if (rows.size() <= 1) {
+      JOptionPane.showMessageDialog(
+          form.getTransactionFormPanel(),
+          Strings.get("error.last.allocation"),
+          Strings.get("error"),
+          JOptionPane.ERROR_MESSAGE);
+      return;
+    }
+
+    StatusRunnable r = new StatusRunnable("Deleting allocation " + allocation.getId()) {
+      @Override public void run() {
+        try {
+          // a row that was never written has nothing to delete server-side
+          if (allocation.getId() != null)
+            new TransactionPortal().deleteAllocation(allocation.getId());
+          SwingUtilities.invokeLater(new Runnable() {
+            public void run() { form.getTableModel().removeRow(allocation); }
+          });
           setSavedLabel();
           refreshTotals();
         } catch (AbortException e) {
@@ -355,9 +459,16 @@ public class TransactionChangeHandler {
     }
   }
 
+  /**
+   * Both label helpers hop to the EDT: every caller runs on the thread pool, and
+   * Swing components may only be touched from the event thread.
+   */
   private void setSavedLabel() {
     DateFormat df = DateFormat.getTimeInstance();
-    form.setSaveStateLabel(Strings.get("saved.at") + " " + df.format(new java.util.Date()));
+    final String text = Strings.get("saved.at") + " " + df.format(new java.util.Date());
+    SwingUtilities.invokeLater(new Runnable() {
+      public void run() { form.setSaveStateLabel(text); }
+    });
   }
 
   /**
@@ -366,6 +477,8 @@ public class TransactionChangeHandler {
    * "Save Pending" and quietly claim the write is still coming.
    */
   private void setSaveFailedLabel() {
-    form.setSaveStateLabel(Strings.get("save.failed"));
+    SwingUtilities.invokeLater(new Runnable() {
+      public void run() { form.setSaveStateLabel(Strings.get("save.failed")); }
+    });
   }
 }

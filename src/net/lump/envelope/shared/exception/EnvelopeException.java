@@ -24,7 +24,10 @@ public class EnvelopeException extends RemoteException {
     Invalid_Session(Type.Session),
     Invalid_User(Type.Session),
     Internal_Server_Error(Type.Server),
-    Invalid_Command(Type.Command);
+    Invalid_Command(Type.Command),
+    // a request the server understood but refuses because it would leave the
+    // data inconsistent; Portal shows these to the user as a plain error
+    Invalid_Data(Type.Data);
 
     private Type type;
     private Name(Type type) {
