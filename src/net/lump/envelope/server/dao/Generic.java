@@ -15,6 +15,10 @@ public class Generic extends DAO {
   @Override
   public <T extends Identifiable> T get(Class<T> t, Serializable id) {
     T obj = super.get(t, id);
+    // Session.get answers null for a row that is not there, which is an ordinary
+    // answer and not an error -- but both initialize() and evict() throw on null,
+    // so asking for a deleted id used to come back as a NullPointerException.
+    if (obj == null) return null;
     Hibernate.initialize(obj);
     super.evict(obj);
     return obj;

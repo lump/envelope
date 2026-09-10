@@ -5,17 +5,29 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
+import net.lump.envelope.client.CriteriaFactory;
+import net.lump.envelope.client.portal.TransactionPortal;
+import net.lump.envelope.client.thread.StatusRunnable;
+import net.lump.envelope.client.thread.ThreadPool;
+import net.lump.envelope.client.ui.MainFrame;
+import net.lump.envelope.client.ui.components.Hierarchy;
 import net.lump.envelope.client.ui.components.TransactionTableModel;
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.client.ui.images.ImageResource;
+import net.lump.envelope.shared.entity.Transaction;
+import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.Money;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.text.MessageFormat;
 import java.util.Date;
 import java.util.ResourceBundle;
 
@@ -50,6 +62,21 @@ public class TableQueryBar {
     table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
     table.getTableHeader().setReorderingAllowed(false);
     table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+
+    // --- creating and removing transactions -------------------------------
+    // Unlike the allocations table this one does have row selection, so the
+    // right-click selects the row under the pointer and Delete acts on it.
+    table.addMouseListener(new MouseAdapter() {
+      @Override public void mousePressed(MouseEvent e) { showMenuIfTriggered(e); }
+      @Override public void mouseReleased(MouseEvent e) { showMenuIfTriggered(e); }
+      private void showMenuIfTriggered(MouseEvent e) {
+        // the popup trigger is press on some platforms and release on others
+        if (!e.isPopupTrigger()) return;
+        int row = table.rowAtPoint(e.getPoint());
+        if (row >= 0) table.setRowSelectionInterval(row, row);
+        transactionMenu(row >= 0).show(table, e.getX(), e.getY());
+      }
+    });
 
     table.addKeyListener(new KeyListener() {
       public void keyTyped(KeyEvent e) {
@@ -172,6 +199,120 @@ public class TableQueryBar {
 
   public void setOutboxLabel(String inboxLabel) {
     outBoxLabel.setText(inboxLabel);
+  }
+
+  /** Right-click menu for the transaction list. */
+  private JPopupMenu transactionMenu(boolean onRow) {
+    JPopupMenu menu = new JPopupMenu();
+
+    JMenuItem create = new JMenuItem(Strings.get("new.transaction"));
+    create.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) { newTransaction(); }
+    });
+    menu.add(create);
+
+    JMenuItem remove = new JMenuItem(Strings.get("delete.transaction"));
+    remove.setEnabled(onRow);
+    remove.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) { deleteTransaction(); }
+    });
+    menu.add(remove);
+
+    return menu;
+  }
+
+  /**
+   * The category a new transaction's first allocation lands in, taken from the
+   * tree selection: a category node names one outright, an account node falls back
+   * to its first category.  Null when the selection implies none.
+   */
+  private Integer categoryForNewTransaction() throws AbortException {
+    Object node = Hierarchy.getInstance().getLastSelectedPathComponent();
+    Object selected = (node instanceof DefaultMutableTreeNode)
+        ? ((DefaultMutableTreeNode)node).getUserObject() : null;
+
+    // AccountTotal extends CategoryTotal, so the narrower test has to come first
+    if (selected instanceof Hierarchy.AccountTotal) {
+      java.util.List<Hierarchy.CategoryTotal> categories = CriteriaFactory.getInstance()
+          .getCategoriesForAccount(((Hierarchy.AccountTotal)selected).account);
+      return (categories == null || categories.isEmpty()) ? null : categories.get(0).id;
+    }
+    if (selected instanceof Hierarchy.CategoryTotal)
+      return ((Hierarchy.CategoryTotal)selected).id;
+    return null;
+  }
+
+  /**
+   * Create a transaction in the selected category and open it for editing.
+   *
+   * <p>It is born as a dated, zero-amount stub rather than sitting behind an entry
+   * dialog, because every field on the transaction form already saves as it is
+   * edited -- the form is the entry screen.  The server makes the transaction and
+   * its first allocation together; one without allocations would be a row no query
+   * could find.
+   */
+  private void newTransaction() {
+    ThreadPool.getInstance().execute(new StatusRunnable("Creating transaction") {
+      public void run() {
+        try {
+          Integer categoryId = categoryForNewTransaction();
+          if (categoryId == null) {
+            SwingUtilities.invokeLater(new Runnable() {
+              public void run() {
+                JOptionPane.showMessageDialog(tableQueryPanel,
+                    Strings.get("error.no.category.selected"),
+                    Strings.get("error"), JOptionPane.ERROR_MESSAGE);
+              }
+            });
+            return;
+          }
+
+          final Transaction created = new TransactionPortal().createTransaction(
+              categoryId, new java.sql.Date(System.currentTimeMillis()),
+              "", "", Money.ZERO);
+
+          SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+              // the refresh button's listener re-queries this table for the
+              // current tree node and refreshes the tree totals with it
+              refreshButton.doClick();
+              MainFrame.getInstance().setTransactionViewShowing(true);
+              MainFrame.getInstance().getTransactionForm().loadTransactionForId(created.getId());
+            }
+          });
+        } catch (AbortException e) {
+          // Portal has already put the reason in front of the user
+        }
+      }
+    });
+  }
+
+  /** Delete the selected transaction, and with it every allocation on it. */
+  private void deleteTransaction() {
+    int row = table.getSelectedRow();
+    if (row < 0 || !(table.getModel() instanceof TransactionTableModel)) return;
+    final Integer id = ((TransactionTableModel)table.getModel()).getTransactionId(row);
+    if (id == null) return;
+
+    if (JOptionPane.showConfirmDialog(
+        tableQueryPanel,
+        MessageFormat.format(Strings.get("confirm.delete.transaction"), id),
+        Strings.get("delete.transaction"),
+        JOptionPane.YES_NO_OPTION,
+        JOptionPane.WARNING_MESSAGE) != JOptionPane.YES_OPTION) return;
+
+    ThreadPool.getInstance().execute(new StatusRunnable("Deleting transaction " + id) {
+      public void run() {
+        try {
+          new TransactionPortal().deleteTransaction(id);
+          SwingUtilities.invokeLater(new Runnable() {
+            public void run() { refreshButton.doClick(); }
+          });
+        } catch (AbortException e) {
+          // Portal has already put the reason in front of the user
+        }
+      }
+    });
   }
 
   public JTable getTable() {

@@ -1,7 +1,11 @@
 package net.lump.envelope.client.portal;
 
 import net.lump.envelope.shared.command.Command;
+import net.lump.envelope.shared.entity.Transaction;
 import net.lump.envelope.shared.exception.AbortException;
+import net.lump.lib.Money;
+
+import java.sql.Date;
 
 /**
  * Transaction Methods.
@@ -25,5 +29,28 @@ public class TransactionPortal extends Portal {
    */
   public void deleteAllocation(Integer allocationId) throws AbortException {
     invoke(new Command(Command.Name.deleteAllocation, null, allocationId));
+  }
+
+  /**
+   * Create a transaction and its first allocation in one server-side transaction.
+   * A transaction is reachable only through its allocations, so it is never made
+   * on its own.
+   *
+   * @return the new Transaction, with its allocation already loaded
+   */
+  public Transaction createTransaction(Integer categoryId, Date date, String entity,
+                                       String description, Money amount)
+      throws AbortException {
+    return (Transaction)invoke(new Command(
+        Command.Name.createTransaction, null, categoryId, date, entity, description, amount));
+  }
+
+  /**
+   * Delete a transaction and every allocation on it.
+   *
+   * @param transactionId the transaction to remove
+   */
+  public void deleteTransaction(Integer transactionId) throws AbortException {
+    invoke(new Command(Command.Name.deleteTransaction, null, transactionId));
   }
 }

@@ -58,7 +58,12 @@ association — so no insert verb was needed. Delete is a bespoke
 entity": nothing on the server checks whose budget a command touches, so a generic delete
 verb would hand every authenticated caller the ability to remove any row of any type.
 `Action.deleteAllocation` refuses to remove a transaction's **last** allocation, because a
-transaction reaches its budget only through them. That guard counts the siblings with a
+transaction reaches its budget only through them. For the same reason
+`Action.createTransaction` makes the transaction and its first allocation in one
+server-side transaction — a transaction saved on its own, even for the gap between two round
+trips, is a row no query can find — and `Action.deleteTransaction` clears the allocations
+first, in that same database transaction, because their foreign key is `ON DELETE RESTRICT`
+and the inverse side carries no cascade. That guard counts the siblings with a
 **locking** read (`setLockMode(… PESSIMISTIC_WRITE)`): check-then-delete is otherwise three
 separate statements, deleting a child never touches the parent's `@Version` so optimistic
 locking offers nothing, and under `REPEATABLE READ` a plain `SELECT` would answer from the
@@ -157,6 +162,11 @@ at the `/configure` form waiting for a human.
   succeeds and the second is refused with `StaleObjectStateException` — every entity editable
   exactly once per load. `sql/migrations/001-version-stamp-precision.sql` moved the live tables
   to `timestamp(3)`; keep any new versioned table at `timestamp(3)` too.
+- **A new transaction is dated today, and the list is date-filtered.** "New Transaction"
+  (right-click the transaction list) creates a zero-amount stub in the selected category and
+  opens it on the form, which is the entry screen — every field saves as it is edited. But
+  `TableQueryBar`'s begin/end date choosers filter the list, so if the range excludes today the
+  new row will not appear in it even though the form is editing it.
 - **Ids are `IDENTITY`, not `AUTO`.** Every table is `auto_increment`, but the entities were
   annotated `@GeneratedValue(strategy = AUTO)`, which under Hibernate 5 resolves to a
   *sequence* and fails with `Unknown SEQUENCE: 'hibernate_sequence'`. That went unnoticed for

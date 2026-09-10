@@ -2,10 +2,12 @@ package net.lump.envelope.shared.command;
 
 import org.hibernate.criterion.DetachedCriteria;
 import net.lump.envelope.shared.entity.Identifiable;
+import net.lump.lib.Money;
 
 import javax.swing.event.EventListenerList;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.sql.Date;
 import java.math.BigInteger;
 import java.security.*;
 import java.util.ArrayList;
@@ -85,6 +87,8 @@ public class Command implements Serializable {
     // transaction
     updateReconciled(Dao.Action, Integer.class, Boolean.class),
     deleteAllocation(Dao.Action, Integer.class),
+    createTransaction(Dao.Action, Integer.class, Date.class, String.class, String.class, Money.class),
+    deleteTransaction(Dao.Action, Integer.class),
 
     // NOTE: bit() is derived from ordinal(), so add new commands at the END --
     // inserting one in the middle renumbers every command after it.
