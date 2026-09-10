@@ -45,7 +45,7 @@ public class Command implements Serializable {
     ping(false, Dao.Security),
     authedPing(Dao.Security),
     getChallenge(false, Dao.Security, String.class, PublicKey.class),
-    authChallengeResponse(false, Dao.Security, String.class, byte[].class),
+    authChallengeResponse(false, Dao.Security, String.class, byte[].class, PublicKey.class),
     getServerPublicKey(false, Dao.Security),
 
     // generic

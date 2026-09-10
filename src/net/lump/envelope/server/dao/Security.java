@@ -66,7 +66,7 @@ public class Security extends DAO {
   public Boolean ping() { return true; }
 
   public Boolean authChallengeResponse(String username,
-    byte[] challengeResponse)
+    byte[] challengeResponse, PublicKey publicKey)
     throws BadPaddingException, NoSuchAlgorithmException, IOException,
     IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException {
     Boolean authed;
@@ -79,6 +79,11 @@ public class Security extends DAO {
 
     if (hash.equals(user.getCryptPassword())) {
       authed = true;
+      // the credential is proven, so this key can now be trusted and stored
+      user.setPublicKey(publicKey);
+      update(user);
+      flush();
+      commit();
       logger.info("password for \"" + username + "\" successfully verfied");
     } else {
       logger.warn("password for \"" + username + "\" FAILED");
@@ -118,13 +123,11 @@ public class Security extends DAO {
 
     User user = getUser(username);
 
-    // set the new public key
-    user.setPublicKey(publicKey);
-
-    // save it off
-    update(user);
-    flush();
-    commit();
+    // The caller-supplied public key is deliberately NOT persisted here.
+    // getChallenge is session-not-required, so anyone may call it; writing the
+    // key before the password has been proven let an unauthenticated caller
+    // overwrite the very key validateSession() trusts.  The key travels on to
+    // authChallengeResponse() and is stored only once the credential checks out.
 
     return new Challenge(
       serverKeyPair.getPublic(),

@@ -33,7 +33,8 @@ public class SecurityPortal extends Portal {
 
   public Boolean auth(byte[] challengeResponse) throws AbortException {
     LoginSettings ls = LoginSettings.getInstance();
-    return (Boolean)rawInvoke(new Command(Command.Name.authChallengeResponse, null, ls.getUsername(), challengeResponse));
+    return (Boolean)rawInvoke(new Command(
+      Command.Name.authChallengeResponse, null, ls.getUsername(), challengeResponse, ls.getKeyPair().getPublic()));
   }
 
   public Boolean rawPing() throws AbortException {
