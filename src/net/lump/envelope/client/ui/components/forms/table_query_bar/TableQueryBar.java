@@ -27,8 +27,11 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.text.MessageFormat;
 import java.util.Date;
+import java.util.prefs.Preferences;
 import java.util.ResourceBundle;
 
 public class TableQueryBar {
@@ -142,6 +145,14 @@ public class TableQueryBar {
     beginDate.getDateEditor().getUiComponent().addKeyListener(refreshKeyListener);
     endDate.getDateEditor().getUiComponent().addKeyListener(refreshKeyListener);
 
+    // remember the window as it is changed, so it survives a restart
+    beginDate.addPropertyChangeListener("date", new PropertyChangeListener() {
+      public void propertyChange(PropertyChangeEvent e) { rememberDates(); }
+    });
+    endDate.addPropertyChangeListener("date", new PropertyChangeListener() {
+      public void propertyChange(PropertyChangeEvent e) { rememberDates(); }
+    });
+
 //    table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
 //      public void valueChanged(ListSelectionEvent e) {
 //        if (!e.getValueIsAdjusting()) {
@@ -150,6 +161,12 @@ public class TableQueryBar {
 //        }
 //      }
 //    });
+  }
+
+  private void rememberDates() {
+    Preferences prefs = Preferences.userNodeForPackage(this.getClass());
+    if (beginDate.getDate() != null) prefs.putLong(BEGIN_DATE, beginDate.getDate().getTime());
+    if (endDate.getDate() != null) prefs.putLong(END_DATE, endDate.getDate().getTime());
   }
 
   public static TableQueryBar getInstance() {
@@ -319,14 +336,27 @@ public class TableQueryBar {
     return table;
   }
 
+  /** keys for the remembered query window */
+  private static final String BEGIN_DATE = "beginDate";
+  private static final String END_DATE = "endDate";
+
   private void createUIComponents() {
     Long today = System.currentTimeMillis();
     today = ((today - (today % 86400000)) + 86400000);
-    beginDate = new JDateChooser(new Date(today - (86400000L * 90)), "MM/dd/yyyy", new
+
+    // The window is remembered between launches.  It defaults to the last ninety
+    // days, which suits a budget being kept up to date but shows nothing at all
+    // against imported history -- and having to widen it again on every launch is
+    // how an empty table starts looking like a broken one.
+    Preferences prefs = Preferences.userNodeForPackage(this.getClass());
+    long begin = prefs.getLong(BEGIN_DATE, today - (86400000L * 90));
+    long end = prefs.getLong(END_DATE, today);
+
+    beginDate = new JDateChooser(new Date(begin), "MM/dd/yyyy", new
         JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
     //beginDate.setFont(Fonts.fixed.getFont());
 
-    endDate = new JDateChooser(new Date(today), "MM/dd/yyyy", new JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
+    endDate = new JDateChooser(new Date(end), "MM/dd/yyyy", new JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
     //endDate.setFont(Fonts.fixed.getFont());
     beginDate.setPreferredSize(new Dimension(beginDate.getPreferredSize().width + 10, beginDate.getPreferredSize().height));
     endDate.setPreferredSize(new Dimension(endDate.getPreferredSize().width + 10, endDate.getPreferredSize().height));

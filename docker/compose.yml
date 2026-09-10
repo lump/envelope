@@ -45,7 +45,17 @@ services:
         condition: service_healthy
     environment:
       # ServerPrefs turns these into hibernate settings; see DAO.properties.
-      DAO_HIBERNATE_CONNECTION_URL: jdbc:mariadb://db:3306/envelope
+      #
+      # This points at the *native* MariaDB on the host, not the db service below,
+      # because that is where the migrated budget lives.  Note that tiamat.lump
+      # resolves differently depending on where you ask: from inside a container it
+      # is the host's LAN address (172.17.2.245), while on the host itself it is
+      # 127.0.1.1 -- so testing this from a host shell proves nothing about whether
+      # the container can reach it.
+      #
+      # Set DB_URL to point back at the containerised database:
+      #   DB_URL=jdbc:mariadb://db:3306/envelope docker compose up -d
+      DAO_HIBERNATE_CONNECTION_URL: ${DB_URL:-jdbc:mariadb://tiamat.lump:3306/envelope}
       DAO_HIBERNATE_CONNECTION_USERNAME: ${DB_USER:-budget}
       DAO_HIBERNATE_CONNECTION_PASSWORD: ${DB_PASSWORD:-tegdub}
       SERVERPREFS_CONFIGURE_USERNAME: ${ADMIN_USER:-admin}
