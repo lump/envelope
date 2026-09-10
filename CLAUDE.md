@@ -142,6 +142,11 @@ and it opens with `drop database if exists envelope`, so never run it against a 
 database. To syntax-check an edit to it, rewrite the database name and load it into a
 throwaway schema.
 
+`sql/migrate.pl` is a 2010 one-off that pulls a legacy `budgets` database into this schema.
+It is not part of the build and is kept for the mapping it documents. Its connection details
+come from `MIGRATE_SRC_*` / `MIGRATE_DST_*` environment variables; only
+`MIGRATE_SRC_PASSWORD` has no default, being the only one that reaches another machine.
+
 ## The modernization (and why the pins are where they are)
 
 | Was | Now | Why |

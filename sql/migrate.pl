@@ -3,35 +3,86 @@
 # $Id: migrate.pl,v 1.24 2010/12/23 19:19:02 troy Exp $
 #
 # migrate troy's existing live envelope database
-# requires a fresh database (boostrap.sql)
+# requires a fresh database (bootstrap-mysql.sql)
+#
+# This is a one-off written in 2010 against a legacy "budgets" database on
+# another host.  It is kept because it documents how the old shape maps onto this
+# one, not because it is part of the build.
+#
+# Against the current schema its SQL still stands: every statement below was run
+# against a database freshly loaded from bootstrap-mysql.sql and all of them work.
+# Two things about that schema are worth knowing here, because this script writes
+# columns Hibernate now treats as its own:
+#
+#   * `stamp` is @Version.  The columns are timestamp(3) (see migrations/001), and
+#     the legacy stamps this script carries over are whole seconds, which land as
+#     .000 and are perfectly valid version values.  Passing NULL still means "now",
+#     as the accounts insert below relies on.
+#
+#   * accounts is unique on (budget, name) rather than the old (name, type) (see
+#     migrations/002), so the `replace into accounts` below can no longer collide
+#     with an identically named account in somebody else's budget.  It creates a
+#     fresh budget each run, so in practice it never collides at all.
+#
+# A database loaded from the current bootstrap already has both of those, so a
+# migration run needs no migrations applied afterwards.
+#
+# Connection details come from the environment.  Nothing here is defaulted that
+# would let it reach a real host by accident:
+#
+#   MIGRATE_SRC_HOST  MIGRATE_SRC_PORT  MIGRATE_SRC_DB  MIGRATE_SRC_USER  MIGRATE_SRC_PASSWORD
+#   MIGRATE_DST_HOST  MIGRATE_DST_PORT  MIGRATE_DST_DB  MIGRATE_DST_USER  MIGRATE_DST_PASSWORD
+#
+# Only MIGRATE_SRC_PASSWORD has no default, because it is the only one that
+# reaches a machine that is not this one.
+#
+# e.g.
+#   MIGRATE_SRC_HOST=iota.lump MIGRATE_SRC_PASSWORD=... \
+#   MIGRATE_DST_PORT=13306 MIGRATE_DST_PASSWORD=tegdub perl sql/migrate.pl
 
 use DBI;
 
 $|=1;
 
+# DBD::mysql is not installed everywhere any more; DBD::MariaDB speaks the same
+# DSN and is what this stack has.  Prefer it, fall back to the old driver.
+$driver = eval { require DBD::MariaDB; 1 } ? "MariaDB"
+        : eval { require DBD::mysql;   1 } ? "mysql"
+        : die "neither DBD::MariaDB nor DBD::mysql is installed\n";
+
+sub env {
+  my ($name, $default) = @_;
+  return $ENV{$name} if defined $ENV{$name} && length $ENV{$name};
+  return $default if defined $default;
+  die "$name must be set (see the header of this script)\n";
+}
+
 $dbs = {
   source => {
-    database => "budgets",
-    port => 3306,
-    user => "budget",
-    host => "dublan.net",
-    password => "DeADFeeDBeeF",
+    database => env("MIGRATE_SRC_DB", "budgets"),
+    port     => env("MIGRATE_SRC_PORT", 3306),
+    user     => env("MIGRATE_SRC_USER", "budget"),
+    host     => env("MIGRATE_SRC_HOST", "iota.lump"),
+    # no default: this one reaches a real host, so it has to be supplied
+    password => env("MIGRATE_SRC_PASSWORD"),
   },
   dest => {
-    database => "envelope",
-    port => 3306,
-    host => "localhost",
-    user => "budget",
-    password => "tegdub",
+    database => env("MIGRATE_DST_DB", "envelope"),
+    port     => env("MIGRATE_DST_PORT", 3306),
+    user     => env("MIGRATE_DST_USER", "budget"),
+    host     => env("MIGRATE_DST_HOST", "localhost"),
+    # the local development password, already in bootstrap-mysql.sql and compose.yml
+    password => env("MIGRATE_DST_PASSWORD", "tegdub"),
   },
 };
 
 for my $db (keys %$dbs) {
     my $this = $dbs->{$db};
-    my $dsn = "DBI:mysql:database=" . $this->{database} . ";"
+    my $dsn = "DBI:$driver:database=" . $this->{database} . ";"
       . "host=" . $this->{host} . ";"
       . "port=" . $this->{port};
-    $this->{connection} = DBI->connect($dsn, $this->{user}, $this->{password}) or die $!;
+    $this->{connection} = DBI->connect($dsn, $this->{user}, $this->{password})
+      or die "could not connect to $db ($this->{host}): $DBI::errstr\n";
     ${db} = $this->{connection};
 }
 
@@ -134,7 +185,10 @@ while (my $row = $sth->fetchrow_hashref()) {
      or die $dsth->errstr;
 #  $dsth2->execute($allocation_setting_id, $allocation_amount, $row->{which}, $row->{deducted})
 #    or die $dsth->errstr;
-  print "inserted $allocation_setting_id, $allocation_amount, $row->{which}, $row->{deducted}\n";
+  # was $allocation_setting_id, whose assignment is commented out just above, so
+  # this line only ever printed an empty field.  The preset goes in against the
+  # budget, which is what the insert actually used.
+  print "inserted preset $budget_id, $allocation_amount, $row->{which}, $row->{deducted}\n";
 }
 $sth->finish;
 $dsth->finish;
