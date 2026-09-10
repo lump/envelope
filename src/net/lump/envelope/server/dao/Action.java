@@ -197,7 +197,15 @@ public class Action extends DAO {
   public Account createAccount(Integer budgetId, String name, String type)
       throws EnvelopeException {
     String accountName = checkName(name);
-    Budget budget = load(Budget.class, budgetId);
+
+    // get(), not load().  load() hands back an uninitialized proxy, which would
+    // then travel to the client inside the returned entity as a proxy with no
+    // session behind it -- usable only until something touched it, at which point
+    // it throws LazyInitializationException.
+    Budget budget = get(Budget.class, budgetId);
+    if (budget == null)
+      throw new EnvelopeException(
+          EnvelopeException.Name.Invalid_Data, "there is no budget " + budgetId);
 
     Account.AccountType accountType;
     try {
@@ -217,6 +225,7 @@ public class Action extends DAO {
 
     getCurrentSession().save(account);
     getCurrentSession().flush();
+    Hibernate.initialize(account);
     return evict(account);
   }
 
@@ -259,7 +268,12 @@ public class Action extends DAO {
    */
   public Category createCategory(Integer accountId, String name) throws EnvelopeException {
     String categoryName = checkName(name);
-    Account account = load(Account.class, accountId);
+
+    // get(), not load() -- see createAccount
+    Account account = get(Account.class, accountId);
+    if (account == null)
+      throw new EnvelopeException(
+          EnvelopeException.Name.Invalid_Data, "there is no account " + accountId);
 
     Category category = new Category();
     category.setAccount(account);
@@ -267,6 +281,7 @@ public class Action extends DAO {
 
     getCurrentSession().save(category);
     getCurrentSession().flush();
+    Hibernate.initialize(category);
     return evict(category);
   }
 
