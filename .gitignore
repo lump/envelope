@@ -17,3 +17,9 @@ servlet-2_3-fcs-docs.zip
 test-classes
 CVS
 *~
+
+# editor leavings -- a swap file got committed once via `git add -A`
+.*.sw[a-p]
+*.sw[a-p]
+*.orig
+*.rej
