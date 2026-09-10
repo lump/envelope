@@ -161,7 +161,12 @@ public class TransactionChangeHandler {
               return false;
             }
             @Override public Runnable getSaveOrUpdate() {
-              return new Runnable() { public void run () { updateAllocationTotalLabels(); } };
+              return new Runnable() {
+                public void run() {
+                  writeAmountThroughToSingleAllocation();
+                  updateAllocationTotalLabels();
+                }
+              };
             }
           };
 
@@ -270,6 +275,60 @@ public class TransactionChangeHandler {
     });
   }
 
+  /**
+   * Whether this transaction has exactly one allocation, in which case the
+   * transaction amount and that allocation's amount are the same number.
+   */
+  private boolean isSingleAllocation() {
+    return editing != null
+           && editing.getAllocations() != null
+           && editing.getAllocations().size() == 1;
+  }
+
+  /**
+   * Editing the transaction amount with one allocation is really editing that
+   * allocation, so write it through.
+   *
+   * <p>There is no transactions.amount column -- Transaction.getNetAmount() sums
+   * the allocations, and every balance in the app is a sum over them -- so the
+   * allocations are the authority and this field is a view of them.  With more
+   * than one there is a real decision about where the difference goes, which is
+   * not the form's to make: the amount stays a target and the imbalance indicator
+   * shows the gap until the user apportions it.
+   */
+  private void writeAmountThroughToSingleAllocation() {
+    if (!isSingleAllocation() || amount == null) return;
+
+    Allocation only = editing.getAllocations().get(0);
+    if (amount.equals(only.getAmount())) return;
+
+    only.setAmount(amount);
+    form.getTableModel().rowChanged(only);
+    sendAllocationChange(only);
+  }
+
+  /**
+   * The other direction: the allocation changed, so move the field to match.
+   *
+   * <p>Only touches the text when it actually differs and the field is not being
+   * typed into, so this cannot fight the user for the caret.
+   */
+  private void syncAmountToBalance(Money balance) {
+    amount = balance;
+    if (isExpense == null || changeableAmount == null || form.getAmount().isFocusOwner()) return;
+
+    String text = (isExpense ? balance.negate() : balance).toString();
+    if (text.equals(form.getAmount().getText())) return;
+
+    // Move the field without waking its own change listener.  This is the form
+    // catching up with the allocation, not the user editing it; letting it round
+    // trip would schedule a save that has nothing to save and would wipe the
+    // "Saved at" message the allocation's own save just put there.
+    changeableAmount.removeDataChangeListener();
+    form.getAmount().setText(text);
+    changeableAmount.addDataChangeListener();
+  }
+
   public void updateAllocationTotalLabels() {
     Money in = Money.ZERO;
     Money out = Money.ZERO;
@@ -279,6 +338,11 @@ public class TransactionChangeHandler {
       in = editing.getIncomeAmount().abs();
       balance = editing.getNetAmount();
       out = editing.getDebitAmount().abs();
+
+      // With one allocation the two amounts track each other, so an imbalance is
+      // not a state this form can meaningfully be in -- keep the field level with
+      // the allocation instead of reporting a gap the user cannot act on.
+      if (isSingleAllocation()) syncAmountToBalance(balance);
 
       if (changeableAmount.hasValidInput()) {
         if (balance.compareTo(amount) != 0) {

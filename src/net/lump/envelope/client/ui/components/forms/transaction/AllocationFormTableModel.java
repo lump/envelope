@@ -267,6 +267,22 @@ public class AllocationFormTableModel extends AbstractTableModel {
   }
 
   /**
+   * Tell the table that one row's Allocation was changed from outside it -- by the
+   * transaction amount field writing through, say.  Matches on identity, as
+   * removeRow does and for the same reason.
+   *
+   * @param allocation the row whose contents changed
+   */
+  public void rowChanged(Allocation allocation) {
+    if (allocations == null) return;
+    for (int i = 0; i < allocations.size(); i++)
+      if (allocations.get(i) == allocation) {
+        fireTableRowsUpdated(i, i);
+        return;
+      }
+  }
+
+  /**
    * The Category to start a newly added row on.  Both category and amount are NOT
    * NULL in the database, so a new row has to be born valid; the last row's
    * category keeps the new one in the same account, which is nearly always what

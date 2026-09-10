@@ -89,6 +89,15 @@ omitted anything with no allocations yet — a newly created account was invisib
 and an invisible account cannot be given a category to make it appear. Balances stay derived;
 only the list stopped being.
 
+**The transaction amount field is a view of the allocations, not a field of its own.** There
+is no `transactions.amount` column, so with exactly one allocation the two numbers are the
+same thing and the form keeps them level in both directions — typing in the amount writes
+through to that allocation, and editing the allocation moves the field. With more than one
+there is a real decision about where a difference goes, which the form does not make: the
+amount becomes a target, and the red imbalance panel shows the gap until the user apportions
+it. `TransactionChangeHandler.syncAmountToBalance` detaches the field's own change listener
+while it moves it, so the form catching up is never mistaken for the user typing.
+
 **Login sends a password-equivalent, not a password.** The client generates an RSA keypair —
 fresh on every launch, never persisted — and sends its public key in `getChallenge`. The
 server's `Challenge` carries the server's public key and, as the "challenge", only
