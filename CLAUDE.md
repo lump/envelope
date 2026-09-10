@@ -39,6 +39,18 @@ parameter (`Command.Name.detachedCriteriaQueryList` / `…QueryUnique`), built b
 Hibernate 5.6, the last line that ships those classes. Moving to Hibernate 6/7 is not a
 dependency bump; it means redesigning the protocol.
 
+**The save unit is the Allocation, not the Transaction.** `Transaction.allocations` is
+`@OneToMany(mappedBy = "transaction")` with **no cascade** — an inverse side that owns no
+foreign key — so `saveOrUpdate(Transaction)` persists the transaction's own columns, succeeds,
+and silently writes nothing for its allocations. The `PERSIST`/`MERGE` cascades live on
+`Allocation`'s two `@ManyToOne` fields and point the other way, *up* to `Transaction` and
+`Category`. So an edited allocation is saved on its own (`TransactionChangeHandler
+.sendAllocationChange`), and saving an allocation is also what carries a new transaction into
+existence. Every balance in the app — account totals, category totals, `Transaction
+.getNetAmount()` — is a `sum(amount)` over allocations; there is no stored `transactions
+.amount` column, so allocations are the authority for money and the transaction's amount field
+is a target to reconcile against, not a source.
+
 **Login sends a password-equivalent, not a password.** The client generates an RSA keypair —
 fresh on every launch, never persisted — and sends its public key in `getChallenge`. The
 server's `Challenge` carries the server's public key and, as the "challenge", only
@@ -70,7 +82,18 @@ cd docker && docker compose up -d    # MariaDB 11.8 + Tomcat 11
 - Default logins (seeded by `sql/bootstrap-mysql.sql`): **admin / envelope**, **guest / guest**
 
 The war is **bind-mounted** into Tomcat (not baked into an image), so a code change is
-`mvn package` + `docker compose restart tomcat`.
+`mvn package` + `docker compose restart tomcat`. A client-only change needs neither — the
+fat jar is rebuilt in place.
+
+There is no system `mvn` on this box; the one that works is IntelliJ's bundled copy at
+`~/bin/idea-IU-*/plugins/maven/lib/maven3/bin/mvn`, and it has to run **online** (`-o`
+fails: `~/.m2` lacks the plugin versions that Maven build wants).
+
+Schema changes go in `sql/migrations/` **and** in `sql/bootstrap-mysql.sql` — the bootstrap
+is the authoritative schema for a fresh volume (sourced by `docker/initdb/01-bootstrap.sh`),
+and it opens with `drop database if exists envelope`, so never run it against a live
+database. To syntax-check an edit to it, rewrite the database name and load it into a
+throwaway schema.
 
 ## The modernization (and why the pins are where they are)
 
@@ -114,8 +137,37 @@ at the `/configure` form waiting for a human.
   and the JNLP points at `lib/client.jar`, which resolves to `WEB-INF/lib/client.jar` and
   **404s** because the war ships no such jar. The fat JAR is a local build artifact only; there
   is no server-side distribution mechanism yet.
+- **`@Version` needs sub-second stamp columns.** Every versioned entity maps `@Version` onto a
+  `stamp` column. Declared as plain `timestamp` (whole seconds) the version Hibernate hands
+  back to the client can never match the value the row holds, so the *first* save of an entity
+  succeeds and the second is refused with `StaleObjectStateException` — every entity editable
+  exactly once per load. `sql/migrations/001-version-stamp-precision.sql` moved the live tables
+  to `timestamp(3)`; keep any new versioned table at `timestamp(3)` too.
+- **`Transaction.equals` does not compare allocations, and must not be "fixed" naively.** It
+  builds both sides of that comparison from `this.allocations` (the second one is unqualified),
+  so it compares the list to itself and the check always passes — an allocation change is
+  invisible to it. Repointing it at `that.allocations` makes `Transaction.equals` and
+  `Allocation.equals` mutually recursive (the latter compares its `transaction`), which is a
+  `StackOverflowError` for any two transactions whose scalar fields match. The self-comparison
+  bug is the only thing preventing that today. Track allocation edits explicitly instead.
+- **Running the test suite rewrites the real client settings.** `TestSuite`'s static
+  initializer calls `ServerSettings.setHostName(localHost() + ":8080")` and
+  `LoginSettings.setUsername("bowmantest")`, and those go straight into the same
+  `java.util.prefs` store the actual Swing client reads (`~/.java/.userPrefs/net/lump/...`).
+  So `-DskipTests=false` silently repoints your client at `<hostname>:8080` and leaves it
+  there. Put the settings back afterwards (`localhost:7041`, context `/envelope`) or the
+  client — and every probe — fails with `ConnectException` and a settings dialog.
 - **Tests need a live server + DB** and are skipped by default (`default-skip-tests`
-  profile); run with `-DskipTests=false`.
+  profile); run with `-DskipTests=false`. The suite does not currently pass: it hangs (some
+  tests block on Swing dialogs), and `TestMoney.testPrint` fails outright — `Money`'s
+  constructor rounds `HALF_UP` while its `toString()` and its own Javadoc promise `HALF_EVEN`,
+  so the constructor has already destroyed the half-fraction. Pre-existing since `b4dfb3c`,
+  unrelated to the resurrection.
+- **`mvn package` rewrites the bind-mounted war under a running Tomcat**, which triggers a
+  reload; requests landing mid-reload fail with `IllegalStateException: this web application
+  instance has been stopped already` while the health check still answers `pong` (it never
+  touches the database). Always `docker compose restart tomcat` after packaging, even for a
+  client-only change — the war is rebuilt either way.
 - **Auth is fixed at the command level; the login step still is not.** Commands are safe now
   (session-bound, command-bound, single-use signatures — see above). What remains is that the
   login exchange has no nonce, so the encrypted md5-crypt hash is a static password-equivalent:
