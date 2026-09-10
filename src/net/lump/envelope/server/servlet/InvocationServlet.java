@@ -3,9 +3,11 @@ package net.lump.envelope.server.servlet;
 import net.lump.envelope.server.Controller;
 import net.lump.envelope.server.dao.DAO;
 import net.lump.envelope.server.dao.Security;
+import net.lump.envelope.server.dao.Sessions;
 import net.lump.envelope.server.servlet.beans.ServerPrefs;
 import net.lump.envelope.shared.command.Command;
 import net.lump.lib.util.Base64;
+import net.lump.lib.util.Encryption;
 import org.apache.log4j.Logger;
 
 import javax.crypto.*;
@@ -56,6 +58,25 @@ public class InvocationServlet extends HttpServlet {
     try {
 
       if (m.matches() && m.group(2) != null) {
+
+        // Authentication rides in headers rather than in the payload, so it can
+        // be settled before anything reaches readObject.  The command name comes
+        // along too, so we know whether a session is required without having to
+        // look inside the body first.
+        String cmdHeader = rq.getHeader(Command.H_COMMAND);
+        String sessionId = rq.getHeader(Command.H_SESSION);
+        String stampHeader = rq.getHeader(Command.H_STAMP);
+        String signature = rq.getHeader(Command.H_SIGNATURE);
+
+        boolean sessionRequired;
+        try {
+          sessionRequired = Command.Name.valueOf(cmdHeader).isSessionRequired();
+        } catch (Exception e) {
+          rp.sendError(HttpServletResponse.SC_BAD_REQUEST, "missing or unknown " + Command.H_COMMAND + " header");
+          return;
+        }
+        String authenticatedUser = null;
+
         String fix = "--";
         String boundary = m.group(2);
 
@@ -169,12 +190,32 @@ public class InvocationServlet extends HttpServlet {
               content = out;
             }
 
+            // Check the signature before deserializing.  It covers a digest of
+            // exactly these bytes, so an unauthenticated caller never gets to
+            // hand an object graph to readObject.
+            if (sessionRequired) {
+              Sessions.Session session =
+                  Security.validateSession(sessionId, stampHeader, signature, Encryption.digest(content));
+              if (session == null) {
+                rp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "invalid session");
+                return;
+              }
+              authenticatedUser = session.getUsername();
+            }
+
             String serType = "application/java-serialized-object";
             String contentType = headers.get("content-type");
             if (contentType != null && contentType.equals(serType)) {
               Object o = new ObjectInputStream(new ByteArrayInputStream(content)).readObject();
               if (o instanceof Command) {
                 command = (Command)o;
+                // The header is what decided whether we demanded a signature, so
+                // it has to agree with the payload -- otherwise a caller could
+                // claim "ping" and send "save".
+                if (!command.getName().name().equals(cmdHeader)) {
+                  rp.sendError(HttpServletResponse.SC_BAD_REQUEST, "command header does not match payload");
+                  return;
+                }
               }
               else {
                 rp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE,
@@ -235,7 +276,7 @@ public class InvocationServlet extends HttpServlet {
 
         Controller c = new Controller(rp, os);
         try {
-          c.invoke(command);
+          c.invoke(command, authenticatedUser);
         } catch (Exception e) {
           if (!(e instanceof RemoteException)) {
             Throwable tmp = e.getCause();

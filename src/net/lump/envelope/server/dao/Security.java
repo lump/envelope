@@ -2,7 +2,6 @@ package net.lump.envelope.server.dao;
 
 import net.lump.envelope.shared.command.Command;
 import net.lump.envelope.shared.command.security.Challenge;
-import net.lump.envelope.shared.command.security.Credentials;
 import net.lump.envelope.shared.command.security.Crypt;
 import net.lump.envelope.shared.entity.User;
 import net.lump.envelope.shared.exception.EnvelopeException;
@@ -65,11 +64,10 @@ public class Security extends DAO {
 
   public Boolean ping() { return true; }
 
-  public Boolean authChallengeResponse(String username,
+  public byte[] authChallengeResponse(String username,
     byte[] challengeResponse, PublicKey publicKey)
     throws BadPaddingException, NoSuchAlgorithmException, IOException,
     IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException {
-    Boolean authed;
 
     User user = getUser(username);
 
@@ -77,42 +75,88 @@ public class Security extends DAO {
       Encryption.decodeAsym(serverKeyPair.getPrivate(), challengeResponse),
       Encryption.TRANS_ENCODING);
 
-    if (hash.equals(user.getCryptPassword())) {
-      authed = true;
-      // the credential is proven, so this key can now be trusted and stored
-      user.setPublicKey(publicKey);
-      update(user);
-      flush();
-      commit();
-      logger.info("password for \"" + username + "\" successfully verfied");
-    } else {
+    if (!hash.equals(user.getCryptPassword())) {
       logger.warn("password for \"" + username + "\" FAILED");
       throw new EnvelopeException(Invalid_Credentials);
     }
 
+    logger.info("password for \"" + username + "\" successfully verfied");
 
-    return authed;
+    // The credential is proven, so this key can be trusted -- but only for as
+    // long as this login lasts, so it is bound to the session instead of being
+    // written to the user row.  Nothing in the database is an authenticator.
+    String sessionId = Sessions.open(username, publicKey);
+
+    // Hand the session id back encrypted to the key that was just proven, so
+    // only the client that actually authenticated can read it.
+    return Encryption.encodeAsym(publicKey, sessionId.getBytes(Encryption.TRANS_ENCODING));
   }
 
-  public Boolean validateSession(Command c)
-    throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
-    SignatureException, InvalidKeyException {
-    Credentials credentials = c.getCredentials();
+  /**
+   * Authenticate one command from the material carried alongside it.
+   *
+   * <p>Static, and deliberately touches no database: a DAO instance would open a
+   * transaction, and more importantly nothing persisted is trusted here.  The
+   * signature is checked against the key bound to the session when the password
+   * was proven.
+   *
+   * <p>Three things must hold, and each closes a different hole: the session must
+   * be live, the timestamp must be close to ours (so a captured signature is
+   * useful only briefly), and the signature must be unspent (so it is not useful
+   * even twice).  The signature itself covers a digest of the exact command
+   * bytes, so it cannot be lifted onto a different command.
+   *
+   * @param sessionId  session identifier offered by the caller
+   * @param stampValue client timestamp, as sent
+   * @param signature  signature over {@link Command#signaturePayload}
+   * @param digest     digest of the serialized command the caller sent
+   *
+   * @return the authenticated Session, or null if it does not check out
+   */
+  public static Sessions.Session validateSession(
+      String sessionId, String stampValue, String signature, String digest) {
 
-    User user = getUser(credentials.getUsername());
-
-    boolean valid = c.verify(user.getPublicKey());
-    if (valid) {
-      logger.debug("signature for \""
-        + credentials.getUsername()
-        + "\" successfully verfied");
-    } else {
-      logger.error("signature for \""
-        + credentials.getUsername()
-        + "\" FAILED");
+    Sessions.Session session = Sessions.get(sessionId);
+    if (session == null) {
+      logger.warn("no live session for the offered session id");
+      return null;
     }
 
-    return valid;
+    long stamp;
+    try {
+      stamp = Long.parseLong(stampValue);
+    } catch (NumberFormatException e) {
+      logger.warn("unparseable timestamp from \"" + session.getUsername() + "\"");
+      return null;
+    }
+
+    if (!Sessions.stampIsFresh(stamp)) {
+      logger.warn("timestamp out of window for \"" + session.getUsername() + "\"");
+      return null;
+    }
+
+    try {
+      if (!Encryption.verify(session.getPublicKey(),
+                             Command.signaturePayload(sessionId, stamp, digest),
+                             signature)) {
+        logger.warn("signature for \"" + session.getUsername() + "\" FAILED");
+        return null;
+      }
+    } catch (GeneralSecurityException e) {
+      logger.warn("could not verify signature for \"" + session.getUsername() + "\"", e);
+      return null;
+    } catch (IOException e) {
+      logger.warn("could not verify signature for \"" + session.getUsername() + "\"", e);
+      return null;
+    }
+
+    // a signature is good exactly once
+    if (!Sessions.spend(signature)) {
+      logger.warn("replayed signature for \"" + session.getUsername() + "\"");
+      return null;
+    }
+
+    return session;
   }
 
   public Challenge getChallenge(String username, PublicKey publicKey)

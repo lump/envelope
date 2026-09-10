@@ -42,6 +42,11 @@ public class LoginSettings {
   private KeyPair keyPair;
   private PublicKey serverKey = null;
 
+  // The session id the server issues at login.  Memory only -- never written to
+  // prefs, so it dies with the process, which is also the lifetime of the keypair
+  // it is bound to.
+  private String sessionId = null;
+
   transient private byte[] password;
 
   // the singleton
@@ -232,6 +237,19 @@ public class LoginSettings {
 
   public void setServerKey(PublicKey serverKey) {
     this.serverKey = serverKey;
+  }
+
+  /**
+   * The current session id, or null if we have not logged in yet.
+   *
+   * @return String
+   */
+  public String getSessionId() {
+    return sessionId;
+  }
+
+  public void setSessionId(String sessionId) {
+    this.sessionId = sessionId;
   }
 
 }

@@ -1,9 +1,7 @@
 package net.lump.envelope.shared.command;
 
 import org.hibernate.criterion.DetachedCriteria;
-import net.lump.envelope.shared.command.security.Credentials;
 import net.lump.envelope.shared.entity.Identifiable;
-import net.lump.lib.util.Encryption;
 
 import javax.swing.event.EventListenerList;
 import java.io.Serializable;
@@ -22,6 +20,32 @@ import java.util.List;
  * @version $Id: Command.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 public class Command implements Serializable {
+
+  /**
+   * Authentication material travels in HTTP headers rather than inside the
+   * serialized command.  That buys two things: the signature can cover a digest
+   * of the exact bytes on the wire, instead of re-serializing a deserialized
+   * object graph and hoping it comes out byte-identical; and the server can check
+   * it before handing anything to readObject.
+   */
+  public static final String H_SESSION = "X-Envelope-Session";
+  public static final String H_STAMP = "X-Envelope-Stamp";
+  public static final String H_SIGNATURE = "X-Envelope-Signature";
+  public static final String H_COMMAND = "X-Envelope-Command";
+
+  /**
+   * The exact string that gets signed.  Shared so the two ends cannot drift.
+   *
+   * @param sessionId the session identifier
+   * @param stamp     the client's timestamp
+   * @param digest    digest of the serialized command being sent
+   *
+   * @return String the payload to sign, or to verify against
+   */
+  public static String signaturePayload(String sessionId, long stamp, String digest) {
+    return sessionId + ":" + stamp + ":" + digest;
+  }
+
   /**
    * The DAO that the command is destined for. This is for design-related separation on server side.
    *
@@ -149,9 +173,6 @@ public class Command implements Serializable {
   // the actual parameters
   private final ArrayList<Serializable> params = new ArrayList<Serializable>();
 
-  // credentials for the session
-  private Credentials credentials = null;
-
   /**
    * A new command.  Each command requires at least one listener.
    *
@@ -202,15 +223,6 @@ public class Command implements Serializable {
    */
   public Name getName() {
     return name;
-  }
-
-  /**
-   * Returns a Credentials object of the Credentials.
-   *
-   * @return Credentials
-   */
-  public Credentials getCredentials() {
-    return credentials;
   }
 
   /**
@@ -285,48 +297,8 @@ public class Command implements Serializable {
     return this;
   }
 
-  /**
-   * Signs the current state of the command with a private key.
-   *
-   * @param username the username of the signer.
-   * @param key      the private key of the signer
-   *
-   * @return Command the instance of command (for chained method calls)
-   *
-   * @throws NoSuchAlgorithmException     NoSuchAlgorithmException
-   * @throws SignatureException           SignatureException
-   * @throws InvalidKeyException          InvalidKeyException
-   * @throws UnsupportedEncodingException UnsupportedEncodingException
-   */
-  public Command sign(String username, PrivateKey key)
-      throws NoSuchAlgorithmException, SignatureException, InvalidKeyException, UnsupportedEncodingException {
-    this.credentials = new Credentials(username);
-    credentials.setSignature(Encryption.sign(key, credentials.getUsername() + String.valueOf(credentials.getStamp())));
-    return this;
-  }
-
-  /**
-   * Verifies the signature of the command with a public key.
-   *
-   * @param key the public key
-   *
-   * @return boolean whether the signature verifies.
-   *
-   * @throws NoSuchAlgorithmException     NoSuchAlgorithmException
-   * @throws SignatureException           SignatureException
-   * @throws UnsupportedEncodingException UnsupportedEncodingException
-   * @throws InvalidKeyException          InvalidKeyException
-   */
-  public boolean verify(PublicKey key)
-      throws NoSuchAlgorithmException, SignatureException, UnsupportedEncodingException, InvalidKeyException {
-    return Encryption.verify(key, credentials.getUsername() + String.valueOf(credentials.getStamp()), credentials.getSignature());
-  }
-
   public String toString() {
     String out = "";
-    if (credentials != null) {
-      out += "[" + credentials.getUsername() + "] ";
-    }
     out += name.toString() + "(";
     for (Object param : params) out += param.toString() + ",";
     out += ")";

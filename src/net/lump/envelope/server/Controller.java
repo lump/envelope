@@ -3,10 +3,8 @@ package net.lump.envelope.server;
 import org.apache.log4j.Logger;
 import org.hibernate.ScrollableResults;
 import net.lump.envelope.server.dao.DAO;
-import net.lump.envelope.server.dao.Security;
 import net.lump.envelope.shared.command.Command;
 import net.lump.envelope.shared.exception.EnvelopeException;
-import static net.lump.envelope.shared.exception.EnvelopeException.Name;
 import static net.lump.envelope.shared.exception.EnvelopeException.Name.Invalid_Session;
 import net.lump.lib.util.Interval;
 
@@ -17,10 +15,6 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.RemoteException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
-import java.security.spec.InvalidKeySpecException;
 import java.util.List;
 
 /**
@@ -34,6 +28,7 @@ public class Controller {
   private static final String DAO_PATH = "net.lump.envelope.server.dao.";
   private static final String SPACE = " ";
   private HttpServletResponse rp;
+  private String authenticatedUser;
   private OutputStream os;
 
   @SuppressWarnings({"UnusedDeclaration"})
@@ -46,45 +41,28 @@ public class Controller {
   }
 
   /**
-   * Invoke a command. This is the central method where every command must pass. Since this causes centralization, we can check for
-   * security as defined by the command, and validate sessions if necessary.  We can also catch errors and handle graceful closing
-   * or rollbacks of transactions.
+   * Invoke a command. This is the central method where every command must pass, which is what lets us enforce that a command
+   * requiring a session actually has one, and handle graceful closing or rollbacks of transactions.
    *
-   * @param command the command
+   * @param command           the command
+   * @param authenticatedUser the user the servlet authenticated, or null for the commands that need no session
    *
    * @return an object which must be Serializable for transfer
    *
    * @throws RemoteException
    */
-  @SuppressWarnings({"LoopStatementThatDoesntLoop"})
-  public void invoke(Command command) throws RemoteException {
+  public void invoke(Command command, String authenticatedUser) throws RemoteException {
 
     logger.debug("Received command " + command.getName().name());
 
-    try {
-      // if a session is required, force check authorization first
-      if (command.getName().isSessionRequired() && !(new Security()).validateSession(command)) {
-        throw new EnvelopeException(Invalid_Session);
-      }
-    } catch (IOException e) {
-      if (e instanceof RemoteException) throw (RemoteException)e;
-      logger.error(e);
-      throw new EnvelopeException(Name.Internal_Server_Error, e);
-    } catch (SignatureException e) {
-      logger.error(e);
-      throw new EnvelopeException(Name.Internal_Server_Error, e);
-    } catch (InvalidKeyException e) {
-      logger.error(e);
-      throw new EnvelopeException(Name.Internal_Server_Error, e);
-    } catch (InvalidKeySpecException e) {
-      logger.error(e);
-      throw new EnvelopeException(Name.Internal_Server_Error, e);
-    } catch (NoSuchAlgorithmException e) {
-      logger.error(e);
-      throw new EnvelopeException(Name.Internal_Server_Error, e);
+    // Authentication already happened in the servlet, which had the wire bytes
+    // the signature is computed over.  All that is left is to insist that a
+    // command needing a session actually got one.
+    if (command.getName().isSessionRequired() && authenticatedUser == null) {
+      throw new EnvelopeException(Invalid_Session);
     }
 
-    // session management should be done now, so we can now dispatch and return
+    this.authenticatedUser = authenticatedUser;
     dispatch(command);
   }
 
@@ -205,7 +183,7 @@ public class Controller {
         dao.disconnect();
       }
 
-      logger.info((command.getCredentials() != null ? command.getCredentials().getUsername() : "no-session") + SPACE
+      logger.info((authenticatedUser != null ? authenticatedUser : "no-session") + SPACE
           + command.getName().name() + SPACE + Interval.span(start, System.currentTimeMillis()));
     }
   }

@@ -3,7 +3,6 @@ package net.lump.envelope.client.portal;
 import net.lump.envelope.client.HttpClient;
 import net.lump.envelope.client.ui.components.forms.preferences.Preferences;
 import net.lump.envelope.client.ui.defs.Strings;
-import net.lump.envelope.client.ui.prefs.LoginSettings;
 import net.lump.envelope.shared.command.Command;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.envelope.shared.exception.EnvelopeException;
@@ -43,13 +42,8 @@ abstract class Portal {
   }
 
   public Serializable invoke(Component frame, Command command) throws AbortException {
-    try {
-      LoginSettings ls = LoginSettings.getInstance();
-      // sign the command before invoking
-      command.sign(ls.getUsername(), ls.getKeyPair().getPrivate());
-    } catch (Exception e) {
-      handleException(e);
-    }
+    // Signing happens in HttpClient now, where the serialized bytes the
+    // signature is computed over actually exist.
     return rawInvoke(frame, command);
   }
 
@@ -65,12 +59,6 @@ abstract class Portal {
   }
 
   public List<Serializable> invoke(List<Command> commands) throws AbortException {
-    try {
-      LoginSettings ls = LoginSettings.getInstance();
-      for (Command c : commands) c.sign(ls.getUsername(), ls.getKeyPair().getPrivate());
-    } catch (Exception e) {
-      handleException(e);
-    }
     return rawInvoke(null, commands);
   }
 

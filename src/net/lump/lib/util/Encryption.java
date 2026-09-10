@@ -28,6 +28,9 @@ public final class Encryption {
   // signature algorithm: the reputable SHA
   public static final String sigAlg = "SHA1with" + keyAlg;
 
+  // digest used to bind a signature to the payload it was made for
+  public static final String digestAlg = "SHA-256";
+
   // 168 bit triple-des for symmetric encryption
 //  public static final String symAlg = "DESede";
   public static final String symKeyAlg = "DESede";
@@ -477,5 +480,30 @@ public final class Encryption {
 
     // we should never get here, but just so java is happy...
     return null;
+  }
+
+  /**
+   * A digest of arbitrary bytes, so that a signature can be bound to the exact
+   * payload it was made for rather than just to a name and a timestamp.
+   *
+   * @param data the bytes to digest
+   *
+   * @return String base64 of the digest
+   *
+   * @throws NoSuchAlgorithmException if the digest algorithm is unavailable
+   */
+  public static String digest(byte[] data) throws NoSuchAlgorithmException {
+    return Base64.byteArrayToBase64(MessageDigest.getInstance(digestAlg).digest(data));
+  }
+
+  /**
+   * A cryptographically random opaque token, used for session identifiers.
+   *
+   * @return String base64 of 32 random bytes
+   */
+  public static String randomToken() {
+    byte[] bytes = new byte[32];
+    new SecureRandom().nextBytes(bytes);
+    return Base64.byteArrayToBase64(bytes);
   }
 }

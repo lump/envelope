@@ -5,6 +5,7 @@ import net.lump.envelope.client.ui.prefs.ServerSettings;
 import net.lump.envelope.shared.command.Command;
 import net.lump.envelope.shared.command.OutputEvent;
 import net.lump.envelope.shared.exception.AbortException;
+import net.lump.envelope.shared.exception.EnvelopeException;
 import net.lump.lib.util.Base64;
 import net.lump.lib.util.CipherOutputStream;
 import net.lump.lib.util.Encryption;
@@ -37,7 +38,7 @@ public class HttpClient {
 
   public Serializable invoke(final Command command)
       throws IOException, NoSuchAlgorithmException, IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException,
-      AbortException, ClassNotFoundException {
+      AbortException, ClassNotFoundException, java.security.SignatureException {
 
     boolean encryptable =
         serverSettings.getEncrypt() && (Command.Name.unEncryptables().and(command.getName().bit()).compareTo(BigInteger.ZERO) == 0);
@@ -71,19 +72,52 @@ public class HttpClient {
     connection.setReadTimeout(900000);
     connection.setConnectTimeout(30000);
 
+    // Serialize the command before opening the output stream.  Two reasons: the
+    // signature has to cover these exact bytes, and HttpURLConnection will not
+    // accept another request header once the stream is open.
+    byte[] cmdBytes;
+    {
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      ObjectOutputStream oos = new ObjectOutputStream(baos);
+      oos.writeObject(command);
+      oos.close();
+      cmdBytes = baos.toByteArray();
+    }
+    final int entityLength = cmdBytes.length;
+
+    // The server needs the name to know whether to demand a signature, before it
+    // deserializes anything; it re-checks the name against the payload after.
+    connection.addRequestProperty(Command.H_COMMAND, command.getName().name());
+
+    if (command.getName().isSessionRequired()) {
+      LoginSettings ls = LoginSettings.getInstance();
+      String sessionId = ls.getSessionId();
+      if (sessionId == null) throw new EnvelopeException(EnvelopeException.Name.Invalid_Session);
+
+      // Signing the digest binds this signature to this one command, and the
+      // stamp bounds how long it stays usable; the server also spends it once.
+      long stamp = System.currentTimeMillis();
+      connection.addRequestProperty(Command.H_SESSION, sessionId);
+      connection.addRequestProperty(Command.H_STAMP, String.valueOf(stamp));
+      connection.addRequestProperty(Command.H_SIGNATURE, Encryption.sign(
+          ls.getKeyPair().getPrivate(),
+          Command.signaturePayload(sessionId, stamp, Encryption.digest(cmdBytes))));
+    }
+
+    // Fetching the server key can itself go to the network, so do it before we
+    // open our own stream.
+    String encodedKey = null;
+    if (encryptable) {
+      sessionKey = Encryption.generateSymKey();
+      encodedKey = Base64.byteArrayToBase64(Encryption.wrapSecretKey(sessionKey, LoginSettings.getInstance().getServerKey()));
+    }
+
     DataOutputStream out = new DataOutputStream(connection.getOutputStream());
 
     try {
 
-      // if we're encrypting, generate and send a symkey
+      // if we're encrypting, send the symkey first
       if (encryptable) {
-        sessionKey = Encryption.generateSymKey();
-
-        // encrypt the key with server's public key for transfer and base64 it.
-        String encodedKey =
-            Base64.byteArrayToBase64(Encryption.wrapSecretKey(sessionKey, LoginSettings.getInstance().getServerKey()));
-
-        // write the sym key
         out.writeBytes(prefix + boundary + n);
         out.writeBytes("Content-Transfer-Encoding: base64" + n);
         out.writeBytes("Content-Type: application/octet-stream" + n);
@@ -94,19 +128,8 @@ public class HttpClient {
       // the boundary
       out.writeBytes(prefix + boundary + n);
 
-      // preliminary bytearray of the object
-      byte[] cmdBytes;
-
-      {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(command);
-        oos.close();
-        cmdBytes = baos.toByteArray();
-      }
-
       //rfc 2616 sec7 entity length
-      out.writeBytes("Enity-Length: " + cmdBytes.length + n);
+      out.writeBytes("Enity-Length: " + entityLength + n);
 
       // if we're compressing, set the compress header
       if (serverSettings.getCompress()) {

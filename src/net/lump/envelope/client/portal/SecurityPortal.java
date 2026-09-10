@@ -4,6 +4,7 @@ import net.lump.envelope.client.ui.prefs.LoginSettings;
 import net.lump.envelope.shared.command.Command;
 import net.lump.envelope.shared.command.security.Challenge;
 import net.lump.envelope.shared.exception.AbortException;
+import net.lump.lib.util.Encryption;
 
 import javax.swing.*;
 import java.security.PublicKey;
@@ -33,8 +34,21 @@ public class SecurityPortal extends Portal {
 
   public Boolean auth(byte[] challengeResponse) throws AbortException {
     LoginSettings ls = LoginSettings.getInstance();
-    return (Boolean)rawInvoke(new Command(
+
+    // On success the server returns a session id encrypted to the key we just
+    // proved we hold, so only this process can read it.
+    byte[] wrapped = (byte[])rawInvoke(new Command(
       Command.Name.authChallengeResponse, null, ls.getUsername(), challengeResponse, ls.getKeyPair().getPublic()));
+
+    if (wrapped == null) return false;
+
+    try {
+      ls.setSessionId(new String(
+        Encryption.decodeAsym(ls.getKeyPair().getPrivate(), wrapped), Encryption.TRANS_ENCODING));
+    } catch (Exception e) {
+      throw new AbortException(e);
+    }
+    return true;
   }
 
   public Boolean rawPing() throws AbortException {
