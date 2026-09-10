@@ -3,6 +3,9 @@ package net.lump.envelope.server.dao;
 import net.lump.envelope.shared.entity.Allocation;
 import net.lump.envelope.shared.entity.Transaction;
 import net.lump.envelope.shared.exception.EnvelopeException;
+import org.hibernate.LockMode;
+
+import java.util.List;
 
 /**
  * A DAO for Transactions.
@@ -37,13 +40,30 @@ public class Action extends DAO {
    */
   public void deleteAllocation(Integer allocationId) throws EnvelopeException {
     Allocation allocation = load(Allocation.class, allocationId);
+    Integer transactionId = allocation.getTransaction().getId();
+
+    // Count the siblings with a LOCKING read, which does two things that a plain
+    // one does not.  It serializes concurrent deletes against the same
+    // transaction, and it reads the latest committed rows: under REPEATABLE READ
+    // an ordinary SELECT would answer from the snapshot taken before we waited,
+    // so a second caller would still see the row the first one just removed.
+    // Without it this is check-then-act -- two deletes on a two-allocation
+    // transaction each see two, each pass, and the transaction is left with none.
+    // Deleting a child never touches the parent's @Version, so optimistic locking
+    // offers nothing here.
+    @SuppressWarnings("unchecked")
+    List<Allocation> siblings = getCurrentSession()
+        .createQuery("from Allocation a where a.transaction.id = :transactionId")
+        .setParameter("transactionId", transactionId)
+        .setLockMode("a", LockMode.PESSIMISTIC_WRITE)
+        .list();
 
     // A transaction reaches its budget only through its allocations -- the
     // transactions table carries no budget column -- so a transaction with none
     // is invisible to every query the client can make, and its row is stranded.
     // Removing the last allocation means deleting the transaction, which is a
     // different operation.
-    if (allocation.getTransaction().getAllocations().size() <= 1)
+    if (siblings.size() <= 1)
       throw new EnvelopeException(
           EnvelopeException.Name.Invalid_Data,
           "a transaction must keep at least one allocation");

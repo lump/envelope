@@ -84,8 +84,13 @@ public class TransactionForm {
   private CompletingComboBox<Category> categoriesComboBox = new CompletingComboBox<Category>(true);
   private MoneyTextField moneyEditor = new MoneyTextField();
   private TransactionChangeHandler transactionChangeHandler;
-  /** row the allocation popup and the Delete key act on; -1 when off any row */
-  private int allocationContextRow = -1;
+  /**
+   * The allocation the popup and the Delete key act on.  Held as the row object
+   * rather than a row index, because rows shift asynchronously as adds and deletes
+   * land and an index captured on mouse-press can point at a different row by the
+   * time the menu item is clicked.
+   */
+  private Allocation allocationContextRow = null;
 
   private BlockingQueue<StatusRunnable> updateQueue = new LinkedBlockingQueue<StatusRunnable>();
   ChangeableDateChooser changeableDateChooser;
@@ -177,14 +182,20 @@ public class TransactionForm {
     // every press (which includes the press that raises the popup).
     allocationsTable.addMouseListener(new MouseAdapter() {
       @Override public void mousePressed(MouseEvent e) {
-        allocationContextRow = allocationsTable.rowAtPoint(e.getPoint());
+        rememberRow(e);
         showMenuIfTriggered(e);
       }
       @Override public void mouseReleased(MouseEvent e) { showMenuIfTriggered(e); }
+      private void rememberRow(MouseEvent e) {
+        int row = allocationsTable.rowAtPoint(e.getPoint());
+        java.util.List<Allocation> rows = tableModel.getAllocations();
+        allocationContextRow =
+            (rows != null && row >= 0 && row < rows.size()) ? rows.get(row) : null;
+      }
       private void showMenuIfTriggered(MouseEvent e) {
         // the popup trigger is press on some platforms and release on others
         if (e.isPopupTrigger()) {
-          allocationContextRow = allocationsTable.rowAtPoint(e.getPoint());
+          rememberRow(e);
           allocationRowMenu().show(allocationsTable, e.getX(), e.getY());
         }
       }
@@ -758,7 +769,7 @@ public class TransactionForm {
     menu.add(add);
 
     JMenuItem remove = new JMenuItem(Strings.get("delete.allocation"));
-    remove.setEnabled(transactionChangeHandler != null && allocationContextRow >= 0);
+    remove.setEnabled(transactionChangeHandler != null && allocationContextRow != null);
     remove.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) { deleteAllocationRow(); }
     });
@@ -769,7 +780,7 @@ public class TransactionForm {
 
   /** Remove the row the pointer was last over, committing any open editor first. */
   private void deleteAllocationRow() {
-    if (transactionChangeHandler == null || allocationContextRow < 0) return;
+    if (transactionChangeHandler == null || allocationContextRow == null) return;
     if (allocationsTable.isEditing() && allocationsTable.getCellEditor() != null)
       allocationsTable.getCellEditor().stopCellEditing();
     transactionChangeHandler.deleteAllocation(allocationContextRow);

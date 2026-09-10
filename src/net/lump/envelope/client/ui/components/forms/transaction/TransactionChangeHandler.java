@@ -42,6 +42,14 @@ public class TransactionChangeHandler {
   private final Map<Allocation, Boolean> savesInFlight =
       new IdentityHashMap<Allocation, Boolean>();
 
+  /**
+   * Allocations whose delete is in flight.  A row stays on screen until its round
+   * trip returns, so without this two quick deletes would each count the full
+   * table, each believe a row would survive, and together empty the transaction.
+   */
+  private final Map<Allocation, Boolean> deletesInFlight =
+      new IdentityHashMap<Allocation, Boolean>();
+
   private Transaction pristine;
   private Transaction editing;
   private Money amount;
@@ -407,35 +415,53 @@ public class TransactionChangeHandler {
    *
    * @param row the row index in the allocations table
    */
-  void deleteAllocation(int row) {
+  void deleteAllocation(final Allocation allocation) {
+    if (allocation == null) return;
     java.util.List<Allocation> rows = form.getTableModel().getAllocations();
-    if (rows == null || row < 0 || row >= rows.size()) return;
-    final Allocation allocation = rows.get(row);
+    if (rows == null) return;
 
-    // The server enforces this as well -- it must, since nothing stops another
-    // client -- but refusing here saves a round trip and gives a better reason.
-    if (rows.size() <= 1) {
-      JOptionPane.showMessageDialog(
-          form.getTransactionFormPanel(),
-          Strings.get("error.last.allocation"),
-          Strings.get("error"),
-          JOptionPane.ERROR_MESSAGE);
-      return;
+    // Read the id under the monitor the save path publishes it with.  A row that
+    // was just inserted can otherwise still look unsaved here, and would be taken
+    // off the screen while its row stayed in the database.
+    final Integer id;
+    synchronized (savesInFlight) {
+      id = allocation.getId();
     }
 
-    StatusRunnable r = new StatusRunnable("Deleting allocation " + allocation.getId()) {
+    synchronized (deletesInFlight) {
+      if (deletesInFlight.containsKey(allocation)) return;   // already on its way
+
+      // Count only rows that are not already being removed.  The server enforces
+      // this too -- it must, since nothing stops another client -- but refusing
+      // here saves a round trip and gives a better reason than the server's.
+      int surviving = 0;
+      for (Allocation a : rows) if (!deletesInFlight.containsKey(a)) surviving++;
+      if (surviving <= 1) {
+        JOptionPane.showMessageDialog(
+            form.getTransactionFormPanel(),
+            Strings.get("error.last.allocation"),
+            Strings.get("error"),
+            JOptionPane.ERROR_MESSAGE);
+        return;
+      }
+      deletesInFlight.put(allocation, Boolean.TRUE);
+    }
+
+    StatusRunnable r = new StatusRunnable("Deleting allocation " + id) {
       @Override public void run() {
         try {
           // a row that was never written has nothing to delete server-side
-          if (allocation.getId() != null)
-            new TransactionPortal().deleteAllocation(allocation.getId());
+          if (id != null) new TransactionPortal().deleteAllocation(id);
           SwingUtilities.invokeLater(new Runnable() {
             public void run() { form.getTableModel().removeRow(allocation); }
           });
           setSavedLabel();
           refreshTotals();
         } catch (AbortException e) {
+          // the row is still there and still real, so put it back in play
           setSaveFailedLabel();
+        } finally {
+          synchronized (deletesInFlight) { deletesInFlight.remove(allocation); }
         }
       }
     };

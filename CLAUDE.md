@@ -51,6 +51,20 @@ existence. Every balance in the app — account totals, category totals, `Transa
 .amount` column, so allocations are the authority for money and the transaction's amount field
 is a target to reconcile against, not a source.
 
+Adding and removing allocations follows from the same fact. An insert is just
+`saveOrUpdate` on an `Allocation` whose id is null — its `@ManyToOne` cascades carry the
+association — so no insert verb was needed. Delete is a bespoke
+`Command.Name.deleteAllocation` on the `Action` facet rather than a generic "delete this
+entity": nothing on the server checks whose budget a command touches, so a generic delete
+verb would hand every authenticated caller the ability to remove any row of any type.
+`Action.deleteAllocation` refuses to remove a transaction's **last** allocation, because a
+transaction reaches its budget only through them. That guard counts the siblings with a
+**locking** read (`setLockMode(… PESSIMISTIC_WRITE)`): check-then-delete is otherwise three
+separate statements, deleting a child never touches the parent's `@Version` so optimistic
+locking offers nothing, and under `REPEATABLE READ` a plain `SELECT` would answer from the
+snapshot taken before the caller waited. Two concurrent deletes on a two-allocation
+transaction would each see two, each pass, and together strand it.
+
 **Login sends a password-equivalent, not a password.** The client generates an RSA keypair —
 fresh on every launch, never persisted — and sends its public key in `getChallenge`. The
 server's `Challenge` carries the server's public key and, as the "challenge", only
@@ -143,6 +157,19 @@ at the `/configure` form waiting for a human.
   succeeds and the second is refused with `StaleObjectStateException` — every entity editable
   exactly once per load. `sql/migrations/001-version-stamp-precision.sql` moved the live tables
   to `timestamp(3)`; keep any new versioned table at `timestamp(3)` too.
+- **Ids are `IDENTITY`, not `AUTO`.** Every table is `auto_increment`, but the entities were
+  annotated `@GeneratedValue(strategy = AUTO)`, which under Hibernate 5 resolves to a
+  *sequence* and fails with `Unknown SEQUENCE: 'hibernate_sequence'`. That went unnoticed for
+  the whole resurrection because nothing in the app ever inserted a row — it was read and
+  update only — so the first `INSERT` ever attempted was the first thing to hit it. All ten
+  entities now declare `IDENTITY`. Don't "simplify" them back to `AUTO`.
+- **Nothing serializes two saves of the same row.** `ThreadPool` is
+  `(0, Integer.MAX_VALUE)` over a `SynchronousQueue`, so every submitted task starts
+  immediately on its own thread. Two quick edits to an allocation that has not been inserted
+  yet would both see a null id and insert it twice — demonstrated, two rows.
+  `sendAllocationChange` is therefore single-flight per allocation, re-sending once if the row
+  changed while its save was in the air. Anything else that saves per-keystroke needs the same
+  treatment.
 - **`Transaction.equals` does not compare allocations, and must not be "fixed" naively.** It
   builds both sides of that comparison from `this.allocations` (the second one is unqualified),
   so it compares the list to itself and the check always passes — an allocation change is
