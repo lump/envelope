@@ -27,7 +27,9 @@ the body is optionally gzipped and AES-encrypted under an RSA-wrapped session ke
 separate `key` part. `Controller` dispatches by `Command.Name` — `getFacet()` picks the DAO
 class, `name()` is the method. The **response is not multipart**: the server streams N
 serialized objects with `Single-Object` / `Object-Count` / `Command-Sequence-Id` headers and
-the client reassembles them into a list.
+the client reassembles them into a list. Authentication rides in HTTP headers rather than in
+the serialized payload, so the signature can cover a digest of the exact bytes on the wire and
+the server can check it before anything reaches `readObject`.
 
 **`org.hibernate.criterion.DetachedCriteria` is serialized across the wire** as a `Command`
 parameter (`Command.Name.detachedCriteriaQueryList` / `…QueryUnique`), built by
@@ -37,16 +39,24 @@ parameter (`Command.Name.detachedCriteriaQueryList` / `…QueryUnique`), built b
 Hibernate 5.6, the last line that ships those classes. Moving to Hibernate 6/7 is not a
 dependency bump; it means redesigning the protocol.
 
-**Auth sends a password-equivalent, not a password — and it is not a real challenge-response.**
-The client generates an RSA keypair and sends its public key in `getChallenge`. The server's
-`Challenge` carries the server's public key and, as the "challenge", only
-`Crypt.yankSalt(user.getCryptPassword())` — the **salt from the stored hash**, which is
-constant per password and contains no nonce. The client computes `Crypt.crypt(salt, password)`
-(i.e. reproduces the stored md5-crypt hash) and RSA-encrypts it to the server key; the server
-decrypts and compares it to the stored hash. The result is replayable and password-equivalent,
-and the client **caches that ciphertext in `java.util.prefs` and replays it verbatim** on later
-logins. Hashes are md5-crypt (`$1$`), though `Crypt.crypt()` also dispatches to DES crypt for
-2-/13-char non-`$1$` salts.
+**Login sends a password-equivalent, not a password.** The client generates an RSA keypair —
+fresh on every launch, never persisted — and sends its public key in `getChallenge`. The
+server's `Challenge` carries the server's public key and, as the "challenge", only
+`Crypt.yankSalt(user.getCryptPassword())`: the salt from the stored hash, constant per password
+and carrying no nonce. The client computes `Crypt.crypt(salt, password)`, reproducing the stored
+md5-crypt hash, and RSA-encrypts it to the server key; the server decrypts and compares. Hashes
+are md5-crypt (`$1$`), though `Crypt.crypt()` also dispatches to DES crypt for 2-/13-char
+non-`$1$` salts.
+
+**Everything after login is a session, not re-authentication.** `authChallengeResponse` mints a
+session only once the hash verifies, binds it to the public key proven in that same handshake,
+and returns the id encrypted to that key. Each later command carries `X-Envelope-Session`,
+`X-Envelope-Stamp` and `X-Envelope-Signature` — the last being a signature over
+`sessionId:stamp:digest(command bytes)`. `Security.validateSession` demands a live session, a
+stamp within `Sessions.STAMP_WINDOW` (5 min), and a signature that is unspent and verifies
+against the session's key. Since the client keypair dies with the process, the session id is
+sender-constrained: capturing it is not enough to use it. Nothing in the database authenticates
+anything — `users.public_key` is now vestigial.
 
 ## Build & run
 
@@ -106,11 +116,16 @@ at the `/configure` form waiting for a human.
   is no server-side distribution mechanism yet.
 - **Tests need a live server + DB** and are skipped by default (`default-skip-tests`
   profile); run with `-DskipTests=false`.
-- **Auth bypass (unfixed).** `Command.Name.getChallenge` is declared session-not-required, so
-  `Controller` skips `validateSession` for it — yet `Security.getChallenge()` writes the
-  caller-supplied public key to the user row and commits *before* any credential check. Since
-  `validateSession()` authenticates every other command purely by verifying its signature
-  against that stored public key (there is no server-side session store, and the signature
-  covers only username + an unchecked timestamp), an unauthenticated caller can overwrite any
-  user's key and then sign commands as them. It is a full authentication bypass, and a trivial
-  lockout DoS for the real user.
+- **Auth is fixed at the command level; the login step still is not.** Commands are safe now
+  (session-bound, command-bound, single-use signatures — see above). What remains is that the
+  login exchange has no nonce, so the encrypted md5-crypt hash is a static password-equivalent:
+  capture it and you can open a *new* session, and because the database stores that same value,
+  a DB leak is directly usable without cracking. The fix is a nonce in `Challenge`.
+- **The client cannot authenticate the server.** `LoginSettings.setServerKey()` is a bare
+  assignment — whatever public key arrives in the `Challenge` is trusted, with no pinning and no
+  CA. A MITM can hand the client its own key and collect the password-equivalent. App-level
+  encryption is optional (`ServerSettings.getEncrypt()` defaults to **false**) and there is no
+  TLS; today the only thing mitigating this is compose binding to `127.0.0.1`. Pin the server key
+  on first use, or put TLS in front, before exposing this beyond localhost.
+- **Sessions are per-JVM and in memory** (`Sessions`), so they die on redeploy and would need
+  sticky sessions or a shared store if a second Tomcat ever appeared.
