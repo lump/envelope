@@ -174,13 +174,31 @@ public class Controller {
       throw new RemoteException("wrapped throwable", e);
     } finally {
       if (dao != null) {
-        if (dao.isActive() && !dao.wasRolledBack()) {
-          if (dao.isDirty()) dao.flush();
-          dao.commit();
+        // The flush and the commit can both throw -- a constraint violation, a
+        // stale version -- and this is a finally block, so the catch above cannot
+        // see it.  Left unguarded, such a throw skipped close() and disconnect()
+        // below and leaked the session: the connection went back to nobody, still
+        // holding its row locks, and every later write to those rows blocked for
+        // the full lock timeout and then failed the same way.  One duplicate name
+        // was enough to start it.
+        try {
+          if (dao.isActive() && !dao.wasRolledBack()) {
+            if (dao.isDirty()) dao.flush();
+            dao.commit();
+          }
+        } catch (Exception e) {
+          logger.error("could not commit " + command.getName().name(), e);
+          try {
+            if (dao.getTransaction().isActive() && !dao.wasRolledBack())
+              dao.getTransaction().rollback();
+          } catch (Exception rollbackFailed) {
+            logger.error("could not roll back either", rollbackFailed);
+          }
+        } finally {
+          // close the session -- whatever happened above
+          dao.close();
+          dao.disconnect();
         }
-        // close the session
-        dao.close();
-        dao.disconnect();
       }
 
       logger.info((authenticatedUser != null ? authenticatedUser : "no-session") + SPACE

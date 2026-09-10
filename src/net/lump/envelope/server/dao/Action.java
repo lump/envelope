@@ -167,6 +167,9 @@ public class Action extends DAO {
   // rather than a raw constraint violation.
   // ------------------------------------------------------------------------
 
+  /** Stands in for "no row to exclude" when checking a name for a new entity. */
+  private static final Integer NO_ROW = Integer.valueOf(-1);
+
   /** Trim a user-supplied name and insist it is neither empty nor over-long. */
   private String checkName(String name) throws EnvelopeException {
     String trimmed = name == null ? "" : name.trim();
@@ -176,6 +179,44 @@ public class Action extends DAO {
       throw new EnvelopeException(
           EnvelopeException.Name.Invalid_Data, "a name may be at most 64 characters");
     return trimmed;
+  }
+
+  /**
+   * Refuse a name a sibling already holds, so the caller gets a sentence rather
+   * than "Duplicate entry '0-Checking' for key 'budget_name'".  The unique index
+   * is still the thing that actually guarantees it; this only reads better.
+   *
+   * @param excludeId the row being renamed, or -1 when creating a new one
+   */
+  private void checkAccountNameFree(Integer budgetId, String name, Integer excludeId)
+      throws EnvelopeException {
+    long taken = ((Number)getCurrentSession()
+        .createQuery("select count(a) from Account a where a.budget.id = :budgetId"
+                     + " and a.name = :name and a.id <> :excludeId")
+        .setParameter("budgetId", budgetId)
+        .setParameter("name", name)
+        .setParameter("excludeId", excludeId)
+        .uniqueResult()).longValue();
+    if (taken > 0)
+      throw new EnvelopeException(
+          EnvelopeException.Name.Invalid_Data,
+          "this budget already has an account called \"" + name + "\"");
+  }
+
+  /** As checkAccountNameFree, one level down: categories are unique per account. */
+  private void checkCategoryNameFree(Integer accountId, String name, Integer excludeId)
+      throws EnvelopeException {
+    long taken = ((Number)getCurrentSession()
+        .createQuery("select count(c) from Category c where c.account.id = :accountId"
+                     + " and c.name = :name and c.id <> :excludeId")
+        .setParameter("accountId", accountId)
+        .setParameter("name", name)
+        .setParameter("excludeId", excludeId)
+        .uniqueResult()).longValue();
+    if (taken > 0)
+      throw new EnvelopeException(
+          EnvelopeException.Name.Invalid_Data,
+          "that account already has a category called \"" + name + "\"");
   }
 
   private long countRows(String hql, String parameter, Integer value) {
@@ -215,6 +256,8 @@ public class Action extends DAO {
           EnvelopeException.Name.Invalid_Data, "\"" + type + "\" is not an account type");
     }
 
+    checkAccountNameFree(budgetId, accountName, NO_ROW);
+
     Account account = new Account();
     account.setBudget(budget);
     account.setName(accountName);
@@ -236,7 +279,17 @@ public class Action extends DAO {
    * @param name      its new name, unique within its budget
    */
   public void renameAccount(Integer accountId, String name) throws EnvelopeException {
-    load(Account.class, accountId).setName(checkName(name));
+    String accountName = checkName(name);
+    Account account = load(Account.class, accountId);
+    checkAccountNameFree(account.getBudget().getId(), accountName, accountId);
+
+    account.setName(accountName);
+    // Flush here rather than leaving it to Controller.  Controller flushes from a
+    // finally block, where a constraint violation cannot reach its catch: the
+    // response has already gone out saying the change worked, and the session is
+    // left holding its locks.  Flushing inside the method keeps the failure where
+    // it can be reported.
+    getCurrentSession().flush();
   }
 
   /**
@@ -256,6 +309,7 @@ public class Action extends DAO {
           + (categories == 1 ? " category" : " categories") + " in it");
 
     delete(account);
+    getCurrentSession().flush();   // see renameAccount
   }
 
   /**
@@ -275,6 +329,8 @@ public class Action extends DAO {
       throw new EnvelopeException(
           EnvelopeException.Name.Invalid_Data, "there is no account " + accountId);
 
+    checkCategoryNameFree(accountId, categoryName, NO_ROW);
+
     Category category = new Category();
     category.setAccount(account);
     category.setName(categoryName);
@@ -292,7 +348,12 @@ public class Action extends DAO {
    * @param name       its new name, unique within its account
    */
   public void renameCategory(Integer categoryId, String name) throws EnvelopeException {
-    load(Category.class, categoryId).setName(checkName(name));
+    String categoryName = checkName(name);
+    Category category = load(Category.class, categoryId);
+    checkCategoryNameFree(category.getAccount().getId(), categoryName, categoryId);
+
+    category.setName(categoryName);
+    getCurrentSession().flush();   // see renameAccount
   }
 
   /**
@@ -313,5 +374,6 @@ public class Action extends DAO {
           + (allocations == 1 ? " allocation" : " allocations"));
 
     delete(category);
+    getCurrentSession().flush();   // see renameAccount
   }
 }
