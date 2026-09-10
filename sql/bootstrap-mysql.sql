@@ -11,7 +11,7 @@ connect envelope;
 
 create table budgets (
   `id` int not null auto_increment primary key,
-  `stamp` timestamp not null default current_timestamp,
+  `stamp` timestamp(3) not null default current_timestamp(3),
   `name` varchar(64) not null,
   unique index name_index(`name`)
 )ENGINE=INNODB;
@@ -22,7 +22,7 @@ alter table budgets auto_increment = 0;
 
 create table accounts (
   `id` int NOT NULL auto_increment primary key,
-  `stamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  `stamp` timestamp(3) NOT NULL default current_timestamp(3),
   `budget` int not null,
   `name` varchar(64) not null,
   `type` enum('Debit','Credit','Loan') not null default 'Debit',
@@ -37,7 +37,7 @@ alter table accounts auto_increment = 0;
 
 -- create table allocation_settings (
 --  `id` int not null auto_increment primary key,
---  `stamp` timestamp not null default current_timestamp,
+--  `stamp` timestamp(3) not null default current_timestamp(3),
 --  `budget` int not null,
 --  `name` varchar(64) not null,
 --  `type` enum('Reimbursement','Weekly_Payday','Biweekly_Payday','Semimonthly_Payday','Monthly_Payday') not null,
@@ -51,7 +51,7 @@ alter table accounts auto_increment = 0;
 
 create table categories (
   `id` int NOT NULL auto_increment primary key,
-  `stamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  `stamp` timestamp(3) NOT NULL default current_timestamp(3),
   `account` int not null,
   `name` varchar(64) NOT NULL default '',
   unique index budget_name (`account`,`name`),
@@ -60,7 +60,7 @@ create table categories (
 
 -- create table category_allocation_settings (
 --  `id` int not null auto_increment primary key,
---  `stamp` timestamp not null default current_timestamp,
+--  `stamp` timestamp(3) not null default current_timestamp(3),
 --  `allocation_setting` int not null,
 --  `category` int not null,
 --  `allocation` double not null default '0.0',
@@ -72,7 +72,7 @@ create table categories (
 
 create table allocation_presets (
   `id` int NOT NULL auto_increment primary key,
-  `stamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  `stamp` timestamp(3) NOT NULL default current_timestamp(3),
   `budget` int not null,
   `name` varchar(64) NOT NULL,
   `category` int not null,
@@ -190,7 +190,7 @@ insert into allocation_presets values (null, null, 0, "Pay Day", (select id from
 
 -- create table tags (
 --  `id` int(11) NOT NULL auto_increment primary key,
---  `stamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
+--  `stamp` timestamp(3) NOT NULL default current_timestamp(3),
 --  `budget` int not null,
 --  `name` varchar(64) not null,
 --  constraint tags_budget foreign key (budget) references budgets(id) ON UPDATE CASCADE ON DELETE RESTRICT
@@ -201,7 +201,7 @@ insert into allocation_presets values (null, null, 0, "Pay Day", (select id from
 
 create table transactions (
   `id` int(11) NOT NULL auto_increment primary key,
-  `stamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  `stamp` timestamp(3) NOT NULL default current_timestamp(3),
   `date` date not null,
   `entity` varchar(128) not null,
   `description` varchar(255) not null,
@@ -222,7 +222,7 @@ insert into transactions values (1, null, now(), 'Beginning Balance', 'Starting 
 
 create table allocations (
   `id` int(11) NOT NULL auto_increment primary key,
-  `stamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  `stamp` timestamp(3) NOT NULL default current_timestamp(3),
   `category` int(11) not null,
   `transaction` int(11) not null,
   `amount` decimal(8,2) not null,
@@ -237,7 +237,7 @@ insert into allocations values (null, null, 0, 1, '6.6');
 
 create table `users` (
   `id` int(11) NOT NULL auto_increment primary key,
-  `stamp` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  `stamp` timestamp(3) NOT NULL default current_timestamp(3),
   `budget` int NOT NULL,
   `name` varchar(64) not null,
   `real_name` varchar(64) default NULL,
