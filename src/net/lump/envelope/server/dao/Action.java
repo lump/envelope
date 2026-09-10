@@ -340,6 +340,72 @@ public class Action extends DAO {
   }
 
   /**
+   * Remove one row from a preset.
+   *
+   * <p>No locking and no guard: a preset row has nothing depending on it, and a
+   * preset with no rows left is simply a preset that no longer exists.  Inserting
+   * and updating rows needs no command of its own -- AllocationPreset is an
+   * Identifiable, so the generic saveOrUpdate carries it.
+   *
+   * @param presetRowId the row to remove
+   */
+  public void deletePresetRow(Integer presetRowId) throws EnvelopeException {
+    AllocationPreset row = get(AllocationPreset.class, presetRowId);
+    if (row == null)
+      throw new EnvelopeException(
+          EnvelopeException.Name.Invalid_Data, "there is no preset row " + presetRowId);
+
+    delete(row);
+    getCurrentSession().flush();   // see renameAccount
+  }
+
+  /**
+   * Remove a whole named preset from a budget, every row of it.
+   *
+   * @param budgetId the budget it belongs to
+   * @param name     the preset name
+   */
+  public void deletePresetNamed(Integer budgetId, String name) throws EnvelopeException {
+    @SuppressWarnings("unchecked")
+    List<AllocationPreset> rows = getCurrentSession()
+        .createQuery("from AllocationPreset p where p.budget.id = :budgetId and p.name = :name")
+        .setParameter("budgetId", budgetId)
+        .setParameter("name", name)
+        .list();
+    if (rows.isEmpty())
+      throw new EnvelopeException(
+          EnvelopeException.Name.Invalid_Data, "this budget has no preset called \"" + name + "\"");
+
+    for (AllocationPreset row : rows) delete(row);
+    getCurrentSession().flush();   // see renameAccount
+  }
+
+  /**
+   * Rename a preset, which means renaming every row that carries the name.
+   *
+   * @param budgetId the budget it belongs to
+   * @param oldName  the name now
+   * @param newName  the name wanted
+   */
+  public void renamePresetNamed(Integer budgetId, String oldName, String newName)
+      throws EnvelopeException {
+    String wanted = checkName(newName);
+
+    @SuppressWarnings("unchecked")
+    List<AllocationPreset> rows = getCurrentSession()
+        .createQuery("from AllocationPreset p where p.budget.id = :budgetId and p.name = :name")
+        .setParameter("budgetId", budgetId)
+        .setParameter("name", oldName)
+        .list();
+    if (rows.isEmpty())
+      throw new EnvelopeException(
+          EnvelopeException.Name.Invalid_Data, "this budget has no preset called \"" + oldName + "\"");
+
+    for (AllocationPreset row : rows) row.setName(wanted);
+    getCurrentSession().flush();   // see renameAccount
+  }
+
+  /**
    * Add an account to a budget.
    *
    * @param budgetId the budget it belongs to

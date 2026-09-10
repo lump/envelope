@@ -89,6 +89,22 @@ omitted anything with no allocations yet — a newly created account was invisib
 and an invisible account cannot be given a category to make it appear. Balances stay derived;
 only the list stopped being.
 
+**An allocation preset is a set of rows sharing a name.** There is no header table: the
+presets of a budget are the distinct `allocation_presets.name` values, and one with no rows
+left has stopped existing — which is why creating one starts it with a row.
+`Action.applyAllocationPreset` lays one over a transaction in a single command rather than a
+save per row, because "Pay Day" expands to dozens of allocations that should all land or none.
+A percentage is a **whole number** carried to many places (`7.60764626375748` means 7.6%), so
+the product is taken at full precision and only the result brought to the cent; a row worth
+nothing is skipped; and a row already on the transaction carrying no money is filled before a
+new one is made, so the zero allocation a transaction is born with is used rather than
+stranded. An **auto-deduct** row contributes a *pair* — the amount in and the same amount
+straight back out — because that is what happened: the employee was paid and the money was
+removed before it arrived. The pair nets to nothing on the account while keeping the payment
+in the category's history. The result is not expected to balance; reconciling it against the
+transaction amount is the user's job, with the imbalance panel showing the gap.
+`forms/preset/AllocationPresetEditor` edits them, writing each change as it is made.
+
 **The transaction amount field is a view of the allocations, not a field of its own.** There
 is no `transactions.amount` column, so with exactly one allocation the two numbers are the
 same thing and the form keeps them level in both directions — typing in the amount writes

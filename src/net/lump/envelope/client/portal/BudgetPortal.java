@@ -65,4 +65,24 @@ public class BudgetPortal extends Portal {
   public void deleteCategory(Integer categoryId) throws AbortException {
     invoke(new Command(Command.Name.deleteCategory, null, categoryId));
   }
+
+  /**
+   * Remove one row from an allocation preset.  Adding and changing rows needs no
+   * command of its own: AllocationPreset is an Identifiable, so HibernatePortal's
+   * saveOrUpdate carries it.
+   */
+  public void deletePresetRow(Integer presetRowId) throws AbortException {
+    invoke(new Command(Command.Name.deletePresetRow, null, presetRowId));
+  }
+
+  /** Remove a whole named preset from a budget, every row of it. */
+  public void deletePresetNamed(Integer budgetId, String name) throws AbortException {
+    invoke(new Command(Command.Name.deletePresetNamed, null, budgetId, name));
+  }
+
+  /** Rename a preset, which means renaming every row that carries the name. */
+  public void renamePresetNamed(Integer budgetId, String oldName, String newName)
+      throws AbortException {
+    invoke(new Command(Command.Name.renamePresetNamed, null, budgetId, oldName, newName));
+  }
 }

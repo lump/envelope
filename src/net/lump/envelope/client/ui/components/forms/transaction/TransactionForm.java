@@ -14,6 +14,7 @@ import net.lump.envelope.client.ui.components.AutoCompletionComboBox;
 import net.lump.envelope.client.ui.components.MoneyTextField;
 import net.lump.envelope.client.ui.components.StatusBar;
 import net.lump.envelope.client.ui.components.TransactionTableModel;
+import net.lump.envelope.client.ui.components.forms.preset.AllocationPresetEditor;
 import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBar;
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.client.ui.images.ImageResource;
@@ -775,25 +776,41 @@ public class TransactionForm {
     });
     menu.add(add);
 
+    JMenu presets = new JMenu(Strings.get("allocation.preset"));
+
+    JMenu use = new JMenu(Strings.get("use"));
     java.util.List<String> presetNames = State.getInstance().getPresetNames();
-    if (!presetNames.isEmpty()) {
-      JMenu presets = new JMenu(Strings.get("allocation.preset"));
-      JMenu use = new JMenu(Strings.get("use"));
-      for (String name : presetNames) {
-        final String presetName = name;
-        JMenuItem item = new JMenuItem(presetName);
-        item.addActionListener(new ActionListener() {
-          public void actionPerformed(ActionEvent e) {
-            if (transactionChangeHandler != null)
-              transactionChangeHandler.applyPreset(presetName);
-          }
-        });
-        use.add(item);
-      }
-      presets.add(use);
-      menu.add(presets);
-      menu.addSeparator();
+    for (String name : presetNames) {
+      final String presetName = name;
+      JMenuItem item = new JMenuItem(presetName);
+      item.addActionListener(new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+          if (transactionChangeHandler != null)
+            transactionChangeHandler.applyPreset(presetName);
+        }
+      });
+      use.add(item);
     }
+    // nothing to apply until a preset exists, but Edit is how one gets made
+    use.setEnabled(!presetNames.isEmpty());
+    presets.add(use);
+
+    JMenuItem edit = new JMenuItem(Strings.get("edit"));
+    edit.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        try {
+          new AllocationPresetEditor(
+              SwingUtilities.getWindowAncestor(allocationsTable),
+              State.getInstance().getBudget()).setVisible(true);
+        } catch (AbortException ignore) {
+          // State could not reach the budget; Portal has already said so
+        }
+      }
+    });
+    presets.add(edit);
+
+    menu.add(presets);
+    menu.addSeparator();
 
     JMenuItem remove = new JMenuItem(Strings.get("delete.allocation"));
     remove.setEnabled(transactionChangeHandler != null && allocationContextRow != null);
