@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 import org.hibernate.criterion.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Date;
 import java.util.List;
 
@@ -63,30 +64,46 @@ public class CriteriaFactory {
         .addOrder(Order.asc("name"));
   }
 
+  /**
+   * The accounts of a budget, each with the sum of its allocations.
+   *
+   * <p>The balance is derived from the allocations, but the *list* deliberately is
+   * not: this used to be a single projection over Allocation, which inner-joins
+   * its way to the account and so omitted any account that had no allocations yet.
+   * A newly created account is still an account, and one invisible in the tree
+   * cannot be given a category to make it visible.  So the structure comes from
+   * the accounts table and the money is looked up against it, defaulting to zero.
+   */
   public List<Hierarchy.AccountTotal> getAccountTotals(Budget budget)
       throws AbortException {
-    List<Hierarchy.AccountTotal> retval =
-        new ArrayList<Hierarchy.AccountTotal>();
+    HibernatePortal portal = new HibernatePortal();
 
-    ProjectionList plist = Projections.projectionList()
-        .add(Projections.property("c.account"))
-        .add(Projections.property("a.name").as("AccountName"))
-        .add(Projections.groupProperty("a.id"))
-        .add(Projections.sum("amount"));
-//        .add(Projections.max("t.date"));
-    List<Object[]> list =
-        (List<Object[]>)(new HibernatePortal()).detachedCriteriaQueryList(
+    HashMap<Integer, Money> balances = new HashMap<Integer, Money>();
+    List<Object[]> sums =
+        (List<Object[]>)portal.detachedCriteriaQueryList(
             DetachedCriteria.forClass(Allocation.class)
                 .createAlias("category", "c")
                 .createAlias("c.account", "a")
                 .add(Restrictions.eq("a.budget", budget))
-                .setProjection(plist)
-//                .createAlias("transaction","t")
-                .addOrder(Order.asc("AccountName")));
-    if (list != null)
-      for (Object[] o : list) {
+                .setProjection(Projections.projectionList()
+                    .add(Projections.groupProperty("a.id"))
+                    .add(Projections.sum("amount"))));
+    if (sums != null)
+      for (Object[] o : sums)
+        balances.put((Integer)o[0], o[1] == null ? Money.ZERO : (Money)o[1]);
+
+    List<Hierarchy.AccountTotal> retval = new ArrayList<Hierarchy.AccountTotal>();
+    List<Account> accounts =
+        (List<Account>)portal.detachedCriteriaQueryList(
+            DetachedCriteria.forClass(Account.class)
+                .add(Restrictions.eq("budget", budget))
+                .addOrder(Order.asc("name")));
+    if (accounts != null)
+      for (Account account : accounts) {
+        Money balance = balances.get(account.getId());
         retval.add(new Hierarchy.AccountTotal(
-            (Account)o[0], (String)o[1], (Integer)o[2], (Money)o[3]));
+            account, account.getName(), account.getId(),
+            balance == null ? Money.ZERO : balance));
       }
 
     return retval;
@@ -98,26 +115,43 @@ public class CriteriaFactory {
         .add(Restrictions.eq("id", id)));
   }
 
+  /**
+   * The categories of an account, each with the sum of its allocations.
+   *
+   * <p>Same shape as getAccountTotals and for the same reason: a category with no
+   * allocations yet has to appear, so the list comes from the categories table and
+   * the money is looked up against it.
+   */
   public List<Hierarchy.CategoryTotal> getCategoriesForAccount(Account account)
       throws AbortException {
-    List<Hierarchy.CategoryTotal> retval =
-        new ArrayList<Hierarchy.CategoryTotal>();
-    ProjectionList plist = Projections.projectionList()
-        .add(Projections.property("c.name").as("CategoryName"))
-        .add(Projections.groupProperty("c.id"))
-        .add(Projections.sum("amount"))
-        .add(Projections.max("t.date"));
-    List<Object[]> list =
-        (List<Object[]>)(new HibernatePortal()).detachedCriteriaQueryList(
+    HibernatePortal portal = new HibernatePortal();
+
+    HashMap<Integer, Money> balances = new HashMap<Integer, Money>();
+    List<Object[]> sums =
+        (List<Object[]>)portal.detachedCriteriaQueryList(
             DetachedCriteria.forClass(Allocation.class)
                 .createAlias("category", "c")
                 .add(Restrictions.eq("c.account", account))
-                .createAlias("transaction", "t")
-                .setProjection(plist)
-                .addOrder(Order.asc("CategoryName")));
-    if (list != null)
-      for (Object[] o : list)
-        retval.add(new Hierarchy.CategoryTotal((String)o[0], (Integer)o[1], (Money)o[2]));
+                .setProjection(Projections.projectionList()
+                    .add(Projections.groupProperty("c.id"))
+                    .add(Projections.sum("amount"))));
+    if (sums != null)
+      for (Object[] o : sums)
+        balances.put((Integer)o[0], o[1] == null ? Money.ZERO : (Money)o[1]);
+
+    List<Hierarchy.CategoryTotal> retval = new ArrayList<Hierarchy.CategoryTotal>();
+    List<Category> categories =
+        (List<Category>)portal.detachedCriteriaQueryList(
+            DetachedCriteria.forClass(Category.class)
+                .add(Restrictions.eq("account", account))
+                .addOrder(Order.asc("name")));
+    if (categories != null)
+      for (Category category : categories) {
+        Money balance = balances.get(category.getId());
+        retval.add(new Hierarchy.CategoryTotal(
+            category.getName(), category.getId(),
+            balance == null ? Money.ZERO : balance));
+      }
 
     return retval;
   }

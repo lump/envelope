@@ -70,6 +70,25 @@ locking offers nothing, and under `REPEATABLE READ` a plain `SELECT` would answe
 snapshot taken before the caller waited. Two concurrent deletes on a two-allocation
 transaction would each see two, each pass, and together strand it.
 
+Accounts and categories are managed the same way, through `BudgetPortal` onto narrow
+`Action` commands (`createAccount`, `renameAccount`, `deleteAccount`, and the three
+`…Category` equivalents), reached by right-clicking the tree. Their delete guards
+deliberately do **not** lock, unlike `deleteAllocation`'s: `allocations.category` and
+`categories.account` are `ON DELETE RESTRICT`, so the foreign key is the real backstop and
+the worst a lost race can do is fail the delete. The guards exist to turn a raw constraint
+violation into a sentence. `deleteAllocation` had no such backstop — nothing in the database
+stops a transaction reaching zero allocations — which is why that one check had to be made
+atomic by hand.
+
+**The tree's structure comes from the structure tables; only its money comes from
+allocations.** `CriteriaFactory.getAccountTotals` and `getCategoriesForAccount` each run two
+queries and merge them: the accounts (or categories) themselves, plus a `sum(amount)`
+projection over `Allocation` keyed by id, defaulting to zero. They used to be a single
+projection over `Allocation`, which inner-joins its way up to the account and therefore
+omitted anything with no allocations yet — a newly created account was invisible in the tree,
+and an invisible account cannot be given a category to make it appear. Balances stay derived;
+only the list stopped being.
+
 **Login sends a password-equivalent, not a password.** The client generates an RSA keypair —
 fresh on every launch, never persisted — and sends its public key in `getChallenge`. The
 server's `Challenge` carries the server's public key and, as the "challenge", only
@@ -162,6 +181,11 @@ at the `/configure` form waiting for a human.
   succeeds and the second is refused with `StaleObjectStateException` — every entity editable
   exactly once per load. `sql/migrations/001-version-stamp-precision.sql` moved the live tables
   to `timestamp(3)`; keep any new versioned table at `timestamp(3)` too.
+- **Account names are unique per budget, but only since migration 002.** `accounts` shipped
+  with `unique index name_type (name, type)` — no budget column — so account names were unique
+  across the whole installation and two budgets could not both have a "Checking" account.
+  `sql/migrations/002-account-name-unique-per-budget.sql` re-scopes it to `(budget, name)`,
+  matching what `categories` already does one level down with `(account, name)`.
 - **A new transaction is dated today, and the list is date-filtered.** "New Transaction"
   (right-click the transaction list) creates a zero-amount stub in the selected category and
   opens it on the form, which is the entry screen — every field saves as it is edited. But

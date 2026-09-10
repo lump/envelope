@@ -2,6 +2,7 @@ package net.lump.envelope.client.ui.components;
 
 import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.State;
+import net.lump.envelope.client.portal.BudgetPortal;
 import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.thread.ThreadPool;
 import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBar;
@@ -24,6 +25,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.text.MessageFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -87,6 +91,25 @@ public class Hierarchy extends JTree {
 
     getSelectionModel().setSelectionMode(
         TreeSelectionModel.SINGLE_TREE_SELECTION);
+
+    // --- editing the shape of the budget ----------------------------------
+    // Right-click selects the node under the pointer first, so the menu and the
+    // rest of the window agree about what is being worked on.
+    addMouseListener(new MouseAdapter() {
+      @Override public void mousePressed(MouseEvent e) { showMenuIfTriggered(e); }
+      @Override public void mouseReleased(MouseEvent e) { showMenuIfTriggered(e); }
+      private void showMenuIfTriggered(MouseEvent e) {
+        // the popup trigger is press on some platforms and release on others
+        if (!e.isPopupTrigger()) return;
+        int row = getRowForLocation(e.getX(), e.getY());
+        if (row >= 0) setSelectionRow(row);
+
+        Object node = getLastSelectedPathComponent();
+        Object selected = (node instanceof DefaultMutableTreeNode)
+            ? ((DefaultMutableTreeNode)node).getUserObject() : null;
+        nodeMenu(selected).show(Hierarchy.this, e.getX(), e.getY());
+      }
+    });
 
     EnvelopeTreeCellRenderer renderer = new EnvelopeTreeCellRenderer();
 //    renderer.setLeafIcon(envelope.get());
@@ -156,6 +179,163 @@ public class Hierarchy extends JTree {
 //        else {
 //          MainFrame.getInstance().setTablePane(null);
 //        }
+      }
+    });
+  }
+
+  /** One structure change, expressed against the portal that performs it. */
+  private interface StructureTask {
+    void run(BudgetPortal portal) throws AbortException;
+  }
+
+  /**
+   * Run one structure change off the event thread, then rebuild the tree from the
+   * server so the new shape and its balances arrive together.
+   */
+  private void structureChange(String status, final StructureTask task) {
+    ThreadPool.getInstance().execute(new StatusRunnable(status) {
+      public void run() {
+        try {
+          task.run(new BudgetPortal());
+          refreshTree(State.getInstance().getBudget());
+        } catch (AbortException e) {
+          // Portal has already put the reason in front of the user
+        }
+      }
+    });
+  }
+
+  private JMenuItem menuItem(String key, final Runnable action) {
+    JMenuItem item = new JMenuItem(Strings.get(key));
+    item.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) { action.run(); }
+    });
+    return item;
+  }
+
+  private boolean confirm(String titleKey, String messageKey, String name) {
+    return JOptionPane.showConfirmDialog(
+        this,
+        MessageFormat.format(Strings.get(messageKey), name),
+        Strings.get(titleKey),
+        JOptionPane.YES_NO_OPTION,
+        JOptionPane.WARNING_MESSAGE) == JOptionPane.YES_OPTION;
+  }
+
+  /**
+   * Right-click menu for a tree node.  What it offers depends on what was clicked:
+   * the budget takes accounts, an account takes categories, a category takes only
+   * a rename or a removal.
+   */
+  private JPopupMenu nodeMenu(Object selected) {
+    JPopupMenu menu = new JPopupMenu();
+
+    // AccountTotal extends CategoryTotal, so the narrower test has to come first
+    if (selected instanceof AccountTotal) {
+      final Account account = ((AccountTotal)selected).account;
+      menu.add(menuItem("new.category", new Runnable() {
+        public void run() { newCategory(account); }
+      }));
+      menu.addSeparator();
+      menu.add(menuItem("rename.account", new Runnable() {
+        public void run() { renameAccount(account); }
+      }));
+      menu.add(menuItem("delete.account", new Runnable() {
+        public void run() { deleteAccount(account); }
+      }));
+    }
+    else if (selected instanceof CategoryTotal) {
+      final CategoryTotal category = (CategoryTotal)selected;
+      menu.add(menuItem("rename.category", new Runnable() {
+        public void run() { renameCategory(category); }
+      }));
+      menu.add(menuItem("delete.category", new Runnable() {
+        public void run() { deleteCategory(category); }
+      }));
+    }
+    else {
+      // the root, or nothing at all
+      menu.add(menuItem("new.account", new Runnable() {
+        public void run() { newAccount(); }
+      }));
+    }
+
+    return menu;
+  }
+
+  private void newAccount() {
+    JTextField name = new JTextField(20);
+    JComboBox<Account.AccountType> type =
+        new JComboBox<Account.AccountType>(Account.AccountType.values());
+    JPanel panel = new JPanel(new GridLayout(0, 2, 4, 4));
+    panel.add(new JLabel(Strings.get("name")));
+    panel.add(name);
+    panel.add(new JLabel(Strings.get("type")));
+    panel.add(type);
+
+    if (JOptionPane.showConfirmDialog(this, panel, Strings.get("new.account"),
+        JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE) != JOptionPane.OK_OPTION)
+      return;
+
+    final String accountName = name.getText();
+    final Account.AccountType accountType = (Account.AccountType)type.getSelectedItem();
+    structureChange("Creating account", new StructureTask() {
+      public void run(BudgetPortal portal) throws AbortException {
+        portal.createAccount(State.getInstance().getBudget().getId(), accountName, accountType);
+      }
+    });
+  }
+
+  private void renameAccount(final Account account) {
+    final String name = (String)JOptionPane.showInputDialog(
+        this, Strings.get("name"), Strings.get("rename.account"),
+        JOptionPane.PLAIN_MESSAGE, null, null, account.getName());
+    if (name == null) return;
+    structureChange("Renaming account", new StructureTask() {
+      public void run(BudgetPortal portal) throws AbortException {
+        portal.renameAccount(account.getId(), name);
+      }
+    });
+  }
+
+  private void deleteAccount(final Account account) {
+    if (!confirm("delete.account", "confirm.delete.account", account.getName())) return;
+    structureChange("Deleting account", new StructureTask() {
+      public void run(BudgetPortal portal) throws AbortException {
+        portal.deleteAccount(account.getId());
+      }
+    });
+  }
+
+  private void newCategory(final Account account) {
+    final String name = (String)JOptionPane.showInputDialog(
+        this, Strings.get("name"), Strings.get("new.category"),
+        JOptionPane.PLAIN_MESSAGE, null, null, "");
+    if (name == null) return;
+    structureChange("Creating category", new StructureTask() {
+      public void run(BudgetPortal portal) throws AbortException {
+        portal.createCategory(account.getId(), name);
+      }
+    });
+  }
+
+  private void renameCategory(final CategoryTotal category) {
+    final String name = (String)JOptionPane.showInputDialog(
+        this, Strings.get("name"), Strings.get("rename.category"),
+        JOptionPane.PLAIN_MESSAGE, null, null, category.name);
+    if (name == null) return;
+    structureChange("Renaming category", new StructureTask() {
+      public void run(BudgetPortal portal) throws AbortException {
+        portal.renameCategory(category.id, name);
+      }
+    });
+  }
+
+  private void deleteCategory(final CategoryTotal category) {
+    if (!confirm("delete.category", "confirm.delete.category", category.name)) return;
+    structureChange("Deleting category", new StructureTask() {
+      public void run(BudgetPortal portal) throws AbortException {
+        portal.deleteCategory(category.id);
       }
     });
   }

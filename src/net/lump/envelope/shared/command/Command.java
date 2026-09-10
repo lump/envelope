@@ -90,6 +90,14 @@ public class Command implements Serializable {
     createTransaction(Dao.Action, Integer.class, Date.class, String.class, String.class, Money.class),
     deleteTransaction(Dao.Action, Integer.class),
 
+    // budget structure
+    createAccount(Dao.Action, Integer.class, String.class, String.class),
+    renameAccount(Dao.Action, Integer.class, String.class),
+    deleteAccount(Dao.Action, Integer.class),
+    createCategory(Dao.Action, Integer.class, String.class),
+    renameCategory(Dao.Action, Integer.class, String.class),
+    deleteCategory(Dao.Action, Integer.class),
+
     // NOTE: bit() is derived from ordinal(), so add new commands at the END --
     // inserting one in the middle renumbers every command after it.
     //more command definitions here...
