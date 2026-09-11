@@ -29,16 +29,18 @@ public class Category extends Identifiable<Integer, Timestamp> implements Compar
   private String name;
 
   /**
-   * The name qualified by its account.  Category names are unique only within an
-   * account, and once a budget has two accounts a "Computer" in each is a real
-   * situation; everywhere a Category is shown or completed against goes through
-   * this, so the bare name here meant the two could not be told apart, and typing
-   * one always resolved to whichever happened to be listed first.
+   * The name qualified by its account, written like a path: "UF Checking/Computer".
+   * Category names are unique only within an account, and once a budget has two
+   * accounts a "Computer" in each is a real situation; everywhere a Category is
+   * shown or completed against goes through this, so the bare name here meant the
+   * two could not be told apart, and typing one always resolved to whichever
+   * happened to be listed first.  Account first means a sorted list groups by
+   * account, and typing an account's name browses it.
    */
   public String toString() {
     return account == null || account.getName() == null
         ? name
-        : name + " (" + account.getName() + ")";
+        : account.getName() + "/" + name;
   }
 
   @Id

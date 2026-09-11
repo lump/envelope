@@ -235,7 +235,7 @@ at the `/configure` form waiting for a human.
   hit in list order, so with a bare-name `toString()` and a name-ordered list, every typed
   prefix resolved into whichever account sorted first — a transaction started under one
   account silently moved to another. Two things now hold that off: `Category.toString()`
-  qualifies the name with its account, and `TransactionForm.categoryOrderFor` lists the
+  qualifies the name with its account as `Account/Name`, both completers also answer to the bare name, and `TransactionForm.categoryOrderFor` lists the
   transaction's own accounts first. Don't put the bare name back in `toString()`.
 - **A user has exactly one budget.** `User.budget` is a single `@ManyToOne`, and
   `CriteriaFactory.getBudgetForUser` reads it as a unique result into `State.budget`, which the

@@ -252,17 +252,31 @@ public class ComboBoxCellEditor
       selecting = false;
     }
 
+    /**
+     * Whether an item answers to a typed prefix.  Everything answers to its full
+     * text.  A Category, shown as "Account/Name", also answers to its bare name,
+     * so "Comp" still finds Computer without the account being typed first --
+     * the picker is ordered with the transaction's own accounts first, so the
+     * first Computer is the right one.
+     */
+    private boolean answersTo(Object item, String pattern) {
+      if (item == null) return false;
+      if (startsWithIgnoreCase(item.toString(), pattern)) return true;
+      return item instanceof net.lump.envelope.shared.entity.Category
+          && startsWithIgnoreCase(((net.lump.envelope.shared.entity.Category)item).getName(), pattern);
+    }
+
     private Object lookupItem(String pattern) {
       Object selectedItem = model.getSelectedItem();
       // only search for a different item if the currently selected does not match
-      if (selectedItem != null && startsWithIgnoreCase(selectedItem.toString(), pattern)) {
+      if (answersTo(selectedItem, pattern)) {
         return selectedItem;
       } else {
         // iterate over all items
         for (int i=0, n=model.getSize(); i < n; i++) {
           Object currentItem = model.getElementAt(i);
           // current item starts with the pattern?
-          if (currentItem != null && startsWithIgnoreCase(currentItem.toString(), pattern)) {
+          if (answersTo(currentItem, pattern)) {
             return currentItem;
           }
         }
