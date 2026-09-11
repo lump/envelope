@@ -114,12 +114,17 @@ amount becomes a target, and the red imbalance panel shows the gap until the use
 it. `TransactionChangeHandler.syncAmountToBalance` detaches the field's own change listener
 while it moves it, so the form catching up is never mistaken for the user typing.
 
-**Commands can now tell who is asking.** `Controller.dispatch` loads the authenticated user
-into `ThreadInfo` (a `ThreadLocal`) before invoking the DAO method and clears it after, since
-Tomcat reuses worker threads. `Action.getUser()` reads it, and `requireAdmin()` checks
-`Permission.ADMIN` on it. The user and budget commands (`whoAmI`, `listUsers`, `listBudgets`,
-`createUser`, `updateUser`, `setPassword`, `createBudget`, `deleteBudget`, `renameBudget`) are
-the first to use this — ADMIN for all but `whoAmI` and setting one's own password. Users go
+**Every command declares the permission it needs, and `Controller.dispatch` checks it once.**
+`Command.Name` carries a `Permission` bit — `READ` for looking, `WRITE` for changing money and
+the shape it is filed into, `ADMIN` for users and budgets — and there is deliberately no
+constructor that lets a session-required command omit it: one nobody thought about does not
+compile. Dispatch loads the authenticated user into `ThreadInfo` (a `ThreadLocal`, cleared
+afterwards since Tomcat reuses worker threads), checks `hasPermission` against the command's
+bit, and refuses with `Permission_Denied` before the DAO method is even resolved. So a
+READ-only user is refused every save, delete and create whatever the client draws, and the
+DAO methods never have to check. `Action.requireAdmin()` remains on the user/budget commands
+as belt-and-braces. `setPassword` needs only `READ` — anyone may set their own — and checks
+self-or-ADMIN itself. Users go
 over the wire as copies built by `Action.forClient`, carrying no password hash; a fresh object
 rather than the loaded one with a field blanked, because blanking a field on an attached
 entity is an update Hibernate would write. A new password is hashed **on the client**
@@ -318,9 +323,10 @@ at the `/configure` form waiting for a human.
   encryption is optional (`ServerSettings.getEncrypt()` defaults to **false**) and there is no
   TLS; today the only thing mitigating this is compose binding to `127.0.0.1`. Pin the server key
   on first use, or put TLS in front, before exposing this beyond localhost.
-- **Permissions gate user and budget management only.** `READ`/`WRITE` are never checked
-  anywhere, and no data command is scoped to the caller's budget — an authenticated user can
-  still query or save any budget's transactions via `DetachedCriteria`. The plumbing to fix that
-  now exists (`getUser()` inside any `Action` method); the checks do not.
+- **Permissions say what a user may do, not to which budget.** `READ`/`WRITE`/`ADMIN` are
+  enforced per command at dispatch, but no data command is scoped to the caller's budget — a
+  WRITE user of one budget can still query or save another budget's transactions via
+  `DetachedCriteria`. Scoping writes is tractable (resolve the entity's budget and compare);
+  scoping reads means rewriting or replacing the client-built criteria.
 - **Sessions are per-JVM and in memory** (`Sessions`), so they die on redeploy and would need
   sticky sessions or a shared store if a second Tomcat ever appeared.

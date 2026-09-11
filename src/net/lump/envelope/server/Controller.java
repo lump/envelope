@@ -6,6 +6,9 @@ import net.lump.envelope.server.dao.DAO;
 import net.lump.envelope.shared.command.Command;
 import net.lump.envelope.shared.exception.EnvelopeException;
 import static net.lump.envelope.shared.exception.EnvelopeException.Name.Invalid_Session;
+import static net.lump.envelope.shared.exception.EnvelopeException.Name.Permission_Denied;
+import net.lump.envelope.shared.command.security.Permission;
+import net.lump.envelope.shared.entity.User;
 import net.lump.lib.util.Interval;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -90,12 +93,24 @@ public class Controller {
       // deduce the DAO class name from the facet and create an instance.
       dao = (DAO)Class.forName(DAO_PATH + command.getName().getFacet().name()).newInstance();
 
-      // Put the caller where the DAO can see it.  Until now the authenticated
-      // username went nowhere but the access log, and no command could tell who
-      // was asking; getUser(name) loads the row and parks it in ThreadInfo, which
-      // is what Action's permission checks read.  A user deleted mid-session
-      // fails here, as Invalid_User, which is the right answer.
-      if (authenticatedUser != null) dao.getUser(authenticatedUser);
+      // Put the caller where the DAO can see it, and check they may do this.
+      // getUser(name) loads the row and parks it in ThreadInfo; a user deleted
+      // mid-session fails here, as Invalid_User, which is the right answer.
+      //
+      // Every command declares the Permission it needs, and this is the one
+      // place it is checked.  The DAO methods never have to: a READ-only user
+      // is refused every save, delete and create before the method is even
+      // resolved, whatever the client chose to draw.
+      if (authenticatedUser != null) {
+        User caller = dao.getUser(authenticatedUser);
+        long needed = command.getName().getRequiredPermission();
+        if (needed != 0L && !caller.getPermission().hasPermission(needed)) {
+          logger.warn(authenticatedUser + " lacks " + Permission.list.get(needed)
+              + " for " + command.getName().name());
+          throw new EnvelopeException(Permission_Denied,
+              command.getName().name() + " needs " + Permission.list.get(needed) + " permission");
+        }
+      }
 
       Object returnValue = null;
       try {
@@ -167,6 +182,8 @@ public class Controller {
       //every exception will be caught, logged, and re-thrown to the client.
       logger.fatal("caught exception leaving controller", e);
 
+      // a refusal of our own -- Permission_Denied, Invalid_User -- goes back as is
+      if (e instanceof EnvelopeException) throw (EnvelopeException)e;
       if (e instanceof ClassNotFoundException)
         throw new IllegalArgumentException("Bad Facet " + command.getName().getFacet().name(), e);
       if (e instanceof IllegalAccessException || e instanceof NoSuchMethodException)

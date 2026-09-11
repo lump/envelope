@@ -2,6 +2,12 @@ package net.lump.envelope.shared.command;
 
 import org.hibernate.criterion.DetachedCriteria;
 import net.lump.envelope.shared.entity.Identifiable;
+
+// so the command declarations read as plain words; an enum cannot alias these
+// itself, since its constants initialize before any static field of its own
+import static net.lump.envelope.shared.command.security.Permission.ADMIN;
+import static net.lump.envelope.shared.command.security.Permission.READ;
+import static net.lump.envelope.shared.command.security.Permission.WRITE;
 import net.lump.lib.Money;
 
 import javax.swing.event.EventListenerList;
@@ -67,51 +73,53 @@ public class Command implements Serializable {
    */
   public enum Name {
 
-    // security
+    // ---- no session: the login exchange, and pings ------------------------
     ping(false, Dao.Security),
-    authedPing(Dao.Security),
     getChallenge(false, Dao.Security, String.class, PublicKey.class),
     authChallengeResponse(false, Dao.Security, String.class, byte[].class, PublicKey.class),
     getServerPublicKey(false, Dao.Security),
 
-    // generic
-    detachedCriteriaQueryList(Dao.Generic, DetachedCriteria.class, Boolean.class),
-    detachedCriteriaQueryUnique(Dao.Generic, DetachedCriteria.class, Boolean.class),
-    get(Dao.Generic, Class.class, Serializable.class),
-    load(Dao.Generic, Class.class, Serializable.class),
-    save(Dao.Generic, Identifiable.class),
-    saveOrUpdate(Dao.Generic, Identifiable.class),
+    // ---- READ: looking -------------------------------------------------------
+    authedPing(Dao.Security, READ),
+    detachedCriteriaQueryList(Dao.Generic, READ, DetachedCriteria.class, Boolean.class),
+    detachedCriteriaQueryUnique(Dao.Generic, READ, DetachedCriteria.class, Boolean.class),
+    get(Dao.Generic, READ, Class.class, Serializable.class),
+    load(Dao.Generic, READ, Class.class, Serializable.class),
+
+    // ---- WRITE: changing money and the shape it is filed into --------------
+    save(Dao.Generic, WRITE, Identifiable.class),
+    saveOrUpdate(Dao.Generic, WRITE, Identifiable.class),
 //    merge(Dao.Generic, Identifiable.class),
 //    refresh(Dao.Generic, Identifiable.class),
 
-    // transaction
-    updateReconciled(Dao.Action, Integer.class, Boolean.class),
-    deleteAllocation(Dao.Action, Integer.class),
-    createTransaction(Dao.Action, Integer.class, Date.class, String.class, String.class, Money.class),
-    deleteTransaction(Dao.Action, Integer.class),
+    updateReconciled(Dao.Action, WRITE, Integer.class, Boolean.class),
+    deleteAllocation(Dao.Action, WRITE, Integer.class),
+    createTransaction(Dao.Action, WRITE, Integer.class, Date.class, String.class, String.class, Money.class),
+    deleteTransaction(Dao.Action, WRITE, Integer.class),
 
-    // budget structure
-    createAccount(Dao.Action, Integer.class, String.class, String.class),
-    renameAccount(Dao.Action, Integer.class, String.class),
-    deleteAccount(Dao.Action, Integer.class),
-    createCategory(Dao.Action, Integer.class, String.class),
-    renameCategory(Dao.Action, Integer.class, String.class),
-    deleteCategory(Dao.Action, Integer.class),
-    applyAllocationPreset(Dao.Action, Integer.class, String.class, Money.class),
-    deletePresetRow(Dao.Action, Integer.class),
-    deletePresetNamed(Dao.Action, Integer.class, String.class),
-    renamePresetNamed(Dao.Action, Integer.class, String.class, String.class),
-    renameBudget(Dao.Action, Integer.class, String.class),
+    createAccount(Dao.Action, WRITE, Integer.class, String.class, String.class),
+    renameAccount(Dao.Action, WRITE, Integer.class, String.class),
+    deleteAccount(Dao.Action, WRITE, Integer.class),
+    createCategory(Dao.Action, WRITE, Integer.class, String.class),
+    renameCategory(Dao.Action, WRITE, Integer.class, String.class),
+    deleteCategory(Dao.Action, WRITE, Integer.class),
+    applyAllocationPreset(Dao.Action, WRITE, Integer.class, String.class, Money.class),
+    deletePresetRow(Dao.Action, WRITE, Integer.class),
+    deletePresetNamed(Dao.Action, WRITE, Integer.class, String.class),
+    renamePresetNamed(Dao.Action, WRITE, Integer.class, String.class, String.class),
 
-    // users and budgets (ADMIN, except whoAmI and setting one's own password)
-    whoAmI(Dao.Action),
-    listUsers(Dao.Action),
-    listBudgets(Dao.Action),
-    createUser(Dao.Action, String.class, String.class, Integer.class, Long.class, String.class),
-    updateUser(Dao.Action, Integer.class, String.class, Integer.class, Long.class),
-    setPassword(Dao.Action, Integer.class, String.class),
-    createBudget(Dao.Action, String.class),
-    deleteBudget(Dao.Action, Integer.class),
+    // ---- ADMIN: users and budgets -------------------------------------------
+    renameBudget(Dao.Action, ADMIN, Integer.class, String.class),
+    // whoAmI and setPassword only need a session: anyone may ask who they are
+    // and set their own password.  setPassword checks self-or-ADMIN itself.
+    whoAmI(Dao.Action, READ),
+    listUsers(Dao.Action, ADMIN),
+    listBudgets(Dao.Action, ADMIN),
+    createUser(Dao.Action, ADMIN, String.class, String.class, Integer.class, Long.class, String.class),
+    updateUser(Dao.Action, ADMIN, Integer.class, String.class, Integer.class, Long.class),
+    setPassword(Dao.Action, READ, Integer.class, String.class),
+    createBudget(Dao.Action, ADMIN, String.class),
+    deleteBudget(Dao.Action, ADMIN, Integer.class),
 
     // NOTE: bit() is derived from ordinal(), so add new commands at the END --
     // inserting one in the middle renumbers every command after it.
@@ -122,16 +130,33 @@ public class Command implements Serializable {
     private final Dao dao;
     private final ArrayList<Class> params = new ArrayList<Class>();
     private final Boolean sessionRequired;
+    private final long requiredPermission;
 
+    /**
+     * A command that needs no session -- and so can carry no permission, there
+     * being nobody to hold one.  Only the login exchange and the pings.
+     */
     Name(boolean sessionRequired, Dao dao, Class... params) {
       bit = BigInteger.ZERO.setBit(ordinal());
       this.params.addAll(Arrays.asList(params));
       this.dao = dao;
       this.sessionRequired = sessionRequired;
+      this.requiredPermission = 0L;
     }
 
-    private Name(Dao dao, Class... params) {
-      this(true, dao, params);
+    /**
+     * A command that needs a session, and this permission on it.  Controller
+     * checks it once, at dispatch, against the user the session belongs to; the
+     * DAO methods never have to.  There is deliberately no form of this that
+     * lets the permission be left off: a command nobody thought about does not
+     * compile, rather than quietly running for everyone.
+     */
+    Name(Dao dao, long requiredPermission, Class... params) {
+      bit = BigInteger.ZERO.setBit(ordinal());
+      this.params.addAll(Arrays.asList(params));
+      this.dao = dao;
+      this.sessionRequired = true;
+      this.requiredPermission = requiredPermission;
     }
 
     /**
@@ -170,6 +195,16 @@ public class Command implements Serializable {
      */
     public Boolean isSessionRequired() {
       return sessionRequired;
+    }
+
+    /**
+     * The Permission bits a caller must hold for this command; 0 for one that
+     * needs no session.
+     *
+     * @return long
+     */
+    public long getRequiredPermission() {
+      return requiredPermission;
     }
 
     /**
