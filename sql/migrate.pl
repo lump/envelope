@@ -269,7 +269,8 @@ while (my $row = $sth->fetchrow_hashref()) {
   $rownum ++;
   # skip beginning balances because we don't use those anymore
   if (($row->{amount} == 0 and $row->{date} =~ /^2003-01-01$/)
-      or ($row->{date} =~ /^20[01][0-9]-01-01$/ and $row->{subcategory} eq "Beginning Balance")) {
+      or ($row->{date} =~ /^20[01][0-9]-01-01$/ and $row->{subcategory} eq "Beginning Balance")
+      or ($row->{to_from} eq "Adjustment" and $row->{description} =~ /^ending Balance/i)) {
     print "-";
     next;
   }
