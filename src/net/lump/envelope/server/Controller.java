@@ -90,6 +90,13 @@ public class Controller {
       // deduce the DAO class name from the facet and create an instance.
       dao = (DAO)Class.forName(DAO_PATH + command.getName().getFacet().name()).newInstance();
 
+      // Put the caller where the DAO can see it.  Until now the authenticated
+      // username went nowhere but the access log, and no command could tell who
+      // was asking; getUser(name) loads the row and parks it in ThreadInfo, which
+      // is what Action's permission checks read.  A user deleted mid-session
+      // fails here, as Invalid_User, which is the right answer.
+      if (authenticatedUser != null) dao.getUser(authenticatedUser);
+
       Object returnValue = null;
       try {
         // invoke the method and reap the return value.
@@ -200,6 +207,10 @@ public class Controller {
           dao.disconnect();
         }
       }
+
+      // Tomcat reuses its worker threads, so a ThreadLocal left set here would
+      // be waiting for whichever request lands on this thread next.
+      ThreadInfo.setUser(null);
 
       logger.info((authenticatedUser != null ? authenticatedUser : "no-session") + SPACE
           + command.getName().name() + SPACE + Interval.span(start, System.currentTimeMillis()));

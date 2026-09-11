@@ -114,6 +114,19 @@ amount becomes a target, and the red imbalance panel shows the gap until the use
 it. `TransactionChangeHandler.syncAmountToBalance` detaches the field's own change listener
 while it moves it, so the form catching up is never mistaken for the user typing.
 
+**Commands can now tell who is asking.** `Controller.dispatch` loads the authenticated user
+into `ThreadInfo` (a `ThreadLocal`) before invoking the DAO method and clears it after, since
+Tomcat reuses worker threads. `Action.getUser()` reads it, and `requireAdmin()` checks
+`Permission.ADMIN` on it. The user and budget commands (`whoAmI`, `listUsers`, `listBudgets`,
+`createUser`, `updateUser`, `setPassword`, `createBudget`, `deleteBudget`, `renameBudget`) are
+the first to use this — ADMIN for all but `whoAmI` and setting one's own password. Users go
+over the wire as copies built by `Action.forClient`, carrying no password hash; a fresh object
+rather than the loaded one with a field blanked, because blanking a field on an attached
+entity is an update Hibernate would write. A new password is hashed **on the client**
+(`AdminPortal.hash`, a fresh salt via `Crypt.generateNewMd5Salt`) exactly as the login exchange
+hashes one, and only the hash travels. The Admin tab (`forms/preferences/AdminPanel`) asks
+`whoAmI` on every refresh and draws accordingly — but what it draws is not what is enforced.
+
 **Login sends a password-equivalent, not a password.** The client generates an RSA keypair —
 fresh on every launch, never persisted — and sends its public key in `getChallenge`. The
 server's `Challenge` carries the server's public key and, as the "challenge", only
@@ -305,5 +318,9 @@ at the `/configure` form waiting for a human.
   encryption is optional (`ServerSettings.getEncrypt()` defaults to **false**) and there is no
   TLS; today the only thing mitigating this is compose binding to `127.0.0.1`. Pin the server key
   on first use, or put TLS in front, before exposing this beyond localhost.
+- **Permissions gate user and budget management only.** `READ`/`WRITE` are never checked
+  anywhere, and no data command is scoped to the caller's budget — an authenticated user can
+  still query or save any budget's transactions via `DetachedCriteria`. The plumbing to fix that
+  now exists (`getUser()` inside any `Action` method); the checks do not.
 - **Sessions are per-JVM and in memory** (`Sessions`), so they die on redeploy and would need
   sticky sessions or a shared store if a second Tomcat ever appeared.

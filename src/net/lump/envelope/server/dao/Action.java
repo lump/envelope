@@ -6,6 +6,8 @@ import net.lump.envelope.shared.entity.AllocationPreset;
 import net.lump.envelope.shared.entity.Budget;
 import net.lump.envelope.shared.entity.Category;
 import net.lump.envelope.shared.entity.Transaction;
+import net.lump.envelope.shared.entity.User;
+import net.lump.envelope.shared.command.security.Permission;
 import net.lump.envelope.shared.exception.EnvelopeException;
 import net.lump.lib.Money;
 import org.hibernate.Hibernate;
@@ -14,6 +16,7 @@ import org.hibernate.LockMode;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -268,6 +271,200 @@ public class Action extends DAO {
   }
 
   // ------------------------------------------------------------------------
+  // Users and budgets.
+  //
+  // These are the first commands that care WHO is asking.  Controller loads the
+  // authenticated user into ThreadInfo before dispatch; getUser() reads it back.
+  // ADMIN manages users and budgets; anyone may change their own password.
+  //
+  // Nothing here ever returns a User with its password hash in it.  A User goes
+  // over the wire as a copy carrying only what the client needs to show.
+  // ------------------------------------------------------------------------
+
+  private void requireAdmin() throws EnvelopeException {
+    if (!getUser().getPermission().hasPermission(Permission.ADMIN))
+      throw new EnvelopeException(
+          EnvelopeException.Name.Permission_Denied, "that needs administrator permission");
+  }
+
+  /**
+   * A copy of a User safe to send to a client: identity, name, budget and
+   * permissions, and nothing that could stand in for a credential.  A fresh
+   * object rather than the loaded one with fields blanked, because blanking a
+   * field on an attached entity is an update Hibernate would happily write.
+   */
+  private User forClient(User user) {
+    User out = new User();
+    out.setId(user.getId());
+    out.setStamp(user.getStamp());
+    out.setName(user.getName());
+    out.setRealName(user.getRealName());
+    out.setBudget(user.getBudget());
+    out.setPermission(new Permission(user.getPermission()));
+    return out;
+  }
+
+  /** Who the caller is: their name, budget and permissions. */
+  public User whoAmI() {
+    return forClient(getUser());
+  }
+
+  /** Every user.  ADMIN only. */
+  @SuppressWarnings("unchecked")
+  public List<User> listUsers() throws EnvelopeException {
+    requireAdmin();
+    List<User> users = getCurrentSession()
+        .createQuery("from User u order by u.name").list();
+    List<User> out = new ArrayList<User>(users.size());
+    for (User u : users) out.add(forClient(u));
+    return out;
+  }
+
+  /** Every budget.  ADMIN only. */
+  @SuppressWarnings("unchecked")
+  public List<Budget> listBudgets() throws EnvelopeException {
+    requireAdmin();
+    List<Budget> budgets = getCurrentSession()
+        .createQuery("from Budget b order by b.name").list();
+    for (Budget b : budgets) evict(b);
+    return budgets;
+  }
+
+  /**
+   * Add a user.  ADMIN only.
+   *
+   * @param name          login name, unique across the installation
+   * @param realName      display name
+   * @param budgetId      the one budget the user works in
+   * @param permissions   a Permission bitmask
+   * @param cryptPassword the md5-crypt hash of the initial password, made by the
+   *                      client the same way the login exchange makes one
+   */
+  public User createUser(String name, String realName, Integer budgetId,
+                         Long permissions, String cryptPassword) throws EnvelopeException {
+    requireAdmin();
+    String userName = checkName(name);
+
+    long taken = ((Number)getCurrentSession()
+        .createQuery("select count(u) from User u where u.name = :name")
+        .setParameter("name", userName).uniqueResult()).longValue();
+    if (taken > 0)
+      throw new EnvelopeException(
+          EnvelopeException.Name.Invalid_Data, "there is already a user called \"" + userName + "\"");
+
+    Budget budget = get(Budget.class, budgetId);
+    if (budget == null)
+      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "there is no budget " + budgetId);
+    if (cryptPassword == null || cryptPassword.isEmpty())
+      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "a password is required");
+
+    User user = new User();
+    user.setName(userName);
+    user.setRealName(realName == null ? "" : realName.trim());
+    user.setBudget(budget);
+    user.setPermission(new Permission(permissions == null ? 0L : permissions));
+    user.setCryptPassword(cryptPassword);
+
+    getCurrentSession().save(user);
+    getCurrentSession().flush();
+    return forClient(user);
+  }
+
+  /**
+   * Change a user's name, budget or permissions.  ADMIN only, and an admin may
+   * not take ADMIN away from themself -- the way out of that is another admin.
+   */
+  public void updateUser(Integer userId, String realName, Integer budgetId, Long permissions)
+      throws EnvelopeException {
+    requireAdmin();
+    User user = get(User.class, userId);
+    if (user == null)
+      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "there is no user " + userId);
+
+    Permission wanted = new Permission(permissions == null ? 0L : permissions);
+    if (user.getId().equals(getUser().getId()) && !wanted.hasPermission(Permission.ADMIN))
+      throw new EnvelopeException(
+          EnvelopeException.Name.Invalid_Data, "you cannot remove your own administrator permission");
+
+    Budget budget = get(Budget.class, budgetId);
+    if (budget == null)
+      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "there is no budget " + budgetId);
+
+    user.setRealName(realName == null ? "" : realName.trim());
+    user.setBudget(budget);
+    user.setPermission(wanted);
+    getCurrentSession().flush();   // see renameAccount
+  }
+
+  /**
+   * Set a user's password.  ADMIN may set anyone's; anyone may set their own.
+   *
+   * @param userId        whose
+   * @param cryptPassword the md5-crypt hash, made by the client
+   */
+  public void setPassword(Integer userId, String cryptPassword) throws EnvelopeException {
+    User caller = getUser();
+    boolean self = caller.getId().equals(userId);
+    if (!self && !caller.getPermission().hasPermission(Permission.ADMIN))
+      throw new EnvelopeException(
+          EnvelopeException.Name.Permission_Denied, "only an administrator can set another user's password");
+    if (cryptPassword == null || cryptPassword.isEmpty())
+      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "a password is required");
+
+    User user = self ? caller : get(User.class, userId);
+    if (user == null)
+      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "there is no user " + userId);
+
+    user.setCryptPassword(cryptPassword);
+    getCurrentSession().flush();   // see renameAccount
+  }
+
+  /** Add a budget.  ADMIN only. */
+  public Budget createBudget(String name) throws EnvelopeException {
+    requireAdmin();
+    String budgetName = checkName(name);
+
+    long taken = ((Number)getCurrentSession()
+        .createQuery("select count(b) from Budget b where b.name = :name")
+        .setParameter("name", budgetName).uniqueResult()).longValue();
+    if (taken > 0)
+      throw new EnvelopeException(
+          EnvelopeException.Name.Invalid_Data, "there is already a budget called \"" + budgetName + "\"");
+
+    Budget budget = new Budget();
+    budget.setName(budgetName);
+    getCurrentSession().save(budget);
+    getCurrentSession().flush();
+    return evict(budget);
+  }
+
+  /**
+   * Remove a budget, which must have nothing in it.  ADMIN only.  Accounts and
+   * users both reference budgets ON DELETE RESTRICT, so the foreign keys are the
+   * backstop; the checks here exist to say why in a sentence.
+   */
+  public void deleteBudget(Integer budgetId) throws EnvelopeException {
+    requireAdmin();
+    Budget budget = get(Budget.class, budgetId);
+    if (budget == null)
+      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "there is no budget " + budgetId);
+
+    long accounts = countRows(
+        "select count(a) from Account a where a.budget.id = :id", "id", budgetId);
+    if (accounts > 0)
+      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data,
+          "\"" + budget.getName() + "\" still has " + accounts + (accounts == 1 ? " account" : " accounts"));
+    long users = countRows(
+        "select count(u) from User u where u.budget.id = :id", "id", budgetId);
+    if (users > 0)
+      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data,
+          "\"" + budget.getName() + "\" is still the budget of " + users + (users == 1 ? " user" : " users"));
+
+    delete(budget);
+    getCurrentSession().flush();   // see renameAccount
+  }
+
+  // ------------------------------------------------------------------------
   // Budget structure: accounts and the categories under them.
   //
   // The delete guards here need no locking, unlike deleteAllocation's.  What
@@ -412,6 +609,7 @@ public class Action extends DAO {
    * @param name     its new name, unique across the installation
    */
   public void renameBudget(Integer budgetId, String name) throws EnvelopeException {
+    requireAdmin();
     String budgetName = checkName(name);
     Budget budget = get(Budget.class, budgetId);
     if (budget == null)

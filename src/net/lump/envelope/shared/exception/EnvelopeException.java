@@ -27,7 +27,9 @@ public class EnvelopeException extends RemoteException {
     Invalid_Command(Type.Command),
     // a request the server understood but refuses because it would leave the
     // data inconsistent; Portal shows these to the user as a plain error
-    Invalid_Data(Type.Data);
+    Invalid_Data(Type.Data),
+    // a request the caller is not permitted to make; also a plain error
+    Permission_Denied(Type.Command);
 
     private Type type;
     private Name(Type type) {
