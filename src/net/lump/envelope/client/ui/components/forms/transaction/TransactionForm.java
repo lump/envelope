@@ -381,6 +381,28 @@ public class TransactionForm {
   }
 
 
+  /**
+   * The order the category picker offers things in, for a transaction that
+   * already touches the given accounts.
+   *
+   * <p>Name completion takes the FIRST item whose text starts with what was typed,
+   * and a budget with two accounts has a "Computer" in each.  With the
+   * transaction's own accounts listed first, typing "Comp" lands in the account
+   * the transaction is already in rather than whichever account happens to sort
+   * first.  The rest follow by account, then by name.
+   */
+  static java.util.Comparator<Category> categoryOrderFor(final java.util.Set<Integer> home) {
+    return new java.util.Comparator<Category>() {
+      public int compare(Category a, Category b) {
+        boolean aHome = home.contains(a.getAccount().getId());
+        boolean bHome = home.contains(b.getAccount().getId());
+        if (aHome != bHome) return aHome ? -1 : 1;
+        int byAccount = a.getAccount().getName().compareTo(b.getAccount().getName());
+        return byAccount != 0 ? byAccount : a.getName().compareTo(b.getName());
+      }
+    };
+  }
+
   public void loadTransactionForId(final int id) {
     if (!MainFrame.getInstance().isTransactionViewShowing()) return;
     if (transactionChangeHandler == null || !transactionChangeHandler.getTransaction().getId().equals(id)) {
@@ -390,15 +412,28 @@ public class TransactionForm {
           try {
             final HibernatePortal hp = new HibernatePortal();
 
-            hp.detachedCriteriaQueryList(
-                CriteriaFactory.getInstance().getCategoriesforBudget(State.getInstance().getBudget()),
-                true,
-                new OutputListener() {
-                  public void commandOutputOccurred(OutputEvent event) {
-                    if (event.getIndex() == 0) categoriesComboBox.removeAllItems();
-                    categoriesComboBox.addItem((Category)event.getPayload());
-                  }
-                });
+            // the transaction first: which accounts it already touches decides
+            // the order the category picker offers things in
+            Transaction query = hp.load(Transaction.class, id);
+
+            final java.util.Set<Integer> home = new java.util.HashSet<Integer>();
+            for (Allocation a : query.getAllocations())
+              if (a.getCategory() != null && a.getCategory().getAccount() != null)
+                home.add(a.getCategory().getAccount().getId());
+
+            java.util.List<Category> categories = hp.detachedCriteriaQueryList(
+                CriteriaFactory.getInstance().getCategoriesforBudget(State.getInstance().getBudget()));
+            if (categories == null) categories = new java.util.ArrayList<Category>();
+
+            java.util.Collections.sort(categories, categoryOrderFor(home));
+
+            final java.util.List<Category> ordered = categories;
+            SwingUtilities.invokeAndWait(new Runnable() {
+              public void run() {
+                categoriesComboBox.removeAllItems();
+                for (Category c : ordered) categoriesComboBox.addItem(c);
+              }
+            });
 
             // the allocation menu is built on the event thread, so the presets are
             // fetched here, off it, and parked in State
@@ -407,7 +442,6 @@ public class TransactionForm {
                     CriteriaFactory.getInstance()
                         .getPresetsForBudget(State.getInstance().getBudget())));
 
-            Transaction query = hp.load(Transaction.class, id);
             if (transactionChangeHandler == null)
               transactionChangeHandler = new TransactionChangeHandler(query, TransactionForm.this);
             else

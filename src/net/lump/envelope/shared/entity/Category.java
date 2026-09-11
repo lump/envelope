@@ -28,8 +28,17 @@ public class Category extends Identifiable<Integer, Timestamp> implements Compar
   private Account account;
   private String name;
 
+  /**
+   * The name qualified by its account.  Category names are unique only within an
+   * account, and once a budget has two accounts a "Computer" in each is a real
+   * situation; everywhere a Category is shown or completed against goes through
+   * this, so the bare name here meant the two could not be told apart, and typing
+   * one always resolved to whichever happened to be listed first.
+   */
   public String toString() {
-    return name;
+    return account == null || account.getName() == null
+        ? name
+        : name + " (" + account.getName() + ")";
   }
 
   @Id

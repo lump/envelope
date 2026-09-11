@@ -229,6 +229,14 @@ at the `/configure` form waiting for a human.
   across the whole installation and two budgets could not both have a "Checking" account.
   `sql/migrations/002-account-name-unique-per-budget.sql` re-scopes it to `(budget, name)`,
   matching what `categories` already does one level down with `(account, name)`.
+- **Category names are unique only within an account, and the picker completes by
+  prefix.** Once a budget has two accounts, a "Computer" in each is a real situation. The
+  allocation category combo matches what is typed against `toString()` and takes the **first**
+  hit in list order, so with a bare-name `toString()` and a name-ordered list, every typed
+  prefix resolved into whichever account sorted first — a transaction started under one
+  account silently moved to another. Two things now hold that off: `Category.toString()`
+  qualifies the name with its account, and `TransactionForm.categoryOrderFor` lists the
+  transaction's own accounts first. Don't put the bare name back in `toString()`.
 - **A user has exactly one budget.** `User.budget` is a single `@ManyToOne`, and
   `CriteriaFactory.getBudgetForUser` reads it as a unique result into `State.budget`, which the
   tree roots on. The `budgets` table holds many, and accounts/categories/presets are all scoped
