@@ -178,12 +178,6 @@ while (my $row = $sth->fetchrow_hashref()) {
   print "Inserted user $budget_id, $row->{username}, $row->{real_name}, $row->{crypt_password}, $row->{int_permissions}\n";
 }
 
-# add a test user for this budget
-$dsth->execute($budget_id, 'bowmantest', 'Bowman Test Account','$1$GOyqcoAk$KTE1zfxeTkoXJTcrFKyFi0',7);
-$sth->finish;
-$dsth->finish;
-
-
 #$dsth = $dbs->{dest}->{connection}->prepare(
 #  "insert into allocation_settings (budget,name,type,reference_date) values (?, ?, ?, ?)")
 #  or die $dbs->{source}->{connection}->errstr;;
