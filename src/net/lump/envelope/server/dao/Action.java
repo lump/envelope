@@ -406,6 +406,33 @@ public class Action extends DAO {
   }
 
   /**
+   * Rename a budget.
+   *
+   * @param budgetId the budget to rename
+   * @param name     its new name, unique across the installation
+   */
+  public void renameBudget(Integer budgetId, String name) throws EnvelopeException {
+    String budgetName = checkName(name);
+    Budget budget = get(Budget.class, budgetId);
+    if (budget == null)
+      throw new EnvelopeException(
+          EnvelopeException.Name.Invalid_Data, "there is no budget " + budgetId);
+
+    // budgets.name carries a unique index of its own, with no budget to scope it
+    long taken = ((Number)getCurrentSession()
+        .createQuery("select count(b) from Budget b where b.name = :name and b.id <> :budgetId")
+        .setParameter("name", budgetName)
+        .setParameter("budgetId", budgetId)
+        .uniqueResult()).longValue();
+    if (taken > 0)
+      throw new EnvelopeException(
+          EnvelopeException.Name.Invalid_Data, "there is already a budget called \"" + budgetName + "\"");
+
+    budget.setName(budgetName);
+    getCurrentSession().flush();   // see renameAccount
+  }
+
+  /**
    * Add an account to a budget.
    *
    * @param budgetId the budget it belongs to

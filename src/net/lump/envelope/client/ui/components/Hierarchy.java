@@ -28,6 +28,7 @@ import java.awt.event.ComponentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -233,6 +234,12 @@ public class Hierarchy extends JTree {
     // AccountTotal extends CategoryTotal, so the narrower test has to come first
     if (selected instanceof AccountTotal) {
       final Account account = ((AccountTotal)selected).account;
+      // a transaction is started from here rather than from the transaction
+      // table's rows, so an account with no transactions yet can still get one
+      menu.add(menuItem("new.transaction", new Runnable() {
+        public void run() { newTransactionIn(account); }
+      }));
+      menu.addSeparator();
       menu.add(menuItem("new.category", new Runnable() {
         public void run() { newCategory(account); }
       }));
@@ -246,6 +253,12 @@ public class Hierarchy extends JTree {
     }
     else if (selected instanceof CategoryTotal) {
       final CategoryTotal category = (CategoryTotal)selected;
+      menu.add(menuItem("new.transaction", new Runnable() {
+        public void run() {
+          TableQueryBar.getInstance().newTransaction(category.id);
+        }
+      }));
+      menu.addSeparator();
       menu.add(menuItem("rename.category", new Runnable() {
         public void run() { renameCategory(category); }
       }));
@@ -258,9 +271,58 @@ public class Hierarchy extends JTree {
       menu.add(menuItem("new.account", new Runnable() {
         public void run() { newAccount(); }
       }));
+      if (selected instanceof Budget) {
+        final Budget budget = (Budget)selected;
+        menu.addSeparator();
+        menu.add(menuItem("rename.budget", new Runnable() {
+          public void run() { renameBudget(budget); }
+        }));
+      }
     }
 
     return menu;
+  }
+
+  /**
+   * Start a transaction in an account, using its first category.
+   *
+   * <p>A transaction is reachable only through its allocations, so it needs a
+   * category to exist at all; from an account node the first one stands in, and
+   * the user can change it on the form.
+   */
+  private void newTransactionIn(final Account account) {
+    ThreadPool.getInstance().execute(new StatusRunnable("Reading categories") {
+      public void run() {
+        try {
+          final java.util.List<CategoryTotal> categories =
+              CriteriaFactory.getInstance().getCategoriesForAccount(account);
+          SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+              TableQueryBar.getInstance().newTransaction(
+                  (categories == null || categories.isEmpty()) ? null : categories.get(0).id);
+            }
+          });
+        } catch (AbortException e) {
+          // Portal has already put the reason in front of the user
+        }
+      }
+    });
+  }
+
+  private void renameBudget(final Budget budget) {
+    final String name = (String)JOptionPane.showInputDialog(
+        this, Strings.get("name"), Strings.get("rename.budget"),
+        JOptionPane.PLAIN_MESSAGE, null, null, budget.getName());
+    if (name == null || name.trim().isEmpty() || name.trim().equals(budget.getName())) return;
+
+    structureChange("Renaming budget", new StructureTask() {
+      public void run(BudgetPortal portal) throws AbortException {
+        portal.renameBudget(budget.getId(), name.trim());
+        // the tree root shows the budget, and State holds the copy it is drawn
+        // from, so that copy has to move too
+        State.getInstance().getBudget().setName(name.trim());
+      }
+    });
   }
 
   private void newAccount() {
@@ -365,23 +427,49 @@ public class Hierarchy extends JTree {
       public void updateChildren(final DefaultMutableTreeNode node)
           throws AbortException {
         List children = getListFor(node);
-        if (children == null || children.size() == 0) return;
+        // An empty list is an answer, not a reason to stop.  Returning here left
+        // whatever was already under the node in place, so a deleted account kept
+        // its row and a new account -- which has no categories yet -- kept the
+        // categories of whoever previously occupied its position.
+        if (children == null) children = new ArrayList();
 
-        // nuke any number of children that in indexes creater than new list
-        for (int x = children.size(); x < node.getChildCount(); x++)
-          node.remove(x);
+        // Trim surplus from the END.  Removing by ascending index while the list
+        // shifts down underneath takes out every other node: remove(x) moves the
+        // next one into x, and then x++ steps straight over it.
+        while (node.getChildCount() > children.size()) {
+          final int last = node.getChildCount() - 1;
+          final Object[] gone = new Object[]{node.getChildAt(last)};
+          node.remove(last);
+          SwingUtilities.invokeLater(new Runnable() {
+            public void run() { treeModel.nodesWereRemoved(node, new int[]{last}, gone); }
+          });
+        }
 
         for (int x = 0; x < children.size(); x++) {
-          DefaultMutableTreeNode dmtn = null;
+          DefaultMutableTreeNode dmtn;
           if (x < node.getChildCount()) {
             dmtn = ((DefaultMutableTreeNode)node.getChildAt(x));
+
+            // Nodes are reused by position, and accounts are listed by name, so
+            // inserting one shifts every account after it onto a different node.
+            // The children hanging off that node still belong to the previous
+            // occupant, and have to go before the recursion below refills them.
+            Object had = dmtn.getUserObject();
+            final boolean replaced = had == null || !had.equals(children.get(x));
+            if (replaced) dmtn.removeAllChildren();
+
             dmtn.setUserObject(children.get(x));
             final DefaultMutableTreeNode fdmtn = dmtn;
             SwingUtilities.invokeLater(new Runnable() {
-              public void run() { treeModel.nodeChanged(fdmtn); }
+              public void run() {
+                // a node whose children were just thrown away needs its structure
+                // reloaded, not merely repainted
+                if (replaced) treeModel.nodeStructureChanged(fdmtn);
+                else treeModel.nodeChanged(fdmtn);
+              }
             });
           }
-          if (x >= node.getChildCount()) {
+          else {
             dmtn = new DefaultMutableTreeNode(children.get(x));
             node.add(dmtn);
             final int[] fx = new int[]{x};
@@ -389,14 +477,13 @@ public class Hierarchy extends JTree {
               public void run() { treeModel.nodesWereInserted(node, fx); }
             });
           }
-          if (dmtn != null) {
-            if (selectedObject != null
-                && dmtn.getUserObject().equals(
-                ((DefaultMutableTreeNode)selectedObject).getUserObject()))
-              singleton.setSelectionPath(new TreePath(dmtn.getPath()));
 
-            updateChildren(dmtn);
-          }
+          if (selectedObject != null
+              && dmtn.getUserObject().equals(
+              ((DefaultMutableTreeNode)selectedObject).getUserObject()))
+            singleton.setSelectionPath(new TreePath(dmtn.getPath()));
+
+          updateChildren(dmtn);
         }
       }
 

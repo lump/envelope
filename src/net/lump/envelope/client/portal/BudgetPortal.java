@@ -19,6 +19,11 @@ import net.lump.envelope.shared.exception.AbortException;
 @SuppressWarnings({"unchecked"})
 public class BudgetPortal extends Portal {
 
+  /** Rename a budget.  Budget names are unique across the installation. */
+  public void renameBudget(Integer budgetId, String name) throws AbortException {
+    invoke(new Command(Command.Name.renameBudget, null, budgetId, name));
+  }
+
   /**
    * Add an account to a budget.
    *

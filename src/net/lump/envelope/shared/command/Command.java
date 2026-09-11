@@ -101,6 +101,7 @@ public class Command implements Serializable {
     deletePresetRow(Dao.Action, Integer.class),
     deletePresetNamed(Dao.Action, Integer.class, String.class),
     renamePresetNamed(Dao.Action, Integer.class, String.class, String.class),
+    renameBudget(Dao.Action, Integer.class, String.class),
 
     // NOTE: bit() is derived from ordinal(), so add new commands at the END --
     // inserting one in the middle renumbers every command after it.

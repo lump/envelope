@@ -229,6 +229,20 @@ at the `/configure` form waiting for a human.
   across the whole installation and two budgets could not both have a "Checking" account.
   `sql/migrations/002-account-name-unique-per-budget.sql` re-scopes it to `(budget, name)`,
   matching what `categories` already does one level down with `(account, name)`.
+- **A user has exactly one budget.** `User.budget` is a single `@ManyToOne`, and
+  `CriteriaFactory.getBudgetForUser` reads it as a unique result into `State.budget`, which the
+  tree roots on. The `budgets` table holds many, and accounts/categories/presets are all scoped
+  to one — but nothing lets a user reach a second. Separate banks live as separate *accounts*
+  inside the one budget; a second budget would be a separate envelope system, and supporting
+  that per-user needs a join table, a budget picker, and `State` to track a current budget.
+- **The tree rebuilds nodes by position, so a node's children can outlive its contents.**
+  `Hierarchy.updateChildren` reuses the node at each index and swaps its user object, which
+  means inserting an account (they are listed by name) shifts every later account onto a
+  different node. Three bugs lived here and are fixed: an empty child list returned early
+  instead of clearing, so deletions left stale rows and a brand-new account inherited the
+  categories of whoever previously held its position; surplus nodes were removed by ascending
+  index while the list shifted down, taking out every other one; and a reused node kept its old
+  children. A node whose object is replaced now drops its children first.
 - **A new transaction is dated today, and the list is date-filtered.** "New Transaction"
   (right-click the transaction list) creates a zero-amount stub in the selected category and
   opens it on the form, which is the entry screen — every field saves as it is edited. But

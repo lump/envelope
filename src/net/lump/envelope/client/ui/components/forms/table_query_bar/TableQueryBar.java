@@ -222,12 +222,9 @@ public class TableQueryBar {
   private JPopupMenu transactionMenu(boolean onRow) {
     JPopupMenu menu = new JPopupMenu();
 
-    JMenuItem create = new JMenuItem(Strings.get("new.transaction"));
-    create.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent e) { newTransaction(); }
-    });
-    menu.add(create);
-
+    // "New Transaction" lives on the tree's account and category nodes, not here:
+    // this menu hangs off a row, so an account with no transactions yet had no
+    // way to get its first one.
     JMenuItem remove = new JMenuItem(Strings.get("delete.transaction"));
     remove.setEnabled(onRow);
     remove.addActionListener(new ActionListener() {
@@ -239,27 +236,6 @@ public class TableQueryBar {
   }
 
   /**
-   * The category a new transaction's first allocation lands in, taken from the
-   * tree selection: a category node names one outright, an account node falls back
-   * to its first category.  Null when the selection implies none.
-   */
-  private Integer categoryForNewTransaction() throws AbortException {
-    Object node = Hierarchy.getInstance().getLastSelectedPathComponent();
-    Object selected = (node instanceof DefaultMutableTreeNode)
-        ? ((DefaultMutableTreeNode)node).getUserObject() : null;
-
-    // AccountTotal extends CategoryTotal, so the narrower test has to come first
-    if (selected instanceof Hierarchy.AccountTotal) {
-      java.util.List<Hierarchy.CategoryTotal> categories = CriteriaFactory.getInstance()
-          .getCategoriesForAccount(((Hierarchy.AccountTotal)selected).account);
-      return (categories == null || categories.isEmpty()) ? null : categories.get(0).id;
-    }
-    if (selected instanceof Hierarchy.CategoryTotal)
-      return ((Hierarchy.CategoryTotal)selected).id;
-    return null;
-  }
-
-  /**
    * Create a transaction in the selected category and open it for editing.
    *
    * <p>It is born as a dated, zero-amount stub rather than sitting behind an entry
@@ -268,22 +244,17 @@ public class TableQueryBar {
    * its first allocation together; one without allocations would be a row no query
    * could find.
    */
-  private void newTransaction() {
+  public void newTransaction(final Integer categoryId) {
+    if (categoryId == null) {
+      JOptionPane.showMessageDialog(tableQueryPanel,
+          Strings.get("error.no.category.selected"),
+          Strings.get("error"), JOptionPane.ERROR_MESSAGE);
+      return;
+    }
+
     ThreadPool.getInstance().execute(new StatusRunnable("Creating transaction") {
       public void run() {
         try {
-          Integer categoryId = categoryForNewTransaction();
-          if (categoryId == null) {
-            SwingUtilities.invokeLater(new Runnable() {
-              public void run() {
-                JOptionPane.showMessageDialog(tableQueryPanel,
-                    Strings.get("error.no.category.selected"),
-                    Strings.get("error"), JOptionPane.ERROR_MESSAGE);
-              }
-            });
-            return;
-          }
-
           final Transaction created = new TransactionPortal().createTransaction(
               categoryId, new java.sql.Date(System.currentTimeMillis()),
               "", "", Money.ZERO);
