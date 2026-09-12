@@ -1,0 +1,77 @@
+---
+# Envelope as a swarm stack, for the config project.
+#
+# Install into ~/lump/config as stacks/envelope/source/docker-compose.yml, with a
+# prepare-source that copies it into place (see stacks/web/prepare-source) and
+# an environment/tiers/_defaults.json supplying the ENVELOPE_* values below.
+# revise-compose.rb adds the canonical env vars at deploy time as it does for
+# every stack.
+#
+# The image is built and pushed by ./build.sh in the envelope repository; bump
+# the tag here when .Dockerfile.version moves.
+#
+# The database is not part of this stack.  Point ENVELOPE_DB_HOST at wherever
+# it lives -- the localdb stack, or a host outside the swarm -- and supply
+# ENVELOPE_DB_PASSWORD through the environment file's secret block rather than
+# its environment block.
+#
+# The client is a desktop application that visitors download from the front
+# page and run themselves; nothing here serves it beyond Tomcat.  It speaks
+# plain HTTP to /envelope/invoke, so the front stack must expose this service
+# over HTTP as well as HTTPS until the client learns TLS.
+version: '3.9'
+
+networks:
+  swarm:
+    external: true
+
+services:
+  server:
+    image: registry.lump/lump/envelope:master-1
+    hostname: envelope-{{.Task.Slot}}.{{index .Service.Labels "com.docker.stack.namespace"}}.swarm.private
+    networks:
+      swarm:
+        aliases:
+          - envelope
+          - tomcat
+    environment:
+      # ServerPrefs turns these into hibernate settings; see DAO.properties
+      DAO_HIBERNATE_CONNECTION_URL: "jdbc:mariadb://${ENVELOPE_DB_HOST}:${ENVELOPE_DB_PORT:-3306}/${ENVELOPE_DB_NAME:-envelope}"
+      DAO_HIBERNATE_CONNECTION_USERNAME: "${ENVELOPE_DB_USER:-budget}"
+      DAO_HIBERNATE_CONNECTION_PASSWORD: "${ENVELOPE_DB_PASSWORD}"
+      SERVERPREFS_CONFIGURE_USERNAME: "${ENVELOPE_ADMIN_USER:-admin}"
+      SERVERPREFS_CONFIGURE_PASSWORD: "${ENVELOPE_ADMIN_PASSWORD}"
+      # marks both config sections complete, so the server does not hold every
+      # request at the /configure form waiting for a human to submit it
+      DAO_OK: ok
+      SERVERPREFS_OK: ok
+      # heap only; the image's CATALINA_OPTS already carries the flags the
+      # application needs, and setting CATALINA_OPTS here would replace them
+      JAVA_OPTS: "-Xmx${ENVELOPE_HEAP:-512m}"
+    deploy:
+      # sessions live in the JVM (see CLAUDE.md), so one replica until they
+      # move somewhere shared
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.workload == shared
+      resources:
+        reservations:
+          memory: "256M"
+          cpus: "0.2"
+        limits:
+          cpus: "2.0"
+          memory: "1G"
+      restart_policy:
+        condition: "${SWARM_RESTART_CONDITION}"
+        delay: "${SWARM_RESTART_DELAY}"
+        max_attempts: "${SWARM_RESTART_MAX_ATTEMPTS}"
+        window: "${SWARM_RESTART_WINDOW}"
+      update_config:
+        delay: 15s
+        failure_action: rollback
+        max_failure_ratio: 0
+        monitor: 30s
+        order: stop-first
+        parallelism: 1

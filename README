@@ -32,3 +32,21 @@ out-of-the-box passwords — change them after first login:
     admin / envelope
     guest / guest
 
+## Getting the client
+
+The server's front page hands out the client and says how to run it:
+
+    http://<server>:7041/envelope/
+
+It is one runnable jar.  With Java 25 or later installed:
+
+    java -jar envelope-client.jar
+
+## Building an image
+
+    ./build.sh            # builds, tags, and offers to push to registry.lump
+    ./build.sh --no-push  # just build
+
+The image builds the war itself, so only docker is needed.  docker/swarm-stack.yml
+is the stack definition for the config project; the database is supplied from
+outside the stack through the ENVELOPE_* variables it names.

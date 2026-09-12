@@ -179,6 +179,16 @@ The war is **bind-mounted** into Tomcat (not baked into an image), so a code cha
 `mvn package` + `docker compose restart tomcat`. A client-only change needs neither — the
 fat jar is rebuilt in place.
 
+**For distribution, `./build.sh` builds a self-contained image** — a copy of
+`~/lump/web/build.sh`, driven by `.image.name` (`lump/envelope`) and `.Dockerfile.version`,
+tagging `registry.lump/lump/envelope:<branch>-<version>`. The `Dockerfile` is multi-stage: Maven
+builds the war inside the image, so the host needs nothing but docker. It also adds Tomcat's
+`RemoteIpValve`, since the config project fronts everything with HAProxy and without it the
+front page would tell visitors to point the client at swarm-internal names.
+`docker/swarm-stack.yml` is the drop-in for `~/lump/config/stacks/envelope/source/`. Bump
+`.Dockerfile.version` when the `Dockerfile` changes. `docker/compose.yml` remains the
+bind-mounted development stack.
+
 There is no system `mvn` on this box; the one that works is IntelliJ's bundled copy at
 `~/bin/idea-IU-*/plugins/maven/lib/maven3/bin/mvn`, and it has to run **online** (`-o`
 fails: `~/.m2` lacks the plugin versions that Maven build wants).

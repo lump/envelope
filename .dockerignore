@@ -1,0 +1,5 @@
+# the image builds the war itself from src/ web/ pom.xml; nothing else goes in
+*
+!pom.xml
+!src/
+!web/
