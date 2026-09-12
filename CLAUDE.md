@@ -229,78 +229,15 @@ at the `/configure` form waiting for a human.
 - **Two different `lib/` directories.** The repo-root `lib/` (33 MB of vendored jars) and the
   Ant/Ivy build were deleted in `75461de` — Maven resolves all dependencies now. But
   `src/net/lump/lib/` is **live source**. Don't conflate them.
-- **JNLP is wired up, not quarantined — and the client link is broken.** `server/servlet/jnlp/`
-  (`Jnlp.java`, `jnlp.xml`), `FileServer.feedJnlp()` and the `.jar.pack.gz`/pack200 branches
-  are all still routed: `FileServer` serves `/envelope.jnlp` (HTTP 200) and the landing page
-  renders it as the **only** client link. It cannot work — Java Web Start was removed in JDK 11,
-  and the JNLP points at `lib/client.jar`, which resolves to `WEB-INF/lib/client.jar` and
-  **404s** because the war ships no such jar. The fat JAR is a local build artifact only; there
-  is no server-side distribution mechanism yet.
-- **`@Version` needs sub-second stamp columns.** Every versioned entity maps `@Version` onto a
-  `stamp` column. Declared as plain `timestamp` (whole seconds) the version Hibernate hands
-  back to the client can never match the value the row holds, so the *first* save of an entity
-  succeeds and the second is refused with `StaleObjectStateException` — every entity editable
-  exactly once per load. `sql/migrations/001-version-stamp-precision.sql` moved the live tables
-  to `timestamp(3)`; keep any new versioned table at `timestamp(3)` too.
-- **Account names are unique per budget, but only since migration 002.** `accounts` shipped
-  with `unique index name_type (name, type)` — no budget column — so account names were unique
-  across the whole installation and two budgets could not both have a "Checking" account.
-  `sql/migrations/002-account-name-unique-per-budget.sql` re-scopes it to `(budget, name)`,
-  matching what `categories` already does one level down with `(account, name)`.
-- **Category names are unique only within an account, and the picker completes by
-  prefix.** Once a budget has two accounts, a "Computer" in each is a real situation. The
-  allocation category combo matches what is typed against `toString()` and takes the **first**
-  hit in list order, so with a bare-name `toString()` and a name-ordered list, every typed
-  prefix resolved into whichever account sorted first — a transaction started under one
-  account silently moved to another. Two things now hold that off: `Category.toString()`
-  qualifies the name with its account as `Account/Name`, both completers also answer to the bare name, and `TransactionForm.categoryOrderFor` lists the
-  transaction's own accounts first. Don't put the bare name back in `toString()`.
-- **A user has exactly one budget.** `User.budget` is a single `@ManyToOne`, and
-  `CriteriaFactory.getBudgetForUser` reads it as a unique result into `State.budget`, which the
-  tree roots on. The `budgets` table holds many, and accounts/categories/presets are all scoped
-  to one — but nothing lets a user reach a second. Separate banks live as separate *accounts*
-  inside the one budget; a second budget would be a separate envelope system, and supporting
-  that per-user needs a join table, a budget picker, and `State` to track a current budget.
-- **The tree rebuilds nodes by position, so a node's children can outlive its contents.**
-  `Hierarchy.updateChildren` reuses the node at each index and swaps its user object, which
-  means inserting an account (they are listed by name) shifts every later account onto a
-  different node. Three bugs lived here and are fixed: an empty child list returned early
-  instead of clearing, so deletions left stale rows and a brand-new account inherited the
-  categories of whoever previously held its position; surplus nodes were removed by ascending
-  index while the list shifted down, taking out every other one; and a reused node kept its old
-  children. A node whose object is replaced now drops its children first.
-- **A new transaction is dated today, and the list is date-filtered.** "New Transaction"
-  (right-click the transaction list) creates a zero-amount stub in the selected category and
-  opens it on the form, which is the entry screen — every field saves as it is edited. But
-  `TableQueryBar`'s begin/end date choosers filter the list, so if the range excludes today the
-  new row will not appear in it even though the form is editing it.
-- **Ids are `IDENTITY`, not `AUTO`.** Every table is `auto_increment`, but the entities were
-  annotated `@GeneratedValue(strategy = AUTO)`, which under Hibernate 5 resolves to a
-  *sequence* and fails with `Unknown SEQUENCE: 'hibernate_sequence'`. That went unnoticed for
-  the whole resurrection because nothing in the app ever inserted a row — it was read and
-  update only — so the first `INSERT` ever attempted was the first thing to hit it. All ten
-  entities now declare `IDENTITY`. Don't "simplify" them back to `AUTO`.
-- **Nothing serializes two saves of the same row.** `ThreadPool` is
-  `(0, Integer.MAX_VALUE)` over a `SynchronousQueue`, so every submitted task starts
-  immediately on its own thread. Two quick edits to an allocation that has not been inserted
-  yet would both see a null id and insert it twice — demonstrated, two rows.
-  `sendAllocationChange` is therefore single-flight per allocation, re-sending once if the row
-  changed while its save was in the air. Anything else that saves per-keystroke needs the same
-  treatment.
-- **`Transaction.equals` does not compare allocations, and must not be "fixed" naively.** It
-  builds both sides of that comparison from `this.allocations` (the second one is unqualified),
-  so it compares the list to itself and the check always passes — an allocation change is
-  invisible to it. Repointing it at `that.allocations` makes `Transaction.equals` and
-  `Allocation.equals` mutually recursive (the latter compares its `transaction`), which is a
-  `StackOverflowError` for any two transactions whose scalar fields match. The self-comparison
-  bug is the only thing preventing that today. Track allocation edits explicitly instead.
-- **Running the test suite rewrites the real client settings.** `TestSuite`'s static
-  initializer calls `ServerSettings.setHostName(localHost() + ":8080")` and
-  `LoginSettings.setUsername("bowmantest")`, and those go straight into the same
-  `java.util.prefs` store the actual Swing client reads (`~/.java/.userPrefs/net/lump/...`).
-  So `-DskipTests=false` silently repoints your client at `<hostname>:8080` and leaves it
-  there. Put the settings back afterwards (`localhost:7041`, context `/envelope`) or the
-  client — and every probe — fails with `ConnectException` and a settings dialog.
+- **The client is distributed from the server's front page.** `mvn package` builds the fat
+  jar in `prepare-package` and the war plugin copies it to `WEB-INF/client/envelope-client.jar`
+  — under `WEB-INF` so Tomcat never lists it, but deliberately **not** under `WEB-INF/lib`,
+  which is the webapp classpath (a 31 MB fat jar there would load a second Hibernate into
+  the server). `FileServer.feedClient` hands it out at `/envelope-client.jar`, and the landing
+  page gives run instructions naming the host the visitor reached. All the Java Web Start
+  machinery — `Jnlp.java`, `jnlp.xml`, `feedJnlp`, the pack200 branches, `/lib/*` and `/us/*`
+  serving of `WEB-INF/lib`, `/info/security.policy`, `/log4j.properties` — was removed in one
+  go; Web Start left with JDK 11. The client only ever calls `/invoke`.
 - **Tests need a live server + DB** and are skipped by default (`default-skip-tests`
   profile); run with `-DskipTests=false`. The suite does not currently pass: it hangs (some
   tests block on Swing dialogs), and `TestMoney.testPrint` fails outright — `Money`'s

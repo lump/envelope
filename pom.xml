@@ -172,6 +172,18 @@
         <configuration>
           <warName>envelope</warName>
           <warSourceDirectory>web</warSourceDirectory>
+          <!-- The runnable client goes INTO the war so the server can hand it out
+               from its front page (FileServer.feedClient).  Under WEB-INF so Tomcat
+               never lists it, but deliberately not under WEB-INF/lib, which is the
+               webapp classpath: a 31 MB fat jar there would load a second copy of
+               Hibernate and everything else into the server. -->
+          <webResources>
+            <resource>
+              <directory>${project.build.directory}</directory>
+              <includes><include>envelope-client.jar</include></includes>
+              <targetPath>WEB-INF/client</targetPath>
+            </resource>
+          </webResources>
           <!-- Swing-only jars have no business in the server war -->
           <packagingExcludes>
             WEB-INF/lib/flatlaf-*.jar,
@@ -189,7 +201,9 @@
         <executions>
           <execution>
             <id>client-jar</id>
-            <phase>package</phase>
+            <!-- prepare-package, not package: the war plugin runs in package and
+                 has to find this jar already built to copy it in -->
+            <phase>prepare-package</phase>
             <goals><goal>single</goal></goals>
             <configuration>
               <finalName>envelope</finalName>
