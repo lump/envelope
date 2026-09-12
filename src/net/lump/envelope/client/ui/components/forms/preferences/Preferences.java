@@ -489,7 +489,7 @@ public class Preferences extends JDialog {
 
   public void fillServerFormWithSavedData() {
     if (System.getProperty("codebase") != null) hostName.setText(System.getProperty("codebase"));
-    else hostName.setText(ssData.getHostName() + ":" + ssData.getPort());
+    else hostName.setText(ssData.getServerUrl());
 
     if (System.getProperty("context") != null) context.setText(System.getProperty("context"));
     else context.setText(ssData.getContext());
@@ -505,7 +505,7 @@ public class Preferences extends JDialog {
   }
 
   public boolean isModified(ServerSettings data) {
-    if (hostName.getText() != null ? !hostName.getText().equals(data.getHostName()) : data.getHostName() != null) return true;
+    if (hostName.getText() != null ? !hostName.getText().equals(data.getServerUrl()) : data.getServerUrl() != null) return true;
     return false;
   }
 

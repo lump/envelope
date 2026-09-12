@@ -132,6 +132,17 @@ entity is an update Hibernate would write. A new password is hashed **on the cli
 hashes one, and only the hash travels. The Admin tab (`forms/preferences/AdminPanel`) asks
 `whoAmI` on every refresh and draws accordingly — but what it draws is not what is enforced.
 
+**The client is given a URL and uses whatever scheme it says.** `ServerSettings.setHostName`
+accepts either `https://host[:port][/context]` or the old `host[:port]`; a URL sets scheme,
+host, port (defaulting to the scheme's own, not 7041) and context, and a bare host means
+http. `getCodeBase()` builds from the scheme and `HttpClient` builds `/invoke` from that, so
+https is just a different URL — `HttpsURLConnection` is an `HttpURLConnection`. The server's
+front page hands out the full URL to paste. Java has to **trust the certificate**: a public CA
+is fine out of the box; a private CA (step-ca) means `-Djavax.net.ssl.trustStore=…` on the
+client, or importing the CA into the JRE's `cacerts`, or the handshake fails with `unable to
+find valid certification path`. The settings test no longer ICMP-pings the host first — a
+server behind a front end that drops ICMP is reachable and was reported as not.
+
 **Login sends a password-equivalent, not a password.** The client generates an RSA keypair —
 fresh on every launch, never persisted — and sends its public key in `getChallenge`. The
 server's `Challenge` carries the server's public key and, as the "challenge", only
@@ -185,7 +196,9 @@ tagging `registry.lump/lump/envelope:<branch>-<version>`. The `Dockerfile` is mu
 builds the war inside the image, so the host needs nothing but docker. It also adds Tomcat's
 `RemoteIpValve`, since the config project fronts everything with HAProxy and without it the
 front page would tell visitors to point the client at swarm-internal names.
-`docker/swarm-stack.yml` is the drop-in for `~/lump/config/stacks/envelope/source/`. Bump
+The valve also reads `X-Forwarded-Port`; without it a proxied
+request on anything but 443/80 is reported on the scheme's own port. `docker/swarm-stack.yml`
+is the drop-in for `~/lump/config/stacks/envelope/source/`. Bump
 `.Dockerfile.version` when the `Dockerfile` changes. `docker/compose.yml` remains the
 bind-mounted development stack.
 

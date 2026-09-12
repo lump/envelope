@@ -55,8 +55,9 @@ public class HttpClient {
         String.valueOf(Math.random()).replaceAll("^0\\.", ""),
         String.valueOf(System.currentTimeMillis()));
 
-    URL url = new URL(
-        "http://" + serverSettings.getHostName() + ":" + serverSettings.getPort() + serverSettings.getContext() + "/invoke");
+    // the scheme comes from the settings, so https is just a different URL; an
+    // HttpsURLConnection is an HttpURLConnection, and nothing below cares which
+    URL url = new URL(serverSettings.getCodeBase(), "invoke");
 
     if (System.getProperty("http.keepAlive") == null
         || !System.getProperty("http.keepAlive").equals("true")) System.setProperty("http.keepAlive", "true");

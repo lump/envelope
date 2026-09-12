@@ -83,8 +83,13 @@ public class FileServer {
    * reached us on.
    */
   private void landingPage() throws IOException {
-    String host = rq.getServerName()
-        + ((rq.getServerPort() == 80 || rq.getServerPort() == 443) ? "" : ":" + rq.getServerPort());
+    // Scheme, host and port are as the visitor reached us -- behind the front
+    // end's proxy that is what X-Forwarded-Proto / -Host say, which the
+    // RemoteIpValve in the image makes Tomcat believe.
+    boolean usual = ("https".equals(rq.getScheme()) && rq.getServerPort() == 443)
+                 || ("http".equals(rq.getScheme()) && rq.getServerPort() == 80);
+    String serverUrl = rq.getScheme() + "://" + rq.getServerName()
+        + (usual ? "" : ":" + rq.getServerPort()) + rq.getContextPath();
     String jar = rq.getContextPath() + "/" + CLIENT_JAR_NAME;
 
     rp.setContentType("text/html;charset=UTF-8");
@@ -105,8 +110,8 @@ public class FileServer {
        .append("<pre>java -jar ").append(CLIENT_JAR_NAME).append("</pre>")
        .append("<p>On most desktops, double-clicking the file does the same.</p>")
        .append("<h2>4. Point it here</h2>")
-       .append("<p>On first run it will ask for the server.  Enter:</p>")
-       .append("<pre>Host: ").append(host).append("\nContext: ").append(rq.getContextPath()).append("</pre>")
+       .append("<p>On first run it will ask for the server.  Paste this as the Server URL:</p>")
+       .append("<pre>").append(serverUrl).append("</pre>")
        .append("<p>then log in with the user name and password you were given.</p>")
        .append("<hr><p><small><a href=\"").append(rq.getContextPath()).append("/configure\">Server configuration</a>")
        .append(" &middot; <a href=\"").append(rq.getContextPath()).append("/info/ping\">Health</a></small></p>")

@@ -27,8 +27,10 @@ FROM tomcat:11.0-jdk25-temurin
 # This runs behind the front stack's HAProxy.  Without this valve Tomcat sees the
 # proxy's address and port, and the front page would tell visitors to point the
 # client at swarm-internal names.  With it, X-Forwarded-For / -Proto / -Host are
-# believed, so the page names the host the visitor actually reached.
-RUN sed -i 's|</Host>|  <Valve className="org.apache.catalina.valves.RemoteIpValve" remoteIpHeader="x-forwarded-for" protocolHeader="x-forwarded-proto" hostHeader="x-forwarded-host" />\n      </Host>|' conf/server.xml
+# believed, so the page names the host the visitor actually reached.  The port
+# comes from X-Forwarded-Port when the front end sends it, and otherwise is
+# assumed to be the scheme's own -- which is right on 443, wrong on anything else.
+RUN sed -i 's|</Host>|  <Valve className="org.apache.catalina.valves.RemoteIpValve" remoteIpHeader="x-forwarded-for" protocolHeader="x-forwarded-proto" hostHeader="x-forwarded-host" portHeader="x-forwarded-port" />\n      </Host>|' conf/server.xml
 
 # log4j1.compatibility lets log4j-1.2-api read the war's own log4j.properties
 # instead of wanting a log4j2 config; headless because there is no display and
