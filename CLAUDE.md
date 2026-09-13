@@ -137,10 +137,19 @@ accepts either `https://host[:port][/context]` or the old `host[:port]`; a URL s
 host, port (defaulting to the scheme's own, not 7041) and context, and a bare host means
 http. `getCodeBase()` builds from the scheme and `HttpClient` builds `/invoke` from that, so
 https is just a different URL — `HttpsURLConnection` is an `HttpURLConnection`. The server's
-front page hands out the full URL to paste. Java has to **trust the certificate**: a public CA
-is fine out of the box; a private CA (step-ca) means `-Djavax.net.ssl.trustStore=…` on the
-client, or importing the CA into the JRE's `cacerts`, or the handshake fails with `unable to
-find valid certification path`. The settings test no longer ICMP-pings the host first — a
+front page hands out the full URL to paste. **The Lumpnet private CA is bundled in the client**
+(`client/tls/lumpnet-ca.crt`, a copy of `~/lump/config/keys/ca/pki/ca.crt`; replace and
+rebuild when the CA rotates). `ClientTrust.install()`, called first thing in `Main`, sets a
+default `SSLSocketFactory` whose trust manager accepts a chain if *either* the platform's CAs
+or the bundled ones vouch for it — so a public certificate works, a Lumpnet-signed one works
+on a machine that has never heard of Lumpnet, and an imposter is still refused. Two traps
+inside it: a platform trust manager over an **empty** store (a stripped JRE, or a bad
+`-Djavax.net.ssl.trustStore`) refuses with a `RuntimeException`, not a `CertificateException`,
+so `EitherTrust` catches both; and `log4j1.compatibility` is a Tomcat flag, so a plain JVM
+running client code logs nothing from log4j — do not read its silence as "didn't run". This
+box has the Lumpnet CA in `/usr/local/share/ca-certificates/`, so it cannot demonstrate the
+bundled path; test with `-Djavax.net.ssl.trustStore=<empty.jks>` to simulate a stranger's
+machine. The settings test no longer ICMP-pings the host first — a
 server behind a front end that drops ICMP is reachable and was reported as not.
 
 **Login sends a password-equivalent, not a password.** The client generates an RSA keypair —

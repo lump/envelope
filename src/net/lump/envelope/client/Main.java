@@ -1,5 +1,7 @@
 package net.lump.envelope.client;
 
+import net.lump.envelope.client.tls.ClientTrust;
+
 import com.formdev.flatlaf.FlatLightLaf;
 import net.lump.envelope.client.ui.MainFrame;
 import org.apache.log4j.BasicConfigurator;
@@ -62,6 +64,9 @@ public class Main implements Runnable {
   // for possibly applet starting which are already using a http classloader
   public static void main(String[] args) {
     BasicConfigurator.configure();
+    // before anything opens a connection: the private CA the servers are
+    // signed by rides in the jar, and https has to trust it from the first byte
+    ClientTrust.install();
     getInstance().run();
   }
 

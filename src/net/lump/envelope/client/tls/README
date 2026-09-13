@@ -1,0 +1,11 @@
+Certificate authorities the client trusts, in addition to the Java runtime's own.
+
+Every *.crt in this directory is built into the client jar and loaded by
+ClientTrust at startup.  These are public certificates -- a CA's certificate is
+the thing it hands out so that others can verify what it signs -- so there is
+nothing secret about shipping them, and doing so means a downloaded client
+trusts the private CA's servers with no per-machine setup.
+
+lumpnet-ca.crt is ~/lump/config/keys/ca/pki/ca.crt: the Lumpnet Private
+Certificate Authority root, which signs the certificates the front stack's
+HAProxy presents.  When that CA is rotated, replace the file here and rebuild.
