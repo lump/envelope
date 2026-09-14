@@ -1,6 +1,7 @@
 package net.lump.envelope.client;
 
 import net.lump.envelope.client.tls.ClientTrust;
+import net.lump.envelope.client.ui.prefs.ServerSettings;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import net.lump.envelope.client.ui.MainFrame;
@@ -67,6 +68,8 @@ public class Main implements Runnable {
     // before anything opens a connection: the private CA the servers are
     // signed by rides in the jar, and https has to trust it from the first byte
     ClientTrust.install();
+    // the user's zone, before anything turns a day into a Date
+    ServerSettings.getInstance().apply();
     getInstance().run();
   }
 

@@ -256,7 +256,7 @@ public class TableQueryBar {
       public void run() {
         try {
           final Transaction created = new TransactionPortal().createTransaction(
-              categoryId, new java.sql.Date(System.currentTimeMillis()),
+              categoryId, net.lump.lib.util.Day.today(java.util.TimeZone.getDefault()),
               "", "", Money.ZERO);
 
           SwingUtilities.invokeLater(new Runnable() {

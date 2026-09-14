@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.*;
 import java.text.MessageFormat;
+import java.util.TimeZone;
 import java.util.prefs.Preferences;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,7 +31,8 @@ public class ServerSettings {
     port,
     context,
     encrypt,
-    compress
+    compress,
+    timezone
   }
 
   /** a full URL, from which scheme, host, port and context are all taken */
@@ -147,6 +149,34 @@ public class ServerSettings {
   }
   public void setEncrypt(boolean flag) {
     prefs.putBoolean(encrypt.name(), flag);
+  }
+
+  /**
+   * The zone this user keeps their books in.  Transaction dates cross the wire
+   * as an instant at midnight, and midnight of which day depends on a zone;
+   * this is the zone the client makes that instant in and reads it back in, so
+   * the day the user picked is the day that comes back.  Defaults to the
+   * machine's own zone, which is right for almost everyone.
+   */
+  public String getTimeZone() {
+    return prefs.get(timezone.name(), TimeZone.getDefault().getID());
+  }
+
+  public void setTimeZone(String id) {
+    if (id == null || id.trim().isEmpty()) prefs.remove(timezone.name());
+    else prefs.put(timezone.name(), id.trim());
+    apply();
+  }
+
+  /**
+   * Make the chosen zone the JVM's default.  Every place the client turns a
+   * calendar day into a Date or back -- the date chooser, the transaction
+   * table's date column, the query bounds -- goes through the JVM default, so
+   * setting it here is what makes one preference govern all of them, including
+   * inside the third-party chooser.  Called at startup and whenever it changes.
+   */
+  public void apply() {
+    TimeZone.setDefault(TimeZone.getTimeZone(getTimeZone()));
   }
 
   public boolean getCompress() {

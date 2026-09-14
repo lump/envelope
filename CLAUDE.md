@@ -152,6 +152,22 @@ bundled path; test with `-Djavax.net.ssl.trustStore=<empty.jks>` to simulate a s
 machine. The settings test no longer ICMP-pings the host first — a
 server behind a front end that drops ICMP is reachable and was reported as not.
 
+**`Transaction.date` is a calendar day carried as midnight UTC.** The column is `DATE` and
+means "August 31st" — no zone. But it crosses the wire as a `java.sql.Date`, which is an
+instant, and the day an instant falls on depends on a zone. The server is zone-blind: it
+stores the UTC day of whatever instant arrives and reads a day back as midnight UTC. So the
+one representation both ends agree on is midnight UTC of the day, and `lib/util/Day` is the
+only place a day is converted to or from the user's view: `Day.fromView` on the way out of the
+chooser, `Day.toView` on the way in, `Day.today` for a new transaction. The user's zone is a
+preference on the Server tab (`ServerSettings.getTimeZone`, applied as the JVM default so the
+third-party chooser and the table's date column agree), defaulting to the machine's own. The
+server and the image set **no** zone and must not: a pinned zone is right for one household
+and wrong for the next. Before `Day`, the client made the instant at midnight in the user's
+zone, and the round trip lost a day for every user not at UTC — west of Greenwich on the read,
+east of it on the store — which the form's save-as-you-edit then wrote back. Nothing stored
+needed migrating: the stored days were right, only the read was wrong.
+(`hibernate.jdbc.time_zone` was tried and does nothing for `DATE` in 5.6.)
+
 **Login sends a password-equivalent, not a password.** The client generates an RSA keypair —
 fresh on every launch, never persisted — and sends its public key in `getChallenge`. The
 server's `Challenge` carries the server's public key and, as the "challenge", only

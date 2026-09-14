@@ -15,6 +15,7 @@ import net.lump.envelope.shared.entity.Category;
 import net.lump.envelope.shared.entity.Transaction;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.Money;
+import net.lump.lib.util.Day;
 import net.lump.lib.util.ObjectUtil;
 
 import javax.swing.*;
@@ -23,6 +24,7 @@ import java.sql.Date;
 import java.text.DateFormat;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.TimeZone;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
@@ -183,7 +185,8 @@ public class TransactionChangeHandler {
             }
           };
 
-          form.getTransactionDate().setDate(editing.getDate());
+          // the stored day arrives as midnight UTC; show it as that day in the user's zone
+          form.getTransactionDate().setDate(Day.toView(editing.getDate(), TimeZone.getDefault()));
           changeableDate = new ChangeableDateChooser(form.getTransactionDate()){
             @Override public Date getState() { return TransactionChangeHandler.this.editing.getDate(); }
             @Override public boolean saveState() {
@@ -392,7 +395,17 @@ public class TransactionChangeHandler {
           HibernatePortal hp = new HibernatePortal();
           try {
             changeHistory.push(TransactionChangeHandler.this.getTransaction());
-            saveAttributes(hp.saveOrUpdate(TransactionChangeHandler.this.getTransaction()));
+            Transaction saved = hp.saveOrUpdate(TransactionChangeHandler.this.getTransaction());
+            // Take the transaction's new stamp onto the graph the form is ALREADY
+            // editing -- do not replace that graph.  saveAttributes() used to swap
+            // `editing` for a fresh deep copy here, which orphaned every
+            // Allocation the table model and the amount field were holding: their
+            // later saves moved stamps on objects nothing displayed, while the
+            // copies on screen kept the stamps this save returned.  The next save
+            // through the screen's copy was refused as stale.  An allocation's
+            // stamp is only ever moved by its own save now.
+            editing.setStamp(saved.getStamp());
+            pristine = ObjectUtil.deepCopy(editing);
             setSavedLabel();
           } catch (AbortException e) {
             setSaveFailedLabel();

@@ -4,7 +4,10 @@ import com.toedter.calendar.JDateChooser;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import net.lump.lib.util.Day;
+
 import java.sql.Date;
+import java.util.TimeZone;
 
 /**
  * @author troy
@@ -46,7 +49,8 @@ abstract public class ChangeableDateChooser extends Changeable<JDateChooser, Dat
   }
 
   public Date getValue() {
-    return new java.sql.Date(jDateChooser.getDate().getTime());
+    // the day the user picked, in their zone, carried as midnight UTC
+    return Day.fromView(jDateChooser.getDate(), TimeZone.getDefault());
   }
 
   /*
