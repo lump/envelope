@@ -39,8 +39,11 @@ ENV CATALINA_OPTS="-Djava.awt.headless=true -Dlog4j1.compatibility=true -Dlog4j.
 
 COPY --from=build /src/target/envelope.war webapps/envelope.war
 
-# the temurin image has bash but no curl/wget/nc, so probe via /dev/tcp
-HEALTHCHECK --interval=10s --timeout=5s --start-period=45s --retries=12 \
-  CMD bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080; printf "GET /envelope/info/ping HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3; grep -q pong <&3'
+# Readiness, not liveness: /info/ready opens a database session and runs a
+# query, so a container that cannot reach its database is unhealthy rather than
+# "healthy" with every login failing.  The temurin image has bash but no
+# curl/wget/nc, so probe via /dev/tcp.
+HEALTHCHECK --interval=15s --timeout=10s --start-period=60s --retries=8 \
+  CMD bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080; printf "GET /envelope/info/ready HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3; grep -q "^ready:" <&3'
 
 EXPOSE 8080

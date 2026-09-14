@@ -215,6 +215,11 @@ There is no system `mvn` on this box; the one that works is IntelliJ's bundled c
 `~/bin/idea-IU-*/plugins/maven/lib/maven3/bin/mvn`, and it has to run **online** (`-o`
 fails: `~/.m2` lacks the plugin versions that Maven build wants).
 
+`bootstrap-mysql.sql` ends with `grant all on envelope.* to budget identified by 'tegdub'` —
+a **development-stack** convention only. On the swarm, the config project bootstraps and
+grants empty databases itself with its own encrypted credentials, and the image reads them
+from `DAO_HIBERNATE_CONNECTION_*`; `tegdub` is never right there.
+
 Schema changes go in `sql/migrations/` **and** in `sql/bootstrap-mysql.sql` — the bootstrap
 is the authoritative schema for a fresh volume (sourced by `docker/initdb/01-bootstrap.sh`),
 and it opens with `drop database if exists envelope`, so never run it against a live
@@ -276,6 +281,17 @@ at the `/configure` form waiting for a human.
   constructor rounds `HALF_UP` while its `toString()` and its own Javadoc promise `HALF_EVEN`,
   so the constructor has already destroyed the half-fraction. Pre-existing since `b4dfb3c`,
   unrelated to the resurrection.
+- **A database failure used to surface as a bare `NullPointerException`.** `DAO.initialize`
+  swallowed `buildSessionFactory()`'s exception, leaving the factory null; every request then
+  died in `getCurrentSession()` with nothing in the message, while the real reason — on the
+  swarm, `Access denied for user 'budget'` — sat one line in the startup log as an unhelpful
+  `ServiceException`. It now keeps the root cause: the log says
+  `could not build the session factory -- <cause> (url …)` and requests fail with `the
+  database is not available: <cause>`. `/info/ping` is **liveness only** — it never touches
+  Hibernate, so a container sat "healthy" for hours with no database. `/info/ready` opens a
+  session and runs a query (`503 not ready: <cause>` otherwise); the image, dev compose and
+  swarm health checks all use it. `InvocationServlet` is `load-on-startup`, so a bad database
+  shows at startup rather than at the first user's login.
 - **`mvn package` rewrites the bind-mounted war under a running Tomcat**, which triggers a
   reload; requests landing mid-reload fail with `IllegalStateException: this web application
   instance has been stopped already` while the health check still answers `pong` (it never

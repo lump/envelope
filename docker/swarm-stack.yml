@@ -27,7 +27,7 @@ networks:
 
 services:
   server:
-    image: registry.lump/lump/envelope:master-1
+    image: registry.lump/lump/envelope:master-5
     hostname: envelope-{{.Task.Slot}}.{{index .Service.Labels "com.docker.stack.namespace"}}.swarm.private
     networks:
       swarm:

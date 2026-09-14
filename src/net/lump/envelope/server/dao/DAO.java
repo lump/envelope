@@ -54,6 +54,9 @@ public abstract class DAO {
    *
    * @param config a properties that configures hibernate
    */
+  /** why the last initialize() failed, so a request can say so instead of NPE-ing */
+  private static volatile String initializationFailure = null;
+
   public static void initialize(Properties config) {
     if (sessionFactory == null) {
       try {
@@ -71,14 +74,28 @@ public abstract class DAO {
           .addAnnotatedClass(User.class)
           .addProperties(config);
       sessionFactory = c.buildSessionFactory();
+      initializationFailure = null;
+      logger.info("session factory built against " + config.getProperty("hibernate.connection.url"));
       } catch (Exception e) {
-        logger.log(Priority.FATAL, e);
+        // Keep the reason.  Swallowing it here left sessionFactory null, and
+        // every request afterwards died with a NullPointerException deep in
+        // getCurrentSession() -- a message with nothing in it, while the real
+        // one (usually: cannot reach the database) sat in the startup log.
+        Throwable root = e;
+        while (root.getCause() != null) root = root.getCause();
+        initializationFailure = root.getClass().getSimpleName() + ": " + root.getMessage()
+            + " (url " + config.getProperty("hibernate.connection.url") + ")";
+        logger.fatal("could not build the session factory -- " + initializationFailure, e);
       }
 
     }
   }
 
   static SessionFactory getSessionFactory() {
+    if (sessionFactory == null)
+      throw new IllegalStateException(initializationFailure != null
+          ? "the database is not available: " + initializationFailure
+          : "the session factory was never initialized");
     return sessionFactory;
   }
 

@@ -1,6 +1,7 @@
 package net.lump.envelope.server.servlet.beans;
 
 import org.apache.log4j.Logger;
+import net.lump.envelope.server.dao.DAO;
 import net.lump.lib.util.Interval;
 
 import jakarta.servlet.ServletException;
@@ -203,6 +204,35 @@ public class FileServer {
 
       if (query.matches("^info/ping$")) returnValue = "pong";
       else if (query.matches("^info/uptime$")) returnValue = Interval.span(ManagementFactory.getRuntimeMXBean().getUptime());
+      else if (query.matches("^info/ready$")) {
+        // Readiness, as distinct from liveness.  /info/ping answers as soon as
+        // Tomcat is up and says nothing about the database; a container was
+        // reported healthy for hours while every login failed.  This one opens a
+        // session and runs a query, and says what is wrong when it cannot.
+        try {
+          DAO.initialize(ServerPrefs.getInstance().getProps(DAO.class));
+          // a DAO made outside Controller has to be closed here, or every probe
+          // leaks a session -- the very thing that stalled the server once before
+          net.lump.envelope.server.dao.Generic dao = new net.lump.envelope.server.dao.Generic();
+          try {
+            returnValue = dao.readyCheck();
+            if (dao.isActive() && !dao.wasRolledBack()) dao.commit();
+          } finally {
+            dao.close();
+            dao.disconnect();
+          }
+        } catch (Exception e) {
+          Throwable root = e;
+          while (root.getCause() != null) root = root.getCause();
+          byte[] out = ("not ready: " + root.getMessage()).getBytes();
+          rp.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+          rp.setHeader("Content-Length", String.valueOf(out.length));
+          rp.setHeader("Content-Type", "text/plain");
+          if (!rq.getMethod().equals("HEAD")) rp.getOutputStream().write(out);
+          logger.warn("not ready: " + root.getMessage());
+          return;
+        }
+      }
       else { rp.sendError(HttpServletResponse.SC_NOT_FOUND); return; }
 
       byte[] out = returnValue.getBytes();

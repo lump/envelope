@@ -11,6 +11,9 @@
   <servlet>
     <servlet-name>InvocationServlet</servlet-name>
     <servlet-class>net.lump.envelope.server.servlet.InvocationServlet</servlet-class>
+    <!-- so the session factory is built, and a bad database reported, at startup
+         rather than at the first user's login -->
+    <load-on-startup>1</load-on-startup>
     <init-param>
       <param-name>init</param-name>
       <param-value>blah</param-value>
