@@ -543,9 +543,47 @@ public class Preferences extends JDialog {
     timeZone.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         Object chosen = timeZone.getSelectedItem();
-        if (chosen != null) ssData.setTimeZone(chosen.toString());
+        if (chosen == null) return;
+        ssData.setTimeZone(chosen.toString());
+        // Pickers already on screen rendered their text in the old zone; nudge
+        // each to redraw the day it holds.  The day is unchanged -- the wire
+        // form is midnight UTC and does not care -- only its text is.
+        redrawDatePickers();
       }
     });
+  }
+
+  /**
+   * Re-render the date pickers on screen in the (new) default zone.
+   *
+   * <p>Each is re-set from its SOURCE OF TRUTH, never from itself.  A picker's
+   * getDate() is an instant, and re-setting that same instant under a new
+   * default zone reinterprets it as a different day -- so setDate(getDate())
+   * walks the shown day off by one per zone change.  That is the very mistake
+   * lib.util.Day exists to prevent, made once here before this comment.
+   *
+   * <p>The transaction date's truth is the entity's stored day (midnight UTC),
+   * so it is put back through Day.toView.  The query-bar bounds have no day of
+   * truth: they ARE instants -- a range filter on when -- and their instants
+   * are left alone; their text redraws on the next setDate, in the new zone,
+   * from the same instant, which is the right behaviour for a filter.
+   */
+  private void redrawDatePickers() {
+    try {
+      net.lump.envelope.client.ui.MainFrame main = net.lump.envelope.client.ui.MainFrame.getInstanceIfCreated();
+      if (main == null || main.getTransactionForm() == null) return;
+      net.lump.envelope.client.ui.components.forms.transaction.TransactionForm form = main.getTransactionForm();
+      if (form.getTransactionChangeHandler() == null) return;
+      net.lump.envelope.shared.entity.Transaction t = form.getTransactionChangeHandler().getTransaction();
+      if (t == null || t.getDate() == null) return;
+
+      // the handler has its own change listener on this picker; the same
+      // detach-set-reattach it uses for a programmatic change is done here by
+      // going through the handler
+      form.getTransactionChangeHandler().showDate(t.getDate());
+    } catch (RuntimeException ignore) {
+      // nothing on screen to redraw is not an error
+    }
   }
 
   public void fillUserFormWithSavedData() {

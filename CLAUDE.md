@@ -166,6 +166,14 @@ and wrong for the next. Before `Day`, the client made the instant at midnight in
 zone, and the round trip lost a day for every user not at UTC — west of Greenwich on the read,
 east of it on the store — which the form's save-as-you-edit then wrote back. Nothing stored
 needed migrating: the stored days were right, only the read was wrong.
+The date pickers use `ZonedDateEditor`: the stock jcalendar editor captures the
+default zone in its `SimpleDateFormat` at construction and never looks again, so after a zone
+change on the Server tab the text field showed the 30th while the popup said the 31st. And
+when the zone changes, on-screen pickers are re-set from their **source of truth** — the
+entity's stored day — never from themselves: a picker's `getDate()` is an instant, and
+re-setting that instant under a new default zone reinterprets it as a different day, one day
+further off per switch (`08/27` after five). `TransactionChangeHandler.showDate` is the
+right way to put a stored day on the picker.
 (`hibernate.jdbc.time_zone` was tried and does nothing for `DATE` in 5.6.)
 
 **Login sends a password-equivalent, not a password.** The client generates an RSA keypair —

@@ -71,6 +71,16 @@ public class MainFrame extends JFrame {
     return singleton;
   }
 
+  /**
+   * The main window if it has been created, else null.  getInstance() builds
+   * it on demand, which is the wrong thing for a caller that only wants to
+   * touch it if it is already there -- Preferences is shown before the main
+   * window on a first run, and must not summon it.
+   */
+  synchronized public static MainFrame getInstanceIfCreated() {
+    return singleton;
+  }
+
   private MainFrame() {
 
     StatusElement initStatus = status.addTask(Strings.get("initializing"));

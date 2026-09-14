@@ -5,6 +5,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
+import net.lump.envelope.client.ui.components.ZonedDateEditor;
 import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.portal.TransactionPortal;
 import net.lump.envelope.client.thread.StatusRunnable;
@@ -323,11 +324,10 @@ public class TableQueryBar {
     long begin = prefs.getLong(BEGIN_DATE, today - (86400000L * 90));
     long end = prefs.getLong(END_DATE, today);
 
-    beginDate = new JDateChooser(new Date(begin), "MM/dd/yyyy", new
-        JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
+    beginDate = new JDateChooser(new Date(begin), "MM/dd/yyyy", new ZonedDateEditor("MM/dd/yyyy", "##/##/####", '_'));
     //beginDate.setFont(Fonts.fixed.getFont());
 
-    endDate = new JDateChooser(new Date(end), "MM/dd/yyyy", new JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
+    endDate = new JDateChooser(new Date(end), "MM/dd/yyyy", new ZonedDateEditor("MM/dd/yyyy", "##/##/####", '_'));
     //endDate.setFont(Fonts.fixed.getFont());
     beginDate.setPreferredSize(new Dimension(beginDate.getPreferredSize().width + 10, beginDate.getPreferredSize().height));
     endDate.setPreferredSize(new Dimension(endDate.getPreferredSize().width + 10, endDate.getPreferredSize().height));

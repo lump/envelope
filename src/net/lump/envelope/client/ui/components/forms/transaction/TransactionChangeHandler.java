@@ -292,6 +292,20 @@ public class TransactionChangeHandler {
   }
 
   /**
+   * Put a stored day onto the date picker in the user's current zone, without
+   * the picker's change listener mistaking it for an edit.
+   */
+  public void showDate(final java.sql.Date stored) {
+    if (changeableDate == null) {
+      form.getTransactionDate().setDate(Day.toView(stored, TimeZone.getDefault()));
+      return;
+    }
+    changeableDate.removeDataChangeListener();
+    form.getTransactionDate().setDate(Day.toView(stored, TimeZone.getDefault()));
+    changeableDate.addDataChangeListener();
+  }
+
+  /**
    * Whether this transaction has exactly one allocation, in which case the
    * transaction amount and that allocation's amount are the same number.
    */

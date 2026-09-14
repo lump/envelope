@@ -5,6 +5,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
+import net.lump.envelope.client.ui.components.ZonedDateEditor;
 import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.State;
 import net.lump.envelope.client.portal.HibernatePortal;
@@ -693,7 +694,7 @@ public class TransactionForm {
     Long today = System.currentTimeMillis();
     today = today - (today % 86400000);
 
-    transactionDate = new JDateChooser(new Date(today), "MM/dd/yyyy", new JTextFieldDateEditor("MM/dd/yyyy", "##/##/####", '_'));
+    transactionDate = new JDateChooser(new Date(today), "MM/dd/yyyy", new ZonedDateEditor("MM/dd/yyyy", "##/##/####", '_'));
     //transactionDate.setFont(Fonts.fixed.getFont());
     totalsGridLayout = new GridLayout(0, 2);
     totalsPanel = new JPanel(totalsGridLayout);
