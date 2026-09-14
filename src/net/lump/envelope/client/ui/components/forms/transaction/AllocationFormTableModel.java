@@ -86,6 +86,13 @@ public class AllocationFormTableModel extends AbstractTableModel {
 
   public void setExpense(boolean expense) {
     if (this.expense != expense) {
+      // Changing the view while a cell is being edited would re-sign whatever
+      // that editor later hands back under the new convention.  The handler
+      // commits open editors before calling this; refuse to let the view move
+      // under one anyway, since a second caller would reintroduce the flip.
+      if (table != null && table.isEditing() && table.getCellEditor() != null)
+        table.getCellEditor().stopCellEditing();
+
       this.expense = expense;
       if (allocations != null)
         fireTableRowsUpdated(0, allocations.size() - 1);

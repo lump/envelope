@@ -106,6 +106,19 @@ public class TransactionChangeHandler {
   }
 
   public void setExpense(boolean expense) {
+    // Commit any open allocation editor FIRST, while the view still has the
+    // sign convention the value was typed under.  The amount cell shows an
+    // expense unsigned and re-signs it on commit according to the model's
+    // current view; the radio's click both flips that view (here, synchronously)
+    // and takes focus from the editor (committing it, a moment later).  Left in
+    // that order, a "25.00" typed into an expense row committed under the Income
+    // view as +25.00 -- a silent sign flip -- and then raced the amount field's
+    // own focus-loss save for the same row, which is the StaleObjectState the
+    // user saw.  Committing here makes the flip a pure change of view.
+    JTable table = form.getAllocationsTable();
+    if (table != null && table.isEditing() && table.getCellEditor() != null)
+      table.getCellEditor().stopCellEditing();
+
     isExpense = expense;
     form.getTypeExpenseRadio().setSelected(expense);
     form.getTypeIncomeRadio().setSelected(!expense);
