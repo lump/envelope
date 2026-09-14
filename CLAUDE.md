@@ -282,6 +282,13 @@ at the `/configure` form waiting for a human.
 - **Two different `lib/` directories.** The repo-root `lib/` (33 MB of vendored jars) and the
   Ant/Ivy build were deleted in `75461de` — Maven resolves all dependencies now. But
   `src/net/lump/lib/` is **live source**. Don't conflate them.
+- **Never `setLayout()` on a generated form panel to add a row.** The `.form`-generated
+  panels use IntelliJ's `GridLayoutManager`, and a populated one cannot be given another row:
+  replacing its layout discards the constraints every existing child was added with, so they
+  all collapse to `0x0` and vanish. Adding the time-zone picker that way emptied the entire
+  Server tab. Wrap instead — lift the generated panel out of its cell into a plain
+  `BorderLayout` wrapper and hang the new row beneath it (`Preferences.addTimeZoneRow`). Check
+  with a `pack()`-and-measure probe: a control the layout dropped has zero bounds.
 - **The client is distributed from the server's front page.** `mvn package` builds the fat
   jar in `prepare-package` and the war plugin copies it to `WEB-INF/client/envelope-client.jar`
   — under `WEB-INF` so Tomcat never lists it, but deliberately **not** under `WEB-INF/lib`,

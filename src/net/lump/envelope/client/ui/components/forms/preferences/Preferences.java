@@ -506,27 +506,40 @@ public class Preferences extends JDialog {
     encrypt.setSelected(ssData.getEncrypt());
   }
 
-  /** The zone picker: a row of its own beneath the encrypt checkbox. */
+  /**
+   * The zone picker, beneath the encrypt checkbox.
+   *
+   * <p>The generated form is an IntelliJ GridLayoutManager, and a populated one
+   * cannot be given another row: setLayout() on it throws away the constraints
+   * every existing child was added with, so they all disappear -- which is what
+   * the first attempt at this did to the whole Server tab.  So the generated
+   * grid is left exactly as generated, lifted out of its cell into a plain
+   * BorderLayout wrapper, and the new row is hung beneath it.
+   */
   private void addTimeZoneRow() {
-    // the generated grid is 4x2 with encrypt on row 3; grow it by a row
-    serverFormPanel.setLayout(new GridLayoutManager(5, 2, new Insets(0, 0, 0, 0), -1, -1));
+    // the wrapper takes serverFormPanel's place in serverTab, same constraints
+    JPanel wrapper = new JPanel(new BorderLayout(0, 4));
+    serverTab.remove(serverFormPanel);
+    serverTab.add(wrapper, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+    wrapper.add(serverFormPanel, BorderLayout.NORTH);
 
-    timeZoneLabel = new JLabel(Strings.get("timezone"));
-    serverFormPanel.add(timeZoneLabel,
-        new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_NONE,
-            GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+    // the row itself: a label sized to match the ones in the grid above, then the picker
+    JPanel row = new JPanel(new BorderLayout(6, 0));
+    timeZoneLabel = new JLabel(Strings.get("timezone"), SwingConstants.RIGHT);
+    timeZoneLabel.setPreferredSize(new Dimension(hostNameLabel.getPreferredSize().width, timeZoneLabel.getPreferredSize().height));
+    row.add(timeZoneLabel, BorderLayout.WEST);
 
-    // every zone the JVM knows, sorted, with the machine's own near the top
     String[] ids = TimeZone.getAvailableIDs();
     java.util.Arrays.sort(ids);
     timeZone = new JComboBox<String>(ids);
     timeZone.setToolTipText(Strings.get("timezone.tip"));
-    serverFormPanel.add(timeZone,
-        new GridConstraints(4, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
-            GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+    row.add(timeZone, BorderLayout.CENTER);
+    wrapper.add(row, BorderLayout.SOUTH);
 
     timeZone.setSelectedItem(ssData.getTimeZone());
-    // saved on change, like the compress and encrypt checkboxes beside it
+    // saved on change, like the compress and encrypt checkboxes above it
     timeZone.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         Object chosen = timeZone.getSelectedItem();
