@@ -23,8 +23,9 @@ plus a shared `lib/`.
 
 **The RPC protocol is the load-bearing part.** The client Java-serializes a `Command` into a
 hand-rolled RFC 2388 multipart POST to `/invoke` (neither side uses the servlet `Part` API);
-the body is optionally gzipped and AES-encrypted under an RSA-wrapped session key sent as a
-separate `key` part. `Controller` dispatches by `Command.Name` — `getFacet()` picks the DAO
+the body is optionally gzipped and 3DES-encrypted (`DESede/ECB/PKCS5Padding`, no IV) under an
+RSA-1024-wrapped session key, signed `SHA1withRSA`, sent as a separate `key` part. (This was
+documented as "AES" for a long time, which is why the 2007-grade algorithms went unaudited.) `Controller` dispatches by `Command.Name` — `getFacet()` picks the DAO
 class, `name()` is the method. The **response is not multipart**: the server streams N
 serialized objects with `Single-Object` / `Object-Count` / `Command-Sequence-Id` headers and
 the client reassembles them into a list. Authentication rides in HTTP headers rather than in
@@ -357,20 +358,49 @@ at the `/configure` form waiting for a human.
   `sendAllocationChange` is therefore single-flight per allocation, re-sending once if the row
   changed while its save was in the air. Anything else that saves per-keystroke needs the same
   treatment.
-- **`Transaction.equals` does not compare allocations, and must not be "fixed" naively.** It
-  builds both sides of that comparison from `this.allocations` (the second one is unqualified),
-  so it compares the list to itself and the check always passes — an allocation change is
-  invisible to it. Repointing it at `that.allocations` makes `Transaction.equals` and
-  `Allocation.equals` mutually recursive (the latter compares its `transaction`), which is a
-  `StackOverflowError` for any two transactions whose scalar fields match. The self-comparison
-  bug is the only thing preventing that today. Track allocation edits explicitly instead.
-- **Running the test suite rewrites the real client settings.** `TestSuite`'s static
-  initializer calls `ServerSettings.setHostName(localHost() + ":8080")` and
-  `LoginSettings.setUsername("bowmantest")`, and those go straight into the same
-  `java.util.prefs` store the actual Swing client reads (`~/.java/.userPrefs/net/lump/...`).
-  So `-DskipTests=false` silently repoints your client at `<hostname>:8080` and leaves it
-  there. Put the settings back afterwards (`localhost:7041`, context `/envelope`) or the
-  client — and every probe — fails with `ConnectException` and a settings dialog.
+- **`Transaction.equals` compares the transaction's own columns only, and must not be
+  "improved" into comparing allocations.** It used to build both sides of an allocation
+  comparison from `this.allocations` (the second copy unqualified), so it compared the list to
+  itself and always passed — useless, and worse: the sort comparator dereferenced
+  `one.getId()`, so as soon as the form's graph held **two** allocations with a null id among
+  them it threw a `NullPointerException` out of `equals`. `TimSort` never calls a comparator
+  on a list shorter than two, which is why a fresh single-allocation transaction was safe and
+  this went unnoticed. The null id is not transient: `TransactionForm` appends an empty row on
+  Tab or Down and `sendAllocationChange` refuses to save one with no category or amount, so it
+  lives as long as the form. The only caller, `TransactionChangeHandler.sendChanges`, runs on
+  the EDT outside any try, so every description, entity and date edit was silently dropped
+  from then on. The comparison is now gone. Do not reinstate it against `that.allocations`
+  either: `Allocation.equals` compares its `transaction`, so the two would recurse into each
+  other and overflow the stack for any two transactions whose scalar fields match. Allocation
+  edits never travelled through here — they are saved on their own by `sendAllocationChange`.
+- **`sendError` does not return.** It only marks the response and suspends Tomcat's output
+  buffer, so execution carries on: `InvocationServlet` had three `sendError` calls with no
+  `return` after them, and a request refused for a bad `Accept`, an unsupported encoding or
+  an unrecognized part name still dispatched and **committed** while the client was told 415
+  or 406. Adding the returns exposed a second bug behind them — `Accept-Encoding: identity`
+  (and `*`) had never been handled, and only ever worked because the 406 didn't stop the
+  response going out. Both are fixed; if you add another `sendError` on that path, return.
+- **`/configure` fails closed.** `ServerPrefs.configure` used to skip its whole Basic-auth
+  block when `configure.username`/`configure.password` were empty, which is what
+  `ServerPrefs.properties` ships — so a bare war in a plain Tomcat served the config form,
+  and the live database password inside it, to anyone who could reach the webapp. It now
+  answers 503 until both are set, so any new deployment must supply
+  `SERVERPREFS_CONFIGURE_USERNAME` and `SERVERPREFS_CONFIGURE_PASSWORD` (both compose stacks
+  already do). The form also no longer renders stored secrets at all: `type="password"` only
+  masked them in a browser while leaving the value in the page source. An empty password
+  field on submit means "leave it alone".
+- **The test suite no longer touches the real client settings, and must not be allowed to
+  again.** `TestSuite`'s static initializer writes a test host, port and username, and
+  those used to land in the very `java.util.prefs` store the Swing client reads
+  (`~/.java/.userPrefs/net/lump/...`) — so `-DskipTests=false` silently repointed the
+  client at `<hostname>:8080` as user `bowmantest` and left it there, after which the
+  client and every probe failed with `ConnectException` and a settings dialog.
+  `ServerSettings` and `LoginSettings` now resolve their node through
+  `client/ui/prefs/PrefsNode`, which honours `-Denvelope.prefs.node=<path>`; `pom.xml`
+  points surefire at `net/lump/envelope/test`, and `TestSuite` **refuses to run** if that
+  property is unset rather than risk the real node. Saving and restoring the node in a JVM
+  shutdown hook was tried first and does not work — ordering against the preferences
+  system's own flush hook is unspecified, and losing that race left the node cleared.
 - **The allocation table re-signs a committed cell under the *current* view.** It shows an
   expense unsigned and negates what the editor hands back according to `expense` at commit
   time. The Expense/Income radio both flips that view (synchronously, via
@@ -381,12 +411,27 @@ at the `/configure` form waiting for a human.
   `StaleObjectStateException`. `setExpense` in both the handler and the model now commits any
   open editor **before** the view changes. If you add another way to change the view, do the
   same.
-- **Tests need a live server + DB** and are skipped by default (`default-skip-tests`
-  profile); run with `-DskipTests=false`. The suite does not currently pass: it hangs (some
-  tests block on Swing dialogs), and `TestMoney.testPrint` fails outright — `Money`'s
-  constructor rounds `HALF_UP` while its `toString()` and its own Javadoc promise `HALF_EVEN`,
-  so the constructor has already destroyed the half-fraction. Pre-existing since `b4dfb3c`,
-  unrelated to the resurrection.
+- **Tests are skipped by default** (`default-skip-tests` profile); run with
+  `-DskipTests=false`. **The suite passes** — 17 tests — but only the six that need no
+  server pass on their own; point the rest at a running stack:
+
+  ```
+  mvn test -DskipTests=false \
+    -Denvelope.test.host=localhost:7041 -Denvelope.test.user=guest -Denvelope.test.password=guest
+  ```
+
+  Without that it targets `<hostname>:8080` as `bowmantest`, which exists nowhere, and the
+  server-dependent tests fail fast naming the host and user they tried. Four things had to
+  change to get here, all worth not undoing: `TestSuite`'s static initializer called
+  `System.exit(1)` on a failed handshake, which killed the surefire fork outright so not one
+  test — including the server-independent ones — ever reported; `Portal` answers a failed
+  connection with a modal `JOptionPane` and a visible Preferences window
+  (`Portal.java:144-183`), which nothing dismisses in a test JVM, so surefire now runs
+  headless and those become a `HeadlessException` the tests record; `TestBalance` is excluded
+  in `pom.xml` because it is an abandoned OFX experiment with every line commented out, and
+  matching surefire's `Test*.java` default it failed the run on "No tests found"; and
+  `TestRevision` asserted a non-empty value for `Revision.Locker`, which CVS leaves empty
+  exactly like `Revision.Name` that it already skipped.
 - **A database failure used to surface as a bare `NullPointerException`.** `DAO.initialize`
   swallowed `buildSessionFactory()`'s exception, leaving the factory null; every request then
   died in `getCurrentSession()` with nothing in the message, while the real reason — on the
