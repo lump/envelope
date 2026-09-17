@@ -56,7 +56,7 @@ services:
     healthcheck:
       # readiness (database reachable), not just liveness; the temurin image has
       # bash but no curl/wget/nc, so probe via /dev/tcp
-      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080; printf \"GET /envelope/info/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n\" >&3; grep -q "^ready:" <&3'"]
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080; printf \"GET /envelope/info/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n\" >&3; grep -q \"^ready:\" <&3'"]
       interval: 10s
       timeout: 5s
       retries: 12
