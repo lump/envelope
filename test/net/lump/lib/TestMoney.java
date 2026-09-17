@@ -41,10 +41,15 @@ public class TestMoney extends TestCase {
 //    }
 
 
+    // The expected strings for the negatives used to read "($1.02)" and "($1.04)".
+    // That was right in 2009, when the en_US currency pattern still carried a
+    // (¤#,##0.00) negative subpattern; CLDR dropped it, so a modern JDK renders
+    // negative currency as -$1.02.  The inputs keep the parenthesised form on
+    // purpose -- Money still accepts it, it just no longer emits it.
     String[] in =
         {"$1.025", "($1.025)", "1.035", "-1.045", "1.255", "1.265", "1.275"};
     String[] out =
-        {"$1.02", "($1.02)", "$1.04", "($1.04)", "$1.26", "$1.26", "$1.28"};
+        {"$1.02", "-$1.02", "$1.04", "-$1.04", "$1.26", "$1.26", "$1.28"};
 
     for (int x = 0; x < in.length; x++) {
       Money money = new Money(in[x]);
