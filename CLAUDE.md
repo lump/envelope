@@ -160,8 +160,16 @@ stores the UTC day of whatever instant arrives and reads a day back as midnight 
 one representation both ends agree on is midnight UTC of the day, and `lib/util/Day` is the
 only place a day is converted to or from the user's view: `Day.fromView` on the way out of the
 chooser, `Day.toView` on the way in, `Day.today` for a new transaction. The user's zone is a
-preference on the Server tab (`ServerSettings.getTimeZone`, applied as the JVM default so the
-third-party chooser and the table's date column agree), defaulting to the machine's own. The
+preference on the Server tab (`ServerSettings.getTimeZone`, applied as the JVM default for
+the third-party chooser's benefit), defaulting to the machine's own. It is **not** what makes
+the table's date column agree with the chooser -- that claim was here and was wrong. The
+column had no renderer registered, so it fell through to Swing's `DateRenderer`, which
+formats in the default zone: midnight UTC is the evening before west of Greenwich, so the
+list read a day early for a user in the Americas while the form's field, fed `Day.toView`,
+read correctly. `forms/transaction/DayRenderer` formats the stored instant in **UTC**, which
+is the zone its day is expressed in, so the cell says the day the column means for every
+reader and does not move when the zone preference does. Don't "fix" it to use `Day.toView`;
+only the chooser needs that, because only the chooser thinks in instants. The
 server and the image set **no** zone and must not: a pinned zone is right for one household
 and wrong for the next. Before `Day`, the client made the instant at midnight in the user's
 zone, and the round trip lost a day for every user not at UTC — west of Greenwich on the read,
