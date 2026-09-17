@@ -231,6 +231,27 @@
         <configuration>
           <!-- most of these tests need a live server + database; run them with -DskipTests=false -->
           <skipTests>${skipTests}</skipTests>
+          <systemPropertyVariables>
+            <!-- Keep the suite out of the store the real Swing client reads: its
+                 static setup writes a test host, port and username, and landing
+                 those in the client's own node repointed it at the test server and
+                 left it there.  See PrefsNode. -->
+            <envelope.prefs.node>net/lump/envelope/test</envelope.prefs.node>
+            <!-- Portal answers a failed connection or login with a modal
+                 JOptionPane and a visible Preferences window (Portal:144-183).
+                 In a test JVM nobody dismisses those, so the run hung instead of
+                 reporting.  Headless turns them into a HeadlessException the tests
+                 can record. -->
+            <java.awt.headless>true</java.awt.headless>
+          </systemPropertyVariables>
+          <excludes>
+            <!-- An abandoned 2008 OFX experiment: every line of it is commented out,
+                 including the one test method, and the net.ofx.types it imports is not
+                 in the project.  It matches surefire's Test*.java default, so it was
+                 picked up, found no runnable method, and failed the whole run on a
+                 "No tests found" warning.  Kept for the OFX intent it records. -->
+            <exclude>**/ofx/TestBalance.java</exclude>
+          </excludes>
         </configuration>
       </plugin>
     </plugins>

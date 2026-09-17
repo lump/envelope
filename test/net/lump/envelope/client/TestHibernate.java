@@ -38,6 +38,10 @@ public class TestHibernate extends TestCase {
 
   protected void setUp() throws Exception {
     super.setUp();
+    // Say why up front.  Without this these tests carried on past a failed
+    // handshake and blocked on a Swing login dialog, which is what made the suite
+    // hang rather than report.
+    TestSuite.requireServer();
     TestSuite.authed();
   }
 

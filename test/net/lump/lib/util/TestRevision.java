@@ -14,9 +14,17 @@ public class TestRevision extends TestCase {
   @Test
   public void testExistence() {
     for (Revision r : Revision.values()) {
-      if (r != Revision.Name) {
-        assertTrue(r + " is zero length", r.value().length() > 0);
+      // Name and Locker are both empty unless CVS has a reason to fill them: Name
+      // only when the file was checked out under an explicit tag, Locker only
+      // under "cvs admin -l".  The test skipped Name but not Locker, so it died
+      // on a NullPointerException calling length() on the latter.
+      if (r == Revision.Name || r == Revision.Locker) {
+        assertNull(r + " is only filled in by CVS under specific conditions,"
+                   + " so it should be null here, not " + r.value(), r.value());
+        continue;
       }
+      assertNotNull(r + " has no value at all", r.value());
+      assertTrue(r + " is zero length", r.value().length() > 0);
     }
   }
 

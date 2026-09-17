@@ -45,7 +45,6 @@ public class TestEncryption extends TestCase {
     SecretKey sessionKey = Encryption.generateSymKey();
 
     int startSize;
-    int finishSize;
 //    int buffsize = 0;
 //    do {
     Command command =
@@ -88,10 +87,18 @@ public class TestEncryption extends TestCase {
     CipherInputStream cis3 = Encryption.decodeSym(sessionKey, is3);
     ObjectInputStream ois = new ObjectInputStream(cis3);
     Object o = ois.readObject();
-    byte[] b3 = new byte[1024];
-    finishSize = cis3.read(b3);
-    assertEquals("startSize doesn't match finishSize!", startSize, finishSize);
-    System.out.println(startSize + " " + finishSize);
+
+    // This used to read whatever was LEFT in the stream after readObject had
+    // already consumed the whole object, and assert that count equalled the
+    // serialized size: 724 against the -1 that read() answers at EOF.  It could
+    // never pass.  What the test means to establish is that a Command survives
+    // the symmetric round trip, so assert that instead.
+    assertNotNull("nothing came back out of the cipher stream", o);
+    assertTrue("round-tripped object is a " + o.getClass().getName() + ", not a Command",
+      o instanceof Command);
+    assertEquals("the command that came back is not the one that went in",
+      Command.Name.getChallenge, ((Command)o).getName());
+    assertTrue("nothing was written to the cipher stream", startSize > 0);
 //      buffsize++;
 //    } while (startSize != finishSize);
   }

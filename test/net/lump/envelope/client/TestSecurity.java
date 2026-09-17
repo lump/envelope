@@ -25,6 +25,7 @@ public class TestSecurity extends TestCase {
 
   protected void setUp() throws Exception {
     super.setUp();
+    TestSuite.requireServer();
   }
 
   protected void tearDown() throws Exception {
