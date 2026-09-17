@@ -97,6 +97,11 @@ public class TableQueryBar {
       }
 
       public void keyReleased(KeyEvent e) {
+        // The table starts out with the JTable default model and only gets a
+        // TransactionTableModel when a tree selection installs one, so this cast
+        // threw a ClassCastException on every key release until then.  The sibling
+        // delete path already guards the same way.
+        if (!(table.getModel() instanceof TransactionTableModel)) return;
         if (((TransactionTableModel)table.getModel()).isTransaction()) {
           if (e.getKeyCode() == KeyEvent.VK_SPACE
               && (e.getModifiersEx() == 0)) {

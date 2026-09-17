@@ -411,6 +411,22 @@ public class Preferences extends JDialog {
   public Boolean areLoginSettingsOk() {
     SecurityPortal sp = new SecurityPortal();
 
+    // Name the user before judging anything: whether a password is saved is a fact
+    // about this username on this host, so it cannot be answered before the typed
+    // name is in.
+    lsData.setUsername(userName.getText());
+
+    // The password field is filled with a placeholder when a password is saved for
+    // the user it was filled for.  If the username has since been changed to one
+    // with nothing saved, that placeholder stands for a password we do not have --
+    // prompt for it rather than attempt a login that cannot succeed.
+    if (LoginSettings.PASSWORD_ALREADY_SET.equals(String.valueOf(password.getPassword()))
+        && !lsData.passwordIsSaved()) {
+      password.setText("");
+      setSessionState(State.bad, Strings.get("session.state.not.attempted"));
+      return false;
+    }
+
     if (!hadLoginSuccessYet && !lsData.passwordIsSaved() && Arrays.equals(password.getPassword(), new char[0])) {
       setSessionState(State.bad, Strings.get("session.state.not.attempted"));
       return false;
@@ -418,7 +434,6 @@ public class Preferences extends JDialog {
 
     Boolean authed = null;
 //    try {
-    lsData.setUsername(userName.getText());
     try {
       lsData.setPassword(String.valueOf(password.getPassword()));
       lsData.setPasswordShouldBeSaved(rememberPasswordCheckBox.isSelected());

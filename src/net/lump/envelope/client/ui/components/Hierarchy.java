@@ -478,10 +478,18 @@ public class Hierarchy extends JTree {
             });
           }
 
+          // Selection is Swing state, and setting it fires the selection listeners
+          // that rebuild the transaction table model.  This ran on the pool worker,
+          // so that rebuild happened off the EDT after every allocation save --
+          // every neighbouring model notification in this method already defers.
           if (selectedObject != null
               && dmtn.getUserObject().equals(
-              ((DefaultMutableTreeNode)selectedObject).getUserObject()))
-            singleton.setSelectionPath(new TreePath(dmtn.getPath()));
+              ((DefaultMutableTreeNode)selectedObject).getUserObject())) {
+            final TreePath path = new TreePath(dmtn.getPath());
+            SwingUtilities.invokeLater(new Runnable() {
+              public void run() { singleton.setSelectionPath(path); }
+            });
+          }
 
           updateChildren(dmtn);
         }
@@ -500,7 +508,9 @@ public class Hierarchy extends JTree {
 
 
             updateChildren(rootNode);
-            treeModel.nodeChanged(rootNode);
+            SwingUtilities.invokeLater(new Runnable() {
+              public void run() { treeModel.nodeChanged(rootNode); }
+            });
 //        RepaintManager.currentManager(singleton).isCompletelyDirty(singleton);
 
             if (!singleton.isExpanded(new TreePath(rootNode)))

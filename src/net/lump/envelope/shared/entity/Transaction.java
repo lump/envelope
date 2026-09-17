@@ -191,29 +191,26 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
         ? !entity.equals(that.entity)
         : that.entity != null) return false;
 
-    if (allocations != null) {
-      if (that.allocations == null) return false;
-
-      // PersistentSTUPIDBag doesn't have a decent equals
-      ArrayList thisList = new ArrayList<Allocation>(this.allocations);
-      ArrayList thatList = new ArrayList<Allocation>(allocations);
-
-      Comparator<Allocation> indexSort =
-          new Comparator<Allocation>() {
-            public int compare(Allocation one, Allocation other) {
-              return one.getId().compareTo(other.getId());
-            }
-          };
-
-      //noinspection unchecked
-      Collections.sort(thisList, indexSort);
-      //noinspection unchecked
-      Collections.sort(thatList, indexSort);
-
-      if (!Arrays.equals(thisList.toArray(), thatList.toArray()))
-        return false;
-    }
-    else if (that.allocations != null) return false;
+    // Allocations are deliberately NOT compared here.
+    //
+    // What used to stand here built both sides of the comparison from
+    // this.allocations -- the second copy was unqualified -- so it compared the
+    // list to itself and always passed.  It was not merely useless: its sort
+    // comparator dereferenced one.getId(), and the moment the form's graph held
+    // two allocations with a null id among them (the empty row TransactionForm
+    // appends on Tab or Down, which sendAllocationChange then refuses to save, so
+    // it persists for the life of the form) Collections.sort threw a
+    // NullPointerException out of equals.  The only caller is
+    // TransactionChangeHandler.sendChanges, on the EDT and outside any try, so
+    // every description, entity and date edit was silently dropped from then on.
+    //
+    // Repointing the second copy at that.allocations is not the fix: Allocation
+    // .equals compares its transaction, so the two would recurse into each other
+    // and overflow the stack for any two transactions whose scalar fields match.
+    // The self-comparison was the only thing holding that off.  Allocation edits
+    // do not travel through here at all -- they are saved on their own by
+    // TransactionChangeHandler.sendAllocationChange -- so this compares the
+    // transaction's own columns, which is all its one caller needs.
 
     return true;
 

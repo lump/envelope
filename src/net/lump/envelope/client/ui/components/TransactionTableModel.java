@@ -114,6 +114,27 @@ public class TransactionTableModel extends AbstractTableModel {
                 || TransactionTableModel.this.thing instanceof Hierarchy.CategoryTotal))
               throw new IllegalArgumentException("only AccountTotal or CategoryTotal aceptable as first argument");
 
+            // Empty the table before the first row of the new query can land.
+            // Rows were overwritten in place and the surplus trimmed only after a
+            // completed fill -- and the AbortException catch below skips that trim
+            // entirely -- so a query that failed or was abandoned left the previous
+            // selection's rows on screen, or a torn mix of two selections, under a
+            // title the tree's selection listener had already changed on the EDT.
+            SwingUtilities.invokeAndWait(new Runnable() {
+              public void run() {
+                int had = transactions.size();
+                if (had > 0) {
+                  transactions.clear();
+                  fireTableRowsDeleted(0, had - 1);
+                }
+              }
+            });
+
+            // An index into the fill that is about to start.  It was never reset,
+            // so it carried the previous task's last row number into the wait
+            // below.
+            filled = -1;
+
             incomeBalance = new Money(0);
             TableQueryBar.getInstance().setInboxLabel(incomeBalance.toString());
             outgoingBalance = new Money(0);
@@ -174,13 +195,28 @@ public class TransactionTableModel extends AbstractTableModel {
                   }
                 });
 
-            if (retval.size() == 0) rowCount = 0;
+            if (retval.size() == 0) {
+              rowCount = 0;
+              // Nothing will arrive, so the listener below never runs and nothing
+              // ever calls notifyAll.  Say it here, or the wait sits out its whole
+              // timeout on every empty category and every date range with no rows.
+              synchronized (finished) { finished[0] = Boolean.TRUE; }
+            }
 
             long startTime = System.currentTimeMillis();
             // wait until filled (so other things in the queue can't start and conflict)
             try {
               synchronized (finished) {
-                while ((!finished[0] && filled != rowCount) && (System.currentTimeMillis() - 20000) > startTime)
+                // This read (now - 20000) > startTime, which demands that 20
+                // seconds have ALREADY passed, so the body never ran: the fill was
+                // never actually waited for.  It only went unnoticed because
+                // HttpClient delivers its output events inline, so every row has
+                // landed by the time we get here.  The "filled != rowCount" half
+                // is gone with it -- filled is the last row INDEX and rowCount a
+                // count, so it could not have become equal either.  finished[0] is
+                // set by the listener on the last row, and above for an empty
+                // result.
+                while (!finished[0] && (System.currentTimeMillis() - startTime) < 20000)
                   finished.wait(1000);
               }
             } catch (InterruptedException e) {
@@ -220,9 +256,15 @@ public class TransactionTableModel extends AbstractTableModel {
     if (rowNumber != 0 && ((rowNumber - 1) > (transactions.size() - 1))) System.err
         .println("transactions doesn't have row " + (rowNumber - 1) + " as transactions is size: " + (transactions.size() - 1));
 
-    // refresh our amnesia on the balances
-    Money reconciled = rowNumber == 0 ? beginningBalance : (Money)transactions.get(rowNumber - 1)[COLUMN.Reconciled.ordinal()];
-    Money balance = rowNumber == 0 ? beginningReconciledBalance : (Money)transactions.get(rowNumber - 1)[COLUMN.Balance.ordinal()];
+    // refresh our amnesia on the balances.  These two seeds were crossed: Balance
+    // started from the reconciled-only sum and Reconciled from the unfiltered one,
+    // so with any unreconciled transaction before the begin date every Balance in
+    // the list was off by the difference between them, and setValueAt -- which
+    // seeds the right way round -- made the first row jump when its checkbox was
+    // toggled.  Balance carries every transaction; Reconciled carries only the
+    // reconciled ones.
+    Money reconciled = rowNumber == 0 ? beginningReconciledBalance : (Money)transactions.get(rowNumber - 1)[COLUMN.Reconciled.ordinal()];
+    Money balance = rowNumber == 0 ? beginningBalance : (Money)transactions.get(rowNumber - 1)[COLUMN.Balance.ordinal()];
 
     Money amount = (Money)row[COLUMN.Amount.ordinal()];
     // calculate balance column

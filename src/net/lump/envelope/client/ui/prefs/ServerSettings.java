@@ -17,7 +17,7 @@ import static net.lump.envelope.client.ui.prefs.ServerSettings.Field.*;
 
 public class ServerSettings {
   private static ServerSettings singleton;
-  Preferences prefs = Preferences.userNodeForPackage(this.getClass());
+  Preferences prefs = PrefsNode.of(this.getClass());
 
   private static ValidCache socketServerValidated = new ValidCache();
 

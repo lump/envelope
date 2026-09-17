@@ -251,6 +251,14 @@ public class CriteriaFactory {
     }
     else {
       ProjectionList plist = Projections.projectionList();
+      // A row here is an ALLOCATION, not a transaction, and that is deliberate:
+      // grouping by the allocation is what keeps an auto-deduct pair visible in the
+      // category's history as the +X that arrived and the -X that left again.
+      // Grouping by t.id would net them into a single 0.00 row and lose the payment
+      // -- 4219 of the 4440 multi-allocation transaction/category pairs in this
+      // budget are that shape.  The projection carries t.id separately so a row can
+      // still be keyed to its transaction, and the trailing allocation id is what
+      // tells two rows of one transaction apart.  Don't "simplify" this to t.id.
       plist.add(Projections.property("t.reconciled"))
           .add(Projections.property("t.date"))
           .add(Projections.sum("amount"))
@@ -265,7 +273,16 @@ public class CriteriaFactory {
           .add(Restrictions.ge("t.date", beginDate))
           .add(Restrictions.le("t.date", endDate))
           .setProjection(plist)
+          // An unqualified "stamp" on an Allocation root is the ALLOCATION's version
+          // stamp, so rows came back sequenced by when each allocation was last
+          // saved and two transactions sharing a date had their rows interleaved --
+          // on 2010-09-30 in category 53, transaction 4966's two amounts sat either
+          // side of 4968's.  The transaction's stamp first keeps each transaction's
+          // rows together; the allocation's then orders them within it.  t.stamp is
+          // functionally dependent on the a.id group key through the join, so this
+          // stays legal if ONLY_FULL_GROUP_BY is ever turned on.
           .addOrder(Order.asc("t.date"))
+          .addOrder(Order.asc("t.stamp"))
           .addOrder(Order.asc("stamp"));
     }
 

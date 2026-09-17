@@ -36,7 +36,7 @@ public class LoginSettings {
   public static final String PASSWORD_ALREADY_SET = "-password-already-set-";
 
   // preferences reference, defined at instantiation of the singleton.
-  private Preferences prefs = Preferences.userNodeForPackage(this.getClass());
+  private Preferences prefs = PrefsNode.of(this.getClass());
 
   // the key-pair, generated once at instantiation of the singleton.
   private KeyPair keyPair;
@@ -91,14 +91,50 @@ public class LoginSettings {
     return keyPair;
   }
 
+
+  /**
+   * The preference key the saved challenge response is stored under.
+   *
+   * <p>This used to be keyed on the host alone, which made the saved blob a
+   * credential for whoever typed a username next.  After user A saved a password,
+   * typing B's username -- or just leaving the pre-filled placeholder in place, which
+   * makes setPassword a no-op and leaves this the only response available -- replayed
+   * A's response under B's name.  The server hashed it against B's salt, refused it as
+   * Invalid_Credentials, and B's real password was discarded on every attempt until
+   * "remember password" was unchecked.  The response is a password-equivalent for one
+   * specific account on one specific server, so the key has to name both.
+   *
+   * @return the key, or null if there is no username to key on
+   */
+  private String encryptedPasswordKey() {
+    String user = getUsername();
+    if (user == null || user.isEmpty()) return null;
+    String key = ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName() + "." + user;
+    // java.util.prefs refuses a key over Preferences.MAX_KEY_LENGTH
+    if (key.length() > 80)
+      key = ENCRYPTED_PASSWORD + "." + Integer.toHexString(
+          (ServerSettings.getInstance().getHostName() + "." + user).hashCode());
+    return key;
+  }
+
+  /**
+   * The pre-{@link #encryptedPasswordKey} host-only key, so a saved response from an
+   * older build can be cleared out rather than left lying in the prefs store as a
+   * password-equivalent nothing will ever use again.
+   *
+   * @return the legacy key
+   */
+  private String legacyEncryptedPasswordKey() {
+    return ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName();
+  }
+
   public Boolean shouldPasswordBeSaved() {
     return prefs.getBoolean(SHOULD_SAVE_ENCRYPTED_PASSWORD, Boolean.FALSE);
   }
 
   public Boolean passwordIsSaved() {
-    return (prefs.getByteArray(
-      ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName(),
-      null) != null);
+    String key = encryptedPasswordKey();
+    return key != null && prefs.getByteArray(key, null) != null;
   }
 
   public LoginSettings setPassword(String password)
@@ -116,8 +152,11 @@ public class LoginSettings {
   public LoginSettings setPasswordShouldBeSaved(Boolean flag) {
     prefs.putBoolean(SHOULD_SAVE_ENCRYPTED_PASSWORD, flag);
     // reset the password if we're setting it to false
-    if (!flag) prefs.remove(
-      ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName());
+    if (!flag) {
+      String key = encryptedPasswordKey();
+      if (key != null) prefs.remove(key);
+      prefs.remove(legacyEncryptedPasswordKey());
+    }
     return this;
   }
 
@@ -134,9 +173,8 @@ public class LoginSettings {
    * @throws IllegalStateException if the encrypted password is not saved.
    */
   public byte[] challengeResponse() {
-    byte[] response = prefs.getByteArray(
-      ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName(),
-      null);
+    String key = encryptedPasswordKey();
+    byte[] response = key == null ? null : prefs.getByteArray(key, null);
     if (!shouldPasswordBeSaved() || null == response || response.length == 0)
       throw new IllegalStateException("Password is not saved.");
     else
@@ -189,16 +227,18 @@ public class LoginSettings {
     byte[] response = null;
 
     if (password == null && shouldPasswordBeSaved() && passwordIsSaved()) {
-      response = prefs.getByteArray(
-        ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName(),
-        new byte[]{});
+      response = prefs.getByteArray(encryptedPasswordKey(), new byte[]{});
       if (response.length == 0)
         throw new EnvelopeException(Invalid_Credentials);
       else return response;
     }
 
+    // No password typed and nothing saved for this username on this host.  This
+    // used to be an unchecked IllegalStateException, which nothing on the login
+    // path catches; a failed login is what this actually is, and callers already
+    // handle that.
     if (this.password == null)
-      throw new IllegalStateException("Password cannot be null or empty");
+      throw new EnvelopeException(Invalid_Credentials);
 
     // encrypt the response with the server's public key
     response = Encryption.encodeAsym(
@@ -220,13 +260,13 @@ public class LoginSettings {
     // response is encrypted with server's public key, so only that specific
     // server can use it, we can save it, and the saved challenge response
     // on disk cannot be decrypted to find the original password.
-    if (shouldPasswordBeSaved())
-      prefs.putByteArray(
-        ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName(),
-        response);
+    String key = encryptedPasswordKey();
+    if (shouldPasswordBeSaved() && key != null) prefs.putByteArray(key, response);
       // else make sure it is null
-    else prefs.remove(
-      ENCRYPTED_PASSWORD + "." + ServerSettings.getInstance().getHostName());
+    else if (key != null) prefs.remove(key);
+    // a response saved by an older build under the host-only key is a
+    // password-equivalent for whoever logged in then; it will never be read again
+    prefs.remove(legacyEncryptedPasswordKey());
 
     return response;
   }

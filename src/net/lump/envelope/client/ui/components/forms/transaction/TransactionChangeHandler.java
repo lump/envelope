@@ -52,6 +52,14 @@ public class TransactionChangeHandler {
   private final Map<Allocation, Boolean> deletesInFlight =
       new IdentityHashMap<Allocation, Boolean>();
 
+  /**
+   * Allocations whose delete was asked for while their insert was still in the air.
+   * Guarded by the {@link #savesInFlight} monitor, since it is that save's
+   * lifecycle this hangs off.
+   */
+  private final Map<Allocation, Boolean> deleteWhenSaved =
+      new IdentityHashMap<Allocation, Boolean>();
+
   private Transaction pristine;
   private Transaction editing;
   private Money amount;
@@ -478,13 +486,22 @@ public class TransactionChangeHandler {
           setSaveFailedLabel();
         } finally {
           boolean editedWhileSaving;
+          boolean deleteWasAsked;
           synchronized (savesInFlight) {
             editedWhileSaving = Boolean.TRUE.equals(savesInFlight.remove(allocation));
+            deleteWasAsked = Boolean.TRUE.equals(deleteWhenSaved.remove(allocation));
           }
-          // Only chase a change that arrived mid-save if this one worked.  After a
-          // failure the row is out of step with the database, and re-sending the
-          // same object would just fail the same way.
-          if (editedWhileSaving && saved_ok) sendAllocationChange(allocation);
+          // A delete that arrived while this save was in the air was waiting for
+          // the id this save carries back.  Do that ahead of any edit: re-sending
+          // a change for a row that is about to go is pointless.  It runs whether
+          // or not the save worked -- if the insert failed there is no row to
+          // delete and the id is still null, which is exactly the case
+          // deleteAllocation already handles by just taking the row off screen.
+          if (deleteWasAsked) deleteAllocation(allocation);
+            // Only chase a change that arrived mid-save if this one worked.  After a
+            // failure the row is out of step with the database, and re-sending the
+            // same object would just fail the same way.
+          else if (editedWhileSaving && saved_ok) sendAllocationChange(allocation);
         }
       }
     };
@@ -562,11 +579,26 @@ public class TransactionChangeHandler {
     java.util.List<Allocation> rows = form.getTableModel().getAllocations();
     if (rows == null) return;
 
-    // Read the id under the monitor the save path publishes it with.  A row that
-    // was just inserted can otherwise still look unsaved here, and would be taken
-    // off the screen while its row stayed in the database.
+    // Read the id and the in-flight state together, under the monitor the save
+    // path publishes them with.
+    //
+    // Taking the id alone was not enough.  The save path sets the id OUTSIDE this
+    // monitor and only touches savesInFlight to register before the round trip and
+    // to remove in its finally, so the monitor buys visibility of a save that has
+    // already landed and never serialization with one still in the air.  A row
+    // whose insert was still in flight therefore read a null id here, skipped the
+    // server delete as "never written", and left the screen -- then the insert
+    // landed and the database kept an allocation no view shows.  Every balance in
+    // the app is a sum(amount) over allocations, so that silently wrongs the
+    // account total, the category total and getNetAmount().
+    //
+    // Wait for the id instead: the save's finally re-enters here once it exists.
     final Integer id;
     synchronized (savesInFlight) {
+      if (allocation.getId() == null && savesInFlight.containsKey(allocation)) {
+        deleteWhenSaved.put(allocation, Boolean.TRUE);
+        return;
+      }
       id = allocation.getId();
     }
 
