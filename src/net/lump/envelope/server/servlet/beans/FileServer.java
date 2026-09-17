@@ -147,48 +147,74 @@ public class FileServer {
     }
   }
 
+  /**
+   * Escape a value for HTML text content.  Everything {@link #env} prints is
+   * attacker-controlled -- the query string, the path, every header and parameter
+   * name -- and it prints into text/html, so without this a crafted URL reflects
+   * script back to whoever followed it.
+   *
+   * @param s the untrusted value, or null
+   *
+   * @return the value with the five XML significant characters escaped
+   */
+  private static String esc(Object s) {
+    if (s == null) return "";
+    return s.toString()
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+        .replace("'", "&#39;");
+  }
+
+  /** One table row: label and value, both escaped. */
+  private static void row(PrintWriter out, String label, Object value) {
+    out.append("<tr><td>").append(esc(label)).append("</td><td>").append(esc(value)).append("</td></tr>");
+  }
+
   private void env() throws IOException {
 
     rp.setStatus(HttpServletResponse.SC_OK);
     rp.setHeader("Content-Type", "text/html");
     PrintWriter out = rp.getWriter();
     out.append("<html><head><title>Testing</title></head><body><table>");
-    out.append("<tr><td>getPathInfo</td><td>").append(rq.getPathInfo()).append("</td></tr>");
-    out.append("<tr><td>getPathTranslated</td><td>").append(rq.getPathTranslated()).append("</td></tr>");
-    out.append("<tr><td>getServletPath</td><td>").append(rq.getServletPath()).append("</td></tr>");
-    out.append("<tr><td>getContextPath</td><td>").append(rq.getContextPath()).append("</td></tr>");
-    out.append("<tr><td>getMethod</td><td>").append(rq.getMethod()).append("</td></tr>");
-    out.append("<tr><td>getAuthType</td><td>").append(rq.getAuthType()).append("</td></tr>");
-    out.append("<tr><td>getContentType</td><td>").append(rq.getContentType()).append("</td></tr>");
-    out.append("<tr><td>getQueryString</td><td>").append(rq.getQueryString()).append("</td></tr>");
-    out.append("<tr><td>toString</td><td>").append(rq.toString()).append("</td></tr>");
-    out.append("<tr><td>getServerName</td><td>").append(rq.getServerName()).append("</td></tr>");
-    out.append("<tr><td>getRequestURI</td><td>").append(rq.getRequestURI()).append("</td></tr>");
-    out.append("<tr><td>getRequestURL</td><td>").append(rq.getRequestURL()).append("</td></tr>");
-    out.append("<tr><td>getProtocol</td><td>").append(rq.getProtocol()).append("</td></tr>");
-    out.append("<tr><td>getRemoteAddr</td><td>").append(rq.getRemoteAddr()).append("</td></tr>");
-    out.append("<tr><td>getRemotePort</td><td>").append(String.valueOf(rq.getRemotePort())).append("</td></tr>");
-    out.append("<tr><td>getLocalName</td><td>").append(rq.getLocalName()).append("</td></tr>");
-    out.append("<tr><td>getLocalAddr</td><td>").append(rq.getLocalAddr()).append("</td></tr>");
-    out.append("<tr><td>getLocalPort</td><td>").append(String.valueOf(rq.getLocalPort())).append("</td></tr>");
-//    out.append("<tr><td>get</td><td>").append(rq).append("</td></tr>");
+    row(out, "getPathInfo", rq.getPathInfo());
+    row(out, "getPathTranslated", rq.getPathTranslated());
+    row(out, "getServletPath", rq.getServletPath());
+    row(out, "getContextPath", rq.getContextPath());
+    row(out, "getMethod", rq.getMethod());
+    row(out, "getAuthType", rq.getAuthType());
+    row(out, "getContentType", rq.getContentType());
+    row(out, "getQueryString", rq.getQueryString());
+    row(out, "toString", rq.toString());
+    row(out, "getServerName", rq.getServerName());
+    row(out, "getRequestURI", rq.getRequestURI());
+    row(out, "getRequestURL", rq.getRequestURL());
+    row(out, "getProtocol", rq.getProtocol());
+    row(out, "getRemoteAddr", rq.getRemoteAddr());
+    row(out, "getRemotePort", rq.getRemotePort());
+    row(out, "getLocalName", rq.getLocalName());
+    row(out, "getLocalAddr", rq.getLocalAddr());
+    row(out, "getLocalPort", rq.getLocalPort());
 
     Enumeration e = rq.getHeaderNames();
     while (e.hasMoreElements()) {
       String s = (String)e.nextElement();
-      out.append("<tr><td>header \"").append(s).append("\"</td><td>").append(rq.getHeader(s)).append("</td></tr>");
+      row(out, "header \"" + s + "\"", rq.getHeader(s));
     }
 
+    // these two read their own collections now; they used to call getHeader(s)
+    // with a parameter or attribute name, which always answered null
     e = rq.getParameterNames();
     while (e.hasMoreElements()) {
       String s = (String)e.nextElement();
-      out.append("<tr><td>parameter \"").append(s).append("\"</td><td>").append(rq.getHeader(s)).append("</td></tr>");
+      row(out, "parameter \"" + s + "\"", rq.getParameter(s));
     }
 
     e = rq.getAttributeNames();
     while (e.hasMoreElements()) {
       String s = (String)e.nextElement();
-      out.append("<tr><td>attribute \"").append(s).append("\"</td><td>").append(rq.getHeader(s)).append("</td></tr>");
+      row(out, "attribute \"" + s + "\"", rq.getAttribute(s));
     }
 
     out.append("</table></body></html>");
@@ -211,15 +237,28 @@ public class FileServer {
         // session and runs a query, and says what is wrong when it cannot.
         try {
           DAO.initialize(ServerPrefs.getInstance().getProps(DAO.class));
-          // a DAO made outside Controller has to be closed here, or every probe
-          // leaks a session -- the very thing that stalled the server once before
+          // A DAO made outside Controller has to finish its own transaction here,
+          // or every probe leaks a session -- the very thing that stalled the
+          // server once before.  Completing the transaction is all it takes:
+          // with current_session_context_class=thread, ThreadLocalSessionContext
+          // closes and unbinds the session at completion.  This used to call
+          // close() and disconnect() as well, and since the commit had already
+          // disposed of the session each of those opened a FRESH one -- three
+          // sessions per probe, two closed, the third left bound to this Tomcat
+          // worker.  Every ten seconds, for the life of the container.
           net.lump.envelope.server.dao.Generic dao = new net.lump.envelope.server.dao.Generic();
           try {
             returnValue = dao.readyCheck();
             if (dao.isActive() && !dao.wasRolledBack()) dao.commit();
           } finally {
-            dao.close();
-            dao.disconnect();
+            // The path that does need handling is the failure one, where the query
+            // threw and the transaction never completed, so nothing has unbound
+            // the session.
+            try {
+              if (dao.isActive() && !dao.wasRolledBack()) dao.getTransaction().rollback();
+            } catch (Exception rollbackFailed) {
+              logger.warn("could not roll back a readiness probe", rollbackFailed);
+            }
           }
         } catch (Exception e) {
           Throwable root = e;

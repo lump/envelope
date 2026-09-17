@@ -18,6 +18,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.rmi.RemoteException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -55,6 +57,14 @@ public class InvocationServlet extends HttpServlet {
 
     Matcher m =
         Pattern.compile("^(multipart/form-data);\\s+boundary=(.*?)$", Pattern.CASE_INSENSITIVE).matcher(rq.getContentType());
+
+    // Hoisted out of the block below so the finally at the bottom can still reach
+    // them: a Security opened for the key part carries an open transaction that
+    // only Controller commits, and every path that never reaches Controller has to
+    // put it back itself.
+    Security security = null;
+    boolean dispatched = false;
+
     try {
 
       if (m.matches() && m.group(2) != null) {
@@ -90,7 +100,6 @@ public class InvocationServlet extends HttpServlet {
         bis.mark(READLIMIT);
 
         SecretKey sessionKey = null;
-        Security security = null;
         Command command = null;
         String encoding;
         String encryption;
@@ -138,7 +147,17 @@ public class InvocationServlet extends HttpServlet {
             bis.mark(READLIMIT);
           }
           else {
-            content = readUpTo(bis, false, boundaryStart).toString().getBytes();
+            // Raw bytes, not readUpTo.  That went through
+            // new String(buffer)/String.getBytes(), so a part body without a
+            // Content-Length was decoded and re-encoded through the platform
+            // charset: the ac ed serialization magic came out as ef bf bd and
+            // readObject answered "invalid stream header: EFBFBDEF".  It also
+            // returned a CHARACTER offset that was then fed to bis.skip() as a
+            // BYTE count, desynchronizing the stream for any multi-byte content.
+            // The stock client takes this path on every encrypted request -- it
+            // sends a Content-Length for the command part but not for the key
+            // part -- and survived only because base64 is ASCII.
+            content = readBodyUpTo(bis, (fix + boundary).getBytes(StandardCharsets.US_ASCII));
           }
 
           // handle an incoming key
@@ -227,12 +246,26 @@ public class InvocationServlet extends HttpServlet {
               return;
             }
           }
-          else rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "argument " + name + " not recognized");
+          else {
+            rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "argument " + name + " not recognized");
+            return;
+          }
         }
 
         //todo: make this more intelligent
+        // sendError only suspends the output buffer -- it does not return from the
+        // servlet -- so without this the request went on to dispatch and commit while
+        // the client was told it had been refused, and the signature was already spent.
         if (rq.getHeader("accept") == null || !rq.getHeader("accept").contains("application/java-serialized-object")) {
           rp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "accept of " + rq.getHeader("accept") + " is not supported");
+          return;
+        }
+
+        // A multipart with no command part at all used to reach getSeqId() below and
+        // die there with a bare NullPointerException.
+        if (command == null) {
+          rp.sendError(HttpServletResponse.SC_BAD_REQUEST, "no command part in the multipart body");
+          return;
         }
 
         // prepare the output stream depending on the request params
@@ -259,6 +292,16 @@ public class InvocationServlet extends HttpServlet {
           else acceptEncodings = acceptEncoding.replaceAll("^\\s*(.*?)\\s*$", "$1").split("\\s*,\\s*");
           boolean found = false;
           for (String enc : acceptEncodings) {
+            // "identity" means "send it uncompressed", and "*" means "anything will
+            // do" -- both are satisfied by encoding nothing.  They used to fall
+            // through to the 406 below, which only ever reached a client because
+            // that sendError had no return after it and the response went out
+            // anyway; with the return in place, refusing them would turn a legal
+            // request into a hard failure.
+            if (enc.equalsIgnoreCase("identity") || enc.equals("*")) {
+              found = true;
+              break;
+            }
             if (enc.equalsIgnoreCase("gzip")) {
               rp.addHeader("Content-Encoding", "gzip");
               os = new GZIPOutputStream(os);
@@ -269,12 +312,17 @@ public class InvocationServlet extends HttpServlet {
               rp.addHeader("Content-Encoding", "deflate");
               os = new DeflaterOutputStream(os, new Deflater(Deflater.BEST_COMPRESSION));
               found = true;
+              break;
             }
           }
-          if (!found) rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "only gzip or deflate encoding is allowed");
+          if (!found) {
+            rp.sendError(HttpServletResponse.SC_NOT_ACCEPTABLE, "only gzip or deflate encoding is allowed");
+            return;
+          }
         }
 
         Controller c = new Controller(rp, os);
+        dispatched = true;
         try {
           c.invoke(command, authenticatedUser);
         } catch (Exception e) {
@@ -324,6 +372,28 @@ public class InvocationServlet extends HttpServlet {
       rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
     } catch (BadPaddingException e) {
       rp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+    } finally {
+      // Unwrapping the session key constructs a Security, and DAO's instance
+      // initializer begins a transaction.  On the success path Controller adopts
+      // that same thread-bound transaction and commits it.  Every other path --
+      // a junk key part landing in one of the catches above, a missing command
+      // part, a rejected Accept header -- used to leave it open and bound to this
+      // Tomcat worker, still holding its row locks, and because DAO skips begin()
+      // when a transaction is already active the next request on this thread
+      // inherited it instead of starting its own.
+      if (security != null && !dispatched) {
+        try {
+          if (security.isActive() && !security.wasRolledBack()) security.getTransaction().rollback();
+        } catch (Exception e) {
+          logger.error("could not roll back an undispatched request's transaction", e);
+        } finally {
+          try {
+            security.close();
+          } catch (Exception e) {
+            logger.error("could not close an undispatched request's session", e);
+          }
+        }
+      }
     }
   }
 
@@ -331,9 +401,17 @@ public class InvocationServlet extends HttpServlet {
   public CharSequence readUpTo(BufferedInputStream bis, boolean inclusive, Pattern search) throws IOException {
     bis.mark(READLIMIT);
 
-    StringBuffer s = new StringBuffer();
+    StringBuilder s = new StringBuilder();
     Matcher matcher = null;
     boolean found = false;
+
+    // A match can straddle the join between what we already had and what just
+    // arrived, so each rescan has to reach back at least as far as the longest
+    // possible match.  These patterns are the multipart boundary plus a couple of
+    // dashes and a newline, built as a literal, so the pattern's own length bounds
+    // that.
+    final int overlap = search.pattern().length() + 2;
+    int scanned = 0;
 
     while (!found) {
       // make a buffer the size of available
@@ -347,9 +425,14 @@ public class InvocationServlet extends HttpServlet {
 
       s.append(new String(buffer, 0, read));
 
+      // Scan only the new window.  This used to re-run the regex over the whole
+      // accumulated buffer on every 1 KB chunk, which is quadratic, and READLIMIT
+      // is 100 MB: an unauthenticated 4 MiB part took 4.6s of CPU against 17ms for
+      // the same part sent with a Content-Length, doubling ~4x per doubling of
+      // size.  One request was a remote CPU-exhaustion lever.
       matcher = search.matcher(s);
-      found = matcher.find();
-      if (found) break;
+      found = matcher.find(Math.max(0, scanned - overlap));
+      scanned = s.length();
     }
 
     if (matcher == null) return null;
@@ -361,6 +444,73 @@ public class InvocationServlet extends HttpServlet {
     bis.mark(READLIMIT);
 
     return s.subSequence(0, end);
+  }
+
+  /**
+   * Read a part's body as raw bytes, up to but not including the next boundary.
+   *
+   * <p>The stream is left positioned at the boundary, exactly as
+   * {@link #readUpTo} leaves it. Nothing here goes through a {@code String}: a
+   * part body is arbitrary bytes, and decoding it to characters and back mangles
+   * every byte the platform charset cannot round-trip.
+   *
+   * @param bis    the buffered request body, positioned at the start of the body
+   * @param needle the boundary bytes to stop before
+   *
+   * @return the body bytes
+   *
+   * @throws IOException  on io error, or if the body outgrows {@link #READLIMIT}
+   * @throws EOFException if the stream ends before the boundary is seen
+   */
+  private byte[] readBodyUpTo(BufferedInputStream bis, byte[] needle) throws IOException {
+    bis.mark(READLIMIT);
+
+    byte[] hay = new byte[8192];
+    int len = 0;
+    int scanned = 0;
+    int at = -1;
+
+    while (at < 0) {
+      if (len == hay.length) {
+        // Doubling, so the copying is amortized linear.  The gzip/deflate decode
+        // path above still regrows by one chunk at a time, which is the quadratic
+        // shape this deliberately avoids.
+        if (hay.length >= READLIMIT)
+          throw new IOException("part body exceeded " + READLIMIT + " bytes");
+        hay = Arrays.copyOf(hay, Math.min(hay.length * 2, READLIMIT));
+      }
+
+      int read = bis.read(hay, len, hay.length - len);
+      if (read == -1) throw new EOFException("EOF Reached");
+      len += read;
+
+      // Only look at the new window, reaching back far enough to catch a boundary
+      // split across two reads.
+      at = indexOf(hay, len, needle, Math.max(0, scanned - needle.length + 1));
+      scanned = len;
+    }
+
+    bis.reset();
+    // A BYTE count this time: readUpTo handed bis.skip() a character offset.
+    bis.skip(at);
+    bis.mark(READLIMIT);
+
+    return Arrays.copyOf(hay, at);
+  }
+
+  /**
+   * First index at or after {@code from} where {@code needle} occurs in the first
+   * {@code len} bytes of {@code hay}, or -1.
+   */
+  private static int indexOf(byte[] hay, int len, byte[] needle, int from) {
+    final int last = len - needle.length;
+    outer:
+    for (int i = Math.max(0, from); i <= last; i++) {
+      for (int j = 0; j < needle.length; j++)
+        if (hay[i + j] != needle[j]) continue outer;
+      return i;
+    }
+    return -1;
   }
 
 }

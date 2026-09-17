@@ -218,11 +218,16 @@ public class Controller {
           } catch (Exception rollbackFailed) {
             logger.error("could not roll back either", rollbackFailed);
           }
-        } finally {
-          // close the session -- whatever happened above
-          dao.close();
-          dao.disconnect();
         }
+        // No close() or disconnect() here.  With
+        // hibernate.current_session_context_class=thread, ThreadLocalSessionContext
+        // has auto-close enabled and its CleanupSync unbinds and closes the
+        // session at transaction completion -- so the commit above has already
+        // disposed of it.  close() then called getCurrentSession() on an empty
+        // ThreadLocal, which OPENS one just to close it, and disconnect() opened a
+        // third and left it bound to this Tomcat worker for whichever request
+        // landed here next.  Measured with Hibernate statistics: three sessions
+        // opened and two closed per request, where one and one is correct.
       }
 
       // Tomcat reuses its worker threads, so a ThreadLocal left set here would

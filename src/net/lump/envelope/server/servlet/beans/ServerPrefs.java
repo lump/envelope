@@ -1,11 +1,14 @@
 package net.lump.envelope.server.servlet.beans;
 
 import net.lump.envelope.server.dao.DAO;
+import org.apache.log4j.Logger;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.*;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -18,6 +21,7 @@ import java.util.prefs.Preferences;
  */
 public class ServerPrefs {
 
+  private static final Logger logger = Logger.getLogger(ServerPrefs.class);
   private static ServerPrefs instance = null;
   private static final Class[] classes = new Class[]{ServerPrefs.class, DAO.class};
   private static final HashMap<Class, Preferences> configs = new HashMap<Class, Preferences>();
@@ -96,6 +100,36 @@ public class ServerPrefs {
     return System.getenv(qualified.toUpperCase(Locale.ROOT).replaceAll("[.-]", "_"));
   }
 
+  /**
+   * Whether a config key holds a secret that must never be rendered back out.
+   *
+   * @param key the property name, qualified or not
+   *
+   * @return true if the value is a secret
+   */
+  private static boolean isSecret(String key) {
+    String k = key.toLowerCase(Locale.ROOT);
+    return k.contains("password") || k.contains("secret") || k.contains("token");
+  }
+
+  /**
+   * Escape a value for an HTML attribute.  Config values are operator-supplied
+   * rather than hostile, but a value carrying a quote would otherwise break out of
+   * the attribute it is rendered into.
+   *
+   * @param s the value, or null
+   *
+   * @return the escaped value
+   */
+  private static String esc(String s) {
+    if (s == null) return "";
+    return s.replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace("\"", "&quot;")
+        .replace("'", "&#39;");
+  }
+
   public boolean isConfigured() {
     return configured;
   }
@@ -134,24 +168,51 @@ public class ServerPrefs {
     String username = configs.get(this.getClass()).get("configure.username", null);
     String password = configs.get(this.getClass()).get("configure.password", null);
 
-    if (username != null && username.length() > 0 && password != null && password.length() > 0) {
-      boolean authorized = false;
-      String authString = rq.getHeader("authorization");
-      if (authString != null) {
-        String[] creds = (new String(net.lump.lib.util.Base64.base64ToByteArray(
-            authString.replaceAll("[Bb]asic\\s*", "")))).split(":");
-        if (creds[0].equalsIgnoreCase(username) && creds[1].equals(password))
-          authorized = true;
-      }
+    // This gate used to be skipped entirely when either credential was empty, which
+    // is what ServerPrefs.properties ships -- so an installation that never set
+    // SERVERPREFS_CONFIGURE_USERNAME/_PASSWORD served this form, and the live
+    // database password in it, to anyone who could reach the webapp.  Fail closed
+    // instead: no credentials configured means nobody may read or write here.
+    if (username == null || username.length() == 0 || password == null || password.length() == 0) {
+      logger.error("refusing /configure: configure.username and configure.password are not both set"
+                   + " -- set SERVERPREFS_CONFIGURE_USERNAME and SERVERPREFS_CONFIGURE_PASSWORD");
+      rp.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+      rp.setContentType("text/html");
+      rp.getWriter().append("<html><head><title>Not configurable</title></head><body><h1>Not configurable</h1>"
+                            + "<p>This server has no configuration credentials set, so the configuration form"
+                            + " is disabled.  Set <code>SERVERPREFS_CONFIGURE_USERNAME</code> and"
+                            + " <code>SERVERPREFS_CONFIGURE_PASSWORD</code> and restart.</p></body></html>");
+      rp.flushBuffer();
+      return false;
+    }
 
-      if (!authorized) {
-        rp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        rp.setHeader("www-authenticate", "Basic realm=\"ServerPrefs\" domain=\"" + rq.getRequestURL() + "\"");
-        rp.setContentType("text/html");
-        rp.getWriter().append("<html><head><title>Unauthorized</title></head><body><h1>Unauthorized</h1></body></html>");
-        rp.flushBuffer();
-        return false;
+    boolean authorized = false;
+    String authString = rq.getHeader("authorization");
+    if (authString != null) {
+      try {
+        // split with a limit, and check the length: a credential with no colon at
+        // all (Basic base64("admin"), or -u admin:) used to index creds[1] and throw
+        // ArrayIndexOutOfBounds, which surfaced as an unauthenticated 500.
+        String[] creds = (new String(net.lump.lib.util.Base64.base64ToByteArray(
+            authString.replaceAll("[Bb]asic\\s*", "")), StandardCharsets.UTF_8)).split(":", 2);
+        if (creds.length == 2
+            && creds[0].equalsIgnoreCase(username)
+            && MessageDigest.isEqual(creds[1].getBytes(StandardCharsets.UTF_8),
+                                     password.getBytes(StandardCharsets.UTF_8)))
+          authorized = true;
+      } catch (RuntimeException e) {
+        // a malformed authorization header is a failed login, not a server error
+        logger.warn("could not parse an authorization header for /configure: " + e);
       }
+    }
+
+    if (!authorized) {
+      rp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+      rp.setHeader("www-authenticate", "Basic realm=\"ServerPrefs\" domain=\"" + rq.getRequestURL() + "\"");
+      rp.setContentType("text/html");
+      rp.getWriter().append("<html><head><title>Unauthorized</title></head><body><h1>Unauthorized</h1></body></html>");
+      rp.flushBuffer();
+      return false;
     }
 
     ArrayList<String> params = new ArrayList<String>();
@@ -166,7 +227,12 @@ public class ServerPrefs {
         for (String key : params) {
           if (key.substring(0, key.indexOf(".")).equals(c.getSimpleName())) {
             String keyName = key.substring(key.indexOf(".") + 1);
-            configs.get(c).put(keyName, rq.getParameter(key));
+            String submitted = rq.getParameter(key);
+            // The form no longer renders stored passwords, so an empty password
+            // field means "leave this one as it is" rather than "blank it".  Any
+            // other key takes the submitted value, empty or not.
+            if (isSecret(keyName) && (submitted == null || submitted.isEmpty())) continue;
+            configs.get(c).put(keyName, submitted);
             count++;
           }
         }
@@ -220,18 +286,29 @@ public class ServerPrefs {
           out.append("</select>");
         } else {
 
+          boolean secret = isSecret(key);
+
           out.append("<input size=\"60\" name=\"")
-              .append(c.getSimpleName())
+              .append(esc(c.getSimpleName()))
               .append(".")
-              .append(key)
+              .append(esc(key))
+              // A secret's stored value is never rendered.  type="password" only
+              // masks it in a browser -- the value attribute was still in the page
+              // source, so curl or view-source read the live database password in
+              // cleartext.  Submit a new value to change it; leave it empty to keep
+              // the one already stored.
               .append("\" value=\"")
-              .append(p.get(key, ""))
+              .append(secret ? "" : esc(value))
               .append("\"");
 
           if (required.contains(c.getSimpleName() + "." + key) && (value.matches("^\\s*$")))
             out.append(" class=\"required\" ");
 
-          if (key.contains("password")) out.append(" type=\"password\" ");
+          if (secret) {
+            out.append(" type=\"password\" autocomplete=\"new-password\" placeholder=\"")
+                .append(value.isEmpty() ? "not set" : "unchanged -- type to replace")
+                .append("\" ");
+          }
 
           out.append("/>");
         }
