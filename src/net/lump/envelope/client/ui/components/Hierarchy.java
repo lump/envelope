@@ -6,6 +6,7 @@ import net.lump.envelope.client.portal.BudgetPortal;
 import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.thread.ThreadPool;
 import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBar;
+import net.lump.envelope.client.ui.components.forms.transaction.DayRenderer;
 import net.lump.envelope.client.ui.components.forms.transaction.MoneyRenderer;
 import net.lump.envelope.client.ui.defs.Colors;
 import net.lump.envelope.client.ui.defs.Strings;
@@ -139,6 +140,12 @@ public class Hierarchy extends JTree {
           if (!table.getModel().equals(tm)) table.setModel(tm);
 
           table.setDefaultRenderer(Money.class, new MoneyRenderer());
+          // Registering for java.util.Date replaces Swing's own DateRenderer,
+          // which formatted the stored midnight-UTC day in the default zone and so
+          // showed the day before anywhere west of Greenwich -- disagreeing with
+          // the form's own date field for the very transaction being edited.
+          // java.sql.Date resolves to this by superclass lookup.
+          table.setDefaultRenderer(java.util.Date.class, new DayRenderer());
           tqb.setTitleLabel(o.toString());
           tqb.setTitleIcon(getIconForObject(o, true));
 
