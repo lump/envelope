@@ -5,8 +5,10 @@
 # maven here, and the one IntelliJ carries is a detail nobody else should need.
 #
 # Built and pushed by ./build.sh (a copy of ~/lump/web/build.sh; the image name
-# and version come from .image.name and .Dockerfile.version).  Bump
-# .Dockerfile.version when this file changes.
+# and version come from .image.name and the three version files).  The image is
+# tagged <branch>-<major>.<minor>.<patch>, assembled by build.sh from
+# .Major.version, .Minor.version and .Patch.version -- bump whichever one the
+# change warrants, and bump the patch at least when this file changes.
 #
 # The database is not in here.  The runtime expects DAO_HIBERNATE_CONNECTION_*
 # from the environment -- see docker/compose.yml for the names, and
@@ -18,6 +20,11 @@ WORKDIR /src
 COPY pom.xml .
 COPY src src
 COPY web web
+# Read by the build into revision.properties, so the running application can
+# report its own version.  There is no .git in here -- .dockerignore keeps the
+# context to what the build needs -- so these three files are the only thing the
+# image knows about which build it is.
+COPY .Major.version .Minor.version .Patch.version ./
 # the local repository is a BuildKit cache, so only the first build downloads
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q package -DskipTests
 

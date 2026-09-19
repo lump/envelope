@@ -10,9 +10,25 @@ if [[ -s "${_image_name_file}" ]]; then
     _name=$(cat "${_image_name_file}")
 fi
 
-_version_file=".Dockerfile.version"
-if [[ -s "${_version_file}" ]]; then
-    _version=$(cat "$_version_file")
+# The version is major.minor.patch, each held in its own file at the top of the
+# tree, so any one of them can be bumped depending on what the change was.  The
+# same three files are read by the build into the artifact, which is how the
+# running application knows its own version.
+#
+# Projects that have not split their version keep a single .Dockerfile.version,
+# and are handled by the fallback below, so this stays a drop-in for all of them.
+_version_part() {
+    if [[ -s "${1}" ]]; then
+        tr -d '[:space:]' < "${1}"
+    else
+        printf '%s' "${2}"
+    fi
+}
+
+if [[ -s ".Minor.version" ]]; then
+    _version="$(_version_part .Major.version 0).$(_version_part .Minor.version 0).$(_version_part .Patch.version 0)"
+elif [[ -s ".Dockerfile.version" ]]; then
+    _version=$(cat ".Dockerfile.version")
 else
     _version=0
 fi

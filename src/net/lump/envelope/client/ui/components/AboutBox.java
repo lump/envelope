@@ -30,7 +30,7 @@ public class AboutBox extends JFrame implements ActionListener {
     Icon icon = ImageResource.icon.envelope_256.get();
     image.setIcon(icon);
 
-    JLabel[] jlabels = new JLabel[]{new JLabel(Strings.get("envelope.budget")), new JLabel(Revision.nameOrState()),
+    JLabel[] jlabels = new JLabel[]{new JLabel(Strings.get("envelope.budget")), new JLabel(Revision.describe()),
         new JLabel(Strings.get("copyright")), new JLabel(), new JLabel("JDK " + System.getProperty("java.version")),};
 
     GridLayout gl = new GridLayout(jlabels.length, 1);

@@ -53,7 +53,9 @@ The image is built from this repository and pushed to the registry:
     ./build.sh --no-push  # just build
 
 The build runs Maven inside the image, so the machine building it needs only
-docker.  Bump .Dockerfile.version when the Dockerfile changes.
+docker.  The image is tagged <branch>-<major>.<minor>.<patch> from
+.Major.version, .Minor.version and .Patch.version; bump whichever one the change
+warrants, and the patch at least when the Dockerfile changes.
 
 docker/swarm-stack.yml is the service definition for the config project's
 stack.  It expects the database to be supplied from outside, through these

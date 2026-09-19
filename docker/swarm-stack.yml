@@ -8,7 +8,8 @@
 # every stack.
 #
 # The image is built and pushed by ./build.sh in the envelope repository; bump
-# the tag here when .Dockerfile.version moves.
+# the tag here when the version moves; build.sh tags
+# <branch>-<major>.<minor>.<patch> from .Major/.Minor/.Patch.version.
 #
 # The database is not part of this stack.  Point ENVELOPE_DB_HOST at wherever
 # it lives -- the localdb stack, or a host outside the swarm -- and supply
@@ -27,7 +28,7 @@ networks:
 
 services:
   server:
-    image: registry.lump/lump/envelope:master-5
+    image: registry.lump/lump/envelope:master-0.10.0
     hostname: envelope-{{.Task.Slot}}.{{index .Service.Labels "com.docker.stack.namespace"}}.swarm.private
     networks:
       swarm:

@@ -23,6 +23,21 @@
     <!-- Hibernate 5.6 ships byte-buddy 1.12, which cannot read Java 25 class files. -->
     <bytebuddy.version>1.18.13</bytebuddy.version>
     <log4j2.version>2.25.5</log4j2.version>
+
+    <!--
+      Optional build provenance.  There is deliberately no git-reading plugin: the
+      distribution build runs inside the image, where .dockerignore means there is
+      no .git to read, so a plugin could only ever answer for host builds.  Pass
+      them instead when you want them recorded, for example by setting
+      envelope.commit from "git rev-parse" and envelope.branch from the branch
+      name.  Left empty, Revision reports the version alone, which is the part
+      that is always true.
+    -->
+    <envelope.commit/>
+    <envelope.branch/>
+    <envelope.committer/>
+    <envelope.committed/>
+    <maven.build.timestamp.format>yyyy-MM-dd'T'HH:mm:ss'Z'</maven.build.timestamp.format>
   </properties>
 
   <dependencies>
@@ -146,7 +161,17 @@
         <excludes>
           <exclude>**/*.java</exclude>
           <exclude>**/*.form</exclude>
+          <!-- filtered below instead, so ${} in it is substituted -->
+          <exclude>net/lump/lib/util/revision.properties</exclude>
         </excludes>
+      </resource>
+      <!-- build metadata that Maven does know, plus anything the caller passes -->
+      <resource>
+        <directory>src</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>net/lump/lib/util/revision.properties</include>
+        </includes>
       </resource>
       <resource>
         <directory>web/WEB-INF/classes</directory>
@@ -154,6 +179,45 @@
     </resources>
 
     <plugins>
+      <!--
+        The application version lives in three files at the top of the tree -
+        .Major.version, .Minor.version and .Patch.version - so any one of them can
+        be bumped depending on what the change was.  They are the single source of
+        truth: build.sh reads the same three to tag the image
+        <branch>-<major>.<minor>.<patch>, so the artifact and the image it ships in
+        always agree.  The build reads them rather than keeping a second copy here
+        that would drift.  Plain Maven cannot read a file into a property, hence
+        antrun; exportAntProperties hands them to the resource filtering that
+        follows.  .dockerignore lets exactly these three files into the image
+        context so the in-image build gets the same answer.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>read-version-files</id>
+            <phase>initialize</phase>
+            <goals><goal>run</goal></goals>
+            <configuration>
+              <exportAntProperties>true</exportAntProperties>
+              <target>
+                <loadfile property="envelope.major" srcFile="${project.basedir}/.Major.version">
+                  <filterchain><striplinebreaks/></filterchain>
+                </loadfile>
+                <loadfile property="envelope.minor" srcFile="${project.basedir}/.Minor.version">
+                  <filterchain><striplinebreaks/></filterchain>
+                </loadfile>
+                <loadfile property="envelope.patch" srcFile="${project.basedir}/.Patch.version">
+                  <filterchain><striplinebreaks/></filterchain>
+                </loadfile>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>

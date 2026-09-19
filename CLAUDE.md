@@ -19,7 +19,7 @@ plus a shared `lib/`.
 | `envelope/shared/` | both | The wire protocol + data model. `command/Command` is the RPC unit; `entity/` are the Hibernate entities; `command/security/` holds `Challenge`, `Credentials`, `Crypt`, `Permission`. |
 | `envelope/client/` | Swing client | `portal/` = one RPC client per server facet (`SecurityPortal`, `HibernatePortal`, `TransactionPortal`, over abstract `Portal`); `CriteriaFactory` builds every `DetachedCriteria` sent to the server; `ui/` = the Swing tree, with `ui/prefs/` holding `LoginSettings`/`ServerSettings` (backed by `java.util.prefs`). |
 | `envelope/server/` | Tomcat | `servlet/` — `InvocationServlet` → `/invoke`, `DefaultServlet` → `/` (delegates to `FileServer`), `ErrorServlet` → `/error`; `dao/` = `DAO`, `Security`, `Generic`, `Action`; `Controller` dispatches commands. |
-| `lib/` | mostly client | `Money.java` (the core value type, mapped by `entity/type/MoneyType`) plus `util/`. Only `Base64`, `Encryption`, `Interval` and `Revision` are used by the server; the rest (`EmacsKeyBindings`, `ByteFormat`, `Compression`, `ObjectUtil`, `ChildFirstClassLoader`) are client-only or unused. |
+| `lib/` | mostly client | `Money.java` (the core value type, mapped by `entity/type/MoneyType`) plus `util/`. Only `Base64`, `Encryption` and `Interval` are used by the server; `Revision` reports the application version and is read by the client's `AboutBox`; the rest (`EmacsKeyBindings`, `ByteFormat`, `Compression`, `ObjectUtil`, `ChildFirstClassLoader`) are client-only or unused. |
 
 **The RPC protocol is the load-bearing part.** The client Java-serializes a `Command` into a
 hand-rolled RFC 2388 multipart POST to `/invoke` (neither side uses the servlet `Part` API);
@@ -233,16 +233,29 @@ The war is **bind-mounted** into Tomcat (not baked into an image), so a code cha
 fat jar is rebuilt in place.
 
 **For distribution, `./build.sh` builds a self-contained image** — a copy of
-`~/lump/web/build.sh`, driven by `.image.name` (`lump/envelope`) and `.Dockerfile.version`,
-tagging `registry.lump/lump/envelope:<branch>-<version>`. The `Dockerfile` is multi-stage: Maven
+`~/lump/web/build.sh`, driven by `.image.name` (`lump/envelope`) and the three version
+files, tagging `registry.lump/lump/envelope:<branch>-<major>.<minor>.<patch>`. The `Dockerfile` is multi-stage: Maven
 builds the war inside the image, so the host needs nothing but docker. It also adds Tomcat's
 `RemoteIpValve`, since the config project fronts everything with HAProxy and without it the
 front page would tell visitors to point the client at swarm-internal names.
 The valve also reads `X-Forwarded-Port`; without it a proxied
 request on anything but 443/80 is reported on the scheme's own port. `docker/swarm-stack.yml`
 is the drop-in for `~/lump/config/stacks/envelope/source/`. Bump
-`.Dockerfile.version` when the `Dockerfile` changes. `docker/compose.yml` remains the
+the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains the
 bind-mounted development stack.
+
+**The application version lives in `.Major.version`, `.Minor.version` and
+`.Patch.version`**, one number each, joined with dots — currently **0.10.0**. They are the
+single source of truth and are read twice: `build.sh` assembles the image tag from them,
+and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
+into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at
+runtime. So the artifact and the image it ships in always agree. `.Dockerfile.version` was
+the old single-file name; `build.sh` still falls back to it, which is what keeps the script
+a drop-in for the other projects that share it — **don't diverge `build.sh` from
+`~/lump/web/build.sh` in any way that breaks that fallback.** `.dockerignore` lets exactly
+those three files into the image context, since there is no `.git` in there for anything to
+read. Commit and branch are recorded only if the build is passed `-Denvelope.commit` and
+`-Denvelope.branch`; unset, `Revision` reports the version alone rather than guessing.
 
 There is no system `mvn` on this box; the one that works is IntelliJ's bundled copy at
 `~/bin/idea-IU-*/plugins/maven/lib/maven3/bin/mvn`, and it has to run **online** (`-o`
@@ -293,6 +306,15 @@ at the `/configure` form waiting for a human.
 
 ## Traps
 
+- **There are no `@version` tags in the source, and adding one back is a mistake.** 69 files
+  carried `@version $Id: Foo.java,v 1.23 2010/09/22 ... $`, frozen since CVS: git has no
+  keyword expansion and will not grow one, because a file's bytes are an input to the commit
+  hash. (`ident` expands `$Id$` to the *blob* hash — content only, no commit, author or date
+  — and `export-subst` substitutes real commit data but only into `git archive` output, and
+  only the archive's own commit rather than each file's.) `git log -1 --format='%h %an %cI'
+  -- <file>` answers the question and cannot go stale. The two `@version` lines that remain,
+  in `lib/util/Base64.java` and `forms/transaction/CellEditor.java`, are upstream's (Josh
+  Bloch's and Sun's) and stay.
 - **The 2007 layout is kept.** `pom.xml` points `sourceDirectory` at `src/` (not
   `src/main/java`) and `testSourceDirectory` at `test/`. Don't "fix" it into the Maven
   convention.

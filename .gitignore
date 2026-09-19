@@ -19,6 +19,7 @@ CVS
 *~
 
 # editor leavings -- a swap file got committed once via `git add -A`
+.idea/
 .*.sw[a-p]
 *.sw[a-p]
 *.orig

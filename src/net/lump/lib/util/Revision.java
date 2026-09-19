@@ -1,135 +1,167 @@
 package net.lump.lib.util;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.TimeZone;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.Properties;
 
 /**
- * Utility class for enum access to cvs variables for this file.
+ * Which build of this application is running.
+ *
+ * <p>This used to be an enum of CVS keywords -- {@code $Id$}, {@code $Author$},
+ * {@code $Revision$} and the rest -- expanded by the version control system when a
+ * file was checked out. Git has no equivalent and will not grow one: a file's
+ * bytes are an input to the commit hash, so a file cannot contain its own
+ * revision. (Git's one keyword, the {@code ident} attribute, expands {@code $Id$}
+ * to the blob hash -- the hash of the content, carrying no commit, author or date
+ * -- and {@code export-subst} substitutes real commit data, but only into
+ * {@code git archive} output and only the archive's own commit rather than each
+ * file's.) So these keywords had been frozen at their 2009 values for years, and
+ * {@code AboutBox} was showing the literal string {@code Exp}.
+ *
+ * <p>The version is the application's own instead, held in three files at the top
+ * of the tree and joined with dots:
+ *
+ * <ul>
+ *   <li>{@code .Major.version}</li>
+ *   <li>{@code .Minor.version}</li>
+ *   <li>{@code .Patch.version}</li>
+ * </ul>
+ *
+ * <p>Any one of them is bumped depending on what the change was. They are the
+ * single source of truth: {@code build.sh} reads the same three to tag the image
+ * {@code <branch>-<major>.<minor>.<patch>}, so the artifact and the image it ships
+ * in always agree. The build reads them into {@code revision.properties} beside
+ * this class, so the answer is the same whether the artifact was built on a host
+ * or inside the image -- {@code .dockerignore} lets exactly those three files
+ * through for that reason.
+ *
+ * <p>Provenance -- commit, branch, who committed it and when -- is recorded only
+ * when the build is told, through {@code -Denvelope.commit} and friends. There is
+ * deliberately no git-reading Maven plugin: the distribution build runs inside the
+ * image, where there is no {@code .git} to read, so a plugin could only ever
+ * answer for host builds. Everything here degrades to null rather than guessing.
  *
  * @author Troy Bowman
- * @version $Id: Revision.java,v 1.11 2009/10/02 22:06:23 troy Exp $
  */
-public enum Revision {
+public final class Revision {
 
-  /** The login name of the user who checked in the revision.*/
-  Author,
-  /** The date and time (UTC) the revision was checked in. */
-  Date,
-  /** A standard header containing the full pathname of the rcs file, the revision number, the date (UTC), the author, the state, and the locker (if locked). Files will normally never be locked when you use cvsnt. */
-  Header,
-  /** Same as $Header: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.11 2009/10/02 22:06:23 troy Exp $, except that the rcs filename is without a path. */
-  Id,
-  /** Tag name used to check out this file. The keyword is expanded only if one checks out with an explicit tag name. For example, when running the command cvs co -r first, the keyword expands to Name: first. */
-  Name,
-  /** The login name of the user who locked the revision (empty if not locked, which is the normal case unless cvs admin -l is in use). This keyword has little meaning under cvsnt.*/
-  Locker,
-  /** The revision number assigned to the revision. */
-  Revision,
-  /** The full pathname of the rcs file. */
-  Source,
-  /** The state assigned to the revision. States can be assigned with cvs admin. */
-  State;
+  private static final String PROPERTIES = "/net/lump/lib/util/revision.properties";
 
-  // store the cleaned-up value from which cvs gives us.
-  private String value = null;
-
-  // get CVS to fill in the values in strings
-  private final String[] REVS = new String[]{
-      "$Author: troy $",
-      "$Date: 2009/10/02 22:06:23 $",
-      "$Header: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v 1.11 2009/10/02 22:06:23 troy Exp $",
-      "$Id: Revision.java,v 1.11 2009/10/02 22:06:23 troy Exp $",
-      "$Name:  $",
-      "$Locker:  $",
-      "$Revision: 1.11 $",
-      "$Source: /usr/cvsroot/envelope/src/net/lump/lib/util/Revision.java,v $",
-      "$State: Exp $",
-  };
-
-  /** the date format for Date */
-  public static final String dateFormatString = "yyyy/MM/dd HH:mm:ss";
-  /** a simple date formatter which uses dateFormatString */
-  public static final SimpleDateFormat dateFormat;
-  /** a pattern to tell if the value is formatted like a date */
-  public static final Pattern datePattern =
-      Pattern.compile("^\\d{4}(?:/\\d{2}){2}\\s\\d{2}(?:\\:\\d{2}){2}$");
-
-  static {
-    dateFormat = new SimpleDateFormat(dateFormatString);
-    dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-  }
+  private static final Properties properties = readProperties();
 
   private Revision() {
-    Pattern p =
-        Pattern.compile("^\\$" + this.toString() + ":\\s(\\S.+)\\s\\$$");
-    Matcher m = p.matcher(REVS[ordinal()]);
-    if (m.matches()) value = m.group(1);
   }
 
   /**
-   * Is this entry a date?
+   * The application version, as in {@code 0.10.0}. The same string build.sh tags
+   * the image with.
    *
-   * @return boolean
+   * @return the version, or null if the build did not record one
    */
-  public boolean isDate() {
-    return value != null && datePattern.matcher(value).matches();
+  public static String version() {
+    return property("version");
+  }
+
+  /** From {@code .Major.version}. */
+  public static String major() {
+    return property("major");
+  }
+
+  /** From {@code .Minor.version}. */
+  public static String minor() {
+    return property("minor");
+  }
+
+  /** From {@code .Patch.version}. */
+  public static String patch() {
+    return property("patch");
+  }
+
+  /** When this artifact was built, ISO-8601 in UTC, or null. */
+  public static String built() {
+    return property("built");
+  }
+
+  /** The short commit it was built from, or null if the build was not told. */
+  public static String commit() {
+    return property("commit");
+  }
+
+  /** The branch it was built from, or null if the build was not told. */
+  public static String branch() {
+    return property("branch");
+  }
+
+  /** Who committed it, or null if the build was not told. */
+  public static String committer() {
+    return property("committer");
+  }
+
+  /** When it was committed, or null if the build was not told. */
+  public static String committed() {
+    return property("committed");
   }
 
   /**
-   * Get a java.util.Date if this is a date.
-   * @return Date
-   * @throws IllegalStateException if this isn't a date.
-   */
-  public java.util.Date getDate() {
-    java.util.Date date = null;
-    if (isDate()) try {
-      date = dateFormat.parse(value);
-    } catch (ParseException e) {
-      // nevermind
-    }
-
-    if (date == null) throw new IllegalStateException(value + " is not a date");
-
-    return date;
-  }
-
-  /**
-   * Retrieve the String value.
+   * One line naming this build, for an About box or a log line.
    *
-   * @return String
-   */
-  public String value() {
-    return value;
-  }
-
-  /**
-   * Return a prettyValue of name, or if it's null, the value of state.
-   * @return String
-   */
-  public static String nameOrState() {
-    return Name.value() != null
-    ? Name.prettyValue()
-    : State.value();
-  }
-
-  /**
-   * Return the value with the underscores removed.
+   * <p>Says as much as the build actually recorded and no more: the version on its
+   * own for an ordinary build, with the branch, commit and build time appended
+   * when they were supplied.
    *
-   * @return String
+   * @return something true about this build, never null
    */
-  public String prettyValue() {
+  public static String describe() {
+    String version = version();
+    if (version == null) return "development build";
+
+    StringBuilder s = new StringBuilder(version);
+    String branch = branch();
+    String commit = commit();
+    if (branch != null && commit != null) s.append(" (").append(branch).append(' ').append(commit).append(')');
+    else if (commit != null) s.append(" (").append(commit).append(')');
+    else if (branch != null) s.append(" (").append(branch).append(')');
+
+    String built = built();
+    if (built != null) s.append(" built ").append(built);
+    return s.toString();
+  }
+
+  /**
+   * A value from the filtered build properties.
+   *
+   * @param key the property name
+   *
+   * @return its value, or null when it was not recorded -- which covers an empty
+   *         value and an unsubstituted {@code ${...}} placeholder alike, so a
+   *         build that never filtered the file reads as "not recorded" rather than
+   *         reporting the placeholder as though it were data.  The check is for a
+   *         placeholder anywhere in the value, not just at the start: version is
+   *         built from three properties, so one of them failing to substitute
+   *         leaves something like {@code 0.10.${envelope.patch}}, which is worse
+   *         than admitting the version is unknown
+   */
+  private static String property(String key) {
+    if (properties == null) return null;
+    String value = properties.getProperty(key);
     if (value == null) return null;
-    String out = value;
+    value = value.trim();
+    return value.isEmpty() || value.contains("${") ? null : value;
+  }
 
-    // replace underscores between numbers with a dot.
-    while (out.matches(".*\\d_\\d.*"))
-      out = out.replaceAll("(\\d)_(\\d)", "$1.$2");
-
-    // replace all other ounderscores with a space.
-    out = out.replaceAll("_", " ");
-    return out;
+  private static Properties readProperties() {
+    try (InputStream in = Revision.class.getResourceAsStream(PROPERTIES)) {
+      if (in == null) return null;
+      Properties p = new Properties();
+      try (Reader r = new InputStreamReader(in, StandardCharsets.UTF_8)) {
+        p.load(r);
+      }
+      return p;
+    } catch (IOException e) {
+      return null;
+    }
   }
 }

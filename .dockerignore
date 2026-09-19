@@ -1,5 +1,10 @@
-# the image builds the war itself from src/ web/ pom.xml; nothing else goes in
+# the image builds the war itself from src/ web/ pom.xml; nothing else goes in,
+# except the two version files, which are bundled into the artifacts so the
+# running application can say which build it is
 *
 !pom.xml
 !src/
 !web/
+!.Major.version
+!.Minor.version
+!.Patch.version
