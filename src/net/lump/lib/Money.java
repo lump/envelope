@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
  * Money is a bigdecimal which automatically reads currency and formats correctly on toString().
  *
  * @author Troy Bowman
- * @version $Id: Money.java,v 1.7 2010/01/04 06:07:24 troy Exp $
  */
 public class Money implements Serializable, Comparable<Money> {
 

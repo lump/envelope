@@ -27,7 +27,6 @@ import java.util.List;
  * handling.
  *
  * @author Troy Bowman
- * @version $Id: Portal.java,v 1.29 2009/10/02 22:06:23 troy Exp $
  */
 
 abstract class Portal {

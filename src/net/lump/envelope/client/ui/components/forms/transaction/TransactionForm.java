@@ -51,7 +51,6 @@ import java.util.concurrent.LinkedBlockingQueue;
  * A Transaction Form.
  *
  * @author Troy Bowman
- * @version $Id: TransactionForm.java,v 1.25 2010/09/22 19:27:36 troy Exp $
  */
 public class TransactionForm {
   private JTable allocationsTable;

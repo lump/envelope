@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
  * classpath, and handed out from here.
  *
  * @author troy
- * @version $Id: FileServer.java,v 1.5 2009/10/02 22:06:23 troy Exp $
  */
 public class FileServer {
 

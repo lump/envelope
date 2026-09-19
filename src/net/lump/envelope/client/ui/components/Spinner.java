@@ -11,7 +11,6 @@ import java.awt.geom.Line2D;
  * A little spinning line.
  *
  * @author Troy Bowman
- * @version $Id: Spinner.java,v 1.7 2010/02/08 06:56:30 troy Exp $
  */
 
 public class Spinner extends JComponent {

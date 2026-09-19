@@ -22,7 +22,6 @@ import java.util.prefs.Preferences;
  * DAO dealing with security of the application.
  *
  * @author Troy Bowman
- * @version $Id: Security.java,v 1.20 2009/10/02 22:06:23 troy Exp $
  */
 public class Security extends DAO {
   // the server keypair for secure transactions like password encryption

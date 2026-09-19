@@ -12,7 +12,6 @@ import java.awt.*;
 
 /**
  * Generates components for use in this program.
- * @version: $Id: ComponentFactory.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 public class ComponentFactory {
 

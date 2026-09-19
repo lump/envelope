@@ -10,7 +10,6 @@ import java.awt.event.ActionListener;
 
 /**
  * @author troy
- * @version $Id$
  */
 abstract class Changeable<C extends JComponent, V> {
 

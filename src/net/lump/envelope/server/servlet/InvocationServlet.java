@@ -31,7 +31,6 @@ import java.util.zip.*;
  * The default servlet.
  *
  * @author troy
- * @version $Id: InvocationServlet.java,v 1.7 2010/09/20 23:18:23 troy Exp $
  */
 public class InvocationServlet extends HttpServlet {
 

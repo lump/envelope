@@ -11,7 +11,6 @@ import java.sql.Timestamp;
  * A record which maintains an allocation preset.
  *
  * @author troy
- * @version $Id: AllocationPreset.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 @jakarta.persistence.Entity
 @Table(name = "allocation_presets")

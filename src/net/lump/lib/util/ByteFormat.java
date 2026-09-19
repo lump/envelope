@@ -2,7 +2,6 @@ package net.lump.lib.util;
 
 /**
  * @author troy
- * @version $Id: ByteFormat.java,v 1.1 2010/09/20 23:18:23 troy Exp $
  */
 @SuppressWarnings({"UnusedDeclaration"})
 public class ByteFormat {

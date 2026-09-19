@@ -17,7 +17,6 @@ import java.util.prefs.Preferences;
  * Configure stuff.
  *
  * @author troy
- * @version $Id: ServerPrefs.java,v 1.4 2009/10/02 22:06:23 troy Exp $
  */
 public class ServerPrefs {
 

@@ -30,7 +30,6 @@ import java.util.Map;
 
 /**
  * @author troy
- * @version $Id$
  */
 public class TransactionChangeHandler {
 

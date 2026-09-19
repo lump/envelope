@@ -14,7 +14,6 @@ import java.util.*;
  * A transaction.
  *
  * @author Troy Bowman
- * @version $Id: Transaction.java,v 1.3 2010/01/04 06:07:24 troy Exp $
  */
 @jakarta.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)

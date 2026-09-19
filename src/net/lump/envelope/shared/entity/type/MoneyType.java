@@ -25,7 +25,6 @@ import java.sql.Types;
  * BigDecimal now, which is what the column actually holds.
  *
  * @author Troy Bowman
- * @version $Id: MoneyType.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 public class MoneyType implements UserType, Serializable {
 

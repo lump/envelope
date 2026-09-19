@@ -16,7 +16,6 @@ import java.sql.Timestamp;
  * should match the account balance.
  *
  * @author Troy Bowman
- * @version $Id: Category.java,v 1.3 2009/10/02 22:06:23 troy Exp $
  */
 @jakarta.persistence.Entity
 @Table(name = "categories")

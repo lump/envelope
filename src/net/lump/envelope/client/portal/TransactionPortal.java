@@ -11,7 +11,6 @@ import java.sql.Date;
  * Transaction Methods.
  *
  * @author troy
- * @version $Id: TransactionPortal.java,v 1.12 2009/10/02 22:06:23 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class TransactionPortal extends Portal {

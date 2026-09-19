@@ -12,7 +12,6 @@ import java.io.IOException;
  * This servlet handles feeding the jnlp file, jars, and classes to the client.
  *
  * @author troy
- * @version $Id: DefaultServlet.java,v 1.4 2009/10/02 22:06:23 troy Exp $
  */
 public class DefaultServlet extends HttpServlet {
 

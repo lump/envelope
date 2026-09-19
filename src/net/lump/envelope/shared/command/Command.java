@@ -25,7 +25,6 @@ import java.util.List;
  * A command.  Commands are used by the client to be able to issue remote requests.
  *
  * @author Troy Bowman
- * @version $Id: Command.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 public class Command implements Serializable {
 
@@ -69,7 +68,6 @@ public class Command implements Serializable {
    * command, and each command has a bit associated with it for bitwise operations.
    *
    * @author Troy Bowman
-   * @version $Id: Command.java,v 1.2 2009/10/02 22:06:23 troy Exp $
    */
   public enum Name {
 

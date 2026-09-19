@@ -20,7 +20,6 @@ import java.util.List;
  * This provides the model for the allocation list in the form.
  *
  * @author Troy Bowman
- * @version $Id: AllocationFormTableModel.java,v 1.8 2010/02/15 05:51:52 troy Exp $
  */
 public class AllocationFormTableModel extends AbstractTableModel {
 

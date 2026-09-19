@@ -29,7 +29,6 @@ import java.util.Properties;
  * DataDispatch through DAO.
  *
  * @author Troy Bowman
- * @version $Id: DAO.java,v 1.31 2010/01/06 06:58:01 troy Exp $
  */
 public abstract class DAO {
   static final Logger logger = Logger.getLogger(DAO.class.getName());

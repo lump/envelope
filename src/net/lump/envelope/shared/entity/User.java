@@ -18,7 +18,6 @@ import java.text.MessageFormat;
  * User.
  *
  * @author Troy Bowman
- * @version $Id: User.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 @jakarta.persistence.Entity
 @Table(name = "users")

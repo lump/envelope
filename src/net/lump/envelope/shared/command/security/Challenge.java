@@ -18,7 +18,6 @@ import java.security.PublicKey;
  * An authorization challenge.
  *
  * @author Troy Bowman
- * @version $Id: Challenge.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 public class Challenge implements Serializable {
   private PublicKey serverKey;

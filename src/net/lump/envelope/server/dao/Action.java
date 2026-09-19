@@ -24,7 +24,6 @@ import java.util.List;
  * A DAO for Transactions.
  *
  * @author Troy Bowman
- * @version $Id: Action.java,v 1.11 2009/10/02 22:06:23 troy Exp $
  */
 public class Action extends DAO {
 

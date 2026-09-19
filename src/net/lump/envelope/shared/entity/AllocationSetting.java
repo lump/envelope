@@ -9,7 +9,6 @@ import java.text.MessageFormat;
  * An Allocation Setting object.
  *
  * @author Troy Bowman
- * @version $Id: AllocationSetting.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 @jakarta.persistence.Entity
 @Table(name = "allocation_settings")

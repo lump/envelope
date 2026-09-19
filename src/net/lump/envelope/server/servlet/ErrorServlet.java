@@ -11,7 +11,6 @@ import java.io.PrintWriter;
  * Handle errors in a different way.
  *
  * @author troy
- * @version $Id: ErrorServlet.java,v 1.3 2009/10/02 22:06:23 troy Exp $
  */
 public class ErrorServlet extends HttpServlet {
   protected void doGet(HttpServletRequest request, HttpServletResponse response)

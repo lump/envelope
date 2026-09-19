@@ -18,7 +18,6 @@ import java.util.List;
  * Creates detached criteria queries.
  *
  * @author Troy Bowman
- * @version $Id: CriteriaFactory.java,v 1.24 2009/10/02 22:06:23 troy Exp $
  */
 @SuppressWarnings({"unchecked"})
 public class CriteriaFactory {

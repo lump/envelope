@@ -26,7 +26,6 @@ import java.lang.reflect.InvocationTargetException;
  * The main frame for the application.
  *
  * @author Troy Bowman
- * @version $Id: MainFrame.java,v 1.43 2010/09/22 19:27:37 troy Exp $
  */
 public class MainFrame extends JFrame {
   private AboutBox aboutBox;

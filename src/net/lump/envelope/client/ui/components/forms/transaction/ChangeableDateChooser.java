@@ -11,7 +11,6 @@ import java.util.TimeZone;
 
 /**
  * @author troy
- * @version $Id$
  */
 abstract public class ChangeableDateChooser extends Changeable<JDateChooser, Date> {
 

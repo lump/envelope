@@ -8,7 +8,6 @@ import java.io.Serializable;
  * Entity objects which contain an identification field.
  *
  * @author Troy Bowman
- * @version $Id: Identifiable.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 public abstract class Identifiable <T extends Serializable, S extends Serializable>
     implements Serializable, Stampable<S> {

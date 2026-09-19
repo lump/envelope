@@ -4,7 +4,6 @@ import java.util.Stack;
 
 /**
  * @author troy
- * @version $Id$
  */
 public class LimitedStack<E> extends Stack {
   int stackLimit = 10;

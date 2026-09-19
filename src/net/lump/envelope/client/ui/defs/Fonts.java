@@ -6,7 +6,6 @@ import java.awt.*;
  * .
  *
  * @author troy
- * @version $Id: Fonts.java,v 1.6 2010/09/22 19:27:37 troy Exp $
  */
 public enum Fonts {
 

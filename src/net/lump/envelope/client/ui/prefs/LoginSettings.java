@@ -24,7 +24,6 @@ import java.util.prefs.Preferences;
  * Singleton for keeping track of login information.  (Basically the username and password.
  *
  * @author Troy Bowman
- * @version $Id: LoginSettings.java,v 1.18 2009/10/02 22:06:23 troy Exp $
  */
 public class LoginSettings {
 

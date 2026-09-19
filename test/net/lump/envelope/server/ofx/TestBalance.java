@@ -17,7 +17,6 @@ import org.junit.Test;
  * .
  *
  * @author Troy Bowman
- * @version $Id: TestBalance.java,v 1.5 2009/10/02 22:06:23 troy Exp $
  */
 public class TestBalance extends TestCase {
   //http://java.sun.com/developer/technicalArticles/WebServices/jaxb/index.html

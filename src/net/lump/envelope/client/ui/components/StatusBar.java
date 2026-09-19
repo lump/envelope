@@ -11,7 +11,6 @@ import java.util.Vector;
  * This keeps track of things that should be displayed on the status bar..
  *
  * @author Troy Bowman
- * @version $Id: StatusBar.java,v 1.11 2010/09/22 19:27:37 troy Exp $
  */
 
 public class StatusBar extends JPanel {

@@ -25,7 +25,6 @@ import java.security.NoSuchAlgorithmException;
  * A JUnit class which runs all tests.
  *
  * @author Troy Bowman
- * @version $Id: TestSuite.java,v 1.13 2009/10/02 22:06:23 troy Exp $
  */
 public class TestSuite extends TestCase {
   // Overridable so the suite can be pointed at whatever stack is actually up --

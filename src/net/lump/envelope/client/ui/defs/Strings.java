@@ -10,7 +10,6 @@ import java.util.ResourceBundle;
  * Strings interface, for i18n.
  *
  * @author Troy Bowman
- * @version $Id: Strings.java,v 1.3 2009/10/02 22:06:23 troy Exp $
  */
 public class Strings {
   private ResourceBundle stringProperties;

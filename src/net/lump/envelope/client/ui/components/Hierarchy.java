@@ -41,7 +41,6 @@ import static net.lump.envelope.client.ui.images.ImageResource.icon.*;
  * The hierarchy of budget, account, categories.
  *
  * @author Troy Bowman
- * @version $Id: Hierarchy.java,v 1.36 2010/09/22 19:27:37 troy Exp $
  */
 public class Hierarchy extends JTree {
   private static Hierarchy singleton;

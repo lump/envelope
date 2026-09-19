@@ -11,8 +11,6 @@ import java.sql.Timestamp;
  * Allocation Setting for each Category.
  *
  * @author troy
- * @version $Id: CategoryAllocationSetting.java,v 1.1 2008/02/29 04:18:23 troy
- *          Exp $
  */
 @jakarta.persistence.Entity
 @Table(name = "categories")

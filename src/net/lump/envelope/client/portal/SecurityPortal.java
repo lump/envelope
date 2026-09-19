@@ -13,7 +13,6 @@ import java.security.PublicKey;
  * Security methods.
  *
  * @author Troy Bowman
- * @version $Id: SecurityPortal.java,v 1.15 2009/10/02 22:06:23 troy Exp $
  */
 
 public class SecurityPortal extends Portal {

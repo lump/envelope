@@ -9,7 +9,6 @@ import net.lump.envelope.client.portal.SecurityPortal;
  * Test queries.
  *
  * @author troy
- * @version $Id: TestQuery.java,v 1.6 2009/10/02 22:06:23 troy Exp $
  */
 public class TestQuery extends TestCase {
 

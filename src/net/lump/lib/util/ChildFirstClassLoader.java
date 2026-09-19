@@ -11,7 +11,6 @@ import java.net.URLClassLoader;
  * A child-first class loader.
  *
  * @author Troy Bowman
- * @version $Revision: 1.6 $
  */
 public class ChildFirstClassLoader extends URLClassLoader {
 

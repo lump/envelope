@@ -9,7 +9,6 @@ import java.util.HashMap;
  * An object which runs bitwise manipulations to determine access levels.
  *
  * @author Troy Bowman
- * @version $Id: Permission.java,v 1.2 2009/10/02 22:06:23 troy Exp $
  */
 public class Permission implements Serializable {
   public static final long READ = 1L;

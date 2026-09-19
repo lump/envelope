@@ -11,7 +11,6 @@ import java.util.concurrent.TimeUnit;
  * to be updated with what the threadpool is doing.
  *
  * @author Troy Bowman
- * @version $Id: ThreadPool.java,v 1.8 2009/10/02 22:06:23 troy Exp $
  */
 
 public class ThreadPool extends ThreadPoolExecutor {

@@ -7,7 +7,6 @@ import org.junit.Test;
  * Tests MoneyType.
  *
  * @author Troy Bowman
- * @version $Id: TestMoney.java,v 1.5 2010/01/04 06:07:24 troy Exp $
  */
 public class TestMoney extends TestCase {
 

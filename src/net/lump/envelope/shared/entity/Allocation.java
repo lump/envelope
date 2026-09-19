@@ -11,7 +11,6 @@ import java.text.MessageFormat;
  * A many-to-one list of Allocations for a Transaction.  Allocations are tied to Categories, which are tied to Accounts.
  *
  * @author Troy Bowman
- * @version $Id: Allocation.java,v 1.5 2010/01/06 06:58:01 troy Exp $
  */
 @jakarta.persistence.Entity
 @org.hibernate.annotations.Entity(dynamicUpdate = true)

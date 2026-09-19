@@ -20,7 +20,6 @@ import java.util.TreeSet;
 /**
  * This is a repository for globally accessed object instances.
  *
- * @version $Id: State.java,v 1.9 2009/10/02 22:06:23 troy Exp $
  */
 public class State {
 

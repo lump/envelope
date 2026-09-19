@@ -7,7 +7,6 @@ import java.util.EventObject;
  * A command output event.
  *
  * @author troy
- * @version $Id: OutputEvent.java,v 1.3 2010/09/20 23:18:23 troy Exp $
  */
 public class OutputEvent extends EventObject {
   Serializable payload;

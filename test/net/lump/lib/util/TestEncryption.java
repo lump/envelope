@@ -17,7 +17,6 @@ import java.security.KeyPair;
  * .
  *
  * @author Troy Bowman
- * @version $Id: TestEncryption.java,v 1.11 2009/10/02 22:06:23 troy Exp $
  */
 public class TestEncryption extends TestCase {
 

@@ -14,7 +14,6 @@ import java.util.List;
  * An account object.
  *
  * @author Troy Bowman
- * @version $Id: Account.java,v 1.4 2010/07/28 04:25:04 troy Exp $
  */
 @jakarta.persistence.Entity
 @Table(name = "accounts")

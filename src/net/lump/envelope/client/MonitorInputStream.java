@@ -6,7 +6,6 @@ import java.io.InputStream;
 
 /**
  * @author troy
- * @version $Id: MonitorInputStream.java,v 1.1 2010/09/20 23:18:23 troy Exp $
  */
 public class MonitorInputStream extends FilterInputStream {
   InputStream in;
