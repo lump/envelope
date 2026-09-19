@@ -420,7 +420,7 @@ at the `/configure` form waiting for a human.
   open editor **before** the view changes. If you add another way to change the view, do the
   same.
 - **Tests are skipped by default** (`default-skip-tests` profile); run with
-  `-DskipTests=false`. **The suite passes** — 17 tests — but only the six that need no
+  `-DskipTests=false`. **The suite passes** — 36 tests — but only those that need no
   server pass on their own; point the rest at a running stack:
 
   ```
@@ -440,6 +440,15 @@ at the `/configure` form waiting for a human.
   matching surefire's `Test*.java` default it failed the run on "No tests found"; and
   `TestRevision` asserted a non-empty value for `Revision.Locker`, which CVS leaves empty
   exactly like `Revision.Name` that it already skipped.
+- **`TestDates` is where date behaviour is pinned.** Nineteen tests across eight zones either
+  side of UTC, covering the wire form, `java.sql.Date`, the criteria that carry dates, the
+  table column and both date editors. It needs no server, and is deliberately **not** in
+  `TestSuite.suite()` — that class's static initializer demands a handshake and nothing in
+  `TestDates` does. It pins the *stock* `JTextFieldDateEditor`'s staleness on purpose, so if
+  a future jcalendar fixes it that test fails and `ZonedDateEditor` can go. Its comparisons
+  go through `assertSameDay`, not `assertEquals`: JUnit reports a `java.sql.Date` through
+  `toString()`, which renders in the default zone, so two instants a day apart print
+  identically and a real failure reads `expected:<2026-08-30> but was:<2026-08-30>`.
 - **A database failure used to surface as a bare `NullPointerException`.** `DAO.initialize`
   swallowed `buildSessionFactory()`'s exception, leaving the factory null; every request then
   died in `getCurrentSession()` with nothing in the message, while the real reason — on the
