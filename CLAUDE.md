@@ -245,7 +245,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.10.0**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.10.2**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at
@@ -486,7 +486,22 @@ at the `/configure` form waiting for a human.
   reload; requests landing mid-reload fail with `IllegalStateException: this web application
   instance has been stopped already` while the health check still answers `pong` (it never
   touches the database). Always `docker compose restart tomcat` after packaging, even for a
-  client-only change — the war is rebuilt either way.
+  client-only change — the war is rebuilt either way. But `restart` never re-reads
+  `compose.yml`: a changed health check, or any other container config, needs `up -d`,
+  which recreates the container. The dev container ran for nine days on the old
+  `/info/ping` probe after the file had said `/info/ready`.
+- **Every log line says which request it was logged for, and a transaction every 10–15 s
+  is the health check.** `RequestContextFilter` puts `METHOD /uri remote-address` in the
+  log4j MDC for the whole of every request, `Controller.invoke` adds `user commandName`
+  once it has authenticated one, and both layouts in `log4j.properties` print them (`%X`
+  works there because the log4j 1 bridge builds its `PatternLayout` on Log4j2's). So DAO's
+  `began transaction` reads `[GET /envelope/info/ready 127.0.0.1] began transaction` for
+  Docker's `HEALTHCHECK` — every 10 s in dev compose, 15 s in the image, from inside the
+  container hence `127.0.0.1` — and `[POST /envelope/invoke 10.0.0.5] [guest
+  listTransactions] began transaction` for a client. Nothing else probes `/info/ready`:
+  HAProxy's `check` on the backend is TCP-only. Keep such per-thread context going through
+  `ThreadInfo`, which the filter clears in a `finally` — Tomcat reuses worker threads, and a
+  key left set would label the next request's lines with this one.
 - **Auth is fixed at the command level; the login step still is not.** Commands are safe now
   (session-bound, command-bound, single-use signatures — see above). What remains is that the
   login exchange has no nonce, so the encrypted md5-crypt hash is a static password-equivalent:

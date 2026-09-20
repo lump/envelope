@@ -55,6 +55,13 @@ public class Controller {
    */
   public void invoke(Command command, String authenticatedUser) throws RemoteException {
 
+    // Name the command on the thread for the log, so that every line logged
+    // while it runs -- DAO's "began transaction", Hibernate's, HikariCP's --
+    // says who asked for what.  RequestContextFilter takes it off again when
+    // the request is done.
+    ThreadInfo.setCommand((authenticatedUser != null ? authenticatedUser : "no-session") + SPACE
+        + command.getName().name());
+
     logger.debug("Received command " + command.getName().name());
 
     // Authentication already happened in the servlet, which had the wire bytes

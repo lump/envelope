@@ -8,6 +8,19 @@
   <!-- $Id: web.xml,v 1.4 2009/10/02 22:06:23 troy Exp $ -->
 
   <display-name>Envelope Budget</display-name>
+
+  <!-- puts "METHOD /uri remote-address" on the thread for the log for the whole
+       of every request, so a transaction in the log can be traced to the request
+       that caused it (see ThreadInfo); clears the thread again afterwards -->
+  <filter>
+    <filter-name>RequestContextFilter</filter-name>
+    <filter-class>net.lump.envelope.server.servlet.RequestContextFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>RequestContextFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
   <servlet>
     <servlet-name>InvocationServlet</servlet-name>
     <servlet-class>net.lump.envelope.server.servlet.InvocationServlet</servlet-class>
