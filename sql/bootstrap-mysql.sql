@@ -206,7 +206,8 @@ create table transactions (
   `entity` varchar(128) not null,
   `description` varchar(1024) not null,
   `reconciled` tinyint(4) not null default '0',
-  `transfer` tinyint(4) not null default '0'
+  `transfer` tinyint(4) not null default '0',
+  index date (`date`)
 )ENGINE=INNODB;
 insert into transactions values (null, null, now(), 'Beginning Balance', 'Starting Balance', 0, 0);
 update transactions set id = 0;

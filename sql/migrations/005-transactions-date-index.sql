@@ -1,0 +1,21 @@
+-- 005: index transactions on date.
+--
+-- transactions has carried only its primary key since 2007.  The list is
+-- filtered on date in both of its shapes, but only the category list is driven
+-- by an index -- allocations.category, the one InnoDB made for the foreign
+-- key -- with the date applied afterwards to the rows it reaches.  The account
+-- list starts from transactions itself and, with nothing to narrow it, scans
+-- the whole table (EXPLAIN: type index, 14548 rows) and filters the period out
+-- of that.  The readiness probe's max(date) is a full scan for the same reason,
+-- every ten or fifteen seconds.
+--
+-- With this index the account list reads only the period's rows, and max(date)
+-- is answered from the last index entry without touching the table ("Select
+-- tables optimized away").  At this size everything was milliseconds either
+-- way; it is the account list that grows.
+--
+-- Applied to a live database with:
+--   mariadb -h localhost -u budget -p envelope \
+--     < sql/migrations/005-transactions-date-index.sql
+
+alter table transactions add index date (`date`);

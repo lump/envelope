@@ -245,7 +245,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.10.3**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.10.4**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at
@@ -499,8 +499,15 @@ at the `/configure` form waiting for a human.
   unhealthy saying which day became which. It used to count `users`, which on that cadence
   read in the log like someone probing accounts and told any unauthenticated caller how many
   there were; a healthy body is `ready: latest transaction 2026-09-14`, or `ready: no
-  transactions yet` on a fresh schema. `max(date)` is a full scan (no index on
-  `transactions.date`) at ~1 ms over 14k rows.
+  transactions yet` on a fresh schema. `max(date)` is answered from the `date` index
+  (migration 005) without touching the table.
+- **`transactions` carried only its primary key until migration 005.** The list is filtered
+  on date in both shapes, but only the category list was index-driven — by
+  `allocations.category`, one of the two indexes InnoDB made for that table's foreign keys;
+  `allocations` has no date column. The account list started from `transactions` with nothing
+  to narrow it and scanned the whole table (`EXPLAIN: type index`), filtering the period out of
+  that. `sql/migrations/005-transactions-date-index.sql` adds `index date (date)`, which the
+  account list and the readiness probe's `max(date)` both use.
 - **`mvn package` rewrites the bind-mounted war under a running Tomcat**, which triggers a
   reload; requests landing mid-reload fail with `IllegalStateException: this web application
   instance has been stopped already` while the health check still answers `pong` (it never
