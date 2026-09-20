@@ -67,10 +67,13 @@ password from their encrypted secret block):
     ENVELOPE_ADMIN_USER ENVELOPE_ADMIN_PASSWORD
     ENVELOPE_HEAP
 
-The service's health check is /envelope/info/ready, which opens a database
-session and runs a query -- so a container that cannot reach its database is
-unhealthy, and says why, rather than reported healthy with every login
-failing.  /envelope/info/ping only says Tomcat is up.
+The service's health check is /envelope/info/ready, which dispatches the
+"ready" command through the same Controller as every client command.  It
+reads the latest transaction's day back and checks it against the day the
+database says it holds, so a container that cannot reach its database, is
+pointed at an empty one, or is reading dates in the wrong zone is unhealthy,
+and says why, rather than reported healthy with every login failing.
+/envelope/info/ping only says Tomcat is up.
 
 ## The database
 

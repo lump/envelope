@@ -6,6 +6,7 @@ import net.lump.envelope.shared.command.security.Crypt;
 import net.lump.envelope.shared.entity.User;
 import net.lump.envelope.shared.exception.EnvelopeException;
 import static net.lump.envelope.shared.exception.EnvelopeException.Name.Invalid_Credentials;
+import net.lump.lib.util.Day;
 import net.lump.lib.util.Encryption;
 
 import javax.crypto.BadPaddingException;
@@ -62,6 +63,43 @@ public class Security extends DAO {
   public Boolean authedPing() { return ping(); }
 
   public Boolean ping() { return true; }
+
+  /**
+   * The readiness probe's question (/info/ready dispatches this through
+   * Controller like any other command).  Constructing this DAO already opened a
+   * session and began a transaction, so reaching here means the pool handed out
+   * a connection.  The query proves the schema: the swarm's config project
+   * bootstraps <em>empty</em> databases, so "pointed at the wrong database" is
+   * a real way to be up with every login failing.
+   *
+   * <p>It asks for the latest transaction's day, and asks twice: once through
+   * the entity mapping, which is the {@code java.sql.Date} read every client
+   * query makes, and once as the text the database itself spells the column in,
+   * where no instant and so no zone is involved.  The two have to agree.  That
+   * turns the probe into a standing test of the date handling this application
+   * has lost days to before (see {@link Day}): a server given a zone east of
+   * Greenwich, a driver that starts applying one, a stray
+   * {@code hibernate.jdbc.time_zone}, and the container goes unhealthy saying
+   * which day became which, rather than every user quietly seeing -- and the
+   * form quietly writing back -- the day before.
+   *
+   * <p>It used to count the users table, which on a fifteen-second cadence read
+   * in the log like someone probing accounts, besides telling any
+   * unauthenticated caller how many there were.  The latest transaction's day
+   * is a sign of life instead of a census.
+   */
+  public String ready() {
+    java.util.Date read = (java.util.Date)getCurrentSession()
+        .createQuery("select max(t.date) from Transaction t").uniqueResult();
+    String stored = (String)getCurrentSession()
+        .createNativeQuery("select cast(max(date) as char) from transactions").uniqueResult();
+    if (read == null && stored == null) return "ready: no transactions yet";
+    String day = Day.toIso(read);
+    if (!java.util.Objects.equals(stored, day))
+      throw new IllegalStateException("the latest transaction is stored on " + stored
+          + " but read back as " + day + " -- a day is being read in the wrong zone");
+    return "ready: latest transaction " + day;
+  }
 
   public byte[] authChallengeResponse(String username,
     byte[] challengeResponse, PublicKey publicKey)

@@ -19,7 +19,7 @@ plus a shared `lib/`.
 | `envelope/shared/` | both | The wire protocol + data model. `command/Command` is the RPC unit; `entity/` are the Hibernate entities; `command/security/` holds `Challenge`, `Credentials`, `Crypt`, `Permission`. |
 | `envelope/client/` | Swing client | `portal/` = one RPC client per server facet (`SecurityPortal`, `HibernatePortal`, `TransactionPortal`, over abstract `Portal`); `CriteriaFactory` builds every `DetachedCriteria` sent to the server; `ui/` = the Swing tree, with `ui/prefs/` holding `LoginSettings`/`ServerSettings` (backed by `java.util.prefs`). |
 | `envelope/server/` | Tomcat | `servlet/` — `InvocationServlet` → `/invoke`, `DefaultServlet` → `/` (delegates to `FileServer`), `ErrorServlet` → `/error`; `dao/` = `DAO`, `Security`, `Generic`, `Action`; `Controller` dispatches commands. |
-| `lib/` | mostly client | `Money.java` (the core value type, mapped by `entity/type/MoneyType`) plus `util/`. Only `Base64`, `Encryption` and `Interval` are used by the server; `Revision` reports the application version and is read by the client's `AboutBox`; the rest (`EmacsKeyBindings`, `ByteFormat`, `Compression`, `ObjectUtil`, `ChildFirstClassLoader`) are client-only or unused. |
+| `lib/` | mostly client | `Money.java` (the core value type, mapped by `entity/type/MoneyType`) plus `util/`. Only `Base64`, `Encryption`, `Interval` and `Day` (the readiness probe's date check) are used by the server; `Revision` reports the application version and is read by the client's `AboutBox`; the rest (`EmacsKeyBindings`, `ByteFormat`, `Compression`, `ObjectUtil`, `ChildFirstClassLoader`) are client-only or unused. |
 
 **The RPC protocol is the load-bearing part.** The client Java-serializes a `Command` into a
 hand-rolled RFC 2388 multipart POST to `/invoke` (neither side uses the servlet `Part` API);
@@ -245,7 +245,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.10.2**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.10.3**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at
@@ -442,7 +442,7 @@ at the `/configure` form waiting for a human.
   open editor **before** the view changes. If you add another way to change the view, do the
   same.
 - **Tests are skipped by default** (`default-skip-tests` profile); run with
-  `-DskipTests=false`. **The suite passes** — 36 tests — but only those that need no
+  `-DskipTests=false`. **The suite passes** — 39 tests — but only those that need no
   server pass on their own; point the rest at a running stack:
 
   ```
@@ -462,7 +462,7 @@ at the `/configure` form waiting for a human.
   matching surefire's `Test*.java` default it failed the run on "No tests found"; and
   `TestRevision` asserted a non-empty value for `Revision.Locker`, which CVS leaves empty
   exactly like `Revision.Name` that it already skipped.
-- **`TestDates` is where date behaviour is pinned.** Nineteen tests across eight zones either
+- **`TestDates` is where date behaviour is pinned.** Twenty tests across eight zones either
   side of UTC, covering the wire form, `java.sql.Date`, the criteria that carry dates, the
   table column and both date editors. It needs no server, and is deliberately **not** in
   `TestSuite.suite()` — that class's static initializer demands a handshake and nothing in
@@ -478,10 +478,29 @@ at the `/configure` form waiting for a human.
   `ServiceException`. It now keeps the root cause: the log says
   `could not build the session factory -- <cause> (url …)` and requests fail with `the
   database is not available: <cause>`. `/info/ping` is **liveness only** — it never touches
-  Hibernate, so a container sat "healthy" for hours with no database. `/info/ready` opens a
-  session and runs a query (`503 not ready: <cause>` otherwise); the image, dev compose and
-  swarm health checks all use it. `InvocationServlet` is `load-on-startup`, so a bad database
-  shows at startup rather than at the first user's login.
+  Hibernate, so a container sat "healthy" for hours with no database. `/info/ready` dispatches
+  `Command.Name.ready` — a session-less command beside `ping` on the `Security` facet — through
+  `Controller` exactly as a client's command goes, and
+  answers `503 not ready: <cause>` when that throws; the image, dev compose and swarm health
+  checks all use it. It used to construct a `Generic` DAO in `FileServer` and finish the
+  transaction by hand, and leaked a session per probe until that was debugged: **nothing
+  outside `Controller` should construct a DAO.** `Controller` writes a command's answer as a
+  serialized object, so the probe reads it back the way a client would, and the `Single-Object`
+  / `Object-Count` headers ride along on the probe's response. `InvocationServlet` is
+  `load-on-startup`, so a bad database shows at startup rather than at the first user's login;
+  the probe re-runs `DAO.initialize` each time, so a server that started without its database
+  recovers when the database appears. **What `ready()` asks is the latest transaction's day,
+  twice** — through the entity mapping (the `java.sql.Date` read every client query makes) and
+  as the text the database spells the column in — and it refuses readiness if they disagree
+  (`not ready: the latest transaction is stored on 2026-09-14 but read back as 2026-09-13`).
+  That proves the schema (the swarm bootstraps *empty* databases, so "wrong database" is a
+  real way to be up with every login failing) and stands as a permanent test of the date
+  handling in the `Transaction.date` trap above: a server given a zone east of Greenwich goes
+  unhealthy saying which day became which. It used to count `users`, which on that cadence
+  read in the log like someone probing accounts and told any unauthenticated caller how many
+  there were; a healthy body is `ready: latest transaction 2026-09-14`, or `ready: no
+  transactions yet` on a fresh schema. `max(date)` is a full scan (no index on
+  `transactions.date`) at ~1 ms over 14k rows.
 - **`mvn package` rewrites the bind-mounted war under a running Tomcat**, which triggers a
   reload; requests landing mid-reload fail with `IllegalStateException: this web application
   instance has been stopped already` while the health check still answers `pong` (it never
@@ -495,8 +514,8 @@ at the `/configure` form waiting for a human.
   log4j MDC for the whole of every request, `Controller.invoke` adds `user commandName`
   once it has authenticated one, and both layouts in `log4j.properties` print them (`%X`
   works there because the log4j 1 bridge builds its `PatternLayout` on Log4j2's). So DAO's
-  `began transaction` reads `[GET /envelope/info/ready 127.0.0.1] began transaction` for
-  Docker's `HEALTHCHECK` — every 10 s in dev compose, 15 s in the image, from inside the
+  `began transaction` reads `[GET /envelope/info/ready 127.0.0.1] [no-session ready] began
+  transaction` for Docker's `HEALTHCHECK` — every 10 s in dev compose, 15 s in the image, from inside the
   container hence `127.0.0.1` — and `[POST /envelope/invoke 10.0.0.5] [guest
   listTransactions] began transaction` for a client. Nothing else probes `/info/ready`:
   HAProxy's `check` on the backend is TCP-only. Keep such per-thread context going through

@@ -73,4 +73,22 @@ public final class Day {
   public static Date today(TimeZone zone) {
     return fromView(new java.util.Date(), zone);
   }
+
+  /**
+   * A stored day spelled the way the database spells it, {@code yyyy-MM-dd} of
+   * its UTC day.  This is the form to log or compare -- never
+   * {@code toString()}, which renders in the default zone and so reads a day
+   * early west of Greenwich for a value that is perfectly correct.  The
+   * readiness probe leans on it to check the day Hibernate read back against
+   * the day the database says it holds.
+   *
+   * @param stored the entity's date -- midnight UTC of the day
+   */
+  public static String toIso(java.util.Date stored) {
+    if (stored == null) return null;
+    Calendar utc = new GregorianCalendar(UTC);
+    utc.setTime(stored);
+    return String.format("%04d-%02d-%02d",
+        utc.get(Calendar.YEAR), utc.get(Calendar.MONTH) + 1, utc.get(Calendar.DAY_OF_MONTH));
+  }
 }

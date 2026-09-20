@@ -1,7 +1,9 @@
 package net.lump.envelope.server.servlet.beans;
 
 import org.apache.log4j.Logger;
+import net.lump.envelope.server.Controller;
 import net.lump.envelope.server.dao.DAO;
+import net.lump.envelope.shared.command.Command;
 import net.lump.lib.util.Interval;
 
 import jakarta.servlet.ServletException;
@@ -232,33 +234,24 @@ public class FileServer {
       else if (query.matches("^info/ready$")) {
         // Readiness, as distinct from liveness.  /info/ping answers as soon as
         // Tomcat is up and says nothing about the database; a container was
-        // reported healthy for hours while every login failed.  This one opens a
-        // session and runs a query, and says what is wrong when it cannot.
+        // reported healthy for hours while every login failed.  This one
+        // dispatches the ready command through Controller exactly as a client's
+        // command is dispatched, so its transaction is begun, committed or
+        // rolled back, and its session unbound, by the one place that knows how.
+        // It used to construct a Generic DAO here and finish the transaction by
+        // hand, and leaked a session per probe until the hand-rolling was
+        // debugged.  Nothing outside Controller should be constructing a DAO.
         try {
+          // Retried on every probe, so a server whose database was down when it
+          // started recovers when the database appears; a no-op once built.
           DAO.initialize(ServerPrefs.getInstance().getProps(DAO.class));
-          // A DAO made outside Controller has to finish its own transaction here,
-          // or every probe leaks a session -- the very thing that stalled the
-          // server once before.  Completing the transaction is all it takes:
-          // with current_session_context_class=thread, ThreadLocalSessionContext
-          // closes and unbinds the session at completion.  This used to call
-          // close() and disconnect() as well, and since the commit had already
-          // disposed of the session each of those opened a FRESH one -- three
-          // sessions per probe, two closed, the third left bound to this Tomcat
-          // worker.  Every ten seconds, for the life of the container.
-          net.lump.envelope.server.dao.Generic dao = new net.lump.envelope.server.dao.Generic();
-          try {
-            returnValue = dao.readyCheck();
-            if (dao.isActive() && !dao.wasRolledBack()) dao.commit();
-          } finally {
-            // The path that does need handling is the failure one, where the query
-            // threw and the transaction never completed, so nothing has unbound
-            // the session.
-            try {
-              if (dao.isActive() && !dao.wasRolledBack()) dao.getTransaction().rollback();
-            } catch (Exception rollbackFailed) {
-              logger.warn("could not roll back a readiness probe", rollbackFailed);
-            }
-          }
+          // Controller writes the command's answer to the stream it is given as
+          // it does for a client -- one serialized object -- so read it back the
+          // way a client would.  The Single-Object and Object-Count headers it
+          // adds ride along on the probe's response.
+          ByteArrayOutputStream answer = new ByteArrayOutputStream();
+          new Controller(rp, answer).invoke(new Command(Command.Name.ready, null), null);
+          returnValue = (String)new ObjectInputStream(new ByteArrayInputStream(answer.toByteArray())).readObject();
         } catch (Exception e) {
           Throwable root = e;
           while (root.getCause() != null) root = root.getCause();

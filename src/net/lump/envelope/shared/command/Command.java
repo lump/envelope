@@ -73,6 +73,10 @@ public class Command implements Serializable {
 
     // ---- no session: the login exchange, and pings ------------------------
     ping(false, Dao.Security),
+    // the readiness probe's command: reads the latest transaction's day back
+    // and checks it, so it proves the database, the schema and the date
+    // handling, where ping proves only that the server answers
+    ready(false, Dao.Security),
     getChallenge(false, Dao.Security, String.class, PublicKey.class),
     authChallengeResponse(false, Dao.Security, String.class, byte[].class, PublicKey.class),
     getServerPublicKey(false, Dao.Security),

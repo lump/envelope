@@ -47,18 +47,6 @@ public class Generic extends DAO {
     return c.scroll();
   }
 
-  /**
-   * One cheap query against a table the application cannot work without, for
-   * the readiness probe.  Constructing this DAO already opened a session and
-   * began a transaction, so reaching here means the pool handed out a
-   * connection; the query means the schema is there too.
-   */
-  public String readyCheck() {
-    Number users = (Number)getCurrentSession()
-        .createQuery("select count(u) from User u").uniqueResult();
-    return "ready: " + users + " users";
-  }
-
   public Serializable detachedCriteriaQueryUnique(DetachedCriteria dc, Boolean cache) {
     logger.info(dc.toString());
     Criteria c = dc.getExecutableCriteria(getCurrentSession());

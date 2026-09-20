@@ -200,6 +200,24 @@ public class TestDates extends TestCase {
                  "2026-08-30", wire.toString());
   }
 
+  /**
+   * Day.toIso spells the stored day whatever the default zone, which is what
+   * makes it safe to log or compare where toString() is not.  The readiness
+   * probe leans on this: it checks the day Hibernate read back against the day
+   * the database says it holds, and a spelling that moved with the zone would
+   * fail that check on every server west of Greenwich.
+   */
+  public void testTheIsoSpellingIsTheStoredDayInEveryZone() {
+    for (String z : ZONES) {
+      TimeZone.setDefault(TimeZone.getTimeZone(z));
+      for (int[] d : DAYS) {
+        assertEquals(describe(z, d) + " spelled wrong",
+            String.format("%04d-%02d-%02d", d[0], d[1], d[2]), Day.toIso(Day.of(d[0], d[1], d[2])));
+      }
+    }
+    assertNull("a null day has no spelling", Day.toIso(null));
+  }
+
   /** Equality is by instant, so two builds of one day match however they were made. */
   public void testStoredDaysCompareByCalendarDay() {
     TimeZone.setDefault(TimeZone.getTimeZone("US/Mountain"));
