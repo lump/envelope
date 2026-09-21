@@ -48,6 +48,16 @@ public class MoneyRenderer extends DefaultTableCellRenderer {
       }
     }
 
+    // A computed column is not an input.  Set it on the panel's grey, which is
+    // how every other read-only figure on the form already reads.
+    if (!table.isCellEditable(row, col)) {
+      Color panel = UIManager.getColor("Panel.background");
+      if (panel != null) {
+        label.setBackground(panel);
+        label.setOpaque(true);
+      }
+    }
+
     if (isSelected) {
       label.setBackground(table.getSelectionBackground());
       label.setForeground(table.getSelectionForeground());

@@ -106,6 +106,44 @@ in the category's history. The result is not expected to balance; reconciling it
 transaction amount is the user's job, with the imbalance panel showing the gap.
 `forms/preset/AllocationPresetEditor` edits them, writing each change as it is made.
 
+**The allocation table's Balance and Projection columns are computed, and "Balance"
+means the category as of the transaction's day, without the transaction.** Each row shows
+`Category | Balance | Allocation | Projection`. Balance is the category's `sum(amount)` over
+allocations whose transaction is dated **on or before this one's day** (`le("t.date", …)`
+against `Transaction.date` in its wire form, so same-day transactions count) with **this
+transaction's rows excluded on the server** (`ne("t.id", …)`), both in
+`CriteriaFactory.getCategoryBalances(budget, transactionId, asOf)`; Projection is that plus
+every row of this transaction in the same category as they stand on screen, unsaved edits
+included. So an old transaction shows the balance it met and the balance it left, not
+today's less itself; an auto-deduct pair projects to the balance it leaves rather than one
+row up and the other down; and a brand-new transaction's Balance is exactly what the tree
+shows. Excluding the transaction is what makes the number safe to read at any moment: the
+form saves per keystroke, and a plain sum would count a row or not depending on which round
+trip won. The read happens three ways: one grouped query for the whole budget in
+`TransactionChangeHandler.importNew` (off the EDT, before `setFormData`; a preset re-enters
+there too) because a transaction arrives with all its rows at once; the same grouped query
+again when the **date field** is edited (`rereadBalances`, from the date's save runnable),
+since every balance is as of that day; and one single-category query (`refreshBalance`, via
+`EditListener.categoryChosen`) each time a category is put on a row by hand, since those
+arrive seconds apart and the upfront read may be minutes old. A read is applied only if the
+form is still on the same transaction **and the same day** (`stillCurrent`) — otherwise a
+newer read is already on its way. `MoneyRenderer` sets the computed cells on the panel's
+grey so they do not read as inputs.
+
+**The allocation table only ever lands on an editable cell.** The `changeSelection`
+override in `TransactionForm.createUIComponents` redirects any move that would arrive on
+Balance or Projection: Tab carries on to the right (Category → Allocation → next row's
+Category, adding an empty row past the last), Shift-Tab to the left, and a click goes to the
+nearest editable column with Allocation winning a tie. Column reordering is off, because
+`setFormData` sizes the three money columns by index. The old wrap-to-`(0,0)`-on-Tab check is
+still there for the first Tab into an empty lead. `setFormData` also commits any editor
+still open **before** swapping the model's rows: left to `setExpense` to stop it afterwards,
+it wrote into the new list at its old row index, which a shorter transaction did not have.
+
+**A new transaction opens on Expense.** `setFormData` derives the radio from the sign of
+the net amount, and a fresh transaction is a zero stub, so zero has to count as expense
+(`<= 0`, in both `setFormData` and `isExpense()`) — most transactions are.
+
 **The transaction amount field is a view of the allocations, not a field of its own.** There
 is no `transactions.amount` column, so with exactly one allocation the two numbers are the
 same thing and the form keeps them level in both directions — typing in the amount writes
@@ -245,7 +283,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.10.4**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.11.0**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at

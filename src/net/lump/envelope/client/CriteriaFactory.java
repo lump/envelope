@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Creates detached criteria queries.
@@ -211,11 +212,67 @@ public class CriteriaFactory {
             .add(Projections.sum("amount")));
   }
 
-  public DetachedCriteria getAllBalances() {
-    return DetachedCriteria.forClass(Allocation.class)
-        .setProjection(Projections.projectionList()
-            .add(Projections.groupProperty("category"))
-            .add(Projections.sum("amount")));
+  /**
+   * The balance of every category in a budget as of a day, without one
+   * transaction, keyed by category id.
+   *
+   * <p>The same sum the tree shows under each account, taken across the whole
+   * budget in one query so the transaction form can put a balance beside every
+   * allocation row -- but only up to the transaction's own day, that day
+   * included, so an old transaction shows the balance it met rather than
+   * today's, and less the transaction being edited, which is left out on the
+   * server so that the form's own saves never move the number: the form adds
+   * that transaction's rows back itself, as they stand on screen.  A category
+   * with nothing to sum is simply absent; callers read that as zero.  This
+   * replaced an unscoped version that summed every category of every budget on
+   * the server.
+   *
+   * @param budget      the budget
+   * @param transaction the id of the transaction to leave out, or null for none
+   * @param asOf        the last day to count, in the wire form (midnight UTC of
+   *                    the day, as Transaction.date is carried), or null for all
+   */
+  public Map<Integer, Money> getCategoryBalances(Budget budget, Integer transaction, Date asOf)
+      throws AbortException {
+    HashMap<Integer, Money> balances = new HashMap<Integer, Money>();
+    DetachedCriteria dc = DetachedCriteria.forClass(Allocation.class)
+        .createAlias("category", "c")
+        .createAlias("c.account", "a")
+        .createAlias("transaction", "t")
+        .add(Restrictions.eq("a.budget", budget));
+    if (transaction != null) dc.add(Restrictions.ne("t.id", transaction));
+    if (asOf != null) dc.add(Restrictions.le("t.date", asOf));
+    List<Object[]> sums =
+        (List<Object[]>)new HibernatePortal().detachedCriteriaQueryList(
+            dc.setProjection(Projections.projectionList()
+                .add(Projections.groupProperty("c.id"))
+                .add(Projections.sum("amount"))));
+    if (sums != null)
+      for (Object[] o : sums)
+        balances.put((Integer)o[0], o[1] == null ? Money.ZERO : (Money)o[1]);
+    return balances;
+  }
+
+  /**
+   * One category's balance as of a day, without one transaction: the
+   * single-row form of getCategoryBalances, for a row the user has just put a
+   * category on.
+   *
+   * @param category    the category
+   * @param transaction the id of the transaction to leave out, or null for none
+   * @param asOf        the last day to count, as for getCategoryBalances
+   * @return the sum, zero if there is nothing to sum
+   */
+  public Money getCategoryBalance(Category category, Integer transaction, Date asOf)
+      throws AbortException {
+    DetachedCriteria dc = DetachedCriteria.forClass(Allocation.class)
+        .createAlias("transaction", "t")
+        .add(Restrictions.eq("category", category));
+    if (transaction != null) dc.add(Restrictions.ne("t.id", transaction));
+    if (asOf != null) dc.add(Restrictions.le("t.date", asOf));
+    Object sum = new HibernatePortal().detachedCriteriaQueryUnique(
+        dc.setProjection(Projections.sum("amount")));
+    return sum == null ? Money.ZERO : (Money)sum;
   }
 
   public DetachedCriteria getTransactions(Object thing,

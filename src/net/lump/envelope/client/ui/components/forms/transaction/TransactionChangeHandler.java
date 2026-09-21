@@ -1,5 +1,6 @@
 package net.lump.envelope.client.ui.components.forms.transaction;
 
+import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.State;
 import net.lump.envelope.client.portal.HibernatePortal;
 import net.lump.envelope.client.portal.TransactionPortal;
@@ -62,6 +63,8 @@ public class TransactionChangeHandler {
   private Transaction pristine;
   private Transaction editing;
   private Money amount;
+  /** category id to balance, read alongside the transaction; null if that failed */
+  private Map<Integer, Money> balances;
   private TransactionForm form;
   Boolean isExpense = null;
 
@@ -94,7 +97,96 @@ public class TransactionChangeHandler {
     changeHistory.push(t);
     isExpense = null;
     saveAttributes(t);
+    balances = readBalances(editing.getId(), editing.getDate());
     setFormData();
+  }
+
+  /**
+   * Read every category's balance as of a day, without this transaction, for
+   * the Balance and Projection columns.
+   *
+   * <p>One grouped read, done off the event thread before the form is filled,
+   * because a transaction arrives with all its rows at once -- from the list,
+   * or from applyPreset, whose task calls importNew again after laying down
+   * dozens of them -- and again whenever the transaction's day moves
+   * ({@link #rereadBalances}), since every balance is as of that day.  Rows the
+   * user adds by hand come seconds apart, and each of those gets its own read
+   * as its category is chosen ({@link #refreshBalance}).  A failed read leaves
+   * the columns blank rather than stopping the transaction from loading; Portal
+   * has already told the user.
+   *
+   * @return category id to balance, or null if the read failed
+   */
+  private Map<Integer, Money> readBalances(Integer transactionId, Date asOf) {
+    try {
+      return CriteriaFactory.getInstance()
+          .getCategoryBalances(State.getInstance().getBudget(), transactionId, asOf);
+    } catch (AbortException e) {
+      return null;
+    }
+  }
+
+  /**
+   * Whether a read taken for the given transaction and day is still the one
+   * the form wants.  Both change from under a read in flight: the form moves to
+   * another transaction, or the day is edited again before the first read
+   * lands, and a newer read is already on its way for the new day.
+   */
+  private boolean stillCurrent(Integer transactionId, Date asOf) {
+    return editing != null
+        && java.util.Objects.equals(editing.getId(), transactionId)
+        && java.util.Objects.equals(editing.getDate(), asOf);
+  }
+
+  /**
+   * The transaction's day moved, so every balance is as of a different day:
+   * read them all again and put them on the table.  Runs from the date
+   * field's save timer, on the event thread, so the read goes to the pool.
+   */
+  void rereadBalances() {
+    if (editing == null) return;
+    final Integer transactionId = editing.getId();
+    final Date asOf = editing.getDate();
+    StatusRunnable r = new StatusRunnable("Reading balances as of " + asOf) {
+      @Override public void run() {
+        final Map<Integer, Money> read = readBalances(transactionId, asOf);
+        if (read == null) return;   // the columns keep what they had
+        SwingUtilities.invokeLater(new Runnable() {
+          public void run() {
+            if (stillCurrent(transactionId, asOf)) form.getTableModel().setBalances(read);
+          }
+        });
+      }
+    };
+    ThreadPool.getInstance().execute(r);
+  }
+
+  /**
+   * Read one category's balance as of this transaction's day, without the
+   * transaction, freshly, and put it on the table.  For a row the user has
+   * just put a category on: by then the upfront read may be minutes old, and
+   * one small query keeps the number current.  Excluding the transaction on
+   * the server is what makes this safe to run while the form's own saves are
+   * in the air -- they cannot move it.  A read the form has moved past by the
+   * time it lands is dropped; a failed one leaves whatever the column had.
+   */
+  void refreshBalance(final Category category) {
+    if (category == null || category.getId() == null || editing == null) return;
+    final Integer transactionId = editing.getId();
+    final Date asOf = editing.getDate();
+    StatusRunnable r = new StatusRunnable("Reading balance of " + category) {
+      @Override public void run() {
+        try {
+          final Money balance = CriteriaFactory.getInstance().getCategoryBalance(category, transactionId, asOf);
+          SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+              if (stillCurrent(transactionId, asOf)) form.getTableModel().setBalance(category.getId(), balance);
+            }
+          });
+        } catch (AbortException ignore) {}
+      }
+    };
+    ThreadPool.getInstance().execute(r);
   }
 
   private void saveAttributes(Transaction t) {
@@ -109,7 +201,7 @@ public class TransactionChangeHandler {
 
   public Boolean isExpense() {
     if (isExpense == null && amount != null) {
-      isExpense = amount.compareTo(Money.ZERO) < 0;
+      isExpense = amount.compareTo(Money.ZERO) <= 0;
     }
     return isExpense;
   }
@@ -152,22 +244,37 @@ public class TransactionChangeHandler {
           JTable table = TableQueryBar.getInstance().getTable();
           table.scrollRectToVisible(table.getCellRect(table.getSelectedRow(), 0, true));
 
+          // An editor still open on the table belongs to the rows about to be
+          // swapped out.  Commit it now, while setValueAt still lands on them:
+          // left until setExpense stops it below, it writes into the new list at
+          // its old row index, which the new transaction may not have.
+          JTable allocations = form.getAllocationsTable();
+          if (allocations.isEditing() && allocations.getCellEditor() != null)
+            allocations.getCellEditor().stopCellEditing();
+
           if (changeableAmount != null) changeableAmount.removeDataChangeListener();
           if (changeableDate != null) changeableDate.removeDataChangeListener();
           if (changeableDescription != null) changeableDescription.removeDataChangeListener();
           if (changeableEntity != null) changeableEntity.removeDataChangeListener();
           if (changeableAllocationCategory != null) changeableAllocationCategory.removeDataChangeListener();
 
-          form.getTableModel().setAllocations(editing.getAllocations());
+          form.getTableModel().setAllocations(editing.getAllocations(), balances);
           form.getTableModel().setEditListener(
               new AllocationFormTableModel.EditListener() {
                 public void allocationEdited(Allocation allocation) {
                   sendAllocationChange(allocation);
                 }
+                public void categoryChosen(Allocation allocation) {
+                  refreshBalance(allocation.getCategory());
+                }
               });
+          // the three money columns are fixed; Category takes what is left
           int amountWidth = table.getFontMetrics(table.getFont()).stringWidth("$0,000,000.00");
-          form.getAllocationsTable().getColumnModel().getColumn(1).setMaxWidth(amountWidth);
-          form.getAllocationsTable().getColumnModel().getColumn(1).setMinWidth(amountWidth);
+          for (AllocationFormTableModel.Columns c : AllocationFormTableModel.Columns.values())
+            if (c.columnClass == Money.class) {
+              form.getAllocationsTable().getColumnModel().getColumn(c.ordinal()).setMaxWidth(amountWidth);
+              form.getAllocationsTable().getColumnModel().getColumn(c.ordinal()).setMinWidth(amountWidth);
+            }
 
           form.getAmount().setEnabled(!editing.getReconciled());
           form.getAmount().setText(amount.toString());
@@ -204,7 +311,14 @@ public class TransactionChangeHandler {
               }
               return false;
             }
-            @Override public Runnable getSaveOrUpdate() { return saveOrUpdate; }
+            @Override public Runnable getSaveOrUpdate() {
+              return new Runnable() {
+                public void run() {
+                  sendChanges();
+                  rereadBalances();   // every balance is as of the day that just moved
+                }
+              };
+            }
           };
 
           try {
@@ -285,7 +399,9 @@ public class TransactionChangeHandler {
 //          form.getTransactionAllocationSplit().resetToPreferredSizes();
 
 
-          isExpense = amount.compareTo(Money.ZERO) < 0;
+          // A zero net amount is what a new transaction has, and most
+          // transactions are expenses, so that is the view to start on.
+          isExpense = amount.compareTo(Money.ZERO) <= 0;
           form.setViewIsExpense(isExpense);
           setExpense(isExpense); // this has to be run again because we might still be constructing
           updateAllocationTotalLabels();
@@ -528,6 +644,7 @@ public class TransactionChangeHandler {
     // the model's list IS editing.getAllocations(), so this adds to both
     form.getTableModel().addEmptyRow(allocation);
     sendAllocationChange(allocation);
+    refreshBalance(category);
   }
 
   /**

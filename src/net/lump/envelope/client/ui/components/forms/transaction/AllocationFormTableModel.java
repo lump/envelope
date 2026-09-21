@@ -1,20 +1,16 @@
 package net.lump.envelope.client.ui.components.forms.transaction;
 
-import net.lump.envelope.client.CriteriaFactory;
-import net.lump.envelope.client.portal.HibernatePortal;
 import net.lump.envelope.shared.entity.Allocation;
 import net.lump.envelope.shared.entity.Category;
-import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.Money;
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
 
 import javax.swing.*;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This provides the model for the allocation list in the form.
@@ -26,26 +22,37 @@ public class AllocationFormTableModel extends AbstractTableModel {
   JTable table;
   List<Allocation> allocations;
 
-  private static final String BALANCE_CACHE = "allocationFormBalanceCache";
-  private static final Cache balanceCache = new Cache(BALANCE_CACHE, 256, false, false, 30, 60);
+  /**
+   * Category id to that category's balance as of this transaction's day,
+   * WITHOUT this transaction, as the server last reported it.  Null until read,
+   * or if the read failed, and the two computed columns show nothing rather
+   * than a number built on zero.
+   *
+   * <p>As of the day, because an old transaction met the balance of its own
+   * time, and today's less itself would be a fiction.  Leaving the transaction
+   * out is what makes the number safe to refresh at any time.  The form saves
+   * as it is edited, so a plain sum would come to include this transaction's
+   * rows as each save landed, and whether a read taken mid-edit counted a row
+   * or not would depend on which round trip won.  With the transaction
+   * excluded on the server, our own saves never move it; only other
+   * transactions do, which is exactly what a fresh read is for.
+   */
+  private Map<Integer, Money> balances;
 
-  Mode mode;
+  /**
+   * Whether {@link #balances} covers every category, as the upfront read does
+   * (a category it lacks then has nothing to sum and is zero), or only the ones
+   * read one at a time since (an absent category is simply not known yet).
+   */
+  private boolean balancesComplete;
+
   boolean expense = false;
-
-  static {
-    CacheManager.getInstance().addCache(balanceCache);
-  }
-
-  enum Mode {
-    Simple,
-    Complex
-  }
 
   enum Columns {
     Category(Category.class, true),
+    Balance(Money.class, false),
     Allocation(Money.class, true),
-//   Projected(Money.class, false);
-    ;
+    Projection(Money.class, false);
 
     final Class columnClass;
     final Boolean editable;
@@ -64,6 +71,13 @@ public class AllocationFormTableModel extends AbstractTableModel {
    */
   public interface EditListener {
     void allocationEdited(Allocation allocation);
+
+    /**
+     * The user has put a category on a row.  Rows entered by hand arrive
+     * seconds apart, so this is the moment to read that one category's balance
+     * afresh (see {@link #setBalance}) rather than trust the upfront read.
+     */
+    void categoryChosen(Allocation allocation);
   }
 
   private EditListener editListener;
@@ -73,14 +87,13 @@ public class AllocationFormTableModel extends AbstractTableModel {
   }
 
   public AllocationFormTableModel(JTable table) {
-    this(table, Mode.Simple, false);
+    this(table, false);
   }
 
-  public AllocationFormTableModel(JTable table, Mode mode, boolean expense) {
+  public AllocationFormTableModel(JTable table, boolean expense) {
     this.table = table;
     allocations = new ArrayList<Allocation>();
     setExpense(expense);
-    setMode(mode);
   }
 
   public void setExpense(boolean expense) {
@@ -98,43 +111,19 @@ public class AllocationFormTableModel extends AbstractTableModel {
     }
   }
 
-  public void setMode(Mode mode) {
-    this.mode = mode;
-
-  }
-
-  private void populateCategoryBalances() {
-    Object categoryBalances = null;
-    try {
-      for (Object o : new HibernatePortal().detachedCriteriaQueryList(CriteriaFactory.getInstance().getAllBalances())) {
-        balanceCache.put(
-            new Element(
-                ((Category)((Object[])o)[0]).getId(),
-                (Money)(((Object[])o)[1] == null ? new Money(0) : ((Object[])o)[1])
-            )
-        );
-      }
-    } catch (AbortException ignore) {}
-  }
-
-  @SuppressWarnings({"unchecked"}) private Money getCategoryBalance(Allocation allocation) {
-    Money output = new Money(0);
-
-    Element e = balanceCache.get(allocation.getCategory().getId());
-    if (e != null)
-      output = (Money)e.getValue();
-    else {
-      populateCategoryBalances();
-      e = balanceCache.get(allocation.getCategory().getId());
-      if (e != null)
-        output = (Money)e.getValue();
-    }
-    return output;
-  }
-
-  public void setAllocations(List<Allocation> allocations) {
+  /**
+   * Show a transaction's allocations, with every category's balance without
+   * that transaction: one grouped read, which is the right shape for a
+   * transaction arriving with dozens of rows, from the list or from a preset.
+   *
+   * @param allocations the rows, which is the transaction's own list
+   * @param balances    category id to balance for the whole budget, or null
+   *                    if it could not be read
+   */
+  public void setAllocations(List<Allocation> allocations, Map<Integer, Money> balances) {
     int oldSize = this.allocations == null ? 0 : this.allocations.size();
     this.allocations = allocations;
+    setBalances(balances);
 
     if (allocations != null) {
       fireTableRowsUpdated(0, oldSize - 1);
@@ -143,6 +132,79 @@ public class AllocationFormTableModel extends AbstractTableModel {
       if (oldSize < allocations.size())
         fireTableRowsInserted(oldSize, allocations.size() - 1);
     }
+  }
+
+  /**
+   * Replace every balance: the transaction's day moved, so they are all as of a
+   * different day now.
+   *
+   * @param balances category id to balance for the whole budget, or null if
+   *                 it could not be read
+   */
+  public void setBalances(Map<Integer, Money> balances) {
+    this.balances = balances == null ? null : new HashMap<Integer, Money>(balances);
+    this.balancesComplete = balances != null;
+    fireAllRowsUpdated();
+  }
+
+  /**
+   * A fresh balance for one category, read on its own.  Every row's two computed
+   * cells are repainted, since a category can be on several rows.
+   *
+   * @param categoryId the category
+   * @param balance    its balance without this transaction
+   */
+  public void setBalance(Integer categoryId, Money balance) {
+    if (categoryId == null || balance == null) return;
+    if (balances == null) {
+      balances = new HashMap<Integer, Money>();
+      balancesComplete = false;
+    }
+    balances.put(categoryId, balance);
+    fireAllRowsUpdated();
+  }
+
+  /**
+   * What the category holds before this transaction.
+   *
+   * @return the balance, or null if it is not known or the row has no category
+   */
+  private Money balanceBefore(Allocation allocation) {
+    Category category = allocation.getCategory();
+    if (balances == null || category == null) return null;
+    Money balance = balances.get(category.getId());
+    if (balance == null && balancesComplete) balance = Money.ZERO;
+    return balance;
+  }
+
+  /**
+   * What the category will hold after this transaction: the balance before it
+   * plus every row of this transaction in that category, as they stand on
+   * screen.  Summing the rows rather than adding just this one is what makes
+   * an auto-deduct pair -- the amount in and the same amount straight back out
+   * -- project to the balance it leaves, rather than one row up and the other
+   * down.  The stored amounts are used, not the view's: an expense is negative
+   * and comes off whichever radio is selected.
+   *
+   * @return the projection, or null if the balance before is not known
+   */
+  private Money projection(Allocation allocation) {
+    Money sum = balanceBefore(allocation);
+    if (sum == null) return null;
+    Integer categoryId = allocation.getCategory().getId();
+    for (Allocation a : allocations)
+      if (a.getCategory() != null && categoryId.equals(a.getCategory().getId()) && a.getAmount() != null)
+        sum = sum.add(a.getAmount());
+    return sum;
+  }
+
+  /**
+   * Repaint every row: the projections of a category's other rows move with
+   * any one of them, and a category change touches two categories' worth.
+   */
+  private void fireAllRowsUpdated() {
+    if (allocations != null && !allocations.isEmpty())
+      fireTableRowsUpdated(0, allocations.size() - 1);
   }
 
   @Override
@@ -161,14 +223,7 @@ public class AllocationFormTableModel extends AbstractTableModel {
   }
 
   public int getColumnCount() {
-    switch (mode) {
-      case Simple:
-        return 2;
-      case Complex:
-        return 3;
-      default:
-        return 0;
-    }
+    return Columns.values().length;
   }
 
   @Override
@@ -188,10 +243,12 @@ public class AllocationFormTableModel extends AbstractTableModel {
 
     // Swing calls setValueAt whenever an editor stops, whether or not anything
     // changed, so each branch returns early on a no-op rather than firing a save.
+    boolean categoryChosen = false;
     switch (Columns.values()[column]) {
       case Category:
         if (value.equals(allocation.getCategory())) return;
         allocation.setCategory((Category)value);
+        categoryChosen = true;
         break;
       case Allocation:
         try {
@@ -203,9 +260,14 @@ public class AllocationFormTableModel extends AbstractTableModel {
           return;
         }
         break;
+      default:
+        return;   // the computed columns are not written to
     }
-    fireTableRowsUpdated(row, row);
-    if (editListener != null) editListener.allocationEdited(allocation);
+    fireAllRowsUpdated();
+    if (editListener != null) {
+      editListener.allocationEdited(allocation);
+      if (categoryChosen) editListener.categoryChosen(allocation);
+    }
   }
 
   public Object getValueAt(int row, int column) {
@@ -217,17 +279,15 @@ public class AllocationFormTableModel extends AbstractTableModel {
       case Category:
         retval = allocation.getCategory();
         break;
+      case Balance:
+        retval = balanceBefore(allocation);
+        break;
       case Allocation:
-        Money amount = allocation.getAmount();
         retval = expense ? allocation.getAmount().negate() : allocation.getAmount();
         break;
-//      case Projected:
-//        Money balance = getBalance(editAllocation);
-//        Money amount = editAllocation.getNetAmount();
-//        if (originalAllocation != null)
-//          amount = amount.subtract(originalAllocation.getNetAmount());
-//        retval = balance.add(amount);
-//        break;
+      case Projection:
+        retval = projection(allocation);
+        break;
     }
 
     return retval;
@@ -240,10 +300,9 @@ public class AllocationFormTableModel extends AbstractTableModel {
   public boolean hasEmptyRow() {
     if (allocations.size() == 0) return false;
 
-    return (getValueAt(getRowCount() - 1, 0) == null || Money.ZERO.equals(getValueAt(getRowCount() - 1, 1)));
-
-//    Allocation allocation = allocations.get(allocations.size()-1);
-//    return allocation.getCategory() == null && allocation.getAmount() == null;
+    int last = getRowCount() - 1;
+    return getValueAt(last, Columns.Category.ordinal()) == null
+        || Money.ZERO.equals(getValueAt(last, Columns.Allocation.ordinal()));
   }
 
   public void addEmptyRow(Allocation a) {
@@ -268,6 +327,7 @@ public class AllocationFormTableModel extends AbstractTableModel {
       if (allocations.get(i) == allocation) {
         allocations.remove(i);
         fireTableRowsDeleted(i, i);
+        fireAllRowsUpdated();   // its category's other rows project differently now
         return;
       }
   }
@@ -283,7 +343,7 @@ public class AllocationFormTableModel extends AbstractTableModel {
     if (allocations == null) return;
     for (int i = 0; i < allocations.size(); i++)
       if (allocations.get(i) == allocation) {
-        fireTableRowsUpdated(i, i);
+        fireAllRowsUpdated();
         return;
       }
   }

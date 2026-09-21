@@ -124,6 +124,7 @@ public class TransactionForm {
       }
     });
     allocationsTable.setSurrendersFocusOnKeystroke(false);
+    allocationsTable.getTableHeader().setReorderingAllowed(false);
     allocationsTable.setRowHeight(allocationsTable.getRowHeight() + 5);
 /*
     allocationsTable.addFocusListener(new FocusListener() {
@@ -705,28 +706,78 @@ public class TransactionForm {
 
     allocationsTable = new JTable() {
       private final KeyStroke tabKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0);
+      private final KeyStroke shiftTabKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_TAB, InputEvent.SHIFT_DOWN_MASK);
       private final KeyStroke downKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0);
 
+      /** A blank row at the bottom to type into, unless the bottom row is already blank. */
+      private void appendEmptyRow() {
+        if (!tableModel.hasEmptyRow()) {
+          Allocation a = new Allocation();
+          a.setTransaction(transactionChangeHandler.getTransaction());
+          tableModel.addEmptyRow(a);
+        }
+      }
+
+      /**
+       * The editable column nearest to the given one: the next one to the right
+       * for a direction of +1, to the left for -1, and either way for 0 with the
+       * right winning a tie.  -1 if there is none that way.
+       */
+      private int editableColumnFrom(int column, int direction) {
+        int count = getColumnCount();
+        if (direction == 0) {
+          for (int d = 0; d < count; d++) {
+            if (column + d < count && isCellEditable(0, column + d)) return column + d;
+            if (column - d >= 0 && isCellEditable(0, column - d)) return column - d;
+          }
+          return -1;
+        }
+        for (int c = column + direction; c >= 0 && c < count; c += direction)
+          if (isCellEditable(0, c)) return c;
+        return -1;
+      }
+
+      /**
+       * Only editable cells are worth landing on.  Balance and Projection are
+       * computed, so a move that would arrive on one carries on the way it was
+       * going: Tab from Category reaches Allocation, Tab from Allocation reaches
+       * the next row's Category -- a new row, if this was the last -- and
+       * Shift-Tab the reverse.  A click on a computed cell goes to the nearest
+       * editable one, Allocation when it is a tie.
+       */
       public void changeSelection(int rowIndex, int columnIndex, boolean toggle, boolean extend) {
         AWTEvent currentEvent = EventQueue.getCurrentEvent();
+        int direction = 0;
         if (currentEvent instanceof KeyEvent) {
           KeyEvent ke = (KeyEvent)currentEvent;
           if (ke.getSource() != this)
             return;
+          KeyStroke key = KeyStroke.getKeyStrokeForEvent(ke);
           // focus change with keyboard
-          if (
-              (rowIndex == 0 && columnIndex == 0 && KeyStroke.getKeyStrokeForEvent(ke).equals(tabKeyStroke))
-                  ||
-                  (super.getSelectedRow() == (getRowCount() - 1) && KeyStroke.getKeyStrokeForEvent(ke).equals(downKeyStroke))
-              ) {
-
-            if (!tableModel.hasEmptyRow()) {
-              Allocation a = new Allocation();
-              a.setTransaction(transactionChangeHandler.getTransaction());
-              tableModel.addEmptyRow(a);
-            }
-
+          if ((rowIndex == 0 && columnIndex == 0 && key.equals(tabKeyStroke))
+              || (super.getSelectedRow() == (getRowCount() - 1) && key.equals(downKeyStroke))) {
+            appendEmptyRow();
             rowIndex = getRowCount() - 1;
+          }
+          if (key.equals(tabKeyStroke)) direction = 1;
+          else if (key.equals(shiftTabKeyStroke)) direction = -1;
+        }
+
+        if (rowIndex >= 0 && columnIndex >= 0 && columnIndex < getColumnCount()
+            && !isCellEditable(rowIndex, columnIndex)) {
+          int column = editableColumnFrom(columnIndex, direction);
+          if (column >= 0) {
+            columnIndex = column;
+          }
+          else if (direction > 0) {
+            // past the last editable cell of the row: on to the next, made if need be
+            if (rowIndex + 1 >= getRowCount()) appendEmptyRow();
+            rowIndex = Math.min(rowIndex + 1, getRowCount() - 1);
+            columnIndex = editableColumnFrom(-1, 1);
+          }
+          else {
+            rowIndex = rowIndex > 0 ? rowIndex - 1 : getRowCount() - 1;
+            columnIndex = editableColumnFrom(getColumnCount(), -1);
           }
         }
         super.changeSelection(rowIndex, columnIndex, toggle, extend);
