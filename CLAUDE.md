@@ -288,7 +288,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.11.2**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.11.3**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at
@@ -375,8 +375,12 @@ at the `/configure` form waiting for a human.
   jar in `prepare-package` and the war plugin copies it to `WEB-INF/client/envelope-client.jar`
   — under `WEB-INF` so Tomcat never lists it, but deliberately **not** under `WEB-INF/lib`,
   which is the webapp classpath (a 31 MB fat jar there would load a second Hibernate into
-  the server). `FileServer.feedClient` hands it out at `/envelope-client.jar`, and the landing
-  page gives run instructions naming the host the visitor reached. All the Java Web Start
+  the server). `FileServer.feedClient` hands it out as `/envelope-client-<version>.jar`, the
+  version being the server's own `Revision.version()` — the war and the jar inside it are
+  built from the same version files, so nothing in the build names the file; the bare
+  `/envelope-client.jar` is still served, and a stale versioned name redirects to the
+  current one. The landing page shows the version and gives run instructions naming the
+  host the visitor reached. All the Java Web Start
   machinery — `Jnlp.java`, `jnlp.xml`, `feedJnlp`, the pack200 branches, `/lib/*` and `/us/*`
   serving of `WEB-INF/lib`, `/info/security.policy`, `/log4j.properties` — was removed in one
   go; Web Start left with JDK 11. The client only ever calls `/invoke`.

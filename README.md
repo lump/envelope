@@ -35,10 +35,12 @@ Open the server's front page in a browser:
 
     https://<server>/envelope/
 
-It offers envelope-client.jar and shows the exact server URL to give it.
-With Java 25 or later installed:
+It shows the server's version, offers the client named with that version
+(`envelope-client-<version>.jar`), and shows the exact server URL to give it.
+The client and server should be the same version; a client file named with an
+older one is a sign to download it again. With Java 25 or later installed:
 
-    java -jar envelope-client.jar
+    java -jar envelope-client-<version>.jar
 
 or double-click the jar.  On first run it asks for the server; paste the URL
 from the front page, then log in.  Nothing else needs installing: the client

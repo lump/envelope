@@ -1,5 +1,6 @@
 package net.lump.envelope.server.servlet.beans;
 
+import net.lump.lib.util.Revision;
 import org.apache.log4j.Logger;
 import net.lump.envelope.server.Controller;
 import net.lump.envelope.server.dao.DAO;
@@ -33,6 +34,21 @@ public class FileServer {
   /** where the war carries the client; under WEB-INF so Tomcat never lists it, but not under lib/ */
   private static final String CLIENT_JAR = "/WEB-INF/client/envelope-client.jar";
   private static final String CLIENT_JAR_NAME = "envelope-client.jar";
+  /** the bare name, or the name carrying any version: envelope-client-0.11.3.jar */
+  private static final String CLIENT_JAR_PATH = "^/envelope-client(-[0-9][0-9A-Za-z.\\-]*)?\\.jar$";
+
+  /**
+   * The name the client is handed out under: envelope-client-0.11.3.jar, carrying
+   * the version so a user can see at a glance whether the copy they are running
+   * is behind, since a client and server of different versions may not agree on
+   * the wire.  The war and the client jar inside it are built from the same three
+   * version files, so this server's own version is the client's.  A build with no
+   * version recorded keeps the bare name rather than inventing one.
+   */
+  static String clientJarName() {
+    String version = Revision.version();
+    return version == null ? CLIENT_JAR_NAME : "envelope-client-" + version + ".jar";
+  }
 
   private static final Logger logger = Logger.getLogger(FileServer.class);
   private HttpServletRequest rq;
@@ -56,8 +72,13 @@ public class FileServer {
 
     String path = rq.getServletPath();
 
-    if (path.equals("/" + CLIENT_JAR_NAME)) {
-      feedClient();
+    if (path.matches(CLIENT_JAR_PATH)) {
+      // The current name is served; the bare name too, for old links and the
+      // README.  Any other version is a stale link, so send it to the current
+      // one rather than hand out this version's bytes under another's name.
+      String current = "/" + clientJarName();
+      if (path.equals(current) || path.equals("/" + CLIENT_JAR_NAME)) feedClient();
+      else rp.sendRedirect(rq.getContextPath() + current);
       return;
     }
 
@@ -92,7 +113,9 @@ public class FileServer {
                  || ("http".equals(rq.getScheme()) && rq.getServerPort() == 80);
     String serverUrl = rq.getScheme() + "://" + rq.getServerName()
         + (usual ? "" : ":" + rq.getServerPort()) + rq.getContextPath();
-    String jar = rq.getContextPath() + "/" + CLIENT_JAR_NAME;
+    String name = clientJarName();
+    String jar = rq.getContextPath() + "/" + name;
+    String version = Revision.version();
 
     rp.setContentType("text/html;charset=UTF-8");
     PrintWriter out = rp.getWriter();
@@ -101,15 +124,18 @@ public class FileServer {
        .append("code,pre{background:#f4f4f4;padding:.15em .4em;border-radius:3px}")
        .append("pre{padding:.8em 1em;overflow-x:auto}</style></head><body>")
        .append("<h1>Envelope</h1>")
+       .append("<p>Version <strong>").append(version == null ? "unknown" : version).append("</strong>")
+       .append(" &mdash; the client and server should be the same version; if the client you")
+       .append(" have is named with an older one, download it again.</p>")
        .append("<p>An envelope budget.  The client is a desktop application; download it, then run it")
        .append(" against this server.</p>")
        .append("<h2>1. Get the client</h2>")
-       .append("<p><a href=\"").append(jar).append("\" download>").append(CLIENT_JAR_NAME).append("</a></p>")
+       .append("<p><a href=\"").append(jar).append("\" download>").append(name).append("</a></p>")
        .append("<h2>2. Have Java 25 or later</h2>")
        .append("<p>The client needs a Java runtime, version 25 or newer.  <a href=\"https://adoptium.net/\">Temurin</a>")
        .append(" is a good free one for Windows, macOS and Linux.</p>")
        .append("<h2>3. Run it</h2>")
-       .append("<pre>java -jar ").append(CLIENT_JAR_NAME).append("</pre>")
+       .append("<pre>java -jar ").append(name).append("</pre>")
        .append("<p>On most desktops, double-clicking the file does the same.</p>")
        .append("<h2>4. Point it here</h2>")
        .append("<p>On first run it will ask for the server.  Paste this as the Server URL:</p>")
@@ -131,7 +157,8 @@ public class FileServer {
     }
     try {
       rp.setContentType("application/java-archive");
-      rp.setHeader("Content-Disposition", "attachment; filename=\"" + CLIENT_JAR_NAME + "\"");
+      String name = clientJarName();
+      rp.setHeader("Content-Disposition", "attachment; filename=\"" + name + "\"");
       if (rq.getMethod().equals("HEAD")) return;
 
       OutputStream os = rp.getOutputStream();
@@ -142,7 +169,7 @@ public class FileServer {
         total += n;
       }
       os.flush();
-      logger.info("served " + CLIENT_JAR_NAME + " (" + total + " bytes) to " + rq.getRemoteHost());
+      logger.info("served " + name + " (" + total + " bytes) to " + rq.getRemoteHost());
     } finally {
       is.close();
     }
