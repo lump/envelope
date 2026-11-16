@@ -11,13 +11,17 @@ import net.lump.envelope.shared.entity.AllocationPreset;
 import net.lump.envelope.shared.entity.Budget;
 import net.lump.envelope.shared.entity.Category;
 import net.lump.envelope.shared.exception.AbortException;
+import net.lump.lib.Money;
 
 import javax.swing.*;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.IdentityHashMap;
@@ -47,6 +51,7 @@ public class AllocationPresetEditor extends JDialog {
   private final RowTableModel model = new RowTableModel();
   private final JTable table = new JTable(model);
   private final JLabel status = new JLabel(" ");
+  private final JLabel total = new JLabel(" ");
 
   /** true while the picker is being repopulated, so its listener stays quiet */
   private boolean loading = false;
@@ -74,6 +79,12 @@ public class AllocationPresetEditor extends JDialog {
     table.setRowHeight(table.getRowHeight() + 4);
     table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
     table.putClientProperty("terminateEditOnFocusLost", true);
+
+    // every change to the rows -- a preset picked, a row added or removed, a cell
+    // edited -- arrives as a model event, so the total follows the table exactly
+    model.addTableModelListener(new TableModelListener() {
+      public void tableChanged(TableModelEvent e) { updateTotal(); }
+    });
 
     setPreferredSize(new Dimension(620, 420));
     pack();
@@ -106,7 +117,10 @@ public class AllocationPresetEditor extends JDialog {
   }
 
   private JPanel buildRowBar() {
-    JPanel bar = new JPanel(new BorderLayout(6, 0));
+    JPanel bar = new JPanel(new BorderLayout(6, 4));
+
+    total.setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 0));
+    bar.add(total, BorderLayout.NORTH);
 
     JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
     buttons.add(button("add.row", new Runnable() {
@@ -125,6 +139,56 @@ public class AllocationPresetEditor extends JDialog {
     bar.add(right, BorderLayout.EAST);
 
     return bar;
+  }
+
+  /**
+   * Show what the preset adds up to.  Fixed rows are money and percent rows are a
+   * share of whatever amount the preset is applied to, so the two cannot be added
+   * into one number; a preset with both reads "$1,200.00 + 10% of the transaction
+   * amount".  Fixed rows are brought to the cent first, exactly as
+   * Action.applyAllocationPreset does, so the total is the sum it will produce.
+   * Auto-deduct rows are counted -- they are part of the gross -- and repeated
+   * after it, since each becomes a pair that nets to nothing on the account.
+   */
+  private void updateTotal() {
+    BigDecimal fixed = BigDecimal.ZERO, percent = BigDecimal.ZERO;
+    BigDecimal fixedDeducted = BigDecimal.ZERO, percentDeducted = BigDecimal.ZERO;
+    boolean anyPercent = false, anyDeducted = false;
+
+    for (int i = 0; i < model.getRowCount(); i++) {
+      AllocationPreset p = model.rowAt(i);
+      BigDecimal v = p.getAllocation() == null ? BigDecimal.ZERO : p.getAllocation();
+      boolean deducted = Boolean.TRUE.equals(p.isAutoDeduct());
+      anyDeducted |= deducted;
+      if (p.getAllocationType() == AllocationPreset.AllocationType.percent) {
+        anyPercent = true;
+        percent = percent.add(v);
+        if (deducted) percentDeducted = percentDeducted.add(v);
+      } else {
+        v = v.setScale(2, RoundingMode.HALF_UP);
+        fixed = fixed.add(v);
+        if (deducted) fixedDeducted = fixedDeducted.add(v);
+      }
+    }
+
+    if (model.getRowCount() == 0) {
+      total.setText(" ");
+      return;
+    }
+    String text = MessageFormat.format(Strings.get("preset.total"),
+        describe(fixed, percent, anyPercent));
+    if (anyDeducted)
+      text += "   " + MessageFormat.format(Strings.get("preset.total.deducted"),
+          describe(fixedDeducted, percentDeducted, percentDeducted.signum() != 0));
+    total.setText(text);
+  }
+
+  private static String describe(BigDecimal fixed, BigDecimal percent, boolean showPercent) {
+    String money = new Money(fixed).toString();
+    if (!showPercent) return money;
+    // rates are carried to many places (7.60764626375748); four is plenty to read
+    String rate = percent.setScale(4, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
+    return MessageFormat.format(Strings.get("preset.total.with.percent"), money, rate);
   }
 
   private JButton button(String key, final Runnable action) {

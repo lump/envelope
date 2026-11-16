@@ -283,7 +283,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.11.0**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.11.1**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at
