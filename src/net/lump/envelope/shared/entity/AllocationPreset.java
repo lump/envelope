@@ -48,7 +48,7 @@ public class AllocationPreset extends Identifiable<Integer, Timestamp> implement
   }
 
   @Version
-  @Column(name = "stamp", nullable = false)
+  @Column(name = "stamp", nullable = false, secondPrecision = 3)
   @Override
   public Timestamp getStamp() {
     return stamp;

@@ -5,16 +5,11 @@ import net.lump.envelope.shared.entity.*;
 import net.lump.envelope.shared.exception.EnvelopeException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
-import org.hibernate.Criteria;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.resource.transaction.spi.TransactionStatus;
 import org.hibernate.cfg.Configuration;
-import org.hibernate.criterion.Criterion;
-import org.hibernate.criterion.Order;
-import org.hibernate.criterion.Restrictions;
-import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.service.ServiceRegistry;
 
 import java.io.Serializable;
@@ -112,166 +107,52 @@ public abstract class DAO {
     return getSessionFactory().getCurrentSession();
   }
 
-  @SuppressWarnings({"unchecked"})
-  public static <T extends Serializable, S extends Serializable> T getIdentifier(Identifiable<T, S> c) {
-    return (T)getSessionFactory().getClassMetadata(c.getClass()).getIdentifier(c, (SessionImplementor)getSessionFactory().getCurrentSession());
-  }
+  // The session verbs the DAOs use, in Jakarta Persistence terms.  Hibernate 7
+  // removed save/saveOrUpdate/update/delete/evict/load from the Session; the
+  // generic helpers that wrapped them -- list by Criterion, get/load/merge/save
+  // of lists, saveOrUpdate of any Identifiable, identifier and version access by
+  // ClassMetadata -- had no callers left after 0.12 and went with them.
 
-  public static void setIdentifier(Serializable c, Serializable value) {
-    Session s = getSessionFactory().getCurrentSession();
-    getSessionFactory().getClassMetadata(c.getClass()).setIdentifier(c, value, (SessionImplementor)getSessionFactory().getCurrentSession());
-  }
-
-  @SuppressWarnings({"unchecked"})
-  public static <T extends Serializable, S extends Serializable> S getVersion(Identifiable<T, S> c) {
-    return (S)getSessionFactory().getClassMetadata(c.getClass()).getVersion(c);
-  }
-
-
+  /** Remove a managed entity. */
   public <T extends Identifiable> void delete(T i) {
-    getCurrentSession().delete(i);
+    getCurrentSession().remove(i);
   }
 
-  public <T extends Identifiable> void delete(T[] is) {
-    this.delete(Arrays.asList(is));
-  }
-
-  public <T extends Identifiable> void delete(Iterable<T> l) {
-    for (T i : l) delete(i);
-  }
-
+  /**
+   * Hand an entity back to the client: flush, then detach EVERYTHING the session
+   * holds, not just this entity.  Hibernate 7 cascades PERSIST at flush time, as
+   * Jakarta Persistence says to, where 5 under native bootstrap did not -- so
+   * detaching a new Transaction while its new Allocation stayed managed, with a
+   * PERSIST cascade pointing up at it, failed the commit with "detached entity
+   * passed to persist", after the reply had already said it worked.  Only call
+   * this as a command's last act: nothing is managed afterwards.
+   */
   protected <T extends Identifiable> T evict(T i) {
-    getCurrentSession().evict(i);
+    getCurrentSession().flush();
+    getCurrentSession().clear();
     return i;
   }
 
-  protected <T extends Identifiable> void evict(T[] is) {
-    this.evict(Arrays.asList(is));
-  }
-
-  public <T extends Identifiable> void evict(Iterable<T> l) {
-    for (T i : l) evict(i);
-  }
-
-  @SuppressWarnings("unchecked")
+  /** The row, loaded, or null if there is none. */
   public <T extends Identifiable> T get(Class<T> t, Serializable id) {
-    return (T)getCurrentSession().get(t, id);
+    return getCurrentSession().find(t, id);
   }
 
-  public <T extends Identifiable> List<T> getList(Class<T> t,
-      Serializable[] ids) {
-    return getList(t, Arrays.asList(ids));
-  }
-
-  public <T extends Identifiable> List<T> getList(Class<T> t,
-      Iterable<Serializable> ids) {
-    List<T> out = new ArrayList<T>();
-    for (Serializable id : ids) out.add(get(t, id));
-    return out;
-  }
-
-  @SuppressWarnings("unchecked")
-  public <T extends Identifiable> List<T> list(
-      Class<T> t,
-      List<Order> orderby,
-      Criterion... crits) {
-    Criteria criteria = getCurrentSession().createCriteria(t);
-    for (Criterion crit : crits) criteria.add(crit);
-    if (orderby != null) for (Order o : orderby) criteria.addOrder(o);
-    criteria.setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY);
-    return (List<T>)criteria.list();
-  }
-
-  public <T extends Identifiable> List<T> list(
-      Class<T> t,
-      Criterion... crits) {
-    return list(t, null, crits);
-  }
-
-  @SuppressWarnings("unchecked")
+  /**
+   * A reference to a row that is known to exist, loaded lazily -- what Session.load
+   * was.  Only for use inside a command; a reference never initialized must not be
+   * returned to the client.
+   */
   public <T extends Identifiable> T load(Class<T> t, Serializable id) {
-    return (T)getCurrentSession().load(t, id);
-  }
-
-  public <T extends Identifiable> List<T> loadList(Class<T> t,
-      Serializable... ids) {
-    return loadList(t, Arrays.asList(ids));
-  }
-
-  public <T extends Identifiable> List<T> loadList(Class<T> t,
-      Iterable<Serializable> ids) {
-    List<T> out = new ArrayList<T>();
-    for (Serializable id : ids) out.add(load(t, id));
-    return out;
-  }
-
-  @SuppressWarnings("unchecked")
-  public <T extends Identifiable> T merge(T i) {
-    return (T)getCurrentSession().merge(i);
-  }
-
-  public <T extends Identifiable> List<T> mergeList(T[] is) {
-    return mergeList(Arrays.asList(is));
-  }
-
-  public <T extends Identifiable> List<T> mergeList(Iterable<T> is) {
-    List<T> out = new ArrayList<T>();
-    for (T i : is) out.add(merge(i));
-    return out;
-  }
-
-
-  public <T extends Identifiable> void refresh(T i) {
-    getCurrentSession().refresh(i);
-  }
-
-  public <T extends Identifiable> void refresh(T[] is) {
-    refresh(Arrays.asList(is));
-  }
-
-  public <T extends Identifiable> void refresh(Iterable<T> is) {
-    for (T i : is) refresh(i);
-  }
-
-  public <T extends Identifiable> Serializable save(T o) {
-    return getCurrentSession().save(o);
-  }
-
-  @SuppressWarnings("unchecked")
-  public <T extends Identifiable> Serializable saveOrUpdate(T o) {
-    getCurrentSession().saveOrUpdate(o);
-    getCurrentSession().flush();
-    T out = (T)getCurrentSession().get(o.getClass(), o.getId());
-    evict(out);
-    return out;
-  }
-
-  public <T extends Identifiable> List<Serializable> saveOrUpdateList(T[] os) {
-    return saveOrUpdateList(Arrays.asList(os));
-  }
-
-  public <T extends Identifiable> List<Serializable> saveOrUpdateList(Iterable<T> os) {
-    List<Serializable> out = new ArrayList<Serializable>();
-    for (T o : os) out.add(saveOrUpdate(o));
-    return out;
-  }
-
-  public <T extends Identifiable> void update(T o) {
-    getCurrentSession().update(o);
-  }
-
-  public <T extends Identifiable> void update(T[] os) {
-    update(Arrays.asList(os));
-  }
-
-  public <T extends Identifiable> void update(Iterable<T> os) {
-    for (T o : os) update(o);
+    return getCurrentSession().getReference(t, id);
   }
 
   public User getUser(String username) throws EnvelopeException {
 
-    User user = (User)getCurrentSession().createCriteria(User.class)
-        .add(Restrictions.eq("name", username)).uniqueResult();
+    User user = getCurrentSession()
+        .createSelectionQuery("from User u where u.name = :name", User.class)
+        .setParameter("name", username)
+        .uniqueResult();
     if (user == null)
       throw new EnvelopeException(EnvelopeException.Name.Invalid_User,
           "User " + username + " is invalid.");
@@ -346,9 +227,9 @@ public abstract class DAO {
    */
   protected void requireMyTransaction(Integer transactionId) throws EnvelopeException {
     if (transactionId == null) throw notYours("transaction null");
-    List<?> budgets = getCurrentSession()
-        .createQuery("select distinct a.category.account.budget.id from Allocation a"
-                     + " where a.transaction.id = :id")
+    List<Integer> budgets = getCurrentSession()
+        .createSelectionQuery("select distinct a.category.account.budget.id from Allocation a"
+                              + " where a.transaction.id = :id", Integer.class)
         .setParameter("id", transactionId)
         .list();
     Integer mine = myBudgetId();
@@ -359,7 +240,8 @@ public abstract class DAO {
 
   private void requireOwned(String hql, Integer id, String what) throws EnvelopeException {
     if (id == null) throw notYours(what + " null");
-    Object budget = getCurrentSession().createQuery(hql).setParameter("id", id).uniqueResult();
+    Integer budget = getCurrentSession().createSelectionQuery(hql, Integer.class)
+        .setParameter("id", id).uniqueResult();
     if (budget == null || !budget.equals(myBudgetId())) throw notYours(what + " " + id);
   }
 
@@ -481,20 +363,6 @@ public abstract class DAO {
   }
 
   /**
-   * Disconnect the Session from the current JDBC connection. If the connection was obtained by Hibernate close it and return it to
-   * the connection pool; otherwise, return it to the application. This is used by applications which supply JDBC connections to
-   * Hibernate and which require long-sessions (or long-conversations) Note that disconnect() called on a session where the
-   * connection was retrieved by Hibernate through its configured org.hibernate.connection.ConnectionProvider has no effect,
-   * provided ConnectionReleaseMode.ON_CLOSE is not in effect.
-   *
-   * <p>Returned the application-supplied connection before Hibernate 5; now void.
-   */
-  public void disconnect() {
-    logger.debug("disconnecting from jdbc pool");
-    getCurrentSession().disconnect();
-  }
-
-  /**
    * Get the current Transsaction.
    *
    * @return org.hibernate.Transaction
@@ -519,18 +387,10 @@ public abstract class DAO {
   }
   */
 
-  protected void finalize() throws Throwable {
-    try {
-      if (isActive() && !wasRolledBack() && isDirty()) {
-        commit();
-      }
-      if (isConnected()) {
-        close();
-        disconnect();
-      }
-    } finally {
-      super.finalize();
-    }
-  }
+  // finalize() used to commit and close here when a DAO was collected.  It ran on
+  // the finalizer thread, whose getCurrentSession() opened a session of its own
+  // rather than finding the request's, and Controller already commits and the
+  // session context already closes every session at transaction end.  Removed
+  // with Hibernate 7, which also removed the Session.disconnect() it called.
 }
 

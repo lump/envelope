@@ -1,7 +1,7 @@
 package net.lump.envelope.shared.entity;
 
+import net.lump.envelope.shared.entity.type.MoneyConverter;
 import net.lump.lib.Money;
-import org.hibernate.annotations.Type;
 
 import jakarta.persistence.*;
 import java.sql.Timestamp;
@@ -13,9 +13,8 @@ import java.text.MessageFormat;
  * @author Troy Bowman
  */
 @jakarta.persistence.Entity
-@org.hibernate.annotations.Entity(dynamicUpdate = true)
+@org.hibernate.annotations.DynamicUpdate
 @Table(name = "allocations")
-@org.hibernate.annotations.Table(appliesTo = "allocations")
 public class Allocation extends Identifiable<Integer, Timestamp> {
   private Integer id;
   private Timestamp stamp;
@@ -47,7 +46,7 @@ public class Allocation extends Identifiable<Integer, Timestamp> {
    * @return Timestamp
    */
   @Version
-  @Column(name = "stamp", nullable = false)
+  @Column(name = "stamp", nullable = false, secondPrecision = 3)
   @Override
   public Timestamp getStamp() {
     return stamp;
@@ -109,7 +108,7 @@ public class Allocation extends Identifiable<Integer, Timestamp> {
    * @return Money
    */
   @Column(name = "amount", nullable = false, precision = 2)
-  @Type(type = "net.lump.envelope.shared.entity.type.MoneyType")
+  @Convert(converter = MoneyConverter.class)
   public Money getAmount() {
     return amount;
   }

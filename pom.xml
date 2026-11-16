@@ -14,14 +14,13 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>25</maven.compiler.release>
 
-    <!-- 5.6.x is the last Hibernate line that still ships org.hibernate.criterion.
-         Until 0.12 DetachedCriteria crossed the wire, which pinned this; now only the
-         server's dao/Query uses the criteria API, so 6/7 means rewriting that one class
-         in HQL or JPA criteria, not the protocol.  The "-jakarta" artifact is the same code republished against
-         jakarta.persistence, which is what lets it sit under Tomcat 10+. -->
-    <hibernate.version>5.6.15.Final</hibernate.version>
-    <!-- Hibernate 5.6 ships byte-buddy 1.12, which cannot read Java 25 class files. -->
-    <bytebuddy.version>1.18.13</bytebuddy.version>
+    <!-- Hibernate 7.4, the newest stable line.  Hibernate names no community LTS:
+         the latest series is the maintained one and the previous drops to limited
+         support when a new one ships, so stay current rather than parked.  5.6 was
+         pinned until 0.12 because DetachedCriteria crossed the wire; it no longer
+         does, and dao/Query is written in HQL.  7.x bundles a byte-buddy that reads
+         Java 25 class files, so the override 5.6 needed is gone. -->
+    <hibernate.version>7.4.16.Final</hibernate.version>
     <log4j2.version>2.25.5</log4j2.version>
 
     <!--
@@ -44,34 +43,15 @@
 
     <!-- ==================== persistence ==================== -->
     <dependency>
-      <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-core-jakarta</artifactId>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-core</artifactId>
       <version>${hibernate.version}</version>
     </dependency>
+    <!-- the HikariCP connection provider; HikariCP itself is pinned below -->
     <dependency>
-      <groupId>net.bytebuddy</groupId>
-      <artifactId>byte-buddy</artifactId>
-      <version>${bytebuddy.version}</version>
-    </dependency>
-
-    <!-- HikariCP replaces c3p0.  hibernate-hikaricp was never republished as
-         "-jakarta", but HikariCPConnectionProvider only implements a hibernate-core
-         SPI that is identical in both builds, so we take the provider class alone and
-         exclude its javax-flavoured hibernate-core. -->
-    <dependency>
-      <groupId>org.hibernate</groupId>
+      <groupId>org.hibernate.orm</groupId>
       <artifactId>hibernate-hikaricp</artifactId>
       <version>${hibernate.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.hibernate</groupId>
-          <artifactId>hibernate-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.zaxxer</groupId>
-          <artifactId>HikariCP</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.zaxxer</groupId>

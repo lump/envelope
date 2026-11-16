@@ -1,9 +1,9 @@
 package net.lump.envelope.shared.entity;
 
+import net.lump.envelope.shared.entity.type.MoneyConverter;
 import net.lump.lib.Money;
 import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
-import org.hibernate.annotations.Type;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
@@ -60,7 +60,7 @@ public class Account extends Identifiable<Integer, Timestamp>
   }
 
   @Version
-  @Column(name = "stamp", nullable = false)
+  @Column(name = "stamp", nullable = false, secondPrecision = 3)
   @Override
   public Timestamp getStamp() {
     return stamp;
@@ -119,7 +119,7 @@ public class Account extends Identifiable<Integer, Timestamp>
   }
 
   @Column(name = "ceiling", nullable = false)
-  @Type(type = "net.lump.envelope.shared.entity.type.MoneyType")
+  @Convert(converter = MoneyConverter.class)
   public Money getCeling() {
     return celing;
   }

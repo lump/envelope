@@ -1,6 +1,5 @@
 package net.lump.envelope.shared.entity;
 
-import net.lump.envelope.server.dao.DAO;
 
 import java.io.Serializable;
 
@@ -12,33 +11,18 @@ import java.io.Serializable;
 public abstract class Identifiable <T extends Serializable, S extends Serializable>
     implements Serializable, Stampable<S> {
 
-  /**
-   * Reflectively finds the object which identifies this object.  May be
-   * overidden.
-   *
-   * @return Serializable
+  /*
+   * Every mapped entity declares these itself, annotated with its @Id and
+   * @Version.  The defaults that used to sit here looked the values up through
+   * Hibernate's ClassMetadata -- by way of the server's DAO, from a class the
+   * client loads too -- and ClassMetadata went with Hibernate 6.
    */
-  @SuppressWarnings({"unchecked"})
-  public T getId() {
-    return DAO.getIdentifier(this);
-  }
 
-  /**
-   * Sets the object which identifies this object.
-   *
-   * @param id Serializable
-   */
-  public void setId(T id) {
-    DAO.setIdentifier(this, id);
-  }
+  /** @return this row's identifier, null until it is saved */
+  public abstract T getId();
 
-  /**
-   * Get the timestamp of this entity.
-   *
-   * @return Timestamp
-   */
-  @SuppressWarnings({"unchecked"})
-  public S getStamp() {
-    return (S)DAO.getVersion(this);
-  }
+  public abstract void setId(T id);
+
+  /** @return the version stamp, which a save must present unchanged */
+  public abstract S getStamp();
 }

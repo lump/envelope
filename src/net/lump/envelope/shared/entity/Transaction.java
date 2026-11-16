@@ -16,11 +16,8 @@ import java.util.*;
  * @author Troy Bowman
  */
 @jakarta.persistence.Entity
-@org.hibernate.annotations.Entity(dynamicUpdate = true)
+@org.hibernate.annotations.DynamicUpdate
 @Table(name = "transactions")
-@org.hibernate.annotations.Table(
-    appliesTo = "transactions",
-    fetch = org.hibernate.annotations.FetchMode.SELECT)
 public class Transaction extends Identifiable<Integer, Timestamp> {
 
   private Integer id;
@@ -57,7 +54,7 @@ public class Transaction extends Identifiable<Integer, Timestamp> {
   }
 
   @Version
-  @Column(name = "stamp", nullable = false)
+  @Column(name = "stamp", nullable = false, secondPrecision = 3)
   @Override
   public Timestamp getStamp() {
     return stamp;

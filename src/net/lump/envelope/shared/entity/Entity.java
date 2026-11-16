@@ -5,9 +5,8 @@ import java.sql.Timestamp;
 
 /** An entity to or from which we do transactions with. */
 @jakarta.persistence.Entity
-@org.hibernate.annotations.Entity(dynamicUpdate = true)
+@org.hibernate.annotations.DynamicUpdate
 @Table(name = "entities")
-@org.hibernate.annotations.Table(appliesTo = "entities")
 public class Entity extends Identifiable<Integer, Timestamp> {
 
   private Integer id;

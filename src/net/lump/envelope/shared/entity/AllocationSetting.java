@@ -49,7 +49,7 @@ public class AllocationSetting extends Identifiable<Integer, Timestamp> implemen
   }
 
   @Version
-  @Column(name = "stamp", nullable = false)
+  @Column(name = "stamp", nullable = false, secondPrecision = 3)
   @Override
   public Timestamp getStamp() {
     return stamp;

@@ -122,8 +122,8 @@ public class Action extends DAO {
     allocation.setCategory(category);
     allocation.setAmount(amount == null ? Money.ZERO : amount);
 
-    getCurrentSession().save(transaction);
-    getCurrentSession().save(allocation);
+    getCurrentSession().persist(transaction);
+    getCurrentSession().persist(allocation);
     getCurrentSession().flush();
 
     // re-read so the mapped allocations collection reflects what was just written,
@@ -244,7 +244,7 @@ public class Action extends DAO {
     allocation.setCategory(get(Category.class, categoryId));
     allocation.setAmount(amount == null ? Money.ZERO : amount);
 
-    if (allocation.getId() == null) getCurrentSession().save(allocation);
+    if (allocation.getId() == null) getCurrentSession().persist(allocation);
     getCurrentSession().flush();
     Hibernate.initialize(allocation);
     return evict(allocation);
@@ -288,7 +288,7 @@ public class Action extends DAO {
     row.setAllocationType(allocationType);
     row.setAutoDeduct(Boolean.TRUE.equals(autoDeduct));
 
-    if (row.getId() == null) getCurrentSession().save(row);
+    if (row.getId() == null) getCurrentSession().persist(row);
     getCurrentSession().flush();
     Hibernate.initialize(row);
     return evict(row);
@@ -310,7 +310,8 @@ public class Action extends DAO {
 
     allocation.setCategory(category);
     allocation.setAmount(amount);
-    getCurrentSession().saveOrUpdate(allocation);
+    // a spare is already managed, and its changes are flushed with the rest
+    if (allocation.getId() == null) getCurrentSession().persist(allocation);
   }
 
   /**
@@ -481,7 +482,7 @@ public class Action extends DAO {
     user.setPermission(new Permission(permissions == null ? 0L : permissions));
     user.setCryptPassword(cryptPassword);
 
-    getCurrentSession().save(user);
+    getCurrentSession().persist(user);
     getCurrentSession().flush();
     return forClient(user);
   }
@@ -549,7 +550,7 @@ public class Action extends DAO {
 
     Budget budget = new Budget();
     budget.setName(budgetName);
-    getCurrentSession().save(budget);
+    getCurrentSession().persist(budget);
     getCurrentSession().flush();
     return evict(budget);
   }
@@ -789,7 +790,7 @@ public class Action extends DAO {
     account.setRate(BigDecimal.ZERO);
     account.setCeling(Money.ZERO);
 
-    getCurrentSession().save(account);
+    getCurrentSession().persist(account);
     getCurrentSession().flush();
     Hibernate.initialize(account);
     return evict(account);
@@ -861,7 +862,7 @@ public class Action extends DAO {
     category.setAccount(account);
     category.setName(categoryName);
 
-    getCurrentSession().save(category);
+    getCurrentSession().persist(category);
     getCurrentSession().flush();
     Hibernate.initialize(category);
     return evict(category);

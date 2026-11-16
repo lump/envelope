@@ -19,7 +19,7 @@ plus a shared `lib/`.
 | `envelope/shared/` | both | The wire protocol + data model. `command/Command` is the RPC unit and `command/WireFilter` the classes one may contain; `entity/` are the Hibernate entities; `query/Total` is what the tree's balances arrive as; `command/security/` holds `Challenge`, `Credentials`, `Crypt`, `Permission`. |
 | `envelope/client/` | Swing client | `portal/` = one RPC client per server facet (`SecurityPortal`, `QueryPortal` for every read, `TransactionPortal`, `BudgetPortal`, `AdminPortal`, over abstract `Portal`); `ui/` = the Swing tree, with `ui/prefs/` holding `LoginSettings`/`ServerSettings` (backed by `java.util.prefs`). |
 | `envelope/server/` | Tomcat | `servlet/` — `InvocationServlet` → `/invoke`, `DefaultServlet` → `/` (delegates to `FileServer`), `ErrorServlet` → `/error`; `dao/` = `DAO` (with the whose-budget checks), `Security`, `Query` (reads), `Action` (writes); `Controller` dispatches commands. |
-| `lib/` | mostly client | `Money.java` (the core value type, mapped by `entity/type/MoneyType`) plus `util/`. Only `Base64`, `Encryption`, `Interval` and `Day` (the readiness probe's date check) are used by the server; `Revision` reports the application version and is read by the client's `AboutBox`; the rest (`EmacsKeyBindings`, `ByteFormat`, `Compression`, `ObjectUtil`, `ChildFirstClassLoader`) are client-only or unused. |
+| `lib/` | mostly client | `Money.java` (the core value type, mapped by `entity/type/MoneyConverter`) plus `util/`. Only `Base64`, `Encryption`, `Interval` and `Day` (the readiness probe's date check) are used by the server; `Revision` reports the application version and is read by the client's `AboutBox`; the rest (`EmacsKeyBindings`, `ByteFormat`, `Compression`, `ObjectUtil`, `ChildFirstClassLoader`) are client-only or unused. |
 
 **The RPC protocol is the load-bearing part.** The client Java-serializes a `Command` into a
 hand-rolled RFC 2388 multipart POST to `/invoke` (neither side uses the servlet `Part` API);
@@ -41,14 +41,13 @@ read every row of every table — `User.cryptPassword` included, which is a pass
 as guest against a throwaway stack before the fix. Now reads are the `Query` facet
 (`myBudget`, `categories`, `accountTransactions`, `categoryBalances`, …, reached through
 `QueryPortal`) and edits are `Action`'s `saveTransaction` / `saveAllocation` / `savePreset`
-beside the existing narrow verbs. The criteria moved to `dao/Query` **unchanged**, so the SQL
-is what it was (an old-versus-new diff of every read matched, on the seed data and on the dev
-database's guest budget). The budget is never the client's to say: it comes from the
+beside the existing narrow verbs. The criteria moved to `dao/Query` unchanged in 0.12, and in
+0.13 became HQL for the same joins, filters, grouping and ordering; both times an
+old-versus-new diff of every read matched, on the seed data and on the dev database's guest
+budget. The budget is never the client's to say: it comes from the
 authenticated user, and every id a command names is checked against it (`DAO.requireMy…`)
 before anything else runs. **Don't add a generic verb back** — the server cannot scope what it
-cannot see the purpose of. Hibernate 5.6 is no longer pinned by the wire: the criteria API is
-now used only server-side, so 6/7 is an ordinary upgrade that rewrites `Query` in HQL or JPA
-criteria.
+cannot see the purpose of.
 
 **The saves take values, never an entity.** `saveTransaction(id, stamp, date, entity,
 description, reconciled, transfer)`, `saveAllocation(id, stamp, transactionId, categoryId,
@@ -332,7 +331,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.12.0**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.13.0**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at
@@ -369,18 +368,37 @@ come from `MIGRATE_SRC_*` / `MIGRATE_DST_*` environment variables; only
 | Was | Now | Why |
 |-----|-----|-----|
 | `javax.servlet` / `javax.persistence` | `jakarta.*` | Tomcat 10+; `jakarta.servlet-api` 6.1.0 (Jakarta Servlet 6.1) |
-| Hibernate (old) | **5.6.15.Final `-jakarta`** | was pinned by `DetachedCriteria` on the wire; since 0.12 only `dao/Query` uses criteria, so 6/7 is now an ordinary upgrade |
-| byte-buddy 1.12 (bundled) | **1.18.13** override | 1.12 can't read Java 25 class files |
-| c3p0 | **HikariCP 7.1.0** | via `hibernate-hikaricp` with exclusions (never republished as `-jakarta`) |
+| Hibernate (old) | **7.4.16.Final** (`org.hibernate.orm`, Jakarta Persistence 3.2) | the newest stable line. Hibernate names no community LTS — the latest series is the maintained one and the previous drops to limited support when the next ships — so stay current. 5.6 (end-of-life) was pinned until 0.12 by `DetachedCriteria` on the wire; 0.13 moved |
+| byte-buddy 1.12 (bundled) | byte-buddy 1.18 (bundled by 7.4) | the override 5.6 needed for Java 25 class files is gone |
+| c3p0 | **HikariCP 7.1.0** | via `hibernate-hikaricp`, pinned above the version it asks for |
 | MySQL | **MariaDB 11.8** | `sql/bootstrap-mysql.sql` loads unchanged |
 | log4j 1.2.15 | **log4j-1.2-api** (Log4j2) | code calls `org.apache.log4j.*` directly — no source change, CVE jar gone |
 | Incors Alloy L&F | **FlatLaf** | Alloy's license key expired |
 | Ant (`build.xml`) + Ivy | **Maven** (`pom.xml`) | — |
 
-Other source changes forced by the JDK/library bumps: `MoneyType` rewritten as a `UserType`
-(`ImmutableType` is gone in Hibernate 6); `AppleStuff` rewritten on `java.awt.Desktop`
-(`com.apple.eawt` is gone); `DAO` moved to `Configuration` + `TransactionStatus` (Hibernate 5
-API).
+Other source changes forced by the JDK/library bumps: `AppleStuff` rewritten on
+`java.awt.Desktop` (`com.apple.eawt` is gone); `DAO` on `Configuration` + `TransactionStatus`.
+
+What the Hibernate 7 move (0.13) changed, and the traps it sprang:
+- `Query` is HQL (the criteria API is gone since 6); `DAO`'s helpers are the Jakarta
+  Persistence verbs (`find`, `getReference`, `persist`, `remove`), and the unused generic ones —
+  list by `Criterion`, saveOrUpdate of anything, identifier access by `ClassMetadata` — were
+  deleted. `Identifiable.getId/setId/getStamp` are abstract: their defaults went through
+  `ClassMetadata`, from a class the client loads. `finalize()`, which committed on the
+  finalizer thread, is gone.
+- `MoneyType` (a `UserType`, whose interface moved every major version) is
+  `MoneyConverter`, a standard `AttributeConverter`. `Query.money` takes a `sum()` as either
+  `Money` or `BigDecimal`. `@org.hibernate.annotations.Entity(dynamicUpdate)` is
+  `@DynamicUpdate`; `@org.hibernate.annotations.Table` went. The dialect is plain
+  `MariaDBDialect`; the versioned names went with 6.
+- **Hibernate 7 cascades `PERSIST` at flush**, as Jakarta Persistence says, where 5 under
+  native bootstrap did not. `createTransaction` detached the new transaction to return it
+  while the new allocation, cascading `PERSIST` up to it, stayed managed — the commit failed
+  with "detached entity passed to persist" *after the reply said it worked*. `DAO.evict` now
+  flushes and clears the whole session; it is only ever a command's last act.
+- `ScrollableResults.get()` returns the row, not always an array (`Controller.row`), and
+  `PersistentBag` moved to `org.hibernate.collection.spi`, so a 0.12 client cannot read a 0.13
+  server's replies.
 
 ## Configuration
 
@@ -390,6 +408,17 @@ overridden by a system property or env var** (`ServerPrefs.lookupOverride`): key
 `DAO_HIBERNATE_CONNECTION_URL=…`. The compose file sets these, plus `DAO_OK`/`SERVERPREFS_OK`
 — the `.ok` flags mark each config section complete so the server doesn't hold every request
 at the `/configure` form waiting for a human.
+
+**A default changed in `DAO.properties` reaches existing installs only since 0.13.**
+`ServerPrefs` copies every default into the `java.util.prefs` store on first start, and the
+stored copy is what is read. It used to win for good, so a long-lived install kept whatever
+it first started with — the Hibernate 7 upgrade renamed the dialect, and the dev container
+(restarted, never recreated) went on asking for `MariaDB106Dialect` and never came up. Now a
+`seeded-defaults` child node records which default each pref was seeded from; while the pref
+still holds exactly that, startup moves it to the current default, and a value someone changed
+through `/configure` stays. Installs from before the record keep what they hold (recreate the
+container, or clear `~/.java/.userPrefs/net/lump/envelope/server` in it). Swarm containers are
+recreated on every deploy and start empty, so they always had the current defaults.
 
 ## Traps
 
@@ -433,7 +462,13 @@ at the `/configure` form waiting for a human.
   back to the client can never match the value the row holds, so the *first* save of an entity
   succeeds and the second is refused with `StaleObjectStateException` — every entity editable
   exactly once per load. `sql/migrations/001-version-stamp-precision.sql` moved the live tables
-  to `timestamp(3)`; keep any new versioned table at `timestamp(3)` too.
+  to `timestamp(3)`; keep any new versioned table at `timestamp(3)` too. **And declare it**:
+  every stamp is `@Column(…, secondPrecision = 3)`. Hibernate 7 generates a version timestamp
+  at the column's declared precision, or the dialect's default when none is declared — 6 for
+  MariaDB — so undeclared, a freshly inserted row came back carrying microseconds the column
+  had already dropped, and its next save was refused as stale (5.6 ticked in milliseconds,
+  which hid this). `precision` does nothing for a timestamp; `secondPrecision` is the
+  Jakarta Persistence 3.2 attribute Hibernate reads.
 - **Account names are unique per budget, but only since migration 002.** `accounts` shipped
   with `unique index name_type (name, type)` — no budget column — so account names were unique
   across the whole installation and two budgets could not both have a "Checking" account.

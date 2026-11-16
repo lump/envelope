@@ -46,10 +46,32 @@ public class ServerPrefs {
       // yank the preferences for class
       Preferences prefs = Preferences.userNodeForPackage(klass);
 
-      // sync and sanitize the prefs and properties
-      for (Object key : config.keySet()) {
-        // if the pref is null, set it from the config.
-        if (null == prefs.get((String)key, null)) prefs.put((String)key, config.getProperty((String)key));
+      // Seed the prefs from the properties file, and keep seeding them as the file
+      // changes.  This used to copy a default in only when the pref was missing, so
+      // a stored copy won for good and a changed default never reached an existing
+      // install: the Hibernate 7 upgrade renamed the dialect, and a server that had
+      // first started under 5.6 went on asking for MariaDB106Dialect, a class that
+      // no longer exists, and never came up.  So remember which default each pref
+      // was seeded from, and while the pref still holds exactly that -- nobody
+      // changed it through /configure -- move it to the file's current default.
+      // A value someone did change is theirs and stays.  Installs from before this
+      // record have nothing to compare against and keep what they hold, as before.
+      Preferences seeded = prefs.node("seeded-defaults");
+      for (Object k : config.keySet()) {
+        String key = (String)k;
+        String current = config.getProperty(key);
+        String stored = prefs.get(key, null);
+        String seededFrom = seeded.get(key, null);
+        if (stored == null || (seededFrom != null && stored.equals(seededFrom) && !stored.equals(current)))
+          prefs.put(key, current);
+        if (stored == null || seededFrom != null || stored.equals(current)) seeded.put(key, current);
+      }
+      // write it now rather than on java.util.prefs' own timer, so what this start
+      // decided is what the next one finds even if the JVM does not exit cleanly
+      try {
+        prefs.flush();
+      } catch (java.util.prefs.BackingStoreException e) {
+        // the in-memory values still apply for this run
       }
 
       // A system property or environment variable overrides both the stored pref and

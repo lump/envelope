@@ -1,5 +1,6 @@
 package net.lump.envelope.shared.entity;
 
+import net.lump.envelope.shared.entity.type.MoneyConverter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.Fetch;
@@ -56,7 +57,7 @@ public class Category extends Identifiable<Integer, Timestamp> implements Compar
   }
 
   @Version
-  @Column(name = "stamp", nullable = false)
+  @Column(name = "stamp", nullable = false, secondPrecision = 3)
   @Override
   public Timestamp getStamp() {
     return stamp;
@@ -118,7 +119,7 @@ public class Category extends Identifiable<Integer, Timestamp> implements Compar
       "from allocations a, transactions t " +
       "where a.category = id " +
       "and a.transaction = t.id and year(t.date) = year(now()))")
-  @Type(type = "net.lump.envelope.shared.entity.type.MoneyType")
+  @Convert(converter = MoneyConverter.class)
   public Money getBalance() {
     return balance;
   }
@@ -131,7 +132,7 @@ public class Category extends Identifiable<Integer, Timestamp> implements Compar
       "from allocations a, transactions t " +
       "where a.category = id " +
       "and a.transaction = t.id and year(t.date) = year(now()) and t.reconciled != 0)")
-  @Type(type = "net.lump.envelope.shared.entity.type.MoneyType")
+  @Convert(converter = MoneyConverter.class)
   public Money getReconciledBalance() {
     return reconciledBalance;
   }

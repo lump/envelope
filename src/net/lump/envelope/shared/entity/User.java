@@ -46,7 +46,7 @@ public class User extends Identifiable<Integer, Timestamp> {
     this.id = id;
   }
 
-  @Version @Column(name = "stamp", nullable = false) @Override
+  @Version @Column(name = "stamp", nullable = false, secondPrecision = 3) @Override
   public Timestamp getStamp() {
     return stamp;
   }

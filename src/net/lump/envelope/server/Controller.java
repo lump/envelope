@@ -75,6 +75,15 @@ public class Controller {
     dispatch(command);
   }
 
+  /**
+   * One scrolled row as it goes on the wire: a single-column row as its value,
+   * any other as the array.  Hibernate 7 hands back the row itself, where 5 always
+   * gave an array.
+   */
+  private static Object row(Object r) {
+    return (r instanceof Object[] && ((Object[])r).length == 1) ? ((Object[])r)[0] : r;
+  }
+
   /*
    * This method handles the reflection needed to dispatch the Command.
    */
@@ -141,7 +150,7 @@ public class Controller {
 
       // we have to handle the results here before the transaction is over.
       if (returnValue instanceof ScrollableResults) {
-        ScrollableResults sr = (ScrollableResults)returnValue;
+        ScrollableResults<?> sr = (ScrollableResults<?>)returnValue;
         try {sr.afterLast();
           sr.last();
           int count = sr.getRowNumber() + 1;
@@ -151,10 +160,10 @@ public class Controller {
           ObjectOutputStream oos = new ObjectOutputStream(os);
           if (count > 100)
             while (sr.next())
-              oos.writeObject(sr.get().length == 1 ? sr.get()[0] : sr.get());
+              oos.writeObject(row(sr.get()));
           else
             while (sr.next()) {
-              oos.writeObject(sr.get().length == 1 ? sr.get()[0] : sr.get());
+              oos.writeObject(row(sr.get()));
               oos.flush();
             }
 

@@ -33,7 +33,7 @@ public class Budget extends Identifiable<Integer, Timestamp> {
   }
 
   @Version
-  @Column(name = "stamp", nullable = false)
+  @Column(name = "stamp", nullable = false, secondPrecision = 3)
   @Override
   public Timestamp getStamp() {
     return stamp;
