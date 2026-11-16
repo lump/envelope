@@ -104,7 +104,12 @@ straight back out — because that is what happened: the employee was paid and t
 removed before it arrived. The pair nets to nothing on the account while keeping the payment
 in the category's history. The result is not expected to balance; reconciling it against the
 transaction amount is the user's job, with the imbalance panel showing the gap.
-`forms/preset/AllocationPresetEditor` edits them, writing each change as it is made.
+`forms/preset/AllocationPresetEditor` edits them, writing each change as it is made. Its
+Target Amount is the transaction amount the preset would be applied to, held only on
+screen: the editor values every row against it with `AllocationPreset.valueFor` -- the
+same call `applyAllocationPreset` makes, so the two cannot drift -- and shows the
+Incoming / Sum / Outgoing line and imbalance warning through `components/AllocationTotals`,
+which the transaction form also uses for its icons and warning.
 
 **The allocation table's Balance and Projection columns are computed, and "Balance"
 means the category as of the transaction's day, without the transaction.** Each row shows
@@ -283,7 +288,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.11.1**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.11.2**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at

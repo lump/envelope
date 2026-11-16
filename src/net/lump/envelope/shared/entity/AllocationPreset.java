@@ -4,7 +4,10 @@ import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.FetchMode;
 
 import jakarta.persistence.*;
+import net.lump.lib.Money;
+
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Timestamp;
 
 /**
@@ -19,6 +22,8 @@ public class AllocationPreset extends Identifiable<Integer, Timestamp> implement
     percent,
     fixed,
   }
+
+  private static final BigDecimal ONE_HUNDRED = new BigDecimal(100);
 
   private Integer id;
   private Timestamp stamp;
@@ -112,5 +117,23 @@ public class AllocationPreset extends Identifiable<Integer, Timestamp> implement
 
   public void setAutoDeduct(Boolean autoDeduct) {
     this.autoDeduct = autoDeduct;
+  }
+
+  /**
+   * What this row puts on a transaction of the given amount: a fixed row its own
+   * figure, a percent row that share of the amount.  A percentage is a whole
+   * number carried to many places (7.60764626375748 means 7.6%), so the product is
+   * taken at full precision and only the result brought to the cent.
+   *
+   * <p>Action.applyAllocationPreset lays rows down with this and the preset
+   * editor totals them with it, so the editor's total is the sum the server will
+   * produce.  Not a getter, so Hibernate leaves it alone.
+   */
+  public Money valueFor(Money gross) {
+    BigDecimal rate = allocation == null ? BigDecimal.ZERO : allocation;
+    if (allocationType != AllocationType.percent)
+      return new Money(rate.setScale(2, RoundingMode.HALF_UP));
+    BigDecimal base = gross == null ? BigDecimal.ZERO : gross.toBigDecimal();
+    return new Money(base.multiply(rate).divide(ONE_HUNDRED, 2, RoundingMode.HALF_UP));
   }
 }

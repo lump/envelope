@@ -1,5 +1,6 @@
 package net.lump.envelope.client.ui.components.forms.transaction;
 
+import net.lump.envelope.client.ui.components.AllocationTotals;
 import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.State;
 import net.lump.envelope.client.portal.HibernatePortal;
@@ -497,20 +498,9 @@ public class TransactionChangeHandler {
       // the allocation instead of reporting a gap the user cannot act on.
       if (isSingleAllocation()) syncAmountToBalance(balance);
 
-      if (changeableAmount.hasValidInput()) {
-        if (balance.compareTo(amount) != 0) {
-          form.getImbalanceMessagePanel().setBackground(Colors.getColor("red"));
-          form.getImbalanceMessagePanel().setBorder(BorderFactory.createLineBorder(Colors.getColor("black")));
-          form.getImbalanceMessageLabel().setForeground(Colors.getColor("white"));
-          form.getImbalanceMessageLabel().setFont(Fonts.sans_14_bold.getFont());
-          form.getImbalanceMessageLabel().setText("Imbalance: " + amount.subtract(balance));
-        }
-        else {
-          form.getImbalanceMessagePanel().setBackground(null);
-          form.getImbalanceMessagePanel().setBorder(null);
-          form.getImbalanceMessageLabel().setText(null);
-        }
-      }
+      if (changeableAmount.hasValidInput())
+        AllocationTotals.showImbalance(form.getImbalanceMessagePanel(),
+            form.getImbalanceMessageLabel(), amount.subtract(balance));
     }
 
     form.setInboxLabel(in.toString());

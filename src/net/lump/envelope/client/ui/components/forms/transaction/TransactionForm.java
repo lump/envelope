@@ -5,6 +5,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
+import net.lump.envelope.client.ui.components.AllocationTotals;
 import net.lump.envelope.client.ui.components.ZonedDateEditor;
 import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.State;
@@ -100,16 +101,9 @@ public class TransactionForm {
   public TransactionForm() {
     $$$setupUI$$$();
 
-    inboxLabel.setIcon(ImageResource.icon.inbox_16.get());
-    inboxLabel.setToolTipText(Strings.get("incoming"));
+    AllocationTotals.decorate(inboxLabel, balanceLabel, outboxLabel, "balance");
     setInboxLabel(Money.ZERO.toString());
-
-    balanceLabel.setIcon(ImageResource.icon.balance_16.get());
-    balanceLabel.setToolTipText(Strings.get("balance"));
     setBalanceLabel(Money.ZERO.toString());
-
-    outboxLabel.setIcon(ImageResource.icon.outbox_16.get());
-    outboxLabel.setToolTipText(Strings.get("outgoing"));
     setOutboxLabel(Money.ZERO.toString());
 
     tableModel = new AllocationFormTableModel(allocationsTable);

@@ -159,25 +159,6 @@ public class Action extends DAO {
     delete(transaction);
   }
 
-  private static final BigDecimal ONE_HUNDRED = new BigDecimal(100);
-
-  /**
-   * What one preset row is worth against a gross amount.
-   *
-   * <p>A percentage is stored as a whole number -- 7.60764626375748 means 7.6% --
-   * and deliberately carried to many places, so the product is taken at full
-   * precision and only the result is brought to the cent.  Money is only ever
-   * pennies; nothing here goes near a float.
-   */
-  private Money valueOf(AllocationPreset preset, Money gross) {
-    if (preset.getAllocationType() == AllocationPreset.AllocationType.fixed)
-      return new Money(preset.getAllocation().setScale(2, RoundingMode.HALF_UP));
-
-    return new Money(gross.toBigDecimal()
-        .multiply(preset.getAllocation())
-        .divide(ONE_HUNDRED, 2, RoundingMode.HALF_UP));
-  }
-
   /**
    * Put one amount on the transaction, reusing a row that carries no money before
    * making a new one.  A transaction is born with a single zero allocation, and
@@ -254,7 +235,7 @@ public class Action extends DAO {
       if (a.getAmount() == null || a.getAmount().compareTo(Money.ZERO) == 0) spare.add(a);
 
     for (AllocationPreset preset : rows) {
-      Money value = valueOf(preset, gross == null ? Money.ZERO : gross);
+      Money value = preset.valueFor(gross);
       if (value.compareTo(Money.ZERO) == 0) continue;
 
       place(transaction, preset.getCategory(), value, spare);

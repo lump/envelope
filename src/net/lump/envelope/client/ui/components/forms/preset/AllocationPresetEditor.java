@@ -6,6 +6,8 @@ import net.lump.envelope.client.portal.BudgetPortal;
 import net.lump.envelope.client.portal.HibernatePortal;
 import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.thread.ThreadPool;
+import net.lump.envelope.client.ui.components.AllocationTotals;
+import net.lump.envelope.client.ui.components.MoneyTextField;
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.shared.entity.AllocationPreset;
 import net.lump.envelope.shared.entity.Budget;
@@ -14,6 +16,8 @@ import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.Money;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.table.AbstractTableModel;
@@ -51,7 +55,15 @@ public class AllocationPresetEditor extends JDialog {
   private final RowTableModel model = new RowTableModel();
   private final JTable table = new JTable(model);
   private final JLabel status = new JLabel(" ");
-  private final JLabel total = new JLabel(" ");
+  private final MoneyTextField target = new MoneyTextField();
+  private final AllocationTotals totals = new AllocationTotals("sum");
+
+  /**
+   * The preset the target was last filled for.  The target is reset only when a
+   * different preset is shown, not when the same one is re-read after a row is
+   * added or deleted -- the user is working the rows toward it.
+   */
+  private String targetFor = null;
 
   /** true while the picker is being repopulated, so its listener stays quiet */
   private boolean loading = false;
@@ -72,7 +84,10 @@ public class AllocationPresetEditor extends JDialog {
     setLayout(new BorderLayout(6, 6));
     ((JComponent)getContentPane()).setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-    add(buildPresetBar(), BorderLayout.NORTH);
+    JPanel top = new JPanel(new BorderLayout(0, 6));
+    top.add(buildPresetBar(), BorderLayout.NORTH);
+    top.add(buildTargetBar(), BorderLayout.SOUTH);
+    add(top, BorderLayout.NORTH);
     add(new JScrollPane(table), BorderLayout.CENTER);
     add(buildRowBar(), BorderLayout.SOUTH);
 
@@ -86,7 +101,7 @@ public class AllocationPresetEditor extends JDialog {
       public void tableChanged(TableModelEvent e) { updateTotal(); }
     });
 
-    setPreferredSize(new Dimension(620, 420));
+    setPreferredSize(new Dimension(620, 480));
     pack();
     setLocationRelativeTo(owner);
 
@@ -116,11 +131,27 @@ public class AllocationPresetEditor extends JDialog {
     return bar;
   }
 
+  private JPanel buildTargetBar() {
+    JPanel bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+    JLabel label = new JLabel(Strings.get("target.amount"));
+    label.setLabelFor(target);
+    target.setToolTipText(Strings.get("target.amount.tip"));
+    bar.add(label);
+    bar.add(target);
+
+    // every keystroke, so the totals move as the figure is typed
+    target.getDocument().addDocumentListener(new DocumentListener() {
+      public void insertUpdate(DocumentEvent e) { updateTotal(); }
+      public void removeUpdate(DocumentEvent e) { updateTotal(); }
+      public void changedUpdate(DocumentEvent e) { updateTotal(); }
+    });
+    return bar;
+  }
+
   private JPanel buildRowBar() {
     JPanel bar = new JPanel(new BorderLayout(6, 4));
 
-    total.setBorder(BorderFactory.createEmptyBorder(0, 6, 0, 0));
-    bar.add(total, BorderLayout.NORTH);
+    bar.add(totals, BorderLayout.NORTH);
 
     JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
     buttons.add(button("add.row", new Runnable() {
@@ -142,53 +173,67 @@ public class AllocationPresetEditor extends JDialog {
   }
 
   /**
-   * Show what the preset adds up to.  Fixed rows are money and percent rows are a
-   * share of whatever amount the preset is applied to, so the two cannot be added
-   * into one number; a preset with both reads "$1,200.00 + 10% of the transaction
-   * amount".  Fixed rows are brought to the cent first, exactly as
-   * Action.applyAllocationPreset does, so the total is the sum it will produce.
-   * Auto-deduct rows are counted -- they are part of the gross -- and repeated
-   * after it, since each becomes a pair that nets to nothing on the account.
+   * The amount typed in the target field, or null while it does not parse.
+   */
+  private Money targetAmount() {
+    String text = target.getText();
+    if (text == null || text.trim().isEmpty()) return null;
+    try {
+      return new Money(text.trim());
+    } catch (RuntimeException e) {
+      return null;
+    }
+  }
+
+  /**
+   * Total the rows as the transaction they would make, applied to the target
+   * amount.  Each row is valued by AllocationPreset.valueFor -- the same call
+   * Action.applyAllocationPreset makes -- so a percent row is its share of the
+   * target, a fixed row is brought to the cent, and the totals are what applying
+   * the preset to a transaction of that amount will produce.  An auto-deduct row
+   * lands twice, in and straight back out, as it will on the transaction, so it
+   * shows in both Incoming and Outgoing and nets to nothing in the Sum.
    */
   private void updateTotal() {
-    BigDecimal fixed = BigDecimal.ZERO, percent = BigDecimal.ZERO;
-    BigDecimal fixedDeducted = BigDecimal.ZERO, percentDeducted = BigDecimal.ZERO;
-    boolean anyPercent = false, anyDeducted = false;
+    Money gross = targetAmount();
+    Money in = Money.ZERO, out = Money.ZERO;
 
     for (int i = 0; i < model.getRowCount(); i++) {
       AllocationPreset p = model.rowAt(i);
-      BigDecimal v = p.getAllocation() == null ? BigDecimal.ZERO : p.getAllocation();
-      boolean deducted = Boolean.TRUE.equals(p.isAutoDeduct());
-      anyDeducted |= deducted;
-      if (p.getAllocationType() == AllocationPreset.AllocationType.percent) {
-        anyPercent = true;
-        percent = percent.add(v);
-        if (deducted) percentDeducted = percentDeducted.add(v);
-      } else {
-        v = v.setScale(2, RoundingMode.HALF_UP);
-        fixed = fixed.add(v);
-        if (deducted) fixedDeducted = fixedDeducted.add(v);
+      Money v = p.valueFor(gross == null ? Money.ZERO : gross);
+      if (v.compareTo(Money.ZERO) > 0) in = in.add(v);
+      else out = out.add(v.abs());
+      if (Boolean.TRUE.equals(p.isAutoDeduct())) {
+        if (v.compareTo(Money.ZERO) > 0) out = out.add(v);
+        else in = in.add(v.abs());
       }
     }
 
-    if (model.getRowCount() == 0) {
-      total.setText(" ");
-      return;
-    }
-    String text = MessageFormat.format(Strings.get("preset.total"),
-        describe(fixed, percent, anyPercent));
-    if (anyDeducted)
-      text += "   " + MessageFormat.format(Strings.get("preset.total.deducted"),
-          describe(fixedDeducted, percentDeducted, percentDeducted.signum() != 0));
-    total.setText(text);
+    // no warning while the target is half-typed, as the transaction form does
+    totals.show(in, in.subtract(out), out, gross);
   }
 
-  private static String describe(BigDecimal fixed, BigDecimal percent, boolean showPercent) {
-    String money = new Money(fixed).toString();
-    if (!showPercent) return money;
-    // rates are carried to many places (7.60764626375748); four is plenty to read
-    String rate = percent.setScale(4, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
-    return MessageFormat.format(Strings.get("preset.total.with.percent"), money, rate);
+  /**
+   * The target a preset opens with: what its rows come to.  Fixed rows count as
+   * they stand (an auto-deduct pair nets to nothing); percent rows are a share of
+   * the target itself, so with fixed rows F and rates P the sum is F + T*P/100,
+   * which equals T at T = F / (1 - P/100).  When the rates come to 100% or more
+   * there is no such T and the fixed rows alone are used.  Rounding each percent
+   * row to the cent can leave the result a penny off, which the warning shows.
+   */
+  private static Money defaultTarget(List<AllocationPreset> rows) {
+    BigDecimal fixed = BigDecimal.ZERO, rate = BigDecimal.ZERO;
+    for (AllocationPreset p : rows) {
+      if (Boolean.TRUE.equals(p.isAutoDeduct())) continue;
+      if (p.getAllocationType() == AllocationPreset.AllocationType.percent)
+        rate = rate.add(p.getAllocation() == null ? BigDecimal.ZERO : p.getAllocation());
+      else
+        fixed = fixed.add(p.valueFor(Money.ZERO).toBigDecimal());
+    }
+    BigDecimal hundred = new BigDecimal(100);
+    if (rate.signum() == 0 || rate.compareTo(hundred) >= 0) return new Money(fixed);
+    return new Money(fixed.multiply(hundred)
+        .divide(hundred.subtract(rate), 2, RoundingMode.HALF_UP));
   }
 
   private JButton button(String key, final Runnable action) {
@@ -244,6 +289,11 @@ public class AllocationPresetEditor extends JDialog {
     if (name != null)
       for (AllocationPreset p : State.getInstance().getPresets())
         if (name.equals(p.getName())) rows.add(p);
+
+    if (name == null ? targetFor != null : !name.equals(targetFor)) {
+      targetFor = name;
+      target.setText(defaultTarget(rows).toString());
+    }
     model.setRows(rows);
     installEditors();
   }
