@@ -102,7 +102,7 @@ public class State {
   public List<String> entities() throws AbortException {
     Element element = entityCache.get(ENTITIES);
     if (element != null)
-      return (List<String>)element.getValue();
+      return (List<String>)element.getObjectValue();
     else {
       java.util.List<String> entities;
       entities = new QueryPortal().entities();

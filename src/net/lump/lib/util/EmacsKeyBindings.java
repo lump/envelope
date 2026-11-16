@@ -54,53 +54,53 @@ public class EmacsKeyBindings {
 
   public static final JTextComponent.KeyBinding[] EMACS_KEY_BINDINGS = {
       new JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_MASK),
+          KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_DOWN_MASK),
           DefaultEditorKit.pasteAction),
       new JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.ALT_MASK),
+          KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.ALT_DOWN_MASK),
           DefaultEditorKit.copyAction),
       new JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.CTRL_MASK),
+          KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.CTRL_DOWN_MASK),
           DefaultEditorKit.cutAction),
       new JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_MASK),
+          KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_DOWN_MASK),
           DefaultEditorKit.endLineAction),
       new JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.CTRL_MASK),
+          KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.CTRL_DOWN_MASK),
           DefaultEditorKit.beginLineAction),
       new JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_MASK),
+          KeyStroke.getKeyStroke(KeyEvent.VK_D, InputEvent.CTRL_DOWN_MASK),
           DefaultEditorKit.deleteNextCharAction),
       new JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_MASK),
+          KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK),
           DefaultEditorKit.downAction),
       new JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_MASK),
+          KeyStroke.getKeyStroke(KeyEvent.VK_P, InputEvent.CTRL_DOWN_MASK),
           DefaultEditorKit.upAction),
       new JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.ALT_MASK),
+          KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.ALT_DOWN_MASK),
           DefaultEditorKit.previousWordAction),
       new JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_LESS, InputEvent.ALT_MASK),
+          KeyStroke.getKeyStroke(KeyEvent.VK_LESS, InputEvent.ALT_DOWN_MASK),
           DefaultEditorKit.beginAction),
       new JTextComponent.KeyBinding(
           KeyStroke.getKeyStroke(KeyEvent.VK_LESS,
-              InputEvent.ALT_MASK + InputEvent.SHIFT_MASK),
+              InputEvent.ALT_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK),
           DefaultEditorKit.endAction),
       new JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.ALT_MASK),
+          KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.ALT_DOWN_MASK),
           DefaultEditorKit.nextWordAction),
       new JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_MASK),
+          KeyStroke.getKeyStroke(KeyEvent.VK_F, InputEvent.CTRL_DOWN_MASK),
           DefaultEditorKit.forwardAction),
       new JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.CTRL_MASK),
+          KeyStroke.getKeyStroke(KeyEvent.VK_B, InputEvent.CTRL_DOWN_MASK),
           DefaultEditorKit.backwardAction),
       new JTextComponent.KeyBinding(KeyStroke.getKeyStroke(
-          KeyEvent.VK_V, InputEvent.CTRL_MASK),
+          KeyEvent.VK_V, InputEvent.CTRL_DOWN_MASK),
           DefaultEditorKit.pageDownAction),
       new JTextComponent.KeyBinding(
-          KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.ALT_MASK),
+          KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.ALT_DOWN_MASK),
           DefaultEditorKit.pageUpAction),
   };
 
@@ -118,37 +118,37 @@ public class EmacsKeyBindings {
       JTextComponent.loadKeymap(k, EMACS_KEY_BINDINGS, jtc.getActions());
 
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_D,
-          InputEvent.ALT_MASK),
+          InputEvent.ALT_DOWN_MASK),
           new KillWordAction(killWordAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE,
-          InputEvent.ALT_MASK),
+          InputEvent.ALT_DOWN_MASK),
           new BackwardKillWordAction(backwardKillWordAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE,
-          InputEvent.CTRL_MASK),
+          InputEvent.CTRL_DOWN_MASK),
           new SetMarkCommandAction(setMarkCommandAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_W,
-          InputEvent.ALT_MASK),
+          InputEvent.ALT_DOWN_MASK),
           new KillRingSaveAction(killRingSaveAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_W,
-          InputEvent.CTRL_MASK),
+          InputEvent.CTRL_DOWN_MASK),
           new KillRegionAction(killRegionAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_K,
-          InputEvent.CTRL_MASK),
+          InputEvent.CTRL_DOWN_MASK),
           new KillLineAction(killLineAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_Y,
-          InputEvent.CTRL_MASK),
+          InputEvent.CTRL_DOWN_MASK),
           new YankAction("emacs-yank"));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_Y,
-          InputEvent.ALT_MASK),
+          InputEvent.ALT_DOWN_MASK),
           new YankPopAction("emacs-yank-pop"));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_C,
-          InputEvent.ALT_MASK),
+          InputEvent.ALT_DOWN_MASK),
           new CapitalizeWordAction(capitalizeWordAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_L,
-          InputEvent.ALT_MASK),
+          InputEvent.ALT_DOWN_MASK),
           new DowncaseWordAction(downcaseWordAction));
       k.addActionForKeyStroke(KeyStroke.getKeyStroke(KeyEvent.VK_U,
-          InputEvent.ALT_MASK),
+          InputEvent.ALT_DOWN_MASK),
           new UpcaseWordAction(upcaseWordAction));
     }
   }

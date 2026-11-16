@@ -118,7 +118,12 @@ public class ServerSettings {
   }
 
   private String infoQuery(String query) throws IOException {
-    URL url = new URL(this.getCodeBase().toString() + "info" + query);
+    URL url;
+    try {
+      url = getCodeBase().toURI().resolve("info" + query).toURL();
+    } catch (java.net.URISyntaxException | IllegalArgumentException e) {
+      throw new IOException("bad server address: " + e.getMessage(), e);
+    }
     URLConnection c = url.openConnection();
     c.addRequestProperty("Accept", "text/plain");
 
@@ -188,7 +193,14 @@ public class ServerSettings {
   }
 
   public URL getCodeBase() throws MalformedURLException {
-    return new URL(getScheme() + "://" + getHostName() + ":" + getPort() + getContext() + "/");
+    // the component constructor quotes what needs quoting, where gluing a
+    // string together and handing it to the URL constructor did not
+    try {
+      return new java.net.URI(getScheme(), null, getHostName(), Integer.parseInt(getPort().trim()),
+          getContext() + "/", null, null).toURL();
+    } catch (java.net.URISyntaxException | IllegalArgumentException e) {   // NumberFormatException too
+      throw (MalformedURLException)new MalformedURLException(e.getMessage()).initCause(e);
+    }
   }
 
   public String testSocketServer() {

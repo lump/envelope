@@ -106,7 +106,19 @@ public class Controller {
       }
 
       // deduce the DAO class name from the facet and create an instance.
-      dao = (DAO)Class.forName(DAO_PATH + command.getName().getFacet().name()).newInstance();
+      try {
+        dao = (DAO)Class.forName(DAO_PATH + command.getName().getFacet().name())
+            .getDeclaredConstructor().newInstance();
+      } catch (InvocationTargetException constructing) {
+        // Class.newInstance let a constructor's exception through as it was --
+        // DAO's initializer throws "the database is not available: ..." from
+        // here, and the readiness probe reports that sentence.  Its replacement
+        // wraps it, so unwrap it to keep the same answer.
+        Throwable cause = constructing.getCause();
+        if (cause instanceof RuntimeException) throw (RuntimeException)cause;
+        if (cause instanceof Error) throw (Error)cause;
+        throw constructing;
+      }
 
       // Put the caller where the DAO can see it, and check they may do this.
       // getUser(name) loads the row and parks it in ThreadInfo; a user deleted
@@ -151,9 +163,10 @@ public class Controller {
       // we have to handle the results here before the transaction is over.
       if (returnValue instanceof ScrollableResults) {
         ScrollableResults<?> sr = (ScrollableResults<?>)returnValue;
-        try {sr.afterLast();
-          sr.last();
-          int count = sr.getRowNumber() + 1;
+        try {
+          // getPosition() counts from 1, so on the last row it is the row count;
+          // with no rows last() is false and there is no position to read
+          int count = sr.last() ? sr.getPosition() : 0;
           rp.addHeader("Single-Object", Boolean.FALSE.toString());
           rp.addIntHeader("Object-Count", count);
           sr.beforeFirst();

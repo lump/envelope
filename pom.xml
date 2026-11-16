@@ -205,6 +205,11 @@
         <configuration>
           <compilerArgs>
             <arg>-Xlint:unchecked</arg>
+            <!-- 0.13.1 cleared every deprecated and removal-flagged call; these keep
+                 the next one visible in the build output rather than silent until a
+                 library removes it -->
+            <arg>-Xlint:deprecation</arg>
+            <arg>-Xlint:removal</arg>
           </compilerArgs>
         </configuration>
       </plugin>

@@ -89,10 +89,10 @@ public class Security extends DAO {
    * is a sign of life instead of a census.
    */
   public String ready() {
-    java.util.Date read = (java.util.Date)getCurrentSession()
-        .createQuery("select max(t.date) from Transaction t").uniqueResult();
-    String stored = (String)getCurrentSession()
-        .createNativeQuery("select cast(max(date) as char) from transactions").uniqueResult();
+    java.util.Date read = getCurrentSession()
+        .createSelectionQuery("select max(t.date) from Transaction t", java.util.Date.class).uniqueResult();
+    String stored = getCurrentSession()
+        .createNativeQuery("select cast(max(date) as char) from transactions", String.class).uniqueResult();
     if (read == null && stored == null) return "ready: no transactions yet";
     String day = Day.toIso(read);
     if (!java.util.Objects.equals(stored, day))

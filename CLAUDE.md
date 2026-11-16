@@ -331,7 +331,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.13.0**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.13.1**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at
@@ -399,6 +399,18 @@ What the Hibernate 7 move (0.13) changed, and the traps it sprang:
 - `ScrollableResults.get()` returns the row, not always an array (`Controller.row`), and
   `PersistentBag` moved to `org.hibernate.collection.spi`, so a 0.12 client cannot read a 0.13
   server's replies.
+- **The build has no deprecated calls, and says so if one appears** (`-Xlint:deprecation` and
+  `-Xlint:removal` in `pom.xml`, since 0.13.1). Clearing them meant: every query typed
+  (`createSelectionQuery(hql, Type.class)`, `createNativeQuery(sql, Type.class)`); the locking
+  reads on `setHibernateLockMode(LockMode.PESSIMISTIC_WRITE)` rather than an alias — each
+  selects `Allocation` alone, so it is the same `SELECT … FOR UPDATE` on the same rows (checked
+  in the query log, and by racing two `deleteAllocation`s 25 times: one through every time);
+  the row count from `getPosition()`, which counts from 1, where `getRowNumber()` counted from
+  0; `Class.newInstance()` replaced by the constructor's `newInstance()` with its
+  `InvocationTargetException` unwrapped, so "the database is not available: …" still reaches
+  the readiness probe as itself; and on the client the `*_DOWN_MASK` key masks (`KeyStroke`
+  normalizes old and new to the same stroke), `URI`-built server URLs (byte-identical to the
+  old ones), and `RoundingMode` in `Money`, whose unused int-rounding overloads went.
 
 ## Configuration
 

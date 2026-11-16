@@ -56,7 +56,7 @@ public class HttpClient {
 
     // the scheme comes from the settings, so https is just a different URL; an
     // HttpsURLConnection is an HttpURLConnection, and nothing below cares which
-    URL url = new URL(serverSettings.getCodeBase(), "invoke");
+    URL url = resolve(serverSettings.getCodeBase(), "invoke");
 
     if (System.getProperty("http.keepAlive") == null
         || !System.getProperty("http.keepAlive").equals("true")) System.setProperty("http.keepAlive", "true");
@@ -180,7 +180,7 @@ public class HttpClient {
          */
         public double getBytesPerSec() {
           long elapsedMillis = System.currentTimeMillis() - startTime;
-          return (elapsedMillis > 0) ? (bytesRead / (new Long(elapsedMillis).doubleValue() / 1000)) : 0.0D;
+          return (elapsedMillis > 0) ? (bytesRead / ((double)elapsedMillis / 1000)) : 0.0D;
         }
 
         /**
@@ -299,5 +299,14 @@ public class HttpClient {
     bis.mark(READLIMIT);
 
     return s.subSequence(0, end);
+  }
+
+  /** A path resolved against the code base, as {@code new URL(base, path)} did. */
+  static URL resolve(URL base, String path) throws java.net.MalformedURLException {
+    try {
+      return base.toURI().resolve(path).toURL();
+    } catch (java.net.URISyntaxException | IllegalArgumentException e) {
+      throw (java.net.MalformedURLException)new java.net.MalformedURLException(e.getMessage()).initCause(e);
+    }
   }
 }

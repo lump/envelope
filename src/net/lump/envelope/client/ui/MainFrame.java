@@ -107,7 +107,7 @@ public class MainFrame extends JFrame {
     this.getContentPane().add(BorderLayout.CENTER, treeContentSplitPane);
     this.getContentPane().add(BorderLayout.SOUTH, status);
 
-    int shortcutKeyMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
+    int shortcutKeyMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
 
     viewTransaction = new JCheckBoxMenuItem(Strings.get("transaction"));
     tableContentSplitPane.setBottomComponent(transactionForm.getTransactionFormPanel());
@@ -142,7 +142,7 @@ public class MainFrame extends JFrame {
       fileMenu.add(new JSeparator());
 
       fileMenu
-          .add(new JMenuItem(new exitActionClass(Strings.get("exit"), KeyStroke.getKeyStroke(KeyEvent.VK_Q, KeyEvent.CTRL_MASK))));
+          .add(new JMenuItem(new exitActionClass(Strings.get("exit"), KeyStroke.getKeyStroke(KeyEvent.VK_Q, KeyEvent.CTRL_DOWN_MASK))));
       fileMenu.setEnabled(true);
 
       JMenu helpMenu = new JMenu(Strings.get("help"));

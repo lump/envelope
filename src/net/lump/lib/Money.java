@@ -184,16 +184,8 @@ public class Money implements Serializable, Comparable<Money> {
     return new Money(value.divide(divisor.value));
   }
 
-  public Money divide(Money divisor, int scale, int roundingMode) {
-    return new Money(value.divide(divisor.value, scale, roundingMode));
-  }
-
   public Money divide(Money divisor, int scale, RoundingMode roundingMode) {
     return new Money(value.divide(divisor.value, scale, roundingMode));
-  }
-
-  public Money divide(Money divisor, int roundingMode) {
-    return new Money(value.divide(divisor.value, roundingMode));
   }
 
   /**
@@ -205,7 +197,7 @@ public class Money implements Serializable, Comparable<Money> {
    */
   public String toString() {
     return format.format((value.setScale(format.getMaximumFractionDigits(),
-        BigDecimal.ROUND_HALF_EVEN)).doubleValue());
+        RoundingMode.HALF_EVEN)).doubleValue());
   }
 
   public BigDecimal toBigDecimal() {

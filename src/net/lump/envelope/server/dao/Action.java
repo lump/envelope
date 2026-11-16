@@ -63,11 +63,10 @@ public class Action extends DAO {
     // transaction each see two, each pass, and the transaction is left with none.
     // Deleting a child never touches the parent's @Version, so optimistic locking
     // offers nothing here.
-    @SuppressWarnings("unchecked")
     List<Allocation> siblings = getCurrentSession()
-        .createQuery("from Allocation a where a.transaction.id = :transactionId")
+        .createSelectionQuery("from Allocation a where a.transaction.id = :transactionId", Allocation.class)
         .setParameter("transactionId", transactionId)
-        .setLockMode("a", LockMode.PESSIMISTIC_WRITE)
+        .setHibernateLockMode(LockMode.PESSIMISTIC_WRITE)
         .list();
 
     // A transaction reaches its budget only through its allocations -- the
@@ -148,11 +147,10 @@ public class Action extends DAO {
     requireMyTransaction(transactionId);
     Transaction transaction = load(Transaction.class, transactionId);
 
-    @SuppressWarnings("unchecked")
     List<Allocation> allocations = getCurrentSession()
-        .createQuery("from Allocation a where a.transaction.id = :transactionId")
+        .createSelectionQuery("from Allocation a where a.transaction.id = :transactionId", Allocation.class)
         .setParameter("transactionId", transactionId)
-        .setLockMode("a", LockMode.PESSIMISTIC_WRITE)
+        .setHibernateLockMode(LockMode.PESSIMISTIC_WRITE)
         .list();
 
     for (Allocation allocation : allocations) delete(allocation);
@@ -341,11 +339,10 @@ public class Action extends DAO {
     requireMyTransaction(transactionId);
     Transaction transaction = load(Transaction.class, transactionId);
 
-    @SuppressWarnings("unchecked")
     List<Allocation> existing = getCurrentSession()
-        .createQuery("from Allocation a where a.transaction.id = :transactionId")
+        .createSelectionQuery("from Allocation a where a.transaction.id = :transactionId", Allocation.class)
         .setParameter("transactionId", transactionId)
-        .setLockMode("a", LockMode.PESSIMISTIC_WRITE)
+        .setHibernateLockMode(LockMode.PESSIMISTIC_WRITE)
         .list();
 
     // a transaction reaches its budget only through its allocations, so that is
@@ -356,9 +353,8 @@ public class Action extends DAO {
           "transaction " + transactionId + " has no allocations to take a budget from");
     Budget budget = existing.get(0).getCategory().getAccount().getBudget();
 
-    @SuppressWarnings("unchecked")
     List<AllocationPreset> rows = getCurrentSession()
-        .createQuery("from AllocationPreset p where p.budget.id = :budgetId and p.name = :name")
+        .createSelectionQuery("from AllocationPreset p where p.budget.id = :budgetId and p.name = :name", AllocationPreset.class)
         .setParameter("budgetId", budget.getId())
         .setParameter("name", presetName)
         .list();
@@ -431,7 +427,7 @@ public class Action extends DAO {
   public List<User> listUsers() throws EnvelopeException {
     requireAdmin();
     List<User> users = getCurrentSession()
-        .createQuery("from User u order by u.name").list();
+        .createSelectionQuery("from User u order by u.name", User.class).list();
     List<User> out = new ArrayList<User>(users.size());
     for (User u : users) out.add(forClient(u));
     return out;
@@ -442,7 +438,7 @@ public class Action extends DAO {
   public List<Budget> listBudgets() throws EnvelopeException {
     requireAdmin();
     List<Budget> budgets = getCurrentSession()
-        .createQuery("from Budget b order by b.name").list();
+        .createSelectionQuery("from Budget b order by b.name", Budget.class).list();
     for (Budget b : budgets) evict(b);
     return budgets;
   }
@@ -463,7 +459,7 @@ public class Action extends DAO {
     String userName = checkName(name);
 
     long taken = ((Number)getCurrentSession()
-        .createQuery("select count(u) from User u where u.name = :name")
+        .createSelectionQuery("select count(u) from User u where u.name = :name", Long.class)
         .setParameter("name", userName).uniqueResult()).longValue();
     if (taken > 0)
       throw new EnvelopeException(
@@ -542,7 +538,7 @@ public class Action extends DAO {
     String budgetName = checkName(name);
 
     long taken = ((Number)getCurrentSession()
-        .createQuery("select count(b) from Budget b where b.name = :name")
+        .createSelectionQuery("select count(b) from Budget b where b.name = :name", Long.class)
         .setParameter("name", budgetName).uniqueResult()).longValue();
     if (taken > 0)
       throw new EnvelopeException(
@@ -618,8 +614,8 @@ public class Action extends DAO {
   private void checkAccountNameFree(Integer budgetId, String name, Integer excludeId)
       throws EnvelopeException {
     long taken = ((Number)getCurrentSession()
-        .createQuery("select count(a) from Account a where a.budget.id = :budgetId"
-                     + " and a.name = :name and a.id <> :excludeId")
+        .createSelectionQuery("select count(a) from Account a where a.budget.id = :budgetId"
+                     + " and a.name = :name and a.id <> :excludeId", Long.class)
         .setParameter("budgetId", budgetId)
         .setParameter("name", name)
         .setParameter("excludeId", excludeId)
@@ -634,8 +630,8 @@ public class Action extends DAO {
   private void checkCategoryNameFree(Integer accountId, String name, Integer excludeId)
       throws EnvelopeException {
     long taken = ((Number)getCurrentSession()
-        .createQuery("select count(c) from Category c where c.account.id = :accountId"
-                     + " and c.name = :name and c.id <> :excludeId")
+        .createSelectionQuery("select count(c) from Category c where c.account.id = :accountId"
+                     + " and c.name = :name and c.id <> :excludeId", Long.class)
         .setParameter("accountId", accountId)
         .setParameter("name", name)
         .setParameter("excludeId", excludeId)
@@ -648,7 +644,7 @@ public class Action extends DAO {
 
   private long countRows(String hql, String parameter, Integer value) {
     return ((Number)getCurrentSession()
-        .createQuery(hql)
+        .createSelectionQuery(hql, Long.class)
         .setParameter(parameter, value)
         .uniqueResult()).longValue();
   }
@@ -681,9 +677,8 @@ public class Action extends DAO {
    */
   public void deletePresetNamed(Integer budgetId, String name) throws EnvelopeException {
     requireMyBudget(budgetId);
-    @SuppressWarnings("unchecked")
     List<AllocationPreset> rows = getCurrentSession()
-        .createQuery("from AllocationPreset p where p.budget.id = :budgetId and p.name = :name")
+        .createSelectionQuery("from AllocationPreset p where p.budget.id = :budgetId and p.name = :name", AllocationPreset.class)
         .setParameter("budgetId", budgetId)
         .setParameter("name", name)
         .list();
@@ -707,9 +702,8 @@ public class Action extends DAO {
     requireMyBudget(budgetId);
     String wanted = checkName(newName);
 
-    @SuppressWarnings("unchecked")
     List<AllocationPreset> rows = getCurrentSession()
-        .createQuery("from AllocationPreset p where p.budget.id = :budgetId and p.name = :name")
+        .createSelectionQuery("from AllocationPreset p where p.budget.id = :budgetId and p.name = :name", AllocationPreset.class)
         .setParameter("budgetId", budgetId)
         .setParameter("name", oldName)
         .list();
@@ -737,7 +731,7 @@ public class Action extends DAO {
 
     // budgets.name carries a unique index of its own, with no budget to scope it
     long taken = ((Number)getCurrentSession()
-        .createQuery("select count(b) from Budget b where b.name = :name and b.id <> :budgetId")
+        .createSelectionQuery("select count(b) from Budget b where b.name = :name and b.id <> :budgetId", Long.class)
         .setParameter("name", budgetName)
         .setParameter("budgetId", budgetId)
         .uniqueResult()).longValue();
