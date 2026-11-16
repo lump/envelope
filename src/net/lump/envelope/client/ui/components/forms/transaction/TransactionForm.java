@@ -322,6 +322,9 @@ public class TransactionForm {
       public void valueChanged(ListSelectionEvent e) {
         if (e.getValueIsAdjusting()) return;
         if (table.getSelectedRow() < 0) return;
+        // the table is moving the edited transaction's own row (see reflect): the
+        // selection passing through other rows is not the user choosing them
+        if (((TransactionTableModel)table.getModel()).isQuiet()) return;
         loadTransactionForId(((TransactionTableModel)table.getModel()).getTransactionId(table.getSelectedRow()));
       }
     });

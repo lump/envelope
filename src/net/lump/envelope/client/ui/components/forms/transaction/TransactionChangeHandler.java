@@ -7,6 +7,7 @@ import net.lump.envelope.client.portal.TransactionPortal;
 import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.thread.ThreadPool;
 import net.lump.envelope.client.ui.components.Hierarchy;
+import net.lump.envelope.client.ui.components.TransactionTableModel;
 import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBar;
 import net.lump.envelope.client.ui.defs.Colors;
 import net.lump.envelope.client.ui.defs.Fonts;
@@ -531,6 +532,7 @@ public class TransactionChangeHandler {
             editing.setStamp(saved.getStamp());
             pristine = ObjectUtil.deepCopy(editing);
             setSavedLabel();
+            reflectInTable(true);
           } catch (AbortException e) {
             setSaveFailedLabel();
           }
@@ -754,12 +756,31 @@ public class TransactionChangeHandler {
     SwingUtilities.invokeLater(new Runnable() {
       public void run() { updateAllocationTotalLabels(); }
     });
+    reflectInTable(false);
     try {
       // refreshTree runs itself on the thread pool and keeps the selection
       Hierarchy.getInstance().refreshTree(State.getInstance().getBudget());
     } catch (AbortException e) {
       // the tree is stale but the save itself stood; Portal already told the user
     }
+  }
+
+  /**
+   * Show the save in the transaction list above the form, if this transaction's
+   * rows are loaded there, so the list keeps up without the refresh button: the
+   * same contract refreshTotals keeps with the tree.  The table rebuilds the rows
+   * from the form's copy of the transaction; see TransactionTableModel.reflect.
+   *
+   * @param ownColumnsSaved the transaction's own fields were saved, not an allocation
+   */
+  private void reflectInTable(final boolean ownColumnsSaved) {
+    SwingUtilities.invokeLater(new Runnable() {
+      public void run() {
+        JTable table = TableQueryBar.getInstance().getTable();
+        if (editing != null && table.getModel() instanceof TransactionTableModel)
+          ((TransactionTableModel)table.getModel()).reflect(editing, ownColumnsSaved);
+      }
+    });
   }
 
   /**

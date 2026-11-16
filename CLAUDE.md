@@ -188,6 +188,26 @@ still there for the first Tab into an empty lead. `setFormData` also commits any
 still open **before** swapping the model's rows: left to `setExpense` to stop it afterwards,
 it wrote into the new list at its old row index, which a shorter transaction did not have.
 
+**The transaction list keeps up with the form, as the tree does.** After each save the form
+makes — its own fields (`sendChanges`), or an allocation (through `refreshTotals`, the same
+hook that re-reads the tree) — `TransactionChangeHandler.reflectInTable` hands the form's
+transaction to `TransactionTableModel.reflect`, which rebuilds that transaction's rows from it
+as a refresh would show them: the net on the viewed account (one row), or one row per saved
+allocation in the viewed category in allocation-stamp order (rows now keep their allocation
+id, past the visible columns, which the fill used to drop); in place for an allocation edit,
+last within its day after an own-field save (the query orders a day by transaction stamp);
+running Balance/Reconciled and the in/out totals recomputed from the beginning balances.
+Dated before the range, or **joining** a table it was not in, it falls back to a full re-read —
+the client cannot tell whether the transaction's money was sitting in the beginning balance,
+and the first cut double-counted one coming back into the range. While a re-read is filling
+it stands aside. The swap sets `isQuiet()`, which the form's selection listener honours: the
+selection passing through other rows would otherwise queue loads of them and switch the form
+away mid-edit. The refresh button is unchanged. Checked against the oracle — after each saved
+change, the reflected table equals a freshly loaded one, in both views, for edits, reorders,
+pairs, moves between accounts and in and out of the range. **The other direction is not
+done:** the table's reconciled checkbox writes straight to the server and moves the stamp, so
+the form's next save of that transaction is refused as stale.
+
 **A new transaction opens on Expense.** `setFormData` derives the radio from the sign of
 the net amount, and a fresh transaction is a zero stub, so zero has to count as expense
 (`<= 0`, in both `setFormData` and `isExpense()`) — most transactions are.
@@ -331,7 +351,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.13.1**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.13.2**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at

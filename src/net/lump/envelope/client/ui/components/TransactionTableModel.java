@@ -9,14 +9,19 @@ import net.lump.envelope.client.ui.components.forms.table_query_bar.TableQueryBa
 import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.shared.command.OutputEvent;
 import net.lump.envelope.shared.command.OutputListener;
+import net.lump.envelope.shared.entity.Allocation;
+import net.lump.envelope.shared.entity.Transaction;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.Money;
 import net.lump.lib.util.ByteFormat;
+import net.lump.lib.util.Day;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
@@ -44,6 +49,17 @@ public class TransactionTableModel extends AbstractTableModel {
 
   private int filled = -1;
   private long startDate = -1;
+
+  /** true while the filler thread is loading a query, when reflect() stands aside */
+  private volatile boolean filling = false;
+
+  /**
+   * true while reflect() is swapping rows.  The table's selection listener loads
+   * whatever row is selected into the transaction form, and a row swap passes the
+   * selection through other rows on its way back -- each of which would queue a
+   * load and switch the form away from the transaction being edited.
+   */
+  private boolean quiet = false;
 
 
   private BlockingQueue<Task> q = new LinkedBlockingQueue<Task>();
@@ -90,6 +106,7 @@ public class TransactionTableModel extends AbstractTableModel {
             }
             // take the next
             t = q.take();
+            filling = true;
             final StatusElement statusElement = t.statusElement;
 
 
@@ -223,6 +240,7 @@ public class TransactionTableModel extends AbstractTableModel {
             e.printStackTrace();
           } finally {
             if (t != null) t.finish();
+            filling = false;
           }
         }
       }
@@ -268,7 +286,12 @@ public class TransactionTableModel extends AbstractTableModel {
     if ((Boolean)row[COLUMN.C.ordinal()]) reconciled = reconciled.add((Money)row[COLUMN.Amount.ordinal()]);
 
     // create our new row
-    final Object[] newRow = new Object[]{row[0], row[1], row[2], new Money(balance), new Money(reconciled), row[3], row[4], row[5]};
+    // The allocation id (a category's rows only) is kept, out of sight past the
+    // visible columns: a transaction can hold several rows in a category -- an
+    // auto-deduct pair -- and reflect() has to know which row is which.  It used
+    // to be dropped here.
+    final Object[] newRow = new Object[]{row[0], row[1], row[2], new Money(balance), new Money(reconciled), row[3], row[4], row[5],
+        row.length > 6 ? row[6] : null};
 
     if (rowNumber < transactions.size()) transactions.set(rowNumber, newRow);
     else transactions.add(rowNumber, newRow);
@@ -289,6 +312,163 @@ public class TransactionTableModel extends AbstractTableModel {
     Thread.yield();
   }
 
+
+  /** Whether reflect() is swapping rows; the form's selection listener ignores the table meanwhile. */
+  public boolean isQuiet() {
+    return quiet;
+  }
+
+  /**
+   * Bring one transaction's rows in line with the transaction form's copy of it,
+   * as the refresh button would show them, without re-reading the table.  The
+   * form saves as it is edited, and calls this after each save, so the row above
+   * it moves as the user types; the refresh button still does a full re-read.
+   * Event thread only.
+   *
+   * <p>The rows are rebuilt from the form's transaction, counting only saved
+   * allocations (what the server would sum).  An account's view gets one row --
+   * the transaction's net on that account -- if any allocation is filed under it;
+   * a category's view gets one row per allocation in that category, in allocation
+   * stamp order, which is how the query orders them within a transaction.  Where
+   * it goes: editing an allocation leaves the transaction where it is; saving the
+   * transaction's own fields moves its stamp, and the query orders a day's rows by
+   * stamp, so it goes last within its day, as a refresh would put it.  Dated past
+   * the end of the range, or filed out of the viewed account or category, it
+   * leaves the table.  Dated before the range, or joining a table it was not in,
+   * it may be moving money into or out of the beginning balance -- a sum the
+   * server took, over rows this table never held -- so those fall back to a full
+   * re-read rather than guess.  Running balances and the in/out totals are
+   * recomputed from the beginning balances.  Nothing happens while a re-read is
+   * filling the table -- it is reading the saved state anyway.
+   *
+   * @param t               the form's transaction
+   * @param ownColumnsSaved true when the transaction's own fields were just saved,
+   *                        which moves its stamp and so its place within its day
+   */
+  public void reflect(Transaction t, boolean ownColumnsSaved) {
+    if (t == null || t.getId() == null || t.getDate() == null || thing == null || beginDate == null
+        || endDate == null || filling || !q.isEmpty()) return;
+
+    final int tid = COLUMN.TransactionID.ordinal();
+    Integer id = t.getId();
+    String day = Day.toIso(t.getDate());
+
+    List<Object[]> mine = rowsFor(t);
+    List<Object[]> others = new ArrayList<Object[]>();
+    int first = -1;
+    for (Object[] row : transactions) {
+      if (id.equals(row[tid])) { if (first < 0) first = others.size(); }
+      else others.add(row.clone());
+    }
+    boolean present = first >= 0;
+    if (!present && mine.isEmpty()) return;   // not in this view, before or after
+
+    // Two moves touch money this table does not hold, the beginning balance --
+    // the server's sum of everything in the view dated before the range.  One
+    // dated before the range now has left the table for it; one not in the table
+    // and joining it may be arriving from it (dated before the range until now)
+    // or from nowhere (dated past the end, filed elsewhere), and nothing here says
+    // which.  Both re-read, which is always right; only rows already in the table,
+    // staying in it or leaving past the end, are worked out here.  Added after the
+    // first cut double-counted a transaction coming back into the range.
+    // The day comparison is the server's: the UTC day of each bound.
+    if (day.compareTo(Day.toIso(beginDate)) < 0 || !present) {
+      queue(thing, beginDate, endDate);
+      return;
+    }
+    if (day.compareTo(Day.toIso(endDate)) > 0) mine.clear();
+
+    int at;
+    if (!ownColumnsSaved) at = first;
+    else {
+      at = others.size();
+      for (int i = 0; i < others.size(); i++)
+        if (Day.toIso((Date)others.get(i)[COLUMN.Date.ordinal()]).compareTo(day) > 0) { at = i; break; }
+    }
+
+    List<Object[]> rebuilt = new ArrayList<Object[]>(others);
+    rebuilt.addAll(at, mine);
+    Money[] inOut = rebalance(rebuilt);
+    if (Arrays.deepEquals(transactions.toArray(), rebuilt.toArray())) return;
+
+    int selected = table.getSelectedRow();
+    Object keep = selected > -1 && selected < transactions.size() ? transactions.get(selected)[tid] : null;
+    quiet = true;
+    try {
+      transactions.clear();
+      transactions.addAll(rebuilt);
+      incomeBalance = inOut[0];
+      outgoingBalance = inOut[1];
+      TableQueryBar.getInstance().setInboxLabel(incomeBalance.toString());
+      TableQueryBar.getInstance().setOutboxLabel(outgoingBalance.toString());
+      fireTableDataChanged();
+      if (keep != null)
+        for (int i = 0; i < transactions.size(); i++)
+          if (keep.equals(transactions.get(i)[tid])) {
+            table.setRowSelectionInterval(i, i);
+            table.scrollRectToVisible(table.getCellRect(i, 0, true));
+            break;
+          }
+    } finally {
+      quiet = false;
+    }
+  }
+
+  /** The rows a re-read would give this transaction in the viewed account or category, balances blank. */
+  private List<Object[]> rowsFor(Transaction t) {
+    boolean account = thing instanceof Hierarchy.AccountTotal;   // before CategoryTotal: it is one
+    Integer accountId = account ? ((Hierarchy.AccountTotal)thing).account.getId() : null;
+    Integer categoryId = account ? null : ((Hierarchy.CategoryTotal)thing).id;
+
+    List<Allocation> in = new ArrayList<Allocation>();
+    for (Allocation a : t.getAllocations()) {
+      if (a.getId() == null || a.getCategory() == null) continue;   // not saved: not in the database yet
+      if (account ? a.getCategory().getAccount() != null && accountId.equals(a.getCategory().getAccount().getId())
+                  : categoryId.equals(a.getCategory().getId()))
+        in.add(a);
+    }
+
+    Boolean reconciled = Boolean.TRUE.equals(t.getReconciled());
+    String entity = t.getEntity() == null ? "" : t.getEntity();
+    String description = t.getDescription() == null ? "" : t.getDescription();
+    List<Object[]> rows = new ArrayList<Object[]>();
+    if (in.isEmpty()) return rows;
+
+    if (account) {
+      Money net = Money.ZERO;
+      for (Allocation a : in) if (a.getAmount() != null) net = net.add(a.getAmount());
+      rows.add(new Object[]{reconciled, t.getDate(), net, null, null, entity, description, t.getId(), null});
+    }
+    else {
+      in.sort(Comparator.comparing((Allocation a) -> a.getStamp(), Comparator.nullsFirst(Comparator.naturalOrder()))
+                        .thenComparing(Allocation::getId));
+      for (Allocation a : in)
+        rows.add(new Object[]{reconciled, t.getDate(), a.getAmount() == null ? Money.ZERO : a.getAmount(),
+                              null, null, entity, description, t.getId(), a.getId()});
+    }
+    return rows;
+  }
+
+  /**
+   * Fill in the running Balance and Reconciled columns from the beginning
+   * balances, as the fill does row by row, and total what came in and went out.
+   *
+   * @return {incoming, outgoing}, both positive
+   */
+  private Money[] rebalance(List<Object[]> rows) {
+    Money balance = beginningBalance, reconciled = beginningReconciledBalance;
+    Money in = Money.ZERO, out = Money.ZERO;
+    for (Object[] row : rows) {
+      Money amount = (Money)row[COLUMN.Amount.ordinal()];
+      balance = balance.add(amount);
+      if (Boolean.TRUE.equals(row[COLUMN.C.ordinal()])) reconciled = reconciled.add(amount);
+      row[COLUMN.Balance.ordinal()] = new Money(balance);
+      row[COLUMN.Reconciled.ordinal()] = new Money(reconciled);
+      if (amount.compareTo(Money.ZERO) > 0) in = in.add(amount);
+      else if (amount.compareTo(Money.ZERO) < 0) out = out.add(amount.abs());
+    }
+    return new Money[]{in, out};
+  }
 
   public void queue(Object thing, Date begin, Date end) {
     try {
