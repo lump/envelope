@@ -1,9 +1,8 @@
 package net.lump.envelope.client.ui.components.forms.preset;
 
-import net.lump.envelope.client.CriteriaFactory;
+import net.lump.envelope.client.portal.QueryPortal;
 import net.lump.envelope.client.State;
 import net.lump.envelope.client.portal.BudgetPortal;
-import net.lump.envelope.client.portal.HibernatePortal;
 import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.thread.ThreadPool;
 import net.lump.envelope.client.ui.components.AllocationTotals;
@@ -256,9 +255,7 @@ public class AllocationPresetEditor extends JDialog {
 
     run("Reading presets", new Work() {
       public void run(BudgetPortal portal) throws AbortException {
-        List<AllocationPreset> rows = new HibernatePortal()
-            .detachedCriteriaQueryList(CriteriaFactory.getInstance().getPresetsForBudget(budget));
-        if (rows == null) rows = new ArrayList<AllocationPreset>();
+        List<AllocationPreset> rows = new QueryPortal().presets();
 
         // the transaction form's Use menu reads this, so it moves with the editor
         State.getInstance().setPresets(rows);
@@ -303,9 +300,7 @@ public class AllocationPresetEditor extends JDialog {
     if (categories.isEmpty()) {
       run("Reading categories", new Work() {
         public void run(BudgetPortal portal) throws AbortException {
-          List<Category> found = new HibernatePortal().detachedCriteriaQueryList(
-              CriteriaFactory.getInstance().getCategoriesforBudget(budget));
-          if (found != null) categories.addAll(found);
+          categories.addAll(new QueryPortal().categories());
           SwingUtilities.invokeLater(new Runnable() {
             public void run() { attachEditors(); }
           });
@@ -343,7 +338,7 @@ public class AllocationPresetEditor extends JDialog {
     final String landOn = name.trim();
     run("Creating preset", new Work() {
       public void run(BudgetPortal portal) throws AbortException {
-        new HibernatePortal().saveOrUpdate(row);
+        portal.savePreset(row);
         reload(landOn);
       }
     });
@@ -394,7 +389,7 @@ public class AllocationPresetEditor extends JDialog {
 
     run("Adding preset row", new Work() {
       public void run(BudgetPortal portal) throws AbortException {
-        new HibernatePortal().saveOrUpdate(row);
+        portal.savePreset(row);
         reload(current);
       }
     });
@@ -435,7 +430,7 @@ public class AllocationPresetEditor extends JDialog {
       public void run() {
         boolean ok = false;
         try {
-          AllocationPreset saved = new HibernatePortal().saveOrUpdate(row);
+          AllocationPreset saved = new BudgetPortal().savePreset(row);
           // the generated id on an insert, the new version stamp on an update:
           // without carrying both forward the next edit of this row would insert
           // a duplicate or be refused as stale

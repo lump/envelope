@@ -1,9 +1,8 @@
 package net.lump.envelope.client.ui.components.forms.transaction;
 
+import net.lump.envelope.client.portal.QueryPortal;
 import net.lump.envelope.client.ui.components.AllocationTotals;
-import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.State;
-import net.lump.envelope.client.portal.HibernatePortal;
 import net.lump.envelope.client.portal.TransactionPortal;
 import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.thread.ThreadPool;
@@ -120,8 +119,7 @@ public class TransactionChangeHandler {
    */
   private Map<Integer, Money> readBalances(Integer transactionId, Date asOf) {
     try {
-      return CriteriaFactory.getInstance()
-          .getCategoryBalances(State.getInstance().getBudget(), transactionId, asOf);
+      return new QueryPortal().categoryBalances(transactionId, asOf);
     } catch (AbortException e) {
       return null;
     }
@@ -178,7 +176,7 @@ public class TransactionChangeHandler {
     StatusRunnable r = new StatusRunnable("Reading balance of " + category) {
       @Override public void run() {
         try {
-          final Money balance = CriteriaFactory.getInstance().getCategoryBalance(category, transactionId, asOf);
+          final Money balance = new QueryPortal().categoryBalance(category, transactionId, asOf);
           SwingUtilities.invokeLater(new Runnable() {
             public void run() {
               if (stillCurrent(transactionId, asOf)) form.getTableModel().setBalance(category.getId(), balance);
@@ -519,10 +517,9 @@ public class TransactionChangeHandler {
     if (!editing.equals(pristine)) {
       StatusRunnable r = new StatusRunnable("Updating transaction " + pristine.getId()) {
         @Override public void run() {
-          HibernatePortal hp = new HibernatePortal();
           try {
             changeHistory.push(TransactionChangeHandler.this.getTransaction());
-            Transaction saved = hp.saveOrUpdate(TransactionChangeHandler.this.getTransaction());
+            Transaction saved = new TransactionPortal().saveTransaction(TransactionChangeHandler.this.getTransaction());
             // Take the transaction's new stamp onto the graph the form is ALREADY
             // editing -- do not replace that graph.  saveAttributes() used to swap
             // `editing` for a fresh deep copy here, which orphaned every
@@ -576,7 +573,7 @@ public class TransactionChangeHandler {
       @Override public void run() {
         boolean saved_ok = false;
         try {
-          Allocation saved = new HibernatePortal().saveOrUpdate(allocation);
+          Allocation saved = new TransactionPortal().saveAllocation(allocation);
           // On an insert this is where the generated id arrives; on an update, the
           // new version stamp.  Carrying both forward is what stops the next edit
           // of this row from inserting a duplicate or being refused as stale.

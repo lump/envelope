@@ -1,6 +1,6 @@
 package net.lump.envelope.client.ui.components;
 
-import net.lump.envelope.client.CriteriaFactory;
+import net.lump.envelope.client.portal.QueryPortal;
 import net.lump.envelope.client.State;
 import net.lump.envelope.client.portal.BudgetPortal;
 import net.lump.envelope.client.thread.StatusRunnable;
@@ -301,7 +301,7 @@ public class Hierarchy extends JTree {
       public void run() {
         try {
           final java.util.List<CategoryTotal> categories =
-              CriteriaFactory.getInstance().getCategoriesForAccount(account);
+              new QueryPortal().categoryTotals(account);
           SwingUtilities.invokeLater(new Runnable() {
             public void run() {
               TableQueryBar.getInstance().newTransaction(
@@ -421,10 +421,9 @@ public class Hierarchy extends JTree {
         Object o = dmtn.getUserObject();
 
         if (o instanceof Budget)
-          return CriteriaFactory.getInstance().getAccountTotals((Budget)o);
+          return new QueryPortal().accountTotals();
         if (o instanceof AccountTotal)
-          return CriteriaFactory.getInstance()
-              .getCategoriesForAccount(((AccountTotal)o).account);
+          return new QueryPortal().categoryTotals(((AccountTotal)o).account);
         if (o instanceof Category)
           return null;
         else return null;

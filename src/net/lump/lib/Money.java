@@ -1,5 +1,8 @@
 package net.lump.lib;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -16,6 +19,24 @@ import java.util.regex.Pattern;
 public class Money implements Serializable, Comparable<Money> {
 
   private BigDecimal value = BigDecimal.ZERO;
+
+  /**
+   * Whether a decimal is a plausible amount or rate rather than a weapon.  A
+   * BigDecimal arriving by deserialization carries whatever scale the sender chose,
+   * and one with a scale of two billion is a few bytes on the wire that turns the
+   * first rescale, division or toPlainString into an allocation of that many
+   * digits.  Money is cents, and the longest real rate is a percentage carried to
+   * fourteen places, so these bounds leave a wide margin either way.
+   */
+  public static boolean isSane(BigDecimal d) {
+    return d != null && d.scale() >= -10 && d.scale() <= 20 && d.precision() <= 40;
+  }
+
+  /** Refuse an absurd decimal from the wire before anything does arithmetic on it. */
+  private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+    in.defaultReadObject();
+    if (!isSane(value)) throw new InvalidObjectException("an amount of money out of all proportion");
+  }
   private static final NumberFormat format = java.text.NumberFormat.getCurrencyInstance();
   private static final NumberFormat genericFormat = java.text.NumberFormat.getInstance();
   private static final Pattern vanilla = Pattern.compile("^-?\\d+(\\.\\d+)?$");

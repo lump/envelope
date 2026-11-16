@@ -1,5 +1,6 @@
 package net.lump.envelope.client;
 
+import net.lump.envelope.client.portal.QueryPortal;
 import net.lump.envelope.client.ui.MainFrame;
 import net.lump.envelope.client.ui.components.Hierarchy;
 import net.lump.envelope.client.ui.prefs.LoginSettings;
@@ -57,8 +58,7 @@ public class State {
 
   public Budget getBudget() throws AbortException {
     if (budget == null)
-      budget = CriteriaFactory.getInstance().getBudgetForUser(
-          LoginSettings.getInstance().getUsername());
+      budget = new QueryPortal().myBudget();
     return budget;
   }
 
@@ -105,7 +105,7 @@ public class State {
       return (List<String>)element.getValue();
     else {
       java.util.List<String> entities;
-      entities = CriteriaFactory.getInstance().getEntitiesforBudget(State.getInstance().getBudget());
+      entities = new QueryPortal().entities();
       entityCache.put(new Element(ENTITIES, entities));
       return entities;
     }

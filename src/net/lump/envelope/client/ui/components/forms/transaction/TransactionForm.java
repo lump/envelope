@@ -1,5 +1,6 @@
 package net.lump.envelope.client.ui.components.forms.transaction;
 
+import net.lump.envelope.client.portal.QueryPortal;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -7,9 +8,7 @@ import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
 import net.lump.envelope.client.ui.components.AllocationTotals;
 import net.lump.envelope.client.ui.components.ZonedDateEditor;
-import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.State;
-import net.lump.envelope.client.portal.HibernatePortal;
 import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.ui.MainFrame;
 import net.lump.envelope.client.ui.components.AutoCompletionComboBox;
@@ -405,20 +404,18 @@ public class TransactionForm {
       StatusRunnable r = new StatusRunnable(MessageFormat.format(Strings.get("retrieving.transaction"), id)) {
         public void run() {
           try {
-            final HibernatePortal hp = new HibernatePortal();
+            final QueryPortal qp = new QueryPortal();
 
             // the transaction first: which accounts it already touches decides
             // the order the category picker offers things in
-            Transaction query = hp.load(Transaction.class, id);
+            Transaction query = qp.transaction(id);
 
             final java.util.Set<Integer> home = new java.util.HashSet<Integer>();
             for (Allocation a : query.getAllocations())
               if (a.getCategory() != null && a.getCategory().getAccount() != null)
                 home.add(a.getCategory().getAccount().getId());
 
-            java.util.List<Category> categories = hp.detachedCriteriaQueryList(
-                CriteriaFactory.getInstance().getCategoriesforBudget(State.getInstance().getBudget()));
-            if (categories == null) categories = new java.util.ArrayList<Category>();
+            java.util.List<Category> categories = qp.categories();
 
             java.util.Collections.sort(categories, categoryOrderFor(home));
 
@@ -432,10 +429,7 @@ public class TransactionForm {
 
             // the allocation menu is built on the event thread, so the presets are
             // fetched here, off it, and parked in State
-            State.getInstance().setPresets(
-                hp.detachedCriteriaQueryList(
-                    CriteriaFactory.getInstance()
-                        .getPresetsForBudget(State.getInstance().getBudget())));
+            State.getInstance().setPresets(qp.presets());
 
             if (transactionChangeHandler == null)
               transactionChangeHandler = new TransactionChangeHandler(query, TransactionForm.this);

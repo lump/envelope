@@ -9,7 +9,8 @@ import net.lump.envelope.client.ui.components.forms.transaction.DayRenderer;
 import net.lump.envelope.shared.entity.Account;
 import net.lump.lib.Money;
 import net.lump.lib.util.Day;
-import org.hibernate.criterion.DetachedCriteria;
+import net.lump.envelope.shared.command.Command;
+import net.lump.envelope.shared.command.WireFilter;
 
 import javax.swing.JLabel;
 import javax.swing.JTable;
@@ -238,32 +239,41 @@ public class TestDates extends TestCase {
     }
   }
 
-  // ------------------------------------------------------- criteria evaluation
+  // ------------------------------------------------------- commands on the wire
 
   /**
-   * A {@code DetachedCriteria} is built on the client and Java-serialized to the
-   * server, which is what pins this application to Hibernate 5.6. Its date
-   * restrictions have to arrive intact.
+   * A query's days travel as plain parameters of a {@code Command} -- they used to
+   * ride inside a {@code DetachedCriteria} -- and are read on the server through
+   * {@code WireFilter}.  They have to arrive as the same days, and the filter has
+   * to let them through.
    */
-  public void testCriteriaCarryTheirDatesAcrossTheWire() throws Exception {
+  public void testCommandsCarryTheirDatesThroughTheWireFilter() throws Exception {
     TimeZone.setDefault(TimeZone.getTimeZone("US/Mountain"));
     java.util.Date begin = Day.of(2026, 8, 1);
     java.util.Date end = Day.of(2026, 8, 31);
 
-    Hierarchy.CategoryTotal category =
-        new Hierarchy.CategoryTotal("Groceries", 7, new Money("0.00"));
-    Hierarchy.AccountTotal account =
-        new Hierarchy.AccountTotal(new Account(), "Checking", 3, new Money("0.00"));
+    for (Command.Name name : new Command.Name[]{
+        Command.Name.accountTransactions, Command.Name.categoryTransactions}) {
+      Command arrived = (Command)roundTripFiltered(new Command(name, null, 7, begin, end));
+      assertEquals(name, arrived.getName());
+      assertSameDay("the begin day changed crossing the wire for " + name,
+                    (java.sql.Date)begin, (java.sql.Date)arrived.getParam(1));
+      assertSameDay("the end day changed crossing the wire for " + name,
+                    (java.sql.Date)end, (java.sql.Date)arrived.getParam(2));
+    }
+  }
 
-    for (Object thing : new Object[]{category, account}) {
-      DetachedCriteria sent = CriteriaFactory.getInstance().getTransactions(thing, begin, end);
-      assertEquals("the criteria changed crossing the wire for " + thing.getClass().getSimpleName(),
-                   sent.toString(), roundTrip(sent).toString());
-
-      DetachedCriteria balance =
-          CriteriaFactory.getInstance().getBeginningBalance(thing, begin, Boolean.TRUE);
-      assertEquals("the beginning-balance criteria changed crossing the wire",
-                   balance.toString(), roundTrip(balance).toString());
+  /** And the filter refuses what no command may carry, before constructing it. */
+  public void testTheWireFilterRefusesAnythingElse() throws Exception {
+    // around Command.set()'s own type check, as a hostile client would go
+    Command smuggling = new Command(Command.Name.categoryBalances, null);
+    smuggling.getParams().add(7);
+    smuggling.getParams().add(new java.util.HashMap<String, String>());
+    try {
+      roundTripFiltered(smuggling);
+      fail("a HashMap got through the wire filter");
+    } catch (java.io.InvalidClassException expected) {
+      assertTrue(expected.getMessage(), expected.getMessage().contains("REJECTED"));
     }
   }
 
@@ -502,6 +512,16 @@ public class TestDates extends TestCase {
 
   private static String render(TableCellRenderer r, JTable t, Object value) {
     return ((JLabel)r.getTableCellRendererComponent(t, value, false, false, 0, 1)).getText();
+  }
+
+  private static Object roundTripFiltered(Object o) throws Exception {
+    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+    ObjectOutputStream out = new ObjectOutputStream(bytes);
+    out.writeObject(o);
+    out.close();
+    ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes.toByteArray()));
+    in.setObjectInputFilter(WireFilter.COMMANDS);
+    return in.readObject();
   }
 
   private static Object roundTrip(Object o) throws Exception {

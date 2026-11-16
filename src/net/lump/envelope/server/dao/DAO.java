@@ -287,6 +287,88 @@ public abstract class DAO {
     return user;
   }
 
+  // ------------------------------------------------------------------------
+  // Whose budget.
+  //
+  // Permission says what a caller may do; these say to which rows.  A user has
+  // exactly one budget, and every data command acts only inside it.  Each check
+  // asks the database a scalar question -- the id of the budget a row belongs
+  // to -- rather than loading the row, because a command that goes on to
+  // saveOrUpdate a client's copy of that same row would otherwise collide with
+  // the loaded one (NonUniqueObjectException).  A row that is missing and a row
+  // in someone else's budget get the same answer, so the refusal says nothing
+  // about what exists elsewhere.  Admins get no exemption here: ADMIN is about
+  // users and budgets, and an admin's own money lives in their own budget like
+  // anyone's.
+  // ------------------------------------------------------------------------
+
+  /** The id of the caller's budget. */
+  protected Integer myBudgetId() throws EnvelopeException {
+    Budget budget = getUser().getBudget();
+    if (budget == null || budget.getId() == null)
+      throw new EnvelopeException(EnvelopeException.Name.Permission_Denied, "you have no budget");
+    return budget.getId();
+  }
+
+  /** Refuse unless the budget is the caller's. */
+  protected void requireMyBudget(Integer budgetId) throws EnvelopeException {
+    if (budgetId == null || !budgetId.equals(myBudgetId()))
+      throw notYours("budget " + budgetId);
+  }
+
+  /** Refuse unless the account is in the caller's budget. */
+  protected void requireMyAccount(Integer accountId) throws EnvelopeException {
+    requireOwned("select a.budget.id from Account a where a.id = :id", accountId, "account");
+  }
+
+  /** Refuse unless the category is in the caller's budget. */
+  protected void requireMyCategory(Integer categoryId) throws EnvelopeException {
+    requireOwned("select c.account.budget.id from Category c where c.id = :id", categoryId, "category");
+  }
+
+  /** Refuse unless the allocation is in the caller's budget. */
+  protected void requireMyAllocation(Integer allocationId) throws EnvelopeException {
+    requireOwned("select a.category.account.budget.id from Allocation a where a.id = :id",
+        allocationId, "allocation");
+  }
+
+  /** Refuse unless the preset row is in the caller's budget. */
+  protected void requireMyPresetRow(Integer presetRowId) throws EnvelopeException {
+    requireOwned("select p.budget.id from AllocationPreset p where p.id = :id", presetRowId, "preset row");
+  }
+
+  /**
+   * Refuse unless the transaction is in the caller's budget.  A transaction has
+   * no budget column and reaches one only through its allocations, so every one
+   * of them has to be the caller's: one stray allocation elsewhere would let a
+   * caller reach a row of someone else's through a transaction of their own.  A
+   * transaction with no allocations reaches no budget, so it is nobody's.
+   */
+  protected void requireMyTransaction(Integer transactionId) throws EnvelopeException {
+    if (transactionId == null) throw notYours("transaction null");
+    List<?> budgets = getCurrentSession()
+        .createQuery("select distinct a.category.account.budget.id from Allocation a"
+                     + " where a.transaction.id = :id")
+        .setParameter("id", transactionId)
+        .list();
+    Integer mine = myBudgetId();
+    if (budgets.isEmpty()) throw notYours("transaction " + transactionId);
+    for (Object b : budgets)
+      if (!mine.equals(b)) throw notYours("transaction " + transactionId);
+  }
+
+  private void requireOwned(String hql, Integer id, String what) throws EnvelopeException {
+    if (id == null) throw notYours(what + " null");
+    Object budget = getCurrentSession().createQuery(hql).setParameter("id", id).uniqueResult();
+    if (budget == null || !budget.equals(myBudgetId())) throw notYours(what + " " + id);
+  }
+
+  private EnvelopeException notYours(String what) {
+    logger.warn(getUser().getName() + " was refused " + what + ", which is not in their budget");
+    return new EnvelopeException(EnvelopeException.Name.Permission_Denied,
+        "there is no " + what + " in your budget");
+  }
+
 
   /** Begin a new transaction. */
   void begin() {

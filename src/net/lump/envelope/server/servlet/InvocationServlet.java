@@ -6,6 +6,7 @@ import net.lump.envelope.server.dao.Security;
 import net.lump.envelope.server.dao.Sessions;
 import net.lump.envelope.server.servlet.beans.ServerPrefs;
 import net.lump.envelope.shared.command.Command;
+import net.lump.envelope.shared.command.WireFilter;
 import net.lump.lib.util.Base64;
 import net.lump.lib.util.Encryption;
 import org.apache.log4j.Logger;
@@ -34,7 +35,17 @@ import java.util.zip.*;
  */
 public class InvocationServlet extends HttpServlet {
 
-  private static final int READLIMIT = 104857600;
+  /**
+   * The most any one part of a request may be, and the most a command may inflate
+   * to.  Both are read before the signature can be checked -- the signature covers
+   * the inflated bytes -- so they are the only bound an unauthenticated caller
+   * meets.  A command is a handful of plain values, well under a kilobyte; the
+   * login exchange, carrying a public key, is the largest.  This was 100 MB for the part
+   * and nothing at all for the inflation, which grew by copying: 16 KB of gzip with
+   * no credentials held a thread for four seconds, quadratically more for more.
+   */
+  private static final int READLIMIT = 1024 * 1024;
+  private static final int INFLATELIMIT = 1024 * 1024;
   private static final Logger logger = Logger.getLogger(InvocationServlet.class);
 
   public InvocationServlet() {
@@ -131,7 +142,18 @@ public class InvocationServlet extends HttpServlet {
           }
 
           byte[] content;
-          int contentLength = headers.get("content-length") == null ? -1 : new Integer(headers.get("content-length"));
+          int contentLength;
+          try {
+            contentLength = headers.get("content-length") == null ? -1 : Integer.parseInt(headers.get("content-length").trim());
+          } catch (NumberFormatException e) {
+            rp.sendError(HttpServletResponse.SC_BAD_REQUEST, "bad content-length on " + name);
+            return;
+          }
+          // allocated from this header before a byte is read or anyone is authenticated
+          if (contentLength > READLIMIT) {
+            rp.sendError(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE, name + " is over " + READLIMIT + " bytes");
+            return;
+          }
           if (contentLength > 0) {
             content = new byte[contentLength];
             byte[] buffer = new byte[contentLength];
@@ -196,16 +218,20 @@ public class InvocationServlet extends HttpServlet {
                 return;
               }
 
-              byte[] out = new byte[0];
-              byte[] buffer = new byte[4096];
+              // counted, so a small body cannot inflate without limit, and into a
+              // stream rather than a fresh array per read, which was quadratic
+              ByteArrayOutputStream out = new ByteArrayOutputStream();
+              byte[] buffer = new byte[8192];
               int read;
               while ((read = is.read(buffer)) > 0) {
-                byte[] newOut = new byte[out.length + read];
-                System.arraycopy(out, 0, newOut, 0, out.length);
-                System.arraycopy(buffer, 0, newOut, out.length, read);
-                out = newOut;
+                if (out.size() + read > INFLATELIMIT) {
+                  rp.sendError(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE,
+                      "the command inflates past " + INFLATELIMIT + " bytes");
+                  return;
+                }
+                out.write(buffer, 0, read);
               }
-              content = out;
+              content = out.toByteArray();
             }
 
             // Check the signature before deserializing.  It covers a digest of
@@ -224,7 +250,24 @@ public class InvocationServlet extends HttpServlet {
             String serType = "application/java-serialized-object";
             String contentType = headers.get("content-type");
             if (contentType != null && contentType.equals(serType)) {
-              Object o = new ObjectInputStream(new ByteArrayInputStream(content)).readObject();
+              ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(content));
+              // Only the classes a command can legitimately contain; anything else
+              // is refused before it is constructed.  See WireFilter.
+              ois.setObjectInputFilter(WireFilter.COMMANDS);
+              Object o;
+              try {
+                o = ois.readObject();
+              } catch (InvalidClassException refused) {
+                // WireFilter said no (or, rarely, a class version mismatch)
+                rp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                    "the command contained something no command may carry");
+                return;
+              } catch (ObjectStreamException malformed) {
+                // a value refusing itself (Money.readObject), a key that would not
+                // resolve, a corrupt stream: the client's fault, so not a 500
+                rp.sendError(HttpServletResponse.SC_BAD_REQUEST, "the command could not be read: " + malformed.getMessage());
+                return;
+              }
               if (o instanceof Command) {
                 command = (Command)o;
                 // The header is what decided whether we demanded a signature, so
@@ -238,6 +281,7 @@ public class InvocationServlet extends HttpServlet {
               else {
                 rp.sendError(HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE,
                     name + " was not a " + Command.class.getCanonicalName());
+                return;
               }
             }
             else {

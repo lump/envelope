@@ -118,14 +118,19 @@ public class Controller {
         }
       }
 
+      // Only a method the facet class itself declares.  getMethod also finds the
+      // public methods DAO inherits -- delete, merge, update, saveOrUpdate of any
+      // entity -- so a command that merely happened to share one of those names
+      // would quietly hand out the generic verb the named commands replaced.
+      java.lang.reflect.Method method = dao.getClass().getMethod(command.getName().name(), paramNames);
+      if (method.getDeclaringClass() != dao.getClass())
+        throw new NoSuchMethodException(command.getName().name() + " is not declared by "
+            + dao.getClass().getSimpleName());
+
       Object returnValue = null;
       try {
         // invoke the method and reap the return value.
-        returnValue =
-            // get the method from the command name and parameter names
-            dao.getClass().getMethod(command.getName().name(), paramNames)
-                // invoke the method on a new instance of the class with the arguments
-                .invoke(dao, args);
+        returnValue = method.invoke(dao, args);
       } catch (InvocationTargetException ite) {
         Throwable cause = ite.getCause();
         if (cause instanceof RemoteException && returnValue == null) {

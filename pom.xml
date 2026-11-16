@@ -14,10 +14,10 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>25</maven.compiler.release>
 
-    <!-- 5.6.x is the last Hibernate line that still ships org.hibernate.criterion
-         (DetachedCriteria).  This app serializes DetachedCriteria across the wire as
-         part of its RPC protocol, so moving to Hibernate 6/7 means redesigning the
-         protocol.  The "-jakarta" artifact is the same code republished against
+    <!-- 5.6.x is the last Hibernate line that still ships org.hibernate.criterion.
+         Until 0.12 DetachedCriteria crossed the wire, which pinned this; now only the
+         server's dao/Query uses the criteria API, so 6/7 means rewriting that one class
+         in HQL or JPA criteria, not the protocol.  The "-jakarta" artifact is the same code republished against
          jakarta.persistence, which is what lets it sit under Tomcat 10+. -->
     <hibernate.version>5.6.15.Final</hibernate.version>
     <!-- Hibernate 5.6 ships byte-buddy 1.12, which cannot read Java 25 class files. -->

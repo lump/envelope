@@ -6,7 +6,6 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.toedter.calendar.JDateChooser;
 import com.toedter.calendar.JTextFieldDateEditor;
 import net.lump.envelope.client.ui.components.ZonedDateEditor;
-import net.lump.envelope.client.CriteriaFactory;
 import net.lump.envelope.client.portal.TransactionPortal;
 import net.lump.envelope.client.thread.StatusRunnable;
 import net.lump.envelope.client.thread.ThreadPool;

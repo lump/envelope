@@ -1,6 +1,7 @@
 package net.lump.envelope.client.portal;
 
 import net.lump.envelope.shared.command.Command;
+import net.lump.envelope.shared.entity.Allocation;
 import net.lump.envelope.shared.entity.Transaction;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.Money;
@@ -14,6 +15,22 @@ import java.sql.Date;
  */
 @SuppressWarnings({"unchecked"})
 public class TransactionPortal extends Portal {
+
+  /** Save a transaction's own columns.  New ones come from createTransaction. */
+  public Transaction saveTransaction(Transaction transaction) throws AbortException {
+    return (Transaction)invoke(new Command(Command.Name.saveTransaction, null,
+        transaction.getId(), transaction.getStamp(), transaction.getDate(), transaction.getEntity(),
+        transaction.getDescription(), transaction.getReconciled(), transaction.getTransfer()));
+  }
+
+  /** Save an allocation, inserting it when its id is null. */
+  public Allocation saveAllocation(Allocation allocation) throws AbortException {
+    return (Allocation)invoke(new Command(Command.Name.saveAllocation, null,
+        allocation.getId(), allocation.getStamp(),
+        allocation.getTransaction() == null ? null : allocation.getTransaction().getId(),
+        allocation.getCategory() == null ? null : allocation.getCategory().getId(),
+        allocation.getAmount()));
+  }
 
   public void updateReconciled(Integer transactionId, Boolean reconciled)
       throws AbortException {

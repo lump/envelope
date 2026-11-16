@@ -16,9 +16,9 @@ plus a shared `lib/`.
 
 | Tree | Runs in | What |
 |------|---------|------|
-| `envelope/shared/` | both | The wire protocol + data model. `command/Command` is the RPC unit; `entity/` are the Hibernate entities; `command/security/` holds `Challenge`, `Credentials`, `Crypt`, `Permission`. |
-| `envelope/client/` | Swing client | `portal/` = one RPC client per server facet (`SecurityPortal`, `HibernatePortal`, `TransactionPortal`, over abstract `Portal`); `CriteriaFactory` builds every `DetachedCriteria` sent to the server; `ui/` = the Swing tree, with `ui/prefs/` holding `LoginSettings`/`ServerSettings` (backed by `java.util.prefs`). |
-| `envelope/server/` | Tomcat | `servlet/` — `InvocationServlet` → `/invoke`, `DefaultServlet` → `/` (delegates to `FileServer`), `ErrorServlet` → `/error`; `dao/` = `DAO`, `Security`, `Generic`, `Action`; `Controller` dispatches commands. |
+| `envelope/shared/` | both | The wire protocol + data model. `command/Command` is the RPC unit and `command/WireFilter` the classes one may contain; `entity/` are the Hibernate entities; `query/Total` is what the tree's balances arrive as; `command/security/` holds `Challenge`, `Credentials`, `Crypt`, `Permission`. |
+| `envelope/client/` | Swing client | `portal/` = one RPC client per server facet (`SecurityPortal`, `QueryPortal` for every read, `TransactionPortal`, `BudgetPortal`, `AdminPortal`, over abstract `Portal`); `ui/` = the Swing tree, with `ui/prefs/` holding `LoginSettings`/`ServerSettings` (backed by `java.util.prefs`). |
+| `envelope/server/` | Tomcat | `servlet/` — `InvocationServlet` → `/invoke`, `DefaultServlet` → `/` (delegates to `FileServer`), `ErrorServlet` → `/error`; `dao/` = `DAO` (with the whose-budget checks), `Security`, `Query` (reads), `Action` (writes); `Controller` dispatches commands. |
 | `lib/` | mostly client | `Money.java` (the core value type, mapped by `entity/type/MoneyType`) plus `util/`. Only `Base64`, `Encryption`, `Interval` and `Day` (the readiness probe's date check) are used by the server; `Revision` reports the application version and is read by the client's `AboutBox`; the rest (`EmacsKeyBindings`, `ByteFormat`, `Compression`, `ObjectUtil`, `ChildFirstClassLoader`) are client-only or unused. |
 
 **The RPC protocol is the load-bearing part.** The client Java-serializes a `Command` into a
@@ -32,13 +32,58 @@ the client reassembles them into a list. Authentication rides in HTTP headers ra
 the serialized payload, so the signature can cover a digest of the exact bytes on the wire and
 the server can check it before anything reaches `readObject`.
 
-**`org.hibernate.criterion.DetachedCriteria` is serialized across the wire** as a `Command`
-parameter (`Command.Name.detachedCriteriaQueryList` / `…QueryUnique`), built by
-`client/CriteriaFactory` and executed server-side by `dao/Generic`. That drags the whole
-`org.hibernate.criterion` object graph onto the wire — `CriteriaImpl`, the `Restrictions`
-`Criterion` impls, the `Projections` impls, `Order` — which is why the app is pinned to
-Hibernate 5.6, the last line that ships those classes. Moving to Hibernate 6/7 is not a
-dependency bump; it means redesigning the protocol.
+**Every command is a named question or change about the caller's own budget, and its
+parameters are plain values.** Until 0.12 the client built Hibernate `DetachedCriteria` in
+`client/CriteriaFactory` and shipped them to `dao/Generic`, which ran whatever arrived, beside
+generic `get`/`load`/`save`/`saveOrUpdate` of any entity. Any logged-in user could therefore
+read every row of every table — `User.cryptPassword` included, which is a password-equivalent
+(see the login trap below) — and insert a `User` with ADMIN permission; both were demonstrated
+as guest against a throwaway stack before the fix. Now reads are the `Query` facet
+(`myBudget`, `categories`, `accountTransactions`, `categoryBalances`, …, reached through
+`QueryPortal`) and edits are `Action`'s `saveTransaction` / `saveAllocation` / `savePreset`
+beside the existing narrow verbs. The criteria moved to `dao/Query` **unchanged**, so the SQL
+is what it was (an old-versus-new diff of every read matched, on the seed data and on the dev
+database's guest budget). The budget is never the client's to say: it comes from the
+authenticated user, and every id a command names is checked against it (`DAO.requireMy…`)
+before anything else runs. **Don't add a generic verb back** — the server cannot scope what it
+cannot see the purpose of. Hibernate 5.6 is no longer pinned by the wire: the criteria API is
+now used only server-side, so 6/7 is an ordinary upgrade that rewrites `Query` in HQL or JPA
+criteria.
+
+**The saves take values, never an entity.** `saveTransaction(id, stamp, date, entity,
+description, reconciled, transfer)`, `saveAllocation(id, stamp, transactionId, categoryId,
+amount)` and `savePreset(id, stamp, name, categoryId, allocation, type, autoDeduct)`: the server
+loads its own row, refuses a stamp that is not the stored one (`Action.requireCurrent`, the
+same answer `@Version` gave as `StaleObjectStateException`), and copies the fields across; the
+portals still take entities and unpack them, so no call site changed. The first cut of 0.12
+took entities and `saveOrUpdate`d them, and an independent review read another budget through
+it: a `Transaction` sent to `saveTransaction` carried a `PersistentBag` whose collection key the
+client had set to a foreign transaction id, and reattaching it loaded that collection into the
+reply. **Never reattach a client's object graph** — it hands Hibernate whatever was put in it.
+An existing allocation also cannot move to another transaction (`saveAllocation` refuses), which
+would otherwise take a transaction's last allocation around `deleteAllocation`'s guard.
+
+**What a command may contain is an allowlist.** `InvocationServlet` reads every command
+through `WireFilter.COMMANDS`, an `ObjectInputFilter` that admits `Command` and its `Name`,
+`Money`, the JDK value types (boxed primitives, `BigDecimal`/`BigInteger`, the three date types,
+the `ArrayList` holding the parameters), and `KeyRep` plus the RSA key it resolves to for login
+— **no entity and no Hibernate class** — and refuses everything else with a 400 *before*
+constructing it, so a gadget chain never starts. Depth, references, array length and bytes are
+capped tight, since a command is a handful of values. Two non-obvious entries:
+`java.lang.Object`, because `ArrayList.readObject` checks its backing `Object[]` against the
+filter; and `sun.security.rsa.RSAPublicKeyImpl`, because the filter is asked again about what
+`KeyRep.readResolve` returns. A new parameter type needs a line there (the refusal is logged with
+the class name); an entity parameter means send its id and the fields instead. `Money` also
+refuses, in its own `readObject`, a `BigDecimal` with an absurd scale or precision
+(`Money.isSane`) — a few bytes that would turn the first division into an allocation of
+billions of digits — and `savePreset` applies the same check to its bare `BigDecimal`. Ahead of
+the filter, the servlet caps each request part and the inflated command at 1 MB: both are read
+before the signature can be checked (it covers the inflated bytes), and the inflation used to be
+uncapped and quadratic — 16 KB of gzip with no credentials held a thread for four seconds.
+`Controller` resolves a command only to a method its facet class **declares**, so a command
+sharing a name with one of `DAO`'s public generic methods (`delete`, `merge`, `update`, …) is
+refused rather than handed the generic verb. The client does not filter what the server sends
+back — it trusts its server (see the server-authentication trap below).
 
 **The save unit is the Allocation, not the Transaction.** `Transaction.allocations` is
 `@OneToMany(mappedBy = "transaction")` with **no cascade** — an inverse side that owns no
@@ -53,11 +98,10 @@ existence. Every balance in the app — account totals, category totals, `Transa
 is a target to reconcile against, not a source.
 
 Adding and removing allocations follows from the same fact. An insert is just
-`saveOrUpdate` on an `Allocation` whose id is null — its `@ManyToOne` cascades carry the
+`saveAllocation` on an `Allocation` whose id is null — its `@ManyToOne` cascades carry the
 association — so no insert verb was needed. Delete is a bespoke
 `Command.Name.deleteAllocation` on the `Action` facet rather than a generic "delete this
-entity": nothing on the server checks whose budget a command touches, so a generic delete
-verb would hand every authenticated caller the ability to remove any row of any type.
+entity", like every write: each is one type, in the caller's budget.
 `Action.deleteAllocation` refuses to remove a transaction's **last** allocation, because a
 transaction reaches its budget only through them. For the same reason
 `Action.createTransaction` makes the transaction and its first allocation in one
@@ -82,7 +126,7 @@ stops a transaction reaching zero allocations — which is why that one check ha
 atomic by hand.
 
 **The tree's structure comes from the structure tables; only its money comes from
-allocations.** `CriteriaFactory.getAccountTotals` and `getCategoriesForAccount` each run two
+allocations.** `Query.accountTotals` and `categoryTotals` each run two
 queries and merge them: the accounts (or categories) themselves, plus a `sum(amount)`
 projection over `Allocation` keyed by id, defaulting to zero. They used to be a single
 projection over `Allocation`, which inner-joins its way up to the account and therefore
@@ -117,7 +161,7 @@ means the category as of the transaction's day, without the transaction.** Each 
 allocations whose transaction is dated **on or before this one's day** (`le("t.date", …)`
 against `Transaction.date` in its wire form, so same-day transactions count) with **this
 transaction's rows excluded on the server** (`ne("t.id", …)`), both in
-`CriteriaFactory.getCategoryBalances(budget, transactionId, asOf)`; Projection is that plus
+`Query.categoryBalances(transactionId, asOf)`; Projection is that plus
 every row of this transaction in the same category as they stand on screen, unsaved edits
 included. So an old transaction shows the balance it met and the balance it left, not
 today's less itself; an auto-deduct pair projects to the balance it leaves rather than one
@@ -288,7 +332,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.11.3**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.12.0**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at
@@ -325,7 +369,7 @@ come from `MIGRATE_SRC_*` / `MIGRATE_DST_*` environment variables; only
 | Was | Now | Why |
 |-----|-----|-----|
 | `javax.servlet` / `javax.persistence` | `jakarta.*` | Tomcat 10+; `jakarta.servlet-api` 6.1.0 (Jakarta Servlet 6.1) |
-| Hibernate (old) | **5.6.15.Final `-jakarta`** | last line with `org.hibernate.criterion` (see above) |
+| Hibernate (old) | **5.6.15.Final `-jakarta`** | was pinned by `DetachedCriteria` on the wire; since 0.12 only `dao/Query` uses criteria, so 6/7 is now an ordinary upgrade |
 | byte-buddy 1.12 (bundled) | **1.18.13** override | 1.12 can't read Java 25 class files |
 | c3p0 | **HikariCP 7.1.0** | via `hibernate-hikaricp` with exclusions (never republished as `-jakarta`) |
 | MySQL | **MariaDB 11.8** | `sql/bootstrap-mysql.sql` loads unchanged |
@@ -404,7 +448,7 @@ at the `/configure` form waiting for a human.
   qualifies the name with its account as `Account/Name`, both completers also answer to the bare name, and `TransactionForm.categoryOrderFor` lists the
   transaction's own accounts first. Don't put the bare name back in `toString()`.
 - **A user has exactly one budget.** `User.budget` is a single `@ManyToOne`, and
-  `CriteriaFactory.getBudgetForUser` reads it as a unique result into `State.budget`, which the
+  `Query.myBudget` hands it to `State.budget`, which the
   tree roots on. The `budgets` table holds many, and accounts/categories/presets are all scoped
   to one — but nothing lets a user reach a second. Separate banks live as separate *accounts*
   inside the one budget; a second budget would be a separate envelope system, and supporting
@@ -489,7 +533,7 @@ at the `/configure` form waiting for a human.
   open editor **before** the view changes. If you add another way to change the view, do the
   same.
 - **Tests are skipped by default** (`default-skip-tests` profile); run with
-  `-DskipTests=false`. **The suite passes** — 39 tests — but only those that need no
+  `-DskipTests=false`. **The suite passes** — 38 tests — but only those that need no
   server pass on their own; point the rest at a running stack:
 
   ```
@@ -510,8 +554,9 @@ at the `/configure` form waiting for a human.
   `TestRevision` asserted a non-empty value for `Revision.Locker`, which CVS leaves empty
   exactly like `Revision.Name` that it already skipped.
 - **`TestDates` is where date behaviour is pinned.** Twenty tests across eight zones either
-  side of UTC, covering the wire form, `java.sql.Date`, the criteria that carry dates, the
-  table column and both date editors. It needs no server, and is deliberately **not** in
+  side of UTC, covering the wire form, `java.sql.Date`, the commands that carry dates
+  through `WireFilter` (and the filter refusing anything else), the table column and both
+  date editors. It needs no server, and is deliberately **not** in
   `TestSuite.suite()` — that class's static initializer demands a handshake and nothing in
   `TestDates` does. It pins the *stock* `JTextFieldDateEditor`'s staleness on purpose, so if
   a future jcalendar fixes it that test fails and `ZonedDateEditor` can go. Its comparisons
@@ -586,10 +631,22 @@ at the `/configure` form waiting for a human.
   encryption is optional (`ServerSettings.getEncrypt()` defaults to **false**) and there is no
   TLS; today the only thing mitigating this is compose binding to `127.0.0.1`. Pin the server key
   on first use, or put TLS in front, before exposing this beyond localhost.
-- **Permissions say what a user may do, not to which budget.** `READ`/`WRITE`/`ADMIN` are
-  enforced per command at dispatch, but no data command is scoped to the caller's budget — a
-  WRITE user of one budget can still query or save another budget's transactions via
-  `DetachedCriteria`. Scoping writes is tractable (resolve the entity's budget and compare);
-  scoping reads means rewriting or replacing the client-built criteria.
+- **Permissions say what a user may do; the budget checks say to which rows.** Both apply to
+  every data command: `Controller.dispatch` checks the `Permission` bit, and the DAO method
+  checks every id it was given with `DAO.requireMyAccount` / `…Category` / `…Transaction` /
+  `…Allocation` / `…PresetRow` / `requireMyBudget`. Those checks ask the database a scalar
+  question (the id of the budget a row belongs to) rather than loading the row, because a save
+  that loaded the row first would collide with the client's copy of it
+  (`NonUniqueObjectException`) — that collision is also, by accident, why guest could not
+  rewrite its *own* `User` row before 0.12, only insert new ones. A transaction belongs to a
+  budget only through its allocations, so `requireMyTransaction` insists **every** allocation
+  is the caller's, and refuses a transaction with none. A missing row and someone else's row
+  get the same refusal ("there is no account 7 in your budget"). Admins get no exemption: ADMIN
+  is about users and budgets, and the user/budget commands remain global.
+- **Known, unfixed, low-severity** (from the 0.12 review): `getChallenge` and
+  `authChallengeResponse` answer an unknown user with `Invalid_User` but a wrong password with
+  `Invalid_Credentials`, so user names can be enumerated without logging in, and
+  `getChallenge` hands any user's salt to anyone; `ready` tells anyone the latest transaction
+  date across every budget; `setPassword` does not ask for the current password.
 - **Sessions are per-JVM and in memory** (`Sessions`), so they die on redeploy and would need
   sticky sessions or a shared store if a second Tomcat ever appeared.

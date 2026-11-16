@@ -32,7 +32,8 @@ public class Action extends DAO {
    * @param transactionID the ID of the transaction
    * @param reconciled whether this is reconciled or not
    */
-  public void updateReconciled(Integer transactionID, Boolean reconciled) {
+  public void updateReconciled(Integer transactionID, Boolean reconciled) throws EnvelopeException {
+    requireMyTransaction(transactionID);
     Transaction t = load(Transaction.class, transactionID);
     t.setReconciled(reconciled);
   }
@@ -40,17 +41,16 @@ public class Action extends DAO {
   /**
    * Delete one Allocation.
    *
-   * <p>Deliberately narrow rather than a generic "delete this entity" command.
-   * Nothing on the server checks whose budget a command touches, so a generic
-   * delete verb would hand every authenticated caller the ability to remove any
-   * row of any type; this one can only ever remove an allocation, and it enforces
-   * the invariant below no matter what the client believes.
+   * <p>Deliberately narrow rather than a generic "delete this entity" command:
+   * this one can only ever remove an allocation, only in the caller's budget, and
+   * it enforces the invariant below no matter what the client believes.
    *
    * @param allocationId the id of the Allocation to remove
    *
    * @throws EnvelopeException if this is the transaction's last allocation
    */
   public void deleteAllocation(Integer allocationId) throws EnvelopeException {
+    requireMyAllocation(allocationId);
     Allocation allocation = load(Allocation.class, allocationId);
     Integer transactionId = allocation.getTransaction().getId();
 
@@ -106,6 +106,7 @@ public class Action extends DAO {
     if (categoryId == null)
       throw new EnvelopeException(
           EnvelopeException.Name.Invalid_Data, "a transaction needs a category");
+    requireMyCategory(categoryId);
 
     Category category = load(Category.class, categoryId);
 
@@ -144,6 +145,7 @@ public class Action extends DAO {
    * @param transactionId the transaction to remove
    */
   public void deleteTransaction(Integer transactionId) throws EnvelopeException {
+    requireMyTransaction(transactionId);
     Transaction transaction = load(Transaction.class, transactionId);
 
     @SuppressWarnings("unchecked")
@@ -157,6 +159,139 @@ public class Action extends DAO {
     getCurrentSession().flush();
 
     delete(transaction);
+  }
+
+  // ------------------------------------------------------------------------
+  // Saving what the form edits.
+  //
+  // These replace the generic saveOrUpdate, which took any Identifiable at all
+  // -- a User with ADMIN permission included -- and wrote it.  They take plain
+  // values, not entities: the row's id, the version stamp the client last saw,
+  // and the fields the form edits.  The server loads its own row, refuses a stale
+  // stamp exactly as @Version would, and copies the fields across.
+  //
+  // Values rather than the client's object, because reattaching a client's object
+  // graph hands Hibernate whatever the client put in it.  The first cut of 0.12
+  // did that, and an independent review read another budget's allocations
+  // through it: a Transaction sent for saving carried a PersistentBag whose
+  // collection key the client had set to someone else's transaction id, and
+  // reattaching it loaded that collection into the reply.  Nothing the client
+  // sends is attached to the session now, so no command needs to carry an entity
+  // or a Hibernate collection, and WireFilter admits neither.
+  // ------------------------------------------------------------------------
+
+  /** Refuse a save made against an older version of the row than the one stored. */
+  private void requireCurrent(java.sql.Timestamp stored, java.sql.Timestamp seen, String what)
+      throws EnvelopeException {
+    if (seen == null || stored == null || !stored.equals(seen))
+      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data,
+          what + " was changed since it was read; reload it and try again");
+  }
+
+  /**
+   * Save a transaction's own columns.  New transactions come from
+   * createTransaction, which makes the first allocation with them; one saved
+   * alone is a row no query can find.
+   *
+   * @return the saved transaction, carrying its new version stamp
+   */
+  public Transaction saveTransaction(Integer transactionId, java.sql.Timestamp stamp, java.util.Date date,
+                                     String entity, String description, Boolean reconciled, Boolean transfer)
+      throws EnvelopeException {
+    requireMyTransaction(transactionId);
+    if (date == null)
+      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "a transaction needs a date");
+    Transaction transaction = get(Transaction.class, transactionId);
+    requireCurrent(transaction.getStamp(), stamp, "transaction " + transactionId);
+
+    transaction.setDate(new Date(date.getTime()));
+    transaction.setEntity(entity == null ? "" : entity);
+    transaction.setDescription(description == null ? "" : description);
+    transaction.setReconciled(Boolean.TRUE.equals(reconciled));
+    transaction.setTransfer(Boolean.TRUE.equals(transfer));
+    getCurrentSession().flush();
+    Hibernate.initialize(transaction);
+    return evict(transaction);
+  }
+
+  /**
+   * Save an allocation, inserting it when its id is null.  Its category and its
+   * transaction must both be the caller's.  An existing allocation stays on its
+   * transaction: moving one would be a way to take a transaction's last
+   * allocation without deleteAllocation's guard, and the form never does it.
+   *
+   * @return the saved allocation, carrying its id and new version stamp
+   */
+  public Allocation saveAllocation(Integer allocationId, java.sql.Timestamp stamp, Integer transactionId,
+                                   Integer categoryId, Money amount)
+      throws EnvelopeException {
+    requireMyTransaction(transactionId);
+    requireMyCategory(categoryId);
+
+    Allocation allocation;
+    if (allocationId == null) {
+      allocation = new Allocation();
+      allocation.setTransaction(get(Transaction.class, transactionId));
+    }
+    else {
+      requireMyAllocation(allocationId);
+      allocation = get(Allocation.class, allocationId);
+      requireCurrent(allocation.getStamp(), stamp, "allocation " + allocationId);
+      if (!allocation.getTransaction().getId().equals(transactionId))
+        throw new EnvelopeException(EnvelopeException.Name.Invalid_Data,
+            "an allocation cannot be moved to another transaction");
+    }
+    allocation.setCategory(get(Category.class, categoryId));
+    allocation.setAmount(amount == null ? Money.ZERO : amount);
+
+    if (allocation.getId() == null) getCurrentSession().save(allocation);
+    getCurrentSession().flush();
+    Hibernate.initialize(allocation);
+    return evict(allocation);
+  }
+
+  /**
+   * Save an allocation preset row in the caller's budget, inserting it when its
+   * id is null.
+   *
+   * @param type one of AllocationPreset.AllocationType -- percent or fixed
+   * @return the saved row, carrying its id and new version stamp
+   */
+  public AllocationPreset savePreset(Integer presetRowId, java.sql.Timestamp stamp, String name,
+                                     Integer categoryId, BigDecimal allocation, String type, Boolean autoDeduct)
+      throws EnvelopeException {
+    requireMyCategory(categoryId);
+    String presetName = checkName(name);
+    // a bare BigDecimal, so Money's own check on the wire does not cover it
+    if (!Money.isSane(allocation))
+      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "that allocation is out of all proportion");
+    AllocationPreset.AllocationType allocationType;
+    try {
+      allocationType = AllocationPreset.AllocationType.valueOf(type);
+    } catch (RuntimeException e) {
+      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "\"" + type + "\" is not a preset type");
+    }
+
+    AllocationPreset row;
+    if (presetRowId == null) {
+      row = new AllocationPreset();
+      row.setBudget(get(Budget.class, myBudgetId()));
+    }
+    else {
+      requireMyPresetRow(presetRowId);
+      row = get(AllocationPreset.class, presetRowId);
+      requireCurrent(row.getStamp(), stamp, "preset row " + presetRowId);
+    }
+    row.setName(presetName);
+    row.setCategory(get(Category.class, categoryId));
+    row.setAllocation(allocation);
+    row.setAllocationType(allocationType);
+    row.setAutoDeduct(Boolean.TRUE.equals(autoDeduct));
+
+    if (row.getId() == null) getCurrentSession().save(row);
+    getCurrentSession().flush();
+    Hibernate.initialize(row);
+    return evict(row);
   }
 
   /**
@@ -202,6 +337,7 @@ public class Action extends DAO {
    */
   public Transaction applyAllocationPreset(Integer transactionId, String presetName, Money gross)
       throws EnvelopeException {
+    requireMyTransaction(transactionId);
     Transaction transaction = load(Transaction.class, transactionId);
 
     @SuppressWarnings("unchecked")
@@ -521,12 +657,12 @@ public class Action extends DAO {
    *
    * <p>No locking and no guard: a preset row has nothing depending on it, and a
    * preset with no rows left is simply a preset that no longer exists.  Inserting
-   * and updating rows needs no command of its own -- AllocationPreset is an
-   * Identifiable, so the generic saveOrUpdate carries it.
+   * and updating rows is savePreset.
    *
    * @param presetRowId the row to remove
    */
   public void deletePresetRow(Integer presetRowId) throws EnvelopeException {
+    requireMyPresetRow(presetRowId);
     AllocationPreset row = get(AllocationPreset.class, presetRowId);
     if (row == null)
       throw new EnvelopeException(
@@ -543,6 +679,7 @@ public class Action extends DAO {
    * @param name     the preset name
    */
   public void deletePresetNamed(Integer budgetId, String name) throws EnvelopeException {
+    requireMyBudget(budgetId);
     @SuppressWarnings("unchecked")
     List<AllocationPreset> rows = getCurrentSession()
         .createQuery("from AllocationPreset p where p.budget.id = :budgetId and p.name = :name")
@@ -566,6 +703,7 @@ public class Action extends DAO {
    */
   public void renamePresetNamed(Integer budgetId, String oldName, String newName)
       throws EnvelopeException {
+    requireMyBudget(budgetId);
     String wanted = checkName(newName);
 
     @SuppressWarnings("unchecked")
@@ -621,6 +759,7 @@ public class Action extends DAO {
    */
   public Account createAccount(Integer budgetId, String name, String type)
       throws EnvelopeException {
+    requireMyBudget(budgetId);
     String accountName = checkName(name);
 
     // get(), not load().  load() hands back an uninitialized proxy, which would
@@ -663,6 +802,7 @@ public class Action extends DAO {
    * @param name      its new name, unique within its budget
    */
   public void renameAccount(Integer accountId, String name) throws EnvelopeException {
+    requireMyAccount(accountId);
     String accountName = checkName(name);
     Account account = load(Account.class, accountId);
     checkAccountNameFree(account.getBudget().getId(), accountName, accountId);
@@ -682,6 +822,7 @@ public class Action extends DAO {
    * @param accountId the account to remove
    */
   public void deleteAccount(Integer accountId) throws EnvelopeException {
+    requireMyAccount(accountId);
     Account account = load(Account.class, accountId);
 
     long categories = countRows(
@@ -705,6 +846,7 @@ public class Action extends DAO {
    * @return the new Category, detached
    */
   public Category createCategory(Integer accountId, String name) throws EnvelopeException {
+    requireMyAccount(accountId);
     String categoryName = checkName(name);
 
     // get(), not load() -- see createAccount
@@ -732,6 +874,7 @@ public class Action extends DAO {
    * @param name       its new name, unique within its account
    */
   public void renameCategory(Integer categoryId, String name) throws EnvelopeException {
+    requireMyCategory(categoryId);
     String categoryName = checkName(name);
     Category category = load(Category.class, categoryId);
     checkCategoryNameFree(category.getAccount().getId(), categoryName, categoryId);
@@ -746,6 +889,7 @@ public class Action extends DAO {
    * @param categoryId the category to remove
    */
   public void deleteCategory(Integer categoryId) throws EnvelopeException {
+    requireMyCategory(categoryId);
     Category category = load(Category.class, categoryId);
 
     long allocations = countRows(

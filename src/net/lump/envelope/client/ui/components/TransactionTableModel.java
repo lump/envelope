@@ -1,7 +1,6 @@
 package net.lump.envelope.client.ui.components;
 
-import net.lump.envelope.client.CriteriaFactory;
-import net.lump.envelope.client.portal.HibernatePortal;
+import net.lump.envelope.client.portal.QueryPortal;
 import net.lump.envelope.client.portal.TransactionPortal;
 import net.lump.envelope.client.thread.StatusElement;
 import net.lump.envelope.client.thread.StatusRunnable;
@@ -140,29 +139,15 @@ public class TransactionTableModel extends AbstractTableModel {
             TableQueryBar.getInstance().setOutboxLabel(outgoingBalance.toString());
             startDate = System.currentTimeMillis();
 
-            CriteriaFactory cf = CriteriaFactory.getInstance();
-            HibernatePortal hp = new HibernatePortal();
+            QueryPortal qp = new QueryPortal();
 
-            hp.detachedCriteriaQueryUnique(
-                cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, null),
-                new OutputListener() {
-                  public void commandOutputOccurred(OutputEvent event) {
-                    beginningBalance = event.getPayload() != null ? (Money)event.getPayload() : new Money(0);
-                  }
-                });
-
-            hp.detachedCriteriaQueryUnique(
-                cf.getBeginningBalance(TransactionTableModel.this.thing, beginDate, Boolean.TRUE),
-                new OutputListener() {
-                  public void commandOutputOccurred(OutputEvent event) {
-                    beginningReconciledBalance = event.getPayload() != null ? (Money)event.getPayload() : new Money(0);
-                  }
-                });
+            beginningBalance = qp.beginningBalance(TransactionTableModel.this.thing, beginDate, null);
+            beginningReconciledBalance =
+                qp.beginningBalance(TransactionTableModel.this.thing, beginDate, Boolean.TRUE);
 
             final Boolean[] finished = new Boolean[]{Boolean.FALSE};
 
-            List retval = hp.detachedCriteriaQueryList(
-                cf.getTransactions(TransactionTableModel.this.thing, beginDate, endDate),
+            List retval = qp.transactions(TransactionTableModel.this.thing, beginDate, endDate,
                 new OutputListener() {
                   public void commandOutputOccurred(OutputEvent event) {
                     synchronized (finished) {

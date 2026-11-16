@@ -2,6 +2,7 @@ package net.lump.envelope.client.portal;
 
 import net.lump.envelope.shared.command.Command;
 import net.lump.envelope.shared.entity.Account;
+import net.lump.envelope.shared.entity.AllocationPreset;
 import net.lump.envelope.shared.entity.Category;
 import net.lump.envelope.shared.exception.AbortException;
 
@@ -10,9 +11,8 @@ import net.lump.envelope.shared.exception.AbortException;
  *
  * <p>Separate from TransactionPortal because these change the structure money is
  * filed into rather than the money itself.  Each is a narrow command on the Action
- * facet rather than a generic save or delete -- nothing on the server checks whose
- * budget a command touches, so a generic verb would let any authenticated caller
- * alter any row of that type in anyone's budget.
+ * facet rather than a generic save or delete, and the server confines each to the
+ * caller's own budget.
  *
  * @author troy
  */
@@ -71,11 +71,17 @@ public class BudgetPortal extends Portal {
     invoke(new Command(Command.Name.deleteCategory, null, categoryId));
   }
 
-  /**
-   * Remove one row from an allocation preset.  Adding and changing rows needs no
-   * command of its own: AllocationPreset is an Identifiable, so HibernatePortal's
-   * saveOrUpdate carries it.
-   */
+  /** Save an allocation preset row, inserting it when its id is null. */
+  public AllocationPreset savePreset(AllocationPreset row) throws AbortException {
+    return (AllocationPreset)invoke(new Command(Command.Name.savePreset, null,
+        row.getId(), row.getStamp(), row.getName(),
+        row.getCategory() == null ? null : row.getCategory().getId(),
+        row.getAllocation(),
+        row.getAllocationType() == null ? null : row.getAllocationType().name(),
+        row.isAutoDeduct()));
+  }
+
+  /** Remove one row from an allocation preset. */
   public void deletePresetRow(Integer presetRowId) throws AbortException {
     invoke(new Command(Command.Name.deletePresetRow, null, presetRowId));
   }

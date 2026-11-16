@@ -1,7 +1,5 @@
 package net.lump.envelope.shared.command;
 
-import org.hibernate.criterion.DetachedCriteria;
-import net.lump.envelope.shared.entity.Identifiable;
 
 // so the command declarations read as plain words; an enum cannot alias these
 // itself, since its constants initialize before any static field of its own
@@ -59,7 +57,7 @@ public class Command implements Serializable {
    * @author Troy Bowman
    */
   public enum Dao {
-    Generic,
+    Query,
     Security,
     Action, }
 
@@ -83,16 +81,36 @@ public class Command implements Serializable {
 
     // ---- READ: looking -------------------------------------------------------
     authedPing(Dao.Security, READ),
-    detachedCriteriaQueryList(Dao.Generic, READ, DetachedCriteria.class, Boolean.class),
-    detachedCriteriaQueryUnique(Dao.Generic, READ, DetachedCriteria.class, Boolean.class),
-    get(Dao.Generic, READ, Class.class, Serializable.class),
-    load(Dao.Generic, READ, Class.class, Serializable.class),
+
+    // Every read is a named question about the caller's own budget.  There were
+    // generic verbs here -- a DetachedCriteria query, get and load of any class,
+    // save and saveOrUpdate of any Identifiable -- and they let any logged-in user
+    // read every user's password hash and write a User with ADMIN permission.
+    // Don't add a generic verb back: the server cannot scope what it cannot see
+    // the purpose of.  The parameters are ids, dates and booleans, which is also
+    // what lets InvocationServlet's deserialization filter be a short list.
+    myBudget(Dao.Query, READ),
+    entities(Dao.Query, READ),
+    categories(Dao.Query, READ),
+    presets(Dao.Query, READ),
+    accountTotals(Dao.Query, READ),
+    categoryTotals(Dao.Query, READ, Integer.class),
+    transaction(Dao.Query, READ, Integer.class),
+    categoryBalances(Dao.Query, READ, Integer.class, java.util.Date.class),
+    categoryBalance(Dao.Query, READ, Integer.class, Integer.class, java.util.Date.class),
+    accountBeginningBalance(Dao.Query, READ, Integer.class, java.util.Date.class, Boolean.class),
+    categoryBeginningBalance(Dao.Query, READ, Integer.class, java.util.Date.class, Boolean.class),
+    accountTransactions(Dao.Query, READ, Integer.class, java.util.Date.class, java.util.Date.class),
+    categoryTransactions(Dao.Query, READ, Integer.class, java.util.Date.class, java.util.Date.class),
 
     // ---- WRITE: changing money and the shape it is filed into --------------
-    save(Dao.Generic, WRITE, Identifiable.class),
-    saveOrUpdate(Dao.Generic, WRITE, Identifiable.class),
-//    merge(Dao.Generic, Identifiable.class),
-//    refresh(Dao.Generic, Identifiable.class),
+    // plain values, never an entity: see Action on why a client's object graph
+    // is not something the server may reattach
+    saveTransaction(Dao.Action, WRITE, Integer.class, java.sql.Timestamp.class, java.util.Date.class,
+                    String.class, String.class, Boolean.class, Boolean.class),
+    saveAllocation(Dao.Action, WRITE, Integer.class, java.sql.Timestamp.class, Integer.class, Integer.class, Money.class),
+    savePreset(Dao.Action, WRITE, Integer.class, java.sql.Timestamp.class, String.class, Integer.class,
+               java.math.BigDecimal.class, String.class, Boolean.class),
 
     updateReconciled(Dao.Action, WRITE, Integer.class, Boolean.class),
     deleteAllocation(Dao.Action, WRITE, Integer.class),
@@ -123,8 +141,9 @@ public class Command implements Serializable {
     createBudget(Dao.Action, ADMIN, String.class),
     deleteBudget(Dao.Action, ADMIN, Integer.class),
 
-    // NOTE: bit() is derived from ordinal(), so add new commands at the END --
-    // inserting one in the middle renumbers every command after it.
+    // bit() is derived from ordinal(), so reordering renumbers it -- harmless,
+    // since it is only computed at run time and never stored or sent (a Name
+    // crosses the wire by name), but keep the client's unEncryptables() in mind.
     //more command definitions here...
     ;
 
