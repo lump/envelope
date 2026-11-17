@@ -311,22 +311,49 @@ further off per switch (`08/27` after five). `TransactionChangeHandler.showDate`
 right way to put a stored day on the picker.
 (`hibernate.jdbc.time_zone` was tried and does nothing for `DATE` in 5.6.)
 
-**Login sends a password-equivalent, not a password.** The client generates an RSA keypair —
-fresh on every launch, never persisted — and sends its public key in `getChallenge`. The
-server's `Challenge` carries the server's public key and, as the "challenge", only
-`Crypt.yankSalt(user.getCryptPassword())`: the salt from the stored hash, constant per password
-and carrying no nonce. The client computes `Crypt.crypt(salt, password)`, reproducing the stored
-md5-crypt hash, and RSA-encrypts it to the server key; the server decrypts and compares. Hashes
-are md5-crypt (`$1$`), though `Crypt.crypt()` also dispatches to DES crypt for 2-/13-char
-non-`$1$` salts. `Crypt.PASSWORD_ENCODING` pins the password's byte encoding to
-UTF-8 rather than taking the platform default, and the hash counts the password in bytes
-rather than characters — both only matter outside ASCII, but without them the same password
-hashed differently depending on the JVM's locale and matched no other md5-crypt
-implementation. `Crypt.crypt` now agrees with `openssl passwd -1` for non-ASCII passwords as
-well as ASCII ones.
+**Login is SCRAM-SHA-256, and the database holds nothing that logs anyone in (0.14).** Two
+session-less commands: `scramStart(username, clientNonce)` answers a `ScramChallenge` — the
+full nonce (the client's with the server's appended), the md5-crypt salt, the SCRAM salt, the
+PBKDF2 iteration count (600 000) and the server's public key; `scramFinish(nonce, proof,
+clientPublicKey)` answers a `ScramResult` — the server's signature and the session id
+encrypted to that key. The derivations are RFC 5802's (`shared/command/security/Scram`, checked
+against RFC 7677's test vector in `TestScram`): the client stretches the password once with
+PBKDF2 and sends a proof bound to both nonces, good for that exchange alone; the server keeps
+only StoredKey and ServerKey (`users.scram_*`), checks the proof with a few HMACs — no slow
+hashing at login, so a login flood is cheap to refuse — and signs back with ServerKey, which
+the client checks before believing the session id (`SecurityPortal.login`), so an impostor
+cannot complete a login either. A copied users table makes no proof (demonstrated: StoredKey
+and ServerKey both refused as client keys); it can only be attacked by guessing at the full
+PBKDF2 cost. Two things are this application's own. The "password" fed to PBKDF2 is the
+md5-crypt of the password under `users.md5_salt` — what the server stored before 0.14 — so
+`PasswordMigration` converted every existing user at startup from the hash it already had
+(`Scram.fromMd5Crypt`), cleared `crypt_password`, and nobody had to log in or change a password.
+And `Scram.authMessage` is not RFC 5802's text: it also covers the client's per-launch public
+key, so the session is bound to the client that proved itself, as before. md5 salts are the
+bare eight characters (`Crypt.yankSalt`'s form) everywhere, so a made-up one matches a real
+one's shape. **An unknown user is answered as if known**: a made-up verifier derived from the
+name with a secret (`Logins.fakeSalt`/`fakeMd5Salt`; the secret is a hash of the database
+password and URL — stable and secret for the life of a deployment), and every failure, unknown
+user or wrong password or replayed nonce, is the same `Invalid_Credentials: the user name or
+password is not right`. **Failures are throttled** (`Logins`) by user name and by address: five
+free, then each attempt waits twice as long as the last, from one second to fifteen minutes,
+and a success resets both — an address keeps waiting whatever name it tries next. Pending
+exchanges live two minutes and finish once. A password travels as the **verifier** the client
+computed (`Scram.newVerifier`): `createUser` and `setPassword` take md5 salt, salt,
+iterations, StoredKey, ServerKey (`Action.verifier` refuses one that could not have come from
+`newVerifier`), and changing **one's own** carries a proof with the current password — an
+ordinary `scramStart` for one's own name, its proof handed to `setPassword` — with a wrong one
+counted by the throttle. "Remember password" keeps ClientKey and ServerKey for that salt and
+count, saved only after the server accepted the proof and proved itself (`LoginSettings.remember`);
+a blob from before 0.14 does not parse and reads as nothing remembered. `Crypt.PASSWORD_ENCODING`
+pins the password's byte encoding to UTF-8, and `Crypt.crypt` agrees with `openssl passwd -1`
+for non-ASCII passwords as well as ASCII. **Migration 006 must be applied before 0.14 is
+deployed**: without its columns the server stays `not ready` saying so, and recovers by itself
+once they exist (rehearsed on a database with the 0.13.4 schema). Old backups still hold
+md5-crypt hashes, usable against a pre-0.14 server and crackable at md5-crypt speed.
 
-**Everything after login is a session, not re-authentication.** `authChallengeResponse` mints a
-session only once the hash verifies, binds it to the public key proven in that same handshake,
+**Everything after login is a session, not re-authentication.** `scramFinish` mints a
+session only once the proof verifies, binds it to the public key the proof covered,
 and returns the id encrypted to that key. Each later command carries `X-Envelope-Session`,
 `X-Envelope-Stamp` and `X-Envelope-Signature` — the last being a signature over
 `sessionId:stamp:digest(command bytes)`. `Security.validateSession` demands a live session, a
@@ -344,7 +371,8 @@ cd docker && docker compose up -d    # Tomcat 11; the database is not containeri
 
 - Server: http://localhost:7041/envelope/  (health: `/envelope/info/ping` → `pong`)
 - Client: `java -jar target/envelope-client.jar`
-- Default logins (seeded by `sql/bootstrap-mysql.sql`): **admin / envelope**, **guest / guest**
+- Default logins (seeded by `sql/bootstrap-mysql.sql`, as md5-crypt hashes the server converts
+  to SCRAM verifiers on its first start): **admin / envelope**, **guest / guest**
 
 **The database is the native MariaDB on the host**, reached at `tiamat.lump:3306` and
 overridable with `DB_URL`. There used to be a containerised one, bootstrapped on first start
@@ -371,7 +399,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.13.4**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.14.0**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at
@@ -707,17 +735,14 @@ recreated on every deploy and start empty, so they always had the current defaul
   HAProxy's `check` on the backend is TCP-only. Keep such per-thread context going through
   `ThreadInfo`, which the filter clears in a `finally` — Tomcat reuses worker threads, and a
   key left set would label the next request's lines with this one.
-- **Auth is fixed at the command level; the login step still is not.** Commands are safe now
-  (session-bound, command-bound, single-use signatures — see above). What remains is that the
-  login exchange has no nonce, so the encrypted md5-crypt hash is a static password-equivalent:
-  capture it and you can open a *new* session, and because the database stores that same value,
-  a DB leak is directly usable without cracking. The fix is a nonce in `Challenge`.
-- **The client cannot authenticate the server.** `LoginSettings.setServerKey()` is a bare
-  assignment — whatever public key arrives in the `Challenge` is trusted, with no pinning and no
-  CA. A MITM can hand the client its own key and collect the password-equivalent. App-level
-  encryption is optional (`ServerSettings.getEncrypt()` defaults to **false**) and there is no
-  TLS; today the only thing mitigating this is compose binding to `127.0.0.1`. Pin the server key
-  on first use, or put TLS in front, before exposing this beyond localhost.
+- **The login proves both ends; the transport is the front stack's TLS.** Since 0.14 a login
+  cannot be replayed and a stolen users table logs no one in (see SCRAM above), and the server
+  must sign with the account's ServerKey, so an impostor cannot complete a login. What it does
+  not do is authenticate the server's RSA key for the optional app-level request encryption
+  (`LoginSettings.setServerKey()` takes the key the challenge carries): that encryption is off
+  by default and 2007-grade, and the real protection is TLS — the swarm's front stack terminates
+  HTTPS with the Lumpnet CA (bundled in the client) and answers plain HTTP with a 301, including
+  `POST /invoke`.
 - **Permissions say what a user may do; the budget checks say to which rows.** Both apply to
   every data command: `Controller.dispatch` checks the `Permission` bit, and the DAO method
   checks every id it was given with `DAO.requireMyAccount` / `…Category` / `…Transaction` /
@@ -730,10 +755,9 @@ recreated on every deploy and start empty, so they always had the current defaul
   is the caller's, and refuses a transaction with none. A missing row and someone else's row
   get the same refusal ("there is no account 7 in your budget"). Admins get no exemption: ADMIN
   is about users and budgets, and the user/budget commands remain global.
-- **Known, unfixed, low-severity** (from the 0.12 review): `getChallenge` and
-  `authChallengeResponse` answer an unknown user with `Invalid_User` but a wrong password with
-  `Invalid_Credentials`, so user names can be enumerated without logging in, and
-  `getChallenge` hands any user's salt to anyone; `ready` tells anyone the latest transaction
-  date across every budget; `setPassword` does not ask for the current password.
+- **Known, unfixed, low-severity**: `ready` tells anyone the latest transaction date across
+  every budget. (The rest of the 0.12 review's list was fixed in 0.14: user names can no longer
+  be enumerated, an unknown name gets a made-up salt, and changing one's own password needs the
+  current one.)
 - **Sessions are per-JVM and in memory** (`Sessions`), so they die on redeploy and would need
   sticky sessions or a shared store if a second Tomcat ever appeared.

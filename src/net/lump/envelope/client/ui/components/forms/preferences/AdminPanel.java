@@ -15,7 +15,7 @@ import javax.swing.table.AbstractTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.security.NoSuchAlgorithmException;
+import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -176,7 +176,7 @@ public class AdminPanel extends JPanel {
     if (name.isEmpty() || chosen == null) return;
 
     run("Creating user", new Work() {
-      public void run(AdminPortal portal) throws AbortException, NoSuchAlgorithmException {
+      public void run(AdminPortal portal) throws AbortException, GeneralSecurityException {
         portal.createUser(name, real, chosen.getId(), permissions, pw);
         refresh();
       }
@@ -190,9 +190,14 @@ public class AdminPanel extends JPanel {
     // a non-administrator's table holds only themself, but say so anyway
     if (!admin && !target.getId().equals(me.getId())) return;
 
+    // one's own password is changed only with the current one: a session left
+    // open is not enough to take an account over (the server insists)
+    final boolean own = target.getId().equals(me.getId());
+    JPasswordField current = new JPasswordField(16);
     JPasswordField password = new JPasswordField(16);
     JPasswordField again = new JPasswordField(16);
     JPanel form = new JPanel(new GridLayout(0, 2, 6, 4));
+    if (own) { form.add(new JLabel(Strings.get("password.current"))); form.add(current); }
     form.add(new JLabel(Strings.get("password")));       form.add(password);
     form.add(new JLabel(Strings.get("password.again"))); form.add(again);
 
@@ -202,10 +207,16 @@ public class AdminPanel extends JPanel {
 
     final String pw = passwordIfMatching(password, again);
     if (pw == null) return;
+    final String currentPw = own ? new String(current.getPassword()) : null;
+    if (own && currentPw.isEmpty()) {
+      JOptionPane.showMessageDialog(this, Strings.get("error.password.current.empty"),
+          Strings.get("error"), JOptionPane.ERROR_MESSAGE);
+      return;
+    }
 
     run("Setting password", new Work() {
-      public void run(AdminPortal portal) throws AbortException, NoSuchAlgorithmException {
-        portal.setPassword(target.getId(), pw);
+      public void run(AdminPortal portal) throws AbortException, GeneralSecurityException, java.io.IOException {
+        portal.setPassword(target.getId(), target.getName(), pw, currentPw);
         setStatus(MessageFormat.format(Strings.get("password.set.for"), target.getName()));
       }
     });
@@ -241,7 +252,7 @@ public class AdminPanel extends JPanel {
   // ------------------------------------------------------------- plumbing
 
   private interface Work {
-    void run(AdminPortal portal) throws AbortException, NoSuchAlgorithmException;
+    void run(AdminPortal portal) throws AbortException, GeneralSecurityException, java.io.IOException;
   }
 
   private void run(final String what, final Work work) {
@@ -253,7 +264,9 @@ public class AdminPanel extends JPanel {
         } catch (AbortException e) {
           // Portal has already put the reason in front of the user
           setStatus(Strings.get("save.failed"));
-        } catch (NoSuchAlgorithmException e) {
+        } catch (GeneralSecurityException | java.io.IOException e) {
+          // a wrong current password comes back as Invalid_Credentials, which
+          // Portal has shown; anything else is a failure to say so here
           setStatus(Strings.get("save.failed"));
         }
       }

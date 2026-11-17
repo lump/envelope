@@ -75,8 +75,9 @@ public class Command implements Serializable {
     // and checks it, so it proves the database, the schema and the date
     // handling, where ping proves only that the server answers
     ready(false, Dao.Security),
-    getChallenge(false, Dao.Security, String.class, PublicKey.class),
-    authChallengeResponse(false, Dao.Security, String.class, byte[].class, PublicKey.class),
+    // the login: SCRAM-SHA-256 in two steps (see Scram and Security)
+    scramStart(false, Dao.Security, String.class, String.class),
+    scramFinish(false, Dao.Security, String.class, byte[].class, PublicKey.class),
     getServerPublicKey(false, Dao.Security),
 
     // ---- READ: looking -------------------------------------------------------
@@ -135,9 +136,16 @@ public class Command implements Serializable {
     whoAmI(Dao.Action, READ),
     listUsers(Dao.Action, ADMIN),
     listBudgets(Dao.Action, ADMIN),
-    createUser(Dao.Action, ADMIN, String.class, String.class, Integer.class, Long.class, String.class),
+    // a password travels as the verifier the client computed from it, never as
+    // anything that could be used to log in: md5 salt, SCRAM salt, iterations,
+    // StoredKey, ServerKey
+    createUser(Dao.Action, ADMIN, String.class, String.class, Integer.class, Long.class,
+               String.class, byte[].class, Integer.class, byte[].class, byte[].class),
     updateUser(Dao.Action, ADMIN, Integer.class, String.class, Integer.class, Long.class),
-    setPassword(Dao.Action, READ, Integer.class, String.class),
+    // ...and changing one's own also carries a proof with the current password:
+    // a scramStart nonce, the proof, and the client key the proof covers
+    setPassword(Dao.Action, READ, Integer.class, String.class, byte[].class, Integer.class, byte[].class, byte[].class,
+                String.class, byte[].class, PublicKey.class),
     createBudget(Dao.Action, ADMIN, String.class),
     deleteBudget(Dao.Action, ADMIN, Integer.class),
 

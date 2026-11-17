@@ -29,6 +29,11 @@ public class User extends Identifiable<Integer, Timestamp> {
   private String name;
   private String realName;
   private String cryptPassword;
+  private String md5Salt;
+  private byte[] scramSalt;
+  private Integer scramIterations;
+  private byte[] scramStoredKey;
+  private byte[] scramServerKey;
   private Permission permissions;
   private String publicKey;
 
@@ -73,6 +78,11 @@ public class User extends Identifiable<Integer, Timestamp> {
     this.name = name;
   }
 
+  /**
+   * The md5-crypt hash, as stored before 0.14 -- a password-equivalent, since
+   * the old login sent exactly this.  PasswordMigration turns each into a SCRAM
+   * verifier at startup and clears it; nothing reads it otherwise.
+   */
   @Column(name = "crypt_password")
   public String getCryptPassword() {
     return cryptPassword;
@@ -80,6 +90,42 @@ public class User extends Identifiable<Integer, Timestamp> {
 
   public void setCryptPassword(String cryptPassword) {
     this.cryptPassword = cryptPassword;
+  }
+
+  // The SCRAM-SHA-256 verifier (see Scram).  None of these can be used to log in:
+  // StoredKey only checks a proof, ServerKey only signs the server's answer, and
+  // the salts and count are public.  They never leave the server -- forClient
+  // builds the client's copy without them.
+
+  /** the md5-crypt salt the client pre-hashes the password under */
+  @Column(name = "md5_salt", length = 12)
+  public String getMd5Salt() { return md5Salt; }
+  public void setMd5Salt(String md5Salt) { this.md5Salt = md5Salt; }
+
+  @Column(name = "scram_salt", length = 32)
+  public byte[] getScramSalt() { return scramSalt; }
+  public void setScramSalt(byte[] scramSalt) { this.scramSalt = scramSalt; }
+
+  @Column(name = "scram_iterations")
+  public Integer getScramIterations() { return scramIterations; }
+  public void setScramIterations(Integer scramIterations) { this.scramIterations = scramIterations; }
+
+  @Column(name = "scram_stored_key", length = 32)
+  public byte[] getScramStoredKey() { return scramStoredKey; }
+  public void setScramStoredKey(byte[] scramStoredKey) { this.scramStoredKey = scramStoredKey; }
+
+  @Column(name = "scram_server_key", length = 32)
+  public byte[] getScramServerKey() { return scramServerKey; }
+  public void setScramServerKey(byte[] scramServerKey) { this.scramServerKey = scramServerKey; }
+
+  /** Put a verifier on this user and drop any md5-crypt hash: the only way a password is set. */
+  public void setVerifier(net.lump.envelope.shared.command.security.Scram.Verifier v) {
+    setMd5Salt(v.md5Salt);
+    setScramSalt(v.salt);
+    setScramIterations(v.iterations);
+    setScramStoredKey(v.storedKey);
+    setScramServerKey(v.serverKey);
+    setCryptPassword(null);
   }
 
 

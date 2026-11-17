@@ -3,7 +3,6 @@ package net.lump.lib.util;
 import junit.framework.TestCase;
 import org.junit.Test;
 import net.lump.envelope.shared.command.Command;
-import net.lump.envelope.shared.command.security.Challenge;
 
 import javax.crypto.CipherInputStream;
 import javax.crypto.SecretKey;
@@ -32,9 +31,6 @@ public class TestEncryption extends TestCase {
       new String(Encryption.decodeAsym(kp.getPrivate(), encrypted),
         "US-ASCII"));
 
-    Challenge c = new Challenge(kp.getPublic(), kp.getPublic(), blah);
-    assertEquals("Challenge decription failed",
-      c.getChallenge(kp.getPrivate()), blah);
   }
 
   @Test
@@ -47,7 +43,7 @@ public class TestEncryption extends TestCase {
 //    int buffsize = 0;
 //    do {
     Command command =
-      new Command(Command.Name.getChallenge, null, "troy", kp.getPublic());
+      new Command(Command.Name.scramStart, null, "troy", "a client nonce for the test");
 
     ByteArrayOutputStream serializedos = Compression.serializeOnly(command);
     startSize = serializedos.size();
@@ -96,7 +92,7 @@ public class TestEncryption extends TestCase {
     assertTrue("round-tripped object is a " + o.getClass().getName() + ", not a Command",
       o instanceof Command);
     assertEquals("the command that came back is not the one that went in",
-      Command.Name.getChallenge, ((Command)o).getName());
+      Command.Name.scramStart, ((Command)o).getName());
     assertTrue("nothing was written to the cipher stream", startSize > 0);
 //      buffsize++;
 //    } while (startSize != finishSize);

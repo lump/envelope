@@ -2,11 +2,15 @@ package net.lump.envelope.client.portal;
 
 import net.lump.envelope.client.ui.prefs.LoginSettings;
 import net.lump.envelope.shared.command.Command;
-import net.lump.envelope.shared.command.security.Challenge;
+import net.lump.envelope.shared.command.security.Scram;
+import net.lump.envelope.shared.command.security.ScramChallenge;
+import net.lump.envelope.shared.command.security.ScramResult;
+import net.lump.envelope.shared.exception.EnvelopeException;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.lib.util.Encryption;
 
 import javax.swing.*;
+import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 
 /**
@@ -18,35 +22,48 @@ import java.security.PublicKey;
 public class SecurityPortal extends Portal {
 
 
-  public Challenge getChallenge() throws AbortException {
+  /**
+   * Log in: SCRAM-SHA-256 in two round trips (see Scram).  The password typed
+   * into LoginSettings is used if there is one, else the keys remembered for this
+   * user on this server.  The server has to prove it holds this account's
+   * verifier before anything it returns is believed -- an impostor that answered
+   * the first step cannot answer the second.  On success the session id it
+   * returns, encrypted to this process's key, is kept in LoginSettings.
+   *
+   * @return true when logged in
+   * @throws EnvelopeException Invalid_Credentials with no password to prove with
+   */
+  public Boolean login() throws AbortException, EnvelopeException {
     LoginSettings ls = LoginSettings.getInstance();
+    String user = ls.getUsername();
+    String clientNonce = Scram.newNonce();
+    ScramChallenge challenge = (ScramChallenge)rawInvoke(new Command(Command.Name.scramStart, null, user, clientNonce));
+    if (challenge == null) return false;
+    ls.setServerKey(challenge.serverKey());
 
-    Challenge challenge = (Challenge)rawInvoke(new Command(
-      Command.Name.getChallenge,
-      null,
-      ls.getUsername(),
-      ls.getKeyPair().getPublic()));
-
-    if (challenge != null) ls.setServerKey(challenge.getServerKey());
-    return challenge;
-  }
-
-  public Boolean auth(byte[] challengeResponse) throws AbortException {
-    LoginSettings ls = LoginSettings.getInstance();
-
-    // On success the server returns a session id encrypted to the key we just
-    // proved we hold, so only this process can read it.
-    byte[] wrapped = (byte[])rawInvoke(new Command(
-      Command.Name.authChallengeResponse, null, ls.getUsername(), challengeResponse, ls.getKeyPair().getPublic()));
-
-    if (wrapped == null) return false;
+    byte[][] keys = ls.keysFor(challenge);   // {clientKey, serverKey}
+    PublicKey mine = ls.getKeyPair().getPublic();
+    byte[] authMessage = Scram.authMessage(user, clientNonce, challenge.nonce(), challenge.salt(), challenge.iterations(), mine);
+    byte[] proof;
+    try {
+      proof = Scram.clientProof(keys[0], authMessage);
+    } catch (GeneralSecurityException e) {
+      throw new AbortException(e);
+    }
+    ScramResult result = (ScramResult)rawInvoke(new Command(Command.Name.scramFinish, null, challenge.nonce(), proof, mine));
+    if (result == null) return false;
 
     try {
+      if (!Scram.serverIsGenuine(keys[1], authMessage, result.serverSignature()))
+        throw new AbortException("the server could not prove it holds this account -- it may not be the server it claims to be");
       ls.setSessionId(new String(
-        Encryption.decodeAsym(ls.getKeyPair().getPrivate(), wrapped), Encryption.TRANS_ENCODING));
+          Encryption.decodeAsym(ls.getKeyPair().getPrivate(), result.wrappedSession()), Encryption.TRANS_ENCODING));
+    } catch (AbortException e) {
+      throw e;
     } catch (Exception e) {
       throw new AbortException(e);
     }
+    ls.remember(challenge, keys);
     return true;
   }
 

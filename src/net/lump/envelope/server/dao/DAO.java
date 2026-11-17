@@ -67,7 +67,22 @@ public abstract class DAO {
           .addAnnotatedClass(Allocation.class)
           .addAnnotatedClass(User.class)
           .addProperties(config);
-      sessionFactory = c.buildSessionFactory();
+      SessionFactory built = c.buildSessionFactory();
+      // The made-up verifiers unknown users are answered with derive from a
+      // secret that must be stable and secret; see Logins.setSecretFrom.
+      Logins.setSecretFrom(config.getProperty("hibernate.connection.password"),
+                           config.getProperty("hibernate.connection.url"));
+      // Every pre-0.14 md5-crypt password becomes a SCRAM verifier before the
+      // first login is taken.  Without migration 006's columns this fails, and
+      // the server stays not ready saying which file to apply.
+      try {
+        PasswordMigration.run(built);
+      } catch (RuntimeException e) {
+        built.close();
+        throw new IllegalStateException("the users table has no SCRAM columns -- apply "
+            + "sql/migrations/006-scram-verifiers.sql (" + e.getMessage() + ")", e);
+      }
+      sessionFactory = built;
       initializationFailure = null;
       logger.info("session factory built against " + config.getProperty("hibernate.connection.url"));
       } catch (Exception e) {
@@ -77,8 +92,12 @@ public abstract class DAO {
         // one (usually: cannot reach the database) sat in the startup log.
         Throwable root = e;
         while (root.getCause() != null) root = root.getCause();
-        initializationFailure = root.getClass().getSimpleName() + ": " + root.getMessage()
-            + " (url " + config.getProperty("hibernate.connection.url") + ")";
+        // a migration to apply is said in our own words; anything else by its root cause
+        initializationFailure = (e instanceof IllegalStateException && e.getMessage() != null
+                                 && e.getMessage().contains("sql/migrations/"))
+            ? e.getMessage()
+            : root.getClass().getSimpleName() + ": " + root.getMessage()
+              + " (url " + config.getProperty("hibernate.connection.url") + ")";
         logger.fatal("could not build the session factory -- " + initializationFailure, e);
       }
 

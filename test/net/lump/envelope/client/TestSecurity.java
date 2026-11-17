@@ -15,9 +15,7 @@ public class TestSecurity extends TestCase {
   @SuppressWarnings("unchecked")
   @Test
   public void testLogin() throws Exception {
-    SecurityPortal sp = new SecurityPortal();
-    Boolean authed = sp.auth(
-        TestSuite.LOGINSETTINGS.challengeResponse(sp.getChallenge()));
+    Boolean authed = new SecurityPortal().login();
 
     assertTrue("User does not auth", authed);
 

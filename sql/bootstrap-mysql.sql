@@ -243,19 +243,29 @@ create table `users` (
   `name` varchar(64) not null,
   `real_name` varchar(64) default NULL,
   `crypt_password` varchar(34) default NULL,
+  -- the SCRAM-SHA-256 verifier (migration 006); the server fills these from
+  -- crypt_password at startup and clears it, so the seeds below convert too
+  `md5_salt` varchar(12) default NULL,
+  `scram_salt` varbinary(32) default NULL,
+  `scram_iterations` int default NULL,
+  `scram_stored_key` varbinary(32) default NULL,
+  `scram_server_key` varbinary(32) default NULL,
   `permissions` int(11) default NULL,
   `public_key` text,
   UNIQUE index `name` (`name`),
   constraint users_budget foreign key (budget) references budgets(id) on update cascade on delete restrict
 )ENGINE=INNODB;
 -- Default accounts.  Passwords are md5-crypt ($1$) hashes produced by the app's
--- own Crypt class (net.lump.envelope.shared.command.security.Crypt).
+-- own Crypt class (net.lump.envelope.shared.command.security.Crypt); the server
+-- converts them to SCRAM verifiers on its first start (PasswordMigration).
 --   admin / envelope
 --   guest / guest
 -- These are the out-of-the-box credentials; change them after first login.
-insert into users values (null, null,0,'admin','Admin Account','$1$Abcd1234$AJbrgGrHdGJ/qrnlrIkPT.',7,NULL);
+insert into users (id, stamp, budget, name, real_name, crypt_password, permissions, public_key)
+  values (null, null,0,'admin','Admin Account','$1$Abcd1234$AJbrgGrHdGJ/qrnlrIkPT.',7,NULL);
 update users set id = 0;
 alter table users auto_increment = 0;
-insert into users values (null, null,0,'guest','Guest Account','$1$GOyqcoAk$KTE1zfxeTkoXJTcrFKyFi0',3,NULL);
+insert into users (id, stamp, budget, name, real_name, crypt_password, permissions, public_key)
+  values (null, null,0,'guest','Guest Account','$1$GOyqcoAk$KTE1zfxeTkoXJTcrFKyFi0',3,NULL);
 
 grant all on envelope.* to budget identified by 'tegdub';

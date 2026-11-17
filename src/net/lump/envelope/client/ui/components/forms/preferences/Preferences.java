@@ -9,7 +9,6 @@ import net.lump.envelope.client.ui.defs.Strings;
 import net.lump.envelope.client.ui.images.ImageResource;
 import net.lump.envelope.client.ui.prefs.LoginSettings;
 import net.lump.envelope.client.ui.prefs.ServerSettings;
-import net.lump.envelope.shared.command.security.Challenge;
 import net.lump.envelope.shared.exception.AbortException;
 
 import javax.crypto.BadPaddingException;
@@ -437,8 +436,7 @@ public class Preferences extends JDialog {
     try {
       lsData.setPassword(String.valueOf(password.getPassword()));
       lsData.setPasswordShouldBeSaved(rememberPasswordCheckBox.isSelected());
-      Challenge c = sp.getChallenge();
-      if (c != null) authed = sp.auth(lsData.challengeResponse(c));
+      authed = sp.login();
 
     } catch (BadPaddingException e) {
       e.printStackTrace();

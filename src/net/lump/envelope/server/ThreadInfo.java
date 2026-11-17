@@ -24,6 +24,16 @@ public class ThreadInfo {
   public static final String COMMAND = "command";
 
   private static ThreadLocal<User> user = new ThreadLocal<User>();
+  /** the caller's address, for the login throttle (behind HAProxy, RemoteIpValve makes it the real one) */
+  private static ThreadLocal<String> remoteAddress = new ThreadLocal<String>();
+
+  public static void setRemoteAddress(String address) {
+    remoteAddress.set(address);
+  }
+
+  public static String getRemoteAddress() {
+    return remoteAddress.get();
+  }
 
   public static void setUser(User in) {
     user.set(in);
@@ -50,6 +60,7 @@ public class ThreadInfo {
    */
   public static void clear() {
     user.set(null);
+    remoteAddress.set(null);
     MDC.remove(REQUEST);
     MDC.remove(COMMAND);
   }

@@ -517,7 +517,10 @@ public class TransactionTableModel extends AbstractTableModel {
         fireTableCellUpdated(x, COLUMN.Reconciled.ordinal());
       }
 
-      // update the Transaction
+      // update the Transaction -- telling the form first, so a save it makes of
+      // this transaction meanwhile waits for the new stamp rather than racing it
+      final Integer writing = (Integer)transactions.get(row)[COLUMN.TransactionID.ordinal()];
+      net.lump.envelope.client.ui.MainFrame.getInstance().getTransactionForm().reconciledWriteStarting(writing);
       ThreadPool.getInstance().execute(new StatusRunnable(
           MessageFormat.format("{0} {1} {2}", ((Boolean)value) ? Strings.get("reconciling") : Strings.get("unreconciling"),
               Strings.get("transaction").toLowerCase(), transactions.get(row)[COLUMN.TransactionID.ordinal()])) {
@@ -533,9 +536,15 @@ public class TransactionTableModel extends AbstractTableModel {
               public void run() {
                 net.lump.envelope.client.ui.MainFrame.getInstance().getTransactionForm()
                     .noteReconciled(id, (Boolean)value, stamp);
+                net.lump.envelope.client.ui.MainFrame.getInstance().getTransactionForm().reconciledWriteDone(id);
               }
             });
           } catch (Exception e) {
+            SwingUtilities.invokeLater(new Runnable() {
+              public void run() {
+                net.lump.envelope.client.ui.MainFrame.getInstance().getTransactionForm().reconciledWriteDone(writing);
+              }
+            });
             JOptionPane.showMessageDialog(null, e.getMessage(), Strings.get("error"), JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();
           }

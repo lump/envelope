@@ -92,8 +92,7 @@ public class TestSuite extends TestCase {
       InvalidKeyException,
       NoSuchPaddingException, AbortException {
     if (authed == null) {
-      SecurityPortal sp = new SecurityPortal();
-      authed = sp.auth(LOGINSETTINGS.challengeResponse(sp.getChallenge()));
+      authed = new SecurityPortal().login();
     }
     return authed;
   }

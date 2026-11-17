@@ -35,6 +35,7 @@ public class RequestContextFilter implements Filter {
       throws IOException, ServletException {
     if (request instanceof HttpServletRequest rq) {
       ThreadInfo.setRequest(rq.getMethod() + " " + rq.getRequestURI() + " " + rq.getRemoteAddr());
+      ThreadInfo.setRemoteAddress(rq.getRemoteAddr());
     }
     try {
       chain.doFilter(request, response);

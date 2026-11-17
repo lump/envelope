@@ -2,7 +2,8 @@ package net.lump.envelope.client.ui.prefs;
 
 import net.lump.envelope.client.portal.SecurityPortal;
 import net.lump.envelope.client.ui.defs.Strings;
-import net.lump.envelope.shared.command.security.Challenge;
+import net.lump.envelope.shared.command.security.Scram;
+import net.lump.envelope.shared.command.security.ScramChallenge;
 import net.lump.envelope.shared.command.security.Crypt;
 import net.lump.envelope.shared.exception.AbortException;
 import net.lump.envelope.shared.exception.EnvelopeException;
@@ -132,8 +133,7 @@ public class LoginSettings {
   }
 
   public Boolean passwordIsSaved() {
-    String key = encryptedPasswordKey();
-    return key != null && prefs.getByteArray(key, null) != null;
+    return remembered() != null;
   }
 
   public LoginSettings setPassword(String password)
@@ -164,110 +164,80 @@ public class LoginSettings {
     return this;
   }
 
-  /**
-   * Get the challenge response if it is saved.
-   *
-   * @return String the encrypted password to auth with the server.
-   *
-   * @throws IllegalStateException if the encrypted password is not saved.
-   */
-  public byte[] challengeResponse() {
-    String key = encryptedPasswordKey();
-    byte[] response = key == null ? null : prefs.getByteArray(key, null);
-    if (!shouldPasswordBeSaved() || null == response || response.length == 0)
-      throw new IllegalStateException("Password is not saved.");
-    else
-      return response;
-  }
+  // ------------------------------------------------------------------------
+  // The keys a SCRAM login proves with (see Scram, and SecurityPortal.login).
+  //
+  // "Remember password" keeps ClientKey and ServerKey for this user on this
+  // server, with the salts and iteration count they were made under, rather than
+  // the password.  They log in to that one account on that one server -- as the
+  // remembered response did before 0.14 -- and to recover the password from them
+  // means guessing at the full PBKDF2 cost per guess.  They are saved only after
+  // the server has accepted the proof and proven itself, where the old response
+  // was saved before anyone knew whether the password was right.  If the server
+  // changes the salt or count (a new password), they no longer match and the
+  // password is asked for.  A blob in the pre-0.14 shape does not parse and is
+  // treated as nothing remembered.
+  // ------------------------------------------------------------------------
 
   /**
-   * Get the generate a challenge response from a Challenge and a password.
+   * ClientKey and ServerKey for this challenge: from the password just typed,
+   * else from what was remembered for it.
    *
-   * @param challenge the challenge object
-   * @param password  a string which is the password
-   *
-   * @return a byte array which comprises the encrypted response.
-   *
-   * @throws NoSuchAlgorithmException
-   * @throws BadPaddingException
-   * @throws IOException
-   * @throws IllegalBlockSizeException
-   * @throws InvalidKeyException
-   * @throws NoSuchPaddingException
-   * @throws InvalidKeySpecException
+   * @return {clientKey, serverKey}
+   * @throws EnvelopeException Invalid_Credentials when there is neither
    */
-  public byte[] challengeResponse(Challenge challenge, String password)
-    throws NoSuchAlgorithmException, BadPaddingException, IOException,
-    IllegalBlockSizeException, InvalidKeyException,
-    NoSuchPaddingException, InvalidKeySpecException {
-    setPassword(password);
-    return challengeResponse(challenge);
-  }
-
-  /**
-   * Generate a challenge response from a Challenge and the current password.
-   *
-   * @param challenge the Challenge object from the server.
-   *
-   * @return a byte array which comprises the encrypted response.
-   *
-   * @throws BadPaddingException
-   * @throws NoSuchAlgorithmException
-   * @throws IllegalBlockSizeException
-   * @throws InvalidKeyException
-   * @throws NoSuchPaddingException
-   * @throws IOException
-   */
-  public byte[] challengeResponse(Challenge challenge)
-    throws BadPaddingException, NoSuchAlgorithmException,
-    IllegalBlockSizeException, InvalidKeyException,
-    NoSuchPaddingException, IOException {
-
-    byte[] response = null;
-
-    if (password == null && shouldPasswordBeSaved() && passwordIsSaved()) {
-      response = prefs.getByteArray(encryptedPasswordKey(), new byte[]{});
-      if (response.length == 0)
-        throw new EnvelopeException(Invalid_Credentials);
-      else return response;
-    }
-
-    // No password typed and nothing saved for this username on this host.  This
-    // used to be an unchecked IllegalStateException, which nothing on the login
-    // path catches; a failed login is what this actually is, and callers already
-    // handle that.
-    if (this.password == null)
+  public byte[][] keysFor(ScramChallenge challenge) throws EnvelopeException {
+    try {
+      if (password != null) {
+        String typed = new String(Encryption.decodeAsym(getKeyPair().getPrivate(), password), Crypt.PASSWORD_ENCODING);
+        byte[] salted = Scram.saltedPassword(Crypt.crypt(challenge.md5Salt(), typed), challenge.salt(), challenge.iterations());
+        return new byte[][]{Scram.clientKey(salted), Scram.serverKey(salted)};
+      }
+      byte[][] remembered = remembered();
+      if (remembered != null && shouldPasswordBeSaved()
+          && challenge.md5Salt().equals(new String(remembered[0], java.nio.charset.StandardCharsets.US_ASCII))
+          && java.util.Arrays.equals(challenge.salt(), remembered[1])
+          && challenge.iterations() == java.nio.ByteBuffer.wrap(remembered[2]).getInt())
+        return new byte[][]{remembered[3], remembered[4]};
+    } catch (java.security.GeneralSecurityException e) {
       throw new EnvelopeException(Invalid_Credentials);
+    }
+    throw new EnvelopeException(Invalid_Credentials);
+  }
 
-    // encrypt the response with the server's public key
-    response = Encryption.encodeAsym(
-      challenge.getServerKey(),
-      Crypt.crypt(
-        challenge.getChallenge(getKeyPair().getPrivate()),
-        new String(
-          Encryption.decodeAsym(
-            getKeyPair().getPrivate(),
-            this.password
-          ),
-          Crypt.PASSWORD_ENCODING
-        )
-        // the hash itself is ASCII, but pin it too rather than leave one
-        // conversion on this path reading the platform default
-      ).getBytes(Encryption.TRANS_ENCODING)
-    );
-
-    // response is encrypted with server's public key, so only that specific
-    // server can use it, we can save it, and the saved challenge response
-    // on disk cannot be decrypted to find the original password.
+  /** Keep the keys a login just proved with, if the user asked for that; drop them if not. */
+  public void remember(ScramChallenge challenge, byte[][] keys) {
     String key = encryptedPasswordKey();
-    if (shouldPasswordBeSaved() && key != null) prefs.putByteArray(key, response);
-      // else make sure it is null
-    else if (key != null) prefs.remove(key);
+    if (key == null) return;
+    if (!shouldPasswordBeSaved()) {
+      prefs.remove(key);
+      return;
+    }
+    java.util.Base64.Encoder b64 = java.util.Base64.getEncoder();
+    String blob = "scram1:" + b64.encodeToString(challenge.md5Salt().getBytes(java.nio.charset.StandardCharsets.US_ASCII))
+        + ":" + b64.encodeToString(challenge.salt())
+        + ":" + b64.encodeToString(java.nio.ByteBuffer.allocate(4).putInt(challenge.iterations()).array())
+        + ":" + b64.encodeToString(keys[0]) + ":" + b64.encodeToString(keys[1]);
+    prefs.putByteArray(key, blob.getBytes(java.nio.charset.StandardCharsets.US_ASCII));
     // a response saved by an older build under the host-only key is a
     // password-equivalent for whoever logged in then; it will never be read again
     prefs.remove(legacyEncryptedPasswordKey());
+  }
 
-    return response;
+  /** @return {md5Salt, salt, iterations, clientKey, serverKey}, or null if nothing usable is remembered */
+  private byte[][] remembered() {
+    String key = encryptedPasswordKey();
+    byte[] stored = key == null ? null : prefs.getByteArray(key, null);
+    if (stored == null) return null;
+    String[] parts = new String(stored, java.nio.charset.StandardCharsets.US_ASCII).split(":");
+    if (parts.length != 6 || !"scram1".equals(parts[0])) return null;
+    try {
+      byte[][] out = new byte[5][];
+      for (int i = 0; i < 5; i++) out[i] = java.util.Base64.getDecoder().decode(parts[i + 1]);
+      return out;
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
   }
 
   public PublicKey getServerKey() throws AbortException {

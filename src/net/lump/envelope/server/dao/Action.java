@@ -8,6 +8,7 @@ import net.lump.envelope.shared.entity.Category;
 import net.lump.envelope.shared.entity.Transaction;
 import net.lump.envelope.shared.entity.User;
 import net.lump.envelope.shared.command.security.Permission;
+import net.lump.envelope.shared.command.security.Scram;
 import net.lump.envelope.shared.exception.EnvelopeException;
 import net.lump.lib.Money;
 import org.hibernate.Hibernate;
@@ -460,11 +461,11 @@ public class Action extends DAO {
    * @param realName      display name
    * @param budgetId      the one budget the user works in
    * @param permissions   a Permission bitmask
-   * @param cryptPassword the md5-crypt hash of the initial password, made by the
-   *                      client the same way the login exchange makes one
+   * @param md5Salt..serverKey the initial password's SCRAM verifier, made by the client
    */
-  public User createUser(String name, String realName, Integer budgetId,
-                         Long permissions, String cryptPassword) throws EnvelopeException {
+  public User createUser(String name, String realName, Integer budgetId, Long permissions,
+                         String md5Salt, byte[] salt, Integer iterations, byte[] storedKey, byte[] serverKey)
+      throws EnvelopeException {
     requireAdmin();
     String userName = checkName(name);
 
@@ -478,15 +479,14 @@ public class Action extends DAO {
     Budget budget = get(Budget.class, budgetId);
     if (budget == null)
       throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "there is no budget " + budgetId);
-    if (cryptPassword == null || cryptPassword.isEmpty())
-      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "a password is required");
+    Scram.Verifier verifier = verifier(md5Salt, salt, iterations, storedKey, serverKey);
 
     User user = new User();
     user.setName(userName);
     user.setRealName(realName == null ? "" : realName.trim());
     user.setBudget(budget);
     user.setPermission(new Permission(permissions == null ? 0L : permissions));
-    user.setCryptPassword(cryptPassword);
+    user.setVerifier(verifier);
 
     getCurrentSession().persist(user);
     getCurrentSession().flush();
@@ -523,23 +523,69 @@ public class Action extends DAO {
    * Set a user's password.  ADMIN may set anyone's; anyone may set their own.
    *
    * @param userId        whose
-   * @param cryptPassword the md5-crypt hash, made by the client
    */
-  public void setPassword(Integer userId, String cryptPassword) throws EnvelopeException {
+  /**
+   * Set a password, as the verifier the client computed from it.  An
+   * administrator may set anyone's; anyone may set their own, but only with a
+   * proof made with the current password -- a session left open is not enough to
+   * take an account over.  The proof is an ordinary SCRAM exchange: scramStart
+   * for one's own name, then the proof for it here instead of in scramFinish.
+   * A wrong one counts against the login throttle like a failed login.
+   */
+  public void setPassword(Integer userId, String md5Salt, byte[] salt, Integer iterations, byte[] storedKey,
+                          byte[] serverKey, String nonce, byte[] currentProof, java.security.PublicKey proofKey)
+      throws EnvelopeException {
     User caller = getUser();
     boolean self = caller.getId().equals(userId);
     if (!self && !caller.getPermission().hasPermission(Permission.ADMIN))
       throw new EnvelopeException(
           EnvelopeException.Name.Permission_Denied, "only an administrator can set another user's password");
-    if (cryptPassword == null || cryptPassword.isEmpty())
-      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "a password is required");
+    Scram.Verifier verifier = verifier(md5Salt, salt, iterations, storedKey, serverKey);
 
     User user = self ? caller : get(User.class, userId);
     if (user == null)
       throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "there is no user " + userId);
 
-    user.setCryptPassword(cryptPassword);
+    if (self) {
+      String address = net.lump.envelope.server.ThreadInfo.getRemoteAddress();
+      if (Logins.waitFor(user.getName(), address) > 0)
+        throw new EnvelopeException(EnvelopeException.Name.Invalid_Credentials, "too many failed attempts; try again later");
+      Logins.Exchange exchange = Logins.finish(nonce);
+      boolean proven = false;
+      try {
+        proven = exchange != null && proofKey != null && user.getName().equals(exchange.username)
+            && user.getScramStoredKey() != null
+            && Scram.proofIsValid(user.getScramStoredKey(),
+                   Scram.authMessage(exchange.username, exchange.clientNonce, nonce, exchange.salt, exchange.iterations, proofKey),
+                   currentProof);
+      } catch (java.security.GeneralSecurityException e) {
+        proven = false;
+      }
+      if (!proven) {
+        Logins.failed(user.getName(), address);
+        throw new EnvelopeException(EnvelopeException.Name.Invalid_Credentials, "the current password is not right");
+      }
+    }
+
+    user.setVerifier(verifier);
     getCurrentSession().flush();   // see renameAccount
+  }
+
+  /**
+   * A verifier from its parts, refusing what could not have come from
+   * Scram.newVerifier: a malformed md5-crypt salt, a salt or key of the wrong
+   * size, or an iteration count too cheap to guess against or so dear it would
+   * make every login hang.
+   */
+  private static Scram.Verifier verifier(String md5Salt, byte[] salt, Integer iterations, byte[] storedKey,
+                                         byte[] serverKey) throws EnvelopeException {
+    if (md5Salt == null || !md5Salt.matches("[./0-9A-Za-z]{8}")
+        || salt == null || salt.length < Scram.SALT_BYTES || salt.length > 32
+        || iterations == null || iterations < Scram.MIN_ITERATIONS || iterations > Scram.MAX_ITERATIONS
+        || storedKey == null || storedKey.length != Scram.KEY_BYTES
+        || serverKey == null || serverKey.length != Scram.KEY_BYTES)
+      throw new EnvelopeException(EnvelopeException.Name.Invalid_Data, "that is not a password verifier");
+    return new Scram.Verifier(md5Salt, salt, iterations, storedKey, serverKey);
   }
 
   /** Add a budget.  ADMIN only. */

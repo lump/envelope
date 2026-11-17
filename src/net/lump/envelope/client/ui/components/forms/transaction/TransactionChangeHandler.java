@@ -548,6 +548,9 @@ public class TransactionChangeHandler {
       StatusRunnable r = new StatusRunnable("Updating transaction " + pristine.getId()) {
         @Override public void run() {
           try {
+            // a reconciled write from the list may be in flight for this very
+            // transaction; saving before its new stamp is adopted is refused as stale
+            form.awaitReconciledWrites(TransactionChangeHandler.this.getTransaction().getId());
             changeHistory.push(TransactionChangeHandler.this.getTransaction());
             Transaction saved = new TransactionPortal().saveTransaction(TransactionChangeHandler.this.getTransaction());
             // Take the transaction's new stamp onto the graph the form is ALREADY

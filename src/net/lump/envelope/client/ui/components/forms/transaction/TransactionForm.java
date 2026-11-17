@@ -960,6 +960,45 @@ public class TransactionForm {
       transactionChangeHandler.adoptReconciled(reconciled, stamp);
   }
 
+  /**
+   * Reconciled writes the list has sent and not yet heard back from, per
+   * transaction.  The server commits the write before its answer arrives here,
+   * so a save from this form in that gap carries the stamp from before it and is
+   * refused as stale -- the tick-then-type-at-once case the 0.14 UI test caught
+   * one round in seven.  A save of the transaction waits for these to finish.
+   */
+  private final java.util.concurrent.ConcurrentHashMap<Integer, java.util.concurrent.atomic.AtomicInteger> reconciledInFlight =
+      new java.util.concurrent.ConcurrentHashMap<Integer, java.util.concurrent.atomic.AtomicInteger>();
+
+  /** The list is about to send a reconciled write for this transaction.  Event thread. */
+  public void reconciledWriteStarting(Integer transactionId) {
+    if (transactionId != null)
+      reconciledInFlight.computeIfAbsent(transactionId, k -> new java.util.concurrent.atomic.AtomicInteger()).incrementAndGet();
+  }
+
+  /** That write is over, adopted (noteReconciled, just before) or failed.  Event thread. */
+  public void reconciledWriteDone(Integer transactionId) {
+    java.util.concurrent.atomic.AtomicInteger n = transactionId == null ? null : reconciledInFlight.get(transactionId);
+    if (n != null && n.decrementAndGet() <= 0) reconciledInFlight.remove(transactionId, n);
+  }
+
+  /**
+   * Wait, off the event thread, until no reconciled write is in flight for this
+   * transaction -- and so its stamp, if one landed, has been adopted.  Bounded,
+   * so a lost answer cannot hold a save for ever; it then goes ahead and the
+   * server's stamp check says what is true.
+   */
+  void awaitReconciledWrites(Integer transactionId) {
+    long until = System.currentTimeMillis() + 15000;
+    while (transactionId != null && reconciledInFlight.containsKey(transactionId) && System.currentTimeMillis() < until)
+      try {
+        Thread.sleep(20);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        return;
+      }
+  }
+
   /** Bring a freshly read transaction up to a newer reconciled write from the list, if there is one. */
   private void applyNewerReconciled(Transaction t) {
     Object[] w = t == null ? null : reconciledWrites.get(t.getId());

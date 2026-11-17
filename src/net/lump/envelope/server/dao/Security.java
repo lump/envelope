@@ -1,8 +1,10 @@
 package net.lump.envelope.server.dao;
 
 import net.lump.envelope.shared.command.Command;
-import net.lump.envelope.shared.command.security.Challenge;
-import net.lump.envelope.shared.command.security.Crypt;
+import net.lump.envelope.server.ThreadInfo;
+import net.lump.envelope.shared.command.security.Scram;
+import net.lump.envelope.shared.command.security.ScramChallenge;
+import net.lump.envelope.shared.command.security.ScramResult;
 import net.lump.envelope.shared.entity.User;
 import net.lump.envelope.shared.exception.EnvelopeException;
 import static net.lump.envelope.shared.exception.EnvelopeException.Name.Invalid_Credentials;
@@ -101,32 +103,94 @@ public class Security extends DAO {
     return "ready: latest transaction " + day;
   }
 
-  public byte[] authChallengeResponse(String username,
-    byte[] challengeResponse, PublicKey publicKey)
-    throws BadPaddingException, NoSuchAlgorithmException, IOException,
-    IllegalBlockSizeException, InvalidKeyException, NoSuchPaddingException {
+  // ------------------------------------------------------------------------
+  // Login: SCRAM-SHA-256 (see Scram).  Two session-less commands.
+  //
+  // Until 0.14 the login sent the stored md5-crypt hash, encrypted to the server
+  // key: the same bytes every time, and the same value the users table held, so
+  // a captured login or a copied table logged anyone in.  Now the client proves
+  // it knows the password with a value good for this one exchange, the server
+  // stores only a verifier that makes no proof, and the server proves itself
+  // back.  Every failure -- unknown user, wrong password, stale or replayed
+  // exchange -- is the same Invalid_Credentials, and an unknown user is answered
+  // with a made-up verifier as stable as a real one, so nothing here says who
+  // exists.  Failures are throttled by user name and by address (Logins).
+  // ------------------------------------------------------------------------
 
-    User user = getUser(username);
+  private static final String REFUSED = "the user name or password is not right";
 
-    String hash = new String(
-      Encryption.decodeAsym(serverKeyPair.getPrivate(), challengeResponse),
-      Encryption.TRANS_ENCODING);
+  /** A user whose verifier is usable, or null for none -- never an exception that names the difference. */
+  private User verifiedUser(String username) {
+    if (username == null || username.isEmpty()) return null;
+    User user = getCurrentSession()
+        .createSelectionQuery("from User u where u.name = :name", User.class)
+        .setParameter("name", username).uniqueResult();
+    if (user == null || user.getScramStoredKey() == null || user.getScramServerKey() == null
+        || user.getScramSalt() == null || user.getScramIterations() == null || user.getMd5Salt() == null) return null;
+    return user;
+  }
 
-    if (!hash.equals(user.getCryptPassword())) {
-      logger.warn("password for \"" + username + "\" FAILED");
-      throw new EnvelopeException(Invalid_Credentials);
+  private static void refuseIfThrottled(String username) throws EnvelopeException {
+    long wait = Logins.waitFor(username, ThreadInfo.getRemoteAddress());
+    if (wait > 0) {
+      long seconds = Math.max(1, (wait + 999) / 1000);
+      throw new EnvelopeException(Invalid_Credentials,
+          "too many failed logins; try again in " + seconds + (seconds == 1 ? " second" : " seconds"));
     }
+  }
 
-    logger.info("password for \"" + username + "\" successfully verfied");
+  /**
+   * Step one: name the user and a fresh client nonce; get back what the proof is
+   * computed from.  An unknown user is answered as if known.
+   */
+  public ScramChallenge scramStart(String username, String clientNonce) throws EnvelopeException {
+    refuseIfThrottled(username);
+    if (clientNonce == null || clientNonce.length() < 16 || clientNonce.length() > 128)
+      throw new EnvelopeException(Invalid_Credentials, REFUSED);
+    try {
+      User user = verifiedUser(username);
+      String md5Salt = user != null ? user.getMd5Salt() : Logins.fakeMd5Salt(username);
+      byte[] salt = user != null ? user.getScramSalt() : Logins.fakeSalt(username);
+      int iterations = user != null ? user.getScramIterations() : Scram.ITERATIONS;
 
-    // The credential is proven, so this key can be trusted -- but only for as
-    // long as this login lasts, so it is bound to the session instead of being
-    // written to the user row.  Nothing in the database is an authenticator.
-    String sessionId = Sessions.open(username, publicKey);
+      String nonce = clientNonce + Scram.newNonce();
+      if (!Logins.begin(nonce, new Logins.Exchange(username, clientNonce, salt, iterations)))
+        throw new EnvelopeException(Invalid_Credentials, "the server is busy; try again shortly");
+      return new ScramChallenge(nonce, md5Salt, salt, iterations, serverKeyPair.getPublic());
+    } catch (GeneralSecurityException e) {
+      throw new EnvelopeException(Invalid_Credentials, REFUSED);
+    }
+  }
 
-    // Hand the session id back encrypted to the key that was just proven, so
-    // only the client that actually authenticated can read it.
-    return Encryption.encodeAsym(publicKey, sessionId.getBytes(Encryption.TRANS_ENCODING));
+  /**
+   * Step two: the proof for that exchange, and the client key the session is to
+   * be bound to (the proof covers it).  A good proof opens a session and returns
+   * the server's signature with the session id encrypted to that key.
+   */
+  public ScramResult scramFinish(String nonce, byte[] proof, PublicKey publicKey) throws EnvelopeException {
+    Logins.Exchange exchange = Logins.finish(nonce);
+    String address = ThreadInfo.getRemoteAddress();
+    if (exchange == null) throw new EnvelopeException(Invalid_Credentials, REFUSED);
+    refuseIfThrottled(exchange.username);
+    try {
+      User user = verifiedUser(exchange.username);
+      byte[] am = publicKey == null ? null
+          : Scram.authMessage(exchange.username, exchange.clientNonce, nonce, exchange.salt, exchange.iterations, publicKey);
+      if (user == null || am == null || !Scram.proofIsValid(user.getScramStoredKey(), am, proof)) {
+        Logins.failed(exchange.username, address);
+        logger.warn("login for \"" + exchange.username + "\" FAILED");
+        throw new EnvelopeException(Invalid_Credentials, REFUSED);
+      }
+      Logins.succeeded(exchange.username, address);
+      logger.info("login for \"" + exchange.username + "\" verified");
+
+      // the proof covered this key, so it is the one the session is bound to
+      String sessionId = Sessions.open(exchange.username, publicKey);
+      return new ScramResult(Scram.serverSignature(user.getScramServerKey(), am),
+          Encryption.encodeAsym(publicKey, sessionId.getBytes(Encryption.TRANS_ENCODING)));
+    } catch (GeneralSecurityException | java.io.UnsupportedEncodingException e) {
+      throw new EnvelopeException(Invalid_Credentials, REFUSED);
+    }
   }
 
   /**
@@ -194,27 +258,6 @@ public class Security extends DAO {
     }
 
     return session;
-  }
-
-  public Challenge getChallenge(String username, PublicKey publicKey)
-    throws NoSuchAlgorithmException, IOException, InvalidKeySpecException,
-    BadPaddingException, IllegalBlockSizeException, InvalidKeyException,
-    NoSuchPaddingException {
-    logger.debug("challenge asked for \"" + username + "\"");
-
-    User user = getUser(username);
-
-    // The caller-supplied public key is deliberately NOT persisted here.
-    // getChallenge is session-not-required, so anyone may call it; writing the
-    // key before the password has been proven let an unauthenticated caller
-    // overwrite the very key validateSession() trusts.  The key travels on to
-    // authChallengeResponse() and is stored only once the credential checks out.
-
-    return new Challenge(
-      serverKeyPair.getPublic(),
-      publicKey,
-      Crypt.yankSalt(user.getCryptPassword())
-    );
   }
 
   //  public CipherInputStream decrypt(InputStream is) throws
