@@ -186,6 +186,24 @@ public class ServerPrefs {
    * @throws BackingStoreException on backing store exception for preferences
    */
   public boolean configure(HttpServletRequest rq, HttpServletResponse rp) throws IOException, BackingStoreException {
+    // Only from the addresses configure.allow names (SERVERPREFS_CONFIGURE_ALLOW,
+    // CIDR ranges, comma-separated), checked before anything else: the form holds
+    // the database password, and Basic auth alone left it one guessable password
+    // away for anyone who could reach the webapp.  The default is the private and
+    // loopback ranges.  Behind the front stack, RemoteIpValve makes the remote
+    // address the real client's, and HAProxy drops any X-Forwarded-For a client
+    // sends, so it cannot be claimed from outside.
+    AddressRanges allowed = new AddressRanges(configs.get(this.getClass()).get("configure.allow", null));
+    if (!allowed.contains(rq.getRemoteAddr())) {
+      logger.warn("refusing /configure to " + rq.getRemoteAddr() + ", outside configure.allow");
+      rp.setStatus(HttpServletResponse.SC_FORBIDDEN);
+      rp.setContentType("text/html");
+      rp.getWriter().append("<html><head><title>Forbidden</title></head><body><h1>Forbidden</h1>"
+                            + "<p>Server configuration is not available from your address.</p></body></html>");
+      rp.flushBuffer();
+      return false;
+    }
+
     String username = configs.get(this.getClass()).get("configure.username", null);
     String password = configs.get(this.getClass()).get("configure.password", null);
 

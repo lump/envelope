@@ -47,6 +47,15 @@ public class Security extends DAO {
         }
       }
 
+      // A key kept from before 0.16 is RSA-1024; a long-lived install would go on
+      // using it, so one smaller than Encryption.keyBits is replaced.
+      if (serverKeyPair != null && serverKeyPair.getPublic() instanceof java.security.interfaces.RSAPublicKey rsa
+          && rsa.getModulus().bitLength() < Encryption.keyBits) {
+        logger.info("replacing the stored " + rsa.getModulus().bitLength() + "-bit server key with a "
+            + Encryption.keyBits + "-bit one");
+        serverKeyPair = null;
+      }
+
       // if we couldn't yank a key from prefs, let's create a new one
       if (serverKeyPair == null) {
         try {
@@ -171,6 +180,12 @@ public class Security extends DAO {
     Logins.Exchange exchange = Logins.finish(nonce);
     String address = ThreadInfo.getRemoteAddress();
     if (exchange == null) throw new EnvelopeException(Invalid_Credentials, REFUSED);
+    // A client from before 0.16 brings an RSA-1024 key and signs with SHA-1.  Its
+    // login would go through -- the login itself is not signed -- and then every
+    // command after it fail; say why here instead.
+    if (publicKey instanceof java.security.interfaces.RSAPublicKey rsa && rsa.getModulus().bitLength() < Encryption.keyBits)
+      throw new EnvelopeException(Invalid_Credentials,
+          "this client is out of date -- download the current one from the server's front page");
     refuseIfThrottled(exchange.username);
     try {
       User user = verifiedUser(exchange.username);
@@ -258,17 +273,6 @@ public class Security extends DAO {
     }
 
     return session;
-  }
-
-  //  public CipherInputStream decrypt(InputStream is) throws
-  public ByteArrayInputStream decrypt(InputStream is) throws
-    IllegalBlockSizeException,
-    IOException,
-    InvalidKeyException,
-    NoSuchAlgorithmException,
-    NoSuchPaddingException,
-    BadPaddingException {
-    return Encryption.decodeAsym(serverKeyPair.getPrivate(), is);
   }
 
   public Key unwrapSessionKey(byte[] encryptedKey) throws

@@ -20,12 +20,14 @@ public final class Encryption {
   // encoding for getBytes and new String, to keep things consistent across VMs.
   public static final String TRANS_ENCODING = "US-ASCII";
 
-  // 1024-bit rsa key
+  // RSA-3072 (0.16): the client's per-launch key signs every command after login
+  // and receives the session id; the server's wraps the request body's session
+  // key.  1024 bits until 0.16 -- NIST has disallowed it for signatures since 2013.
   public static final String keyAlg = "RSA";
-  public static final int keyBits = 1024;
+  public static final int keyBits = 3072;
 
-  // signature algorithm: the reputable SHA
-  public static final String sigAlg = "SHA1with" + keyAlg;
+  // SHA-256 (0.16); SHA-1 until then, whose collisions are practical
+  public static final String sigAlg = "SHA256with" + keyAlg;
 
   // digest used to bind a signature to the payload it was made for
   public static final String digestAlg = "SHA-256";
@@ -94,43 +96,6 @@ public final class Encryption {
     return c.doFinal(data);
   }
 
-  /**
-   * Decode an asymmetrically encrypted message with a private key.
-   *
-   * @param key  private key
-   * @param is InputStream
-   *
-   * @return ByteArrayOutputStream
-   *
-   * @throws InvalidKeyException
-   * @throws BadPaddingException
-   * @throws IllegalBlockSizeException
-   * @throws NoSuchAlgorithmException
-   * @throws NoSuchPaddingException
-   */
-  public static ByteArrayInputStream decodeAsym(PrivateKey key, InputStream is)
-//  public static CipherInputStream decodeAsym(PrivateKey key, InputStream is)
-      throws
-      InvalidKeyException,
-      BadPaddingException,
-      IllegalBlockSizeException,
-      NoSuchAlgorithmException,
-      NoSuchPaddingException, IOException {
-    final Cipher c = Cipher.getInstance(keyAlg);
-
-    byte[] buffer = new byte[128];
-    int read = 0;
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    while ((read = is.read(buffer, 0, buffer.length)) > 0) {
-      // check for eof
-      if (read == 1 && buffer[0] == -1) break;
-
-      c.init(Cipher.DECRYPT_MODE, key);
-      baos.write(c.doFinal(buffer));
-      if (read < buffer.length) break;
-    }
-    return new ByteArrayInputStream(baos.toByteArray());
-  }
 
   public static PublicKey decodePublicKey(String key)
       throws NoSuchAlgorithmException,
@@ -209,32 +174,6 @@ public final class Encryption {
     return c.doFinal(data);
   }
 
-  public static ByteArrayOutputStream
-  encodeAsym(PublicKey key, ByteArrayOutputStream data)
-      throws
-      IOException,
-      InvalidKeyException,
-      NoSuchAlgorithmException,
-      NoSuchPaddingException,
-      BadPaddingException,
-      IllegalBlockSizeException {
-    
-    final Cipher c = Cipher.getInstance(keyAlg);
-
-    byte[] buffer = new byte[117];
-    int read = 0;
-    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-    ByteArrayInputStream bis = new ByteArrayInputStream(data.toByteArray());
-    while ((read = bis.read(buffer, 0, buffer.length)) > 0) {
-      c.init(Cipher.ENCRYPT_MODE, key);
-      baos.write(c.doFinal(buffer));
-      if (read < buffer.length) break;
-    }
-    // send an eof of sorts
-    baos.write(-1);
-
-    return baos;
-  }
 
   /**
    * Generates a KeyPair.

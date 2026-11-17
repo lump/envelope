@@ -41,6 +41,9 @@ services:
       DAO_HIBERNATE_CONNECTION_USERNAME: "${ENVELOPE_DB_USER:-budget}"
       DAO_HIBERNATE_CONNECTION_PASSWORD: "${ENVELOPE_DB_PASSWORD}"
       SERVERPREFS_CONFIGURE_USERNAME: "${ENVELOPE_ADMIN_USER:-admin}"
+      # /configure answers only from these CIDR ranges (the LAN); the default,
+      # unset, is every private range
+      SERVERPREFS_CONFIGURE_ALLOW: "${ENVELOPE_CONFIGURE_ALLOW:-172.17.2.0/20}"
       SERVERPREFS_CONFIGURE_PASSWORD: "${ENVELOPE_ADMIN_PASSWORD}"
       # marks both config sections complete, so the server does not hold every
       # request at the /configure form waiting for a human to submit it

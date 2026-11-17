@@ -24,8 +24,15 @@ plus a shared `lib/`.
 **The RPC protocol is the load-bearing part.** The client Java-serializes a `Command` into a
 hand-rolled RFC 2388 multipart POST to `/invoke` (neither side uses the servlet `Part` API);
 the body is optionally gzipped and 3DES-encrypted (`DESede/ECB/PKCS5Padding`, no IV) under an
-RSA-1024-wrapped session key, signed `SHA1withRSA`, sent as a separate `key` part. (This was
-documented as "AES" for a long time, which is why the 2007-grade algorithms went unaudited.) `Controller` dispatches by `Command.Name` — `getFacet()` picks the DAO
+RSA-wrapped session key sent as a separate `key` part, and every command after login is signed
+`SHA256withRSA` with the client's per-launch key. The keys are **RSA-3072** and the signatures
+SHA-256 since 0.16 (`Encryption.keyBits`/`sigAlg`); until then RSA-1024 and SHA-1, which a 0.15
+client still offers and `scramFinish` refuses with "this client is out of date". The server's
+own keypair is kept in its `java.util.prefs`, so `Security` replaces a stored one smaller than
+`keyBits`. The 3DES body layer is kept deliberately, as obfuscation beneath TLS rather than as
+the protection. (It was documented as "AES" for a long time, which is why the 2007-grade
+algorithms went unaudited.) The two streaming RSA helpers, hard-coded for 1024-bit blocks and
+unused, were removed with the key change. `Controller` dispatches by `Command.Name` — `getFacet()` picks the DAO
 class, `name()` is the method. The **response is not multipart**: the server streams N
 serialized objects with `Single-Object` / `Object-Count` / `Command-Sequence-Id` headers and
 the client reassembles them into a list. Authentication rides in HTTP headers rather than in
@@ -407,7 +414,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.15.0**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.16.0**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at
@@ -632,7 +639,15 @@ recreated on every deploy and start empty, so they always had the current defaul
   `SERVERPREFS_CONFIGURE_USERNAME` and `SERVERPREFS_CONFIGURE_PASSWORD` (both compose stacks
   already do). The form also no longer renders stored secrets at all: `type="password"` only
   masked them in a browser while leaving the value in the page source. An empty password
-  field on submit means "leave it alone".
+  field on submit means "leave it alone". **And only from an allowed address** (0.16):
+  `configure.allow` — CIDR ranges, comma-separated, overridable as
+  `SERVERPREFS_CONFIGURE_ALLOW` — is checked before the credentials, and anything outside it
+  gets 403 without the form. The default is the private and loopback ranges, as the config
+  project's `ca.json` rule allows; the swarm sets `172.17.2.0/20` (a router's reading: 172.17.0.0
+  to 172.17.15.255) through `envelope_configure_allow` in the web stack's environment tier.
+  Behind HAProxy, `RemoteIpValve` makes the remote address the real client's, and the front
+  stack drops any client-sent `X-Forwarded-For`. `AddressRanges` takes literals only — an entry
+  or address that is not one is refused before `InetAddress` could resolve it as a host name.
 - **The test suite no longer touches the real client settings, and must not be allowed to
   again.** `TestSuite`'s static initializer writes a test host, port and username, and
   those used to land in the very `java.util.prefs` store the Swing client reads
@@ -748,7 +763,8 @@ recreated on every deploy and start empty, so they always had the current defaul
   must sign with the account's ServerKey, so an impostor cannot complete a login. What it does
   not do is authenticate the server's RSA key for the optional app-level request encryption
   (`LoginSettings.setServerKey()` takes the key the challenge carries): that encryption is off
-  by default and 2007-grade, and the real protection is TLS — the swarm's front stack terminates
+  by default and its cipher 2007-grade (3DES/ECB, kept as obfuscation), and the real protection
+  is TLS — the swarm's front stack terminates
   HTTPS with the Lumpnet CA (bundled in the client) and answers plain HTTP with a 301, including
   `POST /invoke`.
 - **Permissions say what a user may do; the budget checks say to which rows.** Both apply to

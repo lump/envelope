@@ -907,7 +907,9 @@ public final class Crypt {
   }
 
   private static String generateNewSalt(int size) {
-    final java.util.Random randomGenerator = new java.util.Random();
+    // SecureRandom: java.util.Random is a clock-seeded 48-bit generator, so its
+    // salts could be predicted
+    final java.util.Random randomGenerator = new java.security.SecureRandom();
     final char[] salt = new char[size];
     for (int x = 0; x < salt.length; x++) {
       salt[x] = I_TO_A64.charAt(randomGenerator.nextInt(64));
