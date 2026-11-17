@@ -195,6 +195,22 @@ public class TransactionChangeHandler {
     amount = editing.getNetAmount();
   }
 
+  /**
+   * Take a reconciled change made in the transaction list onto the form's copy,
+   * with the stamp the change gave the row, so the form's next save carries both
+   * rather than being refused as stale or putting reconciled back.  The pristine
+   * copy takes it too: it is not the user's edit, so it must not look like one.
+   * Event thread only.
+   */
+  void adoptReconciled(Boolean reconciled, java.sql.Timestamp stamp) {
+    editing.setReconciled(reconciled);
+    editing.setStamp(stamp);
+    if (pristine != null) {
+      pristine.setReconciled(reconciled);
+      pristine.setStamp(stamp);
+    }
+  }
+
   public Transaction getTransaction() {
     return editing;
   }

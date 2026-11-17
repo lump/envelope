@@ -32,9 +32,10 @@ public class TransactionPortal extends Portal {
         allocation.getAmount()));
   }
 
-  public void updateReconciled(Integer transactionId, Boolean reconciled)
+  /** @return the transaction's new version stamp, which the change moved */
+  public java.sql.Timestamp updateReconciled(Integer transactionId, Boolean reconciled)
       throws AbortException {
-    invoke(new Command(Command.Name.updateReconciled, null, transactionId, reconciled));
+    return (java.sql.Timestamp)invoke(new Command(Command.Name.updateReconciled, null, transactionId, reconciled));
   }
 
   /**

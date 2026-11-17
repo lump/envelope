@@ -204,9 +204,26 @@ it stands aside. The swap sets `isQuiet()`, which the form's selection listener 
 selection passing through other rows would otherwise queue loads of them and switch the form
 away mid-edit. The refresh button is unchanged. Checked against the oracle — after each saved
 change, the reflected table equals a freshly loaded one, in both views, for edits, reorders,
-pairs, moves between accounts and in and out of the range. **The other direction is not
-done:** the table's reconciled checkbox writes straight to the server and moves the stamp, so
-the form's next save of that transaction is refused as stale.
+pairs, moves between accounts and in and out of the range.
+
+**And the list's reconciled checkbox reaches the form.** The checkbox writes straight to the
+server (`updateReconciled`), which moves the transaction's stamp; the form, holding the
+transaction with the old stamp and old flag, then had its next save refused as stale (before
+0.12, accepted — putting reconciled back). `updateReconciled` now returns the new stamp, and
+the table hands it with the flag to `TransactionForm.noteReconciled`. Clicking the box also
+selects the row, so there are two cases. Open in the form already — the usual one, reconciling
+what you are looking at: the form re-selects without reloading, and `adoptReconciled` puts
+flag and stamp on its copy (and on `pristine`, so it is not mistaken for an edit). Opening as
+you click: the load reads the transaction and makes two more round trips before installing it,
+so the write can land after its read. `noteReconciled` records each write per transaction, and
+the load looks twice — after its read, and again **once installed, on the event thread**, where
+the note also runs, so one of the two always sees the other; a check only after the read let
+the note slip past while the form still showed the previous transaction (caught on the real
+UI). Checked by driving the real client on Xvfb with `java.awt.Robot` — click the row's box,
+type into the form's description — against a control: the 0.13.2 client failed the first round
+("changed since it was read"); this one passed every round, both cases. Such a harness must
+not touch the list's date range: it is remembered in the real client's `java.util.prefs`, not
+the throwaway node, and changing the choosers saves it.
 
 **A new transaction opens on Expense.** `setFormData` derives the radio from the sign of
 the net amount, and a fresh transaction is a zero stub, so zero has to count as expense
@@ -351,7 +368,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.13.2**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.13.3**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at

@@ -28,14 +28,24 @@ import java.util.List;
 public class Action extends DAO {
 
   /**
-   * Sets reconciled
+   * Sets reconciled -- the transaction list's checkbox.
+   *
+   * <p>Returns the transaction's new version stamp.  The change moves it, and the
+   * transaction form may be holding this transaction with the old one: it used
+   * to keep that, so its next save of the transaction was refused as stale (and
+   * before 0.12 went through and put reconciled back as the form remembered it).
+   * The client hands the stamp and the new value to the form.
+   *
    * @param transactionID the ID of the transaction
    * @param reconciled whether this is reconciled or not
+   * @return the stamp the transaction carries now
    */
-  public void updateReconciled(Integer transactionID, Boolean reconciled) throws EnvelopeException {
+  public java.sql.Timestamp updateReconciled(Integer transactionID, Boolean reconciled) throws EnvelopeException {
     requireMyTransaction(transactionID);
-    Transaction t = load(Transaction.class, transactionID);
-    t.setReconciled(reconciled);
+    Transaction t = get(Transaction.class, transactionID);
+    t.setReconciled(Boolean.TRUE.equals(reconciled));
+    getCurrentSession().flush();   // the version moves on the flush
+    return t.getStamp();
   }
 
   /**

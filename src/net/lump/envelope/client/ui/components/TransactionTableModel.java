@@ -524,8 +524,17 @@ public class TransactionTableModel extends AbstractTableModel {
 
         public void run() {
           try {
-            new TransactionPortal()
-                .updateReconciled((Integer)transactions.get(row)[COLUMN.TransactionID.ordinal()], (Boolean)value);
+            final Integer id = (Integer)transactions.get(row)[COLUMN.TransactionID.ordinal()];
+            final java.sql.Timestamp stamp = new TransactionPortal().updateReconciled(id, (Boolean)value);
+            // The write moved the transaction's stamp.  The form may hold this
+            // transaction -- clicking the box selects the row, which opens it
+            // there -- and its next save would be refused as stale on the old one.
+            SwingUtilities.invokeLater(new Runnable() {
+              public void run() {
+                net.lump.envelope.client.ui.MainFrame.getInstance().getTransactionForm()
+                    .noteReconciled(id, (Boolean)value, stamp);
+              }
+            });
           } catch (Exception e) {
             JOptionPane.showMessageDialog(null, e.getMessage(), Strings.get("error"), JOptionPane.ERROR_MESSAGE);
             e.printStackTrace();

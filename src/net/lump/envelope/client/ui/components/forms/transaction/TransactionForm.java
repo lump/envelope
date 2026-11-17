@@ -412,6 +412,9 @@ public class TransactionForm {
             // the transaction first: which accounts it already touches decides
             // the order the category picker offers things in
             Transaction query = qp.transaction(id);
+            // the list's checkbox may have written this transaction after the
+            // read above; see the second look once it is installed, below
+            applyNewerReconciled(query);
 
             final java.util.Set<Integer> home = new java.util.HashSet<Integer>();
             for (Allocation a : query.getAllocations())
@@ -438,6 +441,21 @@ public class TransactionForm {
               transactionChangeHandler = new TransactionChangeHandler(query, TransactionForm.this);
             else
               transactionChangeHandler.importNew(query, TransactionForm.this);
+
+            // And once more now it is installed, on the event thread, where
+            // noteReconciled also runs.  The check above can come before the
+            // checkbox's write is noted, and the note can come while the form
+            // still shows the previous transaction, so between them a write could
+            // slip past both.  On one thread, one of the two always sees the other:
+            // the note finds this transaction installed, or this finds the note.
+            SwingUtilities.invokeAndWait(new Runnable() {
+              public void run() {
+                Transaction shown = transactionChangeHandler.getTransaction();
+                Object[] w = shown == null ? null : reconciledWrites.get(shown.getId());
+                if (w != null && (shown.getStamp() == null || ((java.sql.Timestamp)w[1]).after(shown.getStamp())))
+                  transactionChangeHandler.adoptReconciled((Boolean)w[0], (java.sql.Timestamp)w[1]);
+              }
+            });
           } catch (AbortException ignore) {
           } catch (InvocationTargetException ignore) {
           } catch (InterruptedException ignore) {
@@ -913,6 +931,42 @@ public class TransactionForm {
 
   public JLabel getEntityLabel() {
     return entityLabel;
+  }
+
+  /**
+   * The latest reconciled change the transaction list has written, per
+   * transaction, with the stamp it gave the row.  Clicking a row's checkbox also
+   * selects the row, which starts loading it into this form; the load reads the
+   * transaction and then makes two more round trips before installing it, so the
+   * checkbox's write can land in between, after the read.  Kept so the load can
+   * catch up; a value is only ever applied over an older stamp.
+   */
+  private final java.util.concurrent.ConcurrentHashMap<Integer, Object[]> reconciledWrites =
+      new java.util.concurrent.ConcurrentHashMap<Integer, Object[]>();
+
+  /**
+   * The transaction list changed a transaction's reconciled flag, and the change
+   * gave it a new stamp.  If this form has that transaction open, take both onto
+   * it now; either way remember it for a load still in flight.  Event thread only.
+   */
+  public void noteReconciled(Integer transactionId, Boolean reconciled, java.sql.Timestamp stamp) {
+    if (transactionId == null || stamp == null) return;
+    reconciledWrites.merge(transactionId, new Object[]{reconciled, stamp},
+        (had, now) -> ((java.sql.Timestamp)now[1]).after((java.sql.Timestamp)had[1]) ? now : had);
+    if (transactionChangeHandler != null && transactionChangeHandler.getTransaction() != null
+        && transactionId.equals(transactionChangeHandler.getTransaction().getId())
+        && (transactionChangeHandler.getTransaction().getStamp() == null
+            || stamp.after(transactionChangeHandler.getTransaction().getStamp())))
+      transactionChangeHandler.adoptReconciled(reconciled, stamp);
+  }
+
+  /** Bring a freshly read transaction up to a newer reconciled write from the list, if there is one. */
+  private void applyNewerReconciled(Transaction t) {
+    Object[] w = t == null ? null : reconciledWrites.get(t.getId());
+    if (w != null && (t.getStamp() == null || ((java.sql.Timestamp)w[1]).after(t.getStamp()))) {
+      t.setReconciled((Boolean)w[0]);
+      t.setStamp((java.sql.Timestamp)w[1]);
+    }
   }
 
   public TransactionChangeHandler getTransactionChangeHandler() {
