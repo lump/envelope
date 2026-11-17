@@ -38,9 +38,9 @@ import java.util.Base64;
  *
  * <p>Two things are this application's own.  The "password" fed to PBKDF2 is
  * the md5-crypt of the password under the user's md5-crypt salt -- what the
- * server stored before 0.14 -- so every existing user was converted on the
- * server without a password reset (see {@code PasswordMigration}); PBKDF2's
- * iterations carry the cost either way.  And {@link #authMessage} is not RFC
+ * server stored before 0.14 -- so 0.14 could convert every existing user on the
+ * server without a password reset; PBKDF2's iterations carry the cost either
+ * way.  (The conversion went in 0.15, with the column it read.)  And {@link #authMessage} is not RFC
  * 5802's text: there is no SASL framing here, and it also covers the client's
  * per-launch public key, so the session the login opens is bound to the client
  * that proved itself, as it was before.
@@ -91,13 +91,6 @@ public final class Scram {
     byte[] salt = randomBytes(SALT_BYTES);
     byte[] salted = saltedPassword(Crypt.crypt(md5Salt, password), salt, ITERATIONS);
     return new Verifier(md5Salt, salt, ITERATIONS, storedKey(clientKey(salted)), serverKey(salted));
-  }
-
-  /** The verifier for a password already in md5-crypt form, as the server held it before 0.14. */
-  public static Verifier fromMd5Crypt(String md5Crypt) throws GeneralSecurityException {
-    byte[] salt = randomBytes(SALT_BYTES);
-    byte[] salted = saltedPassword(md5Crypt, salt, ITERATIONS);
-    return new Verifier(Crypt.yankSalt(md5Crypt), salt, ITERATIONS, storedKey(clientKey(salted)), serverKey(salted));
   }
 
   public static byte[] saltedPassword(String password, byte[] salt, int iterations) throws GeneralSecurityException {

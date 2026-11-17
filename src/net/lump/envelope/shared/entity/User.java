@@ -28,7 +28,6 @@ public class User extends Identifiable<Integer, Timestamp> {
   private Budget budget;
   private String name;
   private String realName;
-  private String cryptPassword;
   private String md5Salt;
   private byte[] scramSalt;
   private Integer scramIterations;
@@ -78,20 +77,6 @@ public class User extends Identifiable<Integer, Timestamp> {
     this.name = name;
   }
 
-  /**
-   * The md5-crypt hash, as stored before 0.14 -- a password-equivalent, since
-   * the old login sent exactly this.  PasswordMigration turns each into a SCRAM
-   * verifier at startup and clears it; nothing reads it otherwise.
-   */
-  @Column(name = "crypt_password")
-  public String getCryptPassword() {
-    return cryptPassword;
-  }
-
-  public void setCryptPassword(String cryptPassword) {
-    this.cryptPassword = cryptPassword;
-  }
-
   // The SCRAM-SHA-256 verifier (see Scram).  None of these can be used to log in:
   // StoredKey only checks a proof, ServerKey only signs the server's answer, and
   // the salts and count are public.  They never leave the server -- forClient
@@ -118,14 +103,13 @@ public class User extends Identifiable<Integer, Timestamp> {
   public byte[] getScramServerKey() { return scramServerKey; }
   public void setScramServerKey(byte[] scramServerKey) { this.scramServerKey = scramServerKey; }
 
-  /** Put a verifier on this user and drop any md5-crypt hash: the only way a password is set. */
+  /** Put a verifier on this user: the only way a password is set. */
   public void setVerifier(net.lump.envelope.shared.command.security.Scram.Verifier v) {
     setMd5Salt(v.md5Salt);
     setScramSalt(v.salt);
     setScramIterations(v.iterations);
     setScramStoredKey(v.storedKey);
     setScramServerKey(v.serverKey);
-    setCryptPassword(null);
   }
 
 
@@ -182,7 +166,6 @@ public class User extends Identifiable<Integer, Timestamp> {
     User user = (User)o;
 
     if (budget != null ? !budget.equals(user.budget) : user.budget != null) return false;
-    if (cryptPassword != null ? !cryptPassword.equals(user.cryptPassword) : user.cryptPassword != null) return false;
     if (id != null ? !id.equals(user.id) : user.id != null) return false;
     if (name != null ? !name.equals(user.name) : user.name != null) return false;
     if (permissions != null ? !permissions.equals(user.permissions) : user.permissions != null) return false;
@@ -200,7 +183,6 @@ public class User extends Identifiable<Integer, Timestamp> {
     result = 31 * result + (budget != null ? budget.hashCode() : 0);
     result = 31 * result + (name != null ? name.hashCode() : 0);
     result = 31 * result + (realName != null ? realName.hashCode() : 0);
-    result = 31 * result + (cryptPassword != null ? cryptPassword.hashCode() : 0);
     result = 31 * result + (permissions != null ? permissions.hashCode() : 0);
     result = 31 * result + (publicKey != null ? publicKey.hashCode() : 0);
     return result;

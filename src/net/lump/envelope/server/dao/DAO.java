@@ -72,15 +72,13 @@ public abstract class DAO {
       // secret that must be stable and secret; see Logins.setSecretFrom.
       Logins.setSecretFrom(config.getProperty("hibernate.connection.password"),
                            config.getProperty("hibernate.connection.url"));
-      // Every pre-0.14 md5-crypt password becomes a SCRAM verifier before the
-      // first login is taken.  Without migration 006's columns this fails, and
-      // the server stays not ready saying which file to apply.
+      // The users table must hold SCRAM verifiers and no md5-crypt hashes before
+      // a login is taken; if not, the server stays not ready saying what to do.
       try {
-        PasswordMigration.run(built);
+        SchemaCheck.run(built);
       } catch (RuntimeException e) {
         built.close();
-        throw new IllegalStateException("the users table has no SCRAM columns -- apply "
-            + "sql/migrations/006-scram-verifiers.sql (" + e.getMessage() + ")", e);
+        throw e;
       }
       sessionFactory = built;
       initializationFailure = null;

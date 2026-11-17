@@ -242,9 +242,7 @@ create table `users` (
   `budget` int NOT NULL,
   `name` varchar(64) not null,
   `real_name` varchar(64) default NULL,
-  `crypt_password` varchar(34) default NULL,
-  -- the SCRAM-SHA-256 verifier (migration 006); the server fills these from
-  -- crypt_password at startup and clears it, so the seeds below convert too
+  -- the SCRAM-SHA-256 verifier (migrations 006 and 007; see Scram.java)
   `md5_salt` varchar(12) default NULL,
   `scram_salt` varbinary(32) default NULL,
   `scram_iterations` int default NULL,
@@ -255,17 +253,17 @@ create table `users` (
   UNIQUE index `name` (`name`),
   constraint users_budget foreign key (budget) references budgets(id) on update cascade on delete restrict
 )ENGINE=INNODB;
--- Default accounts.  Passwords are md5-crypt ($1$) hashes produced by the app's
--- own Crypt class (net.lump.envelope.shared.command.security.Crypt); the server
--- converts them to SCRAM verifiers on its first start (PasswordMigration).
+-- Default accounts, seeded as SCRAM-SHA-256 verifiers made by the app's own
+-- Scram.newVerifier: md5-crypt salt, SCRAM salt, iterations, StoredKey, ServerKey.
+-- None of these values logs anyone in; they only check a password.
 --   admin / envelope
 --   guest / guest
 -- These are the out-of-the-box credentials; change them after first login.
-insert into users (id, stamp, budget, name, real_name, crypt_password, permissions, public_key)
-  values (null, null,0,'admin','Admin Account','$1$Abcd1234$AJbrgGrHdGJ/qrnlrIkPT.',7,NULL);
+insert into users (id, stamp, budget, name, real_name, md5_salt, scram_salt, scram_iterations, scram_stored_key, scram_server_key, permissions, public_key)
+  values (null, null, 0, 'admin', 'Admin Account', 'cLG9lhu0', X'a091855e4ff36a2265c0768e506cf0f3', 600000, X'8412da6964a10928ffdc9413870fb7c01ddcb8bdd994de53ff060f13a26a5778', X'1c3f93a246bc251308c529f1601a7e8c3cf85ae580a570c3b171eb3d2e9aa41a', 7, NULL);
 update users set id = 0;
 alter table users auto_increment = 0;
-insert into users (id, stamp, budget, name, real_name, crypt_password, permissions, public_key)
-  values (null, null,0,'guest','Guest Account','$1$GOyqcoAk$KTE1zfxeTkoXJTcrFKyFi0',3,NULL);
+insert into users (id, stamp, budget, name, real_name, md5_salt, scram_salt, scram_iterations, scram_stored_key, scram_server_key, permissions, public_key)
+  values (null, null, 0, 'guest', 'Guest Account', '4woJttd4', X'859c151f8b22ed0425c6674fb162681b', 600000, X'658d0d725def5b766e31d164ae1dcaa89b9c581abeda1ff232ee0bc713b54110', X'abbc43bcb11ffa2c8212c412e4fbcbc97a757e50446210121ededcb6424d43c9', 3, NULL);
 
 grant all on envelope.* to budget identified by 'tegdub';

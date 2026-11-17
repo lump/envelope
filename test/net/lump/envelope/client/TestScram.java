@@ -61,16 +61,6 @@ public class TestScram extends TestCase {
     assertFalse("an impostor without the verifier", Scram.serverIsGenuine(v.serverKey, am, Scram.serverSignature(Scram.randomBytes(32), am)));
   }
 
-  /** A pre-0.14 md5-crypt hash converts to the verifier the password itself gives. */
-  public void testMd5CryptConversion() throws Exception {
-    String md5 = Crypt.crypt(Crypt.generateNewMd5Salt(), "guest");
-    Scram.Verifier v = Scram.fromMd5Crypt(md5);
-    assertEquals(Crypt.yankSalt(md5), v.md5Salt);
-    byte[] fromPassword = Scram.saltedPassword(Crypt.crypt(v.md5Salt, "guest"), v.salt, v.iterations);
-    assertTrue(java.util.Arrays.equals(v.storedKey, Scram.storedKey(Scram.clientKey(fromPassword))));
-    assertTrue(java.util.Arrays.equals(v.serverKey, Scram.serverKey(fromPassword)));
-  }
-
   private static PublicKey keyPair() throws Exception {
     KeyPairGenerator g = KeyPairGenerator.getInstance("RSA");
     g.initialize(1024);

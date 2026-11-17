@@ -325,9 +325,14 @@ the client checks before believing the session id (`SecurityPortal.login`), so a
 cannot complete a login either. A copied users table makes no proof (demonstrated: StoredKey
 and ServerKey both refused as client keys); it can only be attacked by guessing at the full
 PBKDF2 cost. Two things are this application's own. The "password" fed to PBKDF2 is the
-md5-crypt of the password under `users.md5_salt` — what the server stored before 0.14 — so
-`PasswordMigration` converted every existing user at startup from the hash it already had
-(`Scram.fromMd5Crypt`), cleared `crypt_password`, and nobody had to log in or change a password.
+md5-crypt of the password under `users.md5_salt` — what the server stored before 0.14 — so 0.14
+converted every existing user at startup from the hash it already had, and nobody had to log in
+or change a password. **0.15 dropped the conversion with the column it read** (migration 007,
+which refuses while any row still holds a hash). `SchemaCheck` now stands in its place at
+startup: no SCRAM columns, or users still holding md5-crypt hashes (a pre-0.14 backup restored),
+leaves the server `not ready` naming the fix — for the second, 006, one start under 0.14.x, then
+007. The bootstrap seeds admin and guest as SCRAM verifiers directly, and its `users` table is
+column-for-column what an upgraded database ends up with (checked).
 And `Scram.authMessage` is not RFC 5802's text: it also covers the client's per-launch public
 key, so the session is bound to the client that proved itself, as before. md5 salts are the
 bare eight characters (`Crypt.yankSalt`'s form) everywhere, so a made-up one matches a real
@@ -351,6 +356,9 @@ for non-ASCII passwords as well as ASCII. **Migration 006 must be applied before
 deployed**: without its columns the server stays `not ready` saying so, and recovers by itself
 once they exist (rehearsed on a database with the 0.13.4 schema). Old backups still hold
 md5-crypt hashes, usable against a pre-0.14 server and crackable at md5-crypt speed.
+`sql/bootstrap-psql.sql` is untouched since 2010 and has none of migrations 001–007; it is not a
+schema. `sql/migrate.pl` writes `crypt_password` and so no longer runs against the current
+schema; it is kept for the mapping it documents.
 
 **Everything after login is a session, not re-authentication.** `scramFinish` mints a
 session only once the proof verifies, binds it to the public key the proof covered,
@@ -371,8 +379,8 @@ cd docker && docker compose up -d    # Tomcat 11; the database is not containeri
 
 - Server: http://localhost:7041/envelope/  (health: `/envelope/info/ping` → `pong`)
 - Client: `java -jar target/envelope-client.jar`
-- Default logins (seeded by `sql/bootstrap-mysql.sql`, as md5-crypt hashes the server converts
-  to SCRAM verifiers on its first start): **admin / envelope**, **guest / guest**
+- Default logins (seeded by `sql/bootstrap-mysql.sql` as SCRAM verifiers): **admin / envelope**,
+  **guest / guest**
 
 **The database is the native MariaDB on the host**, reached at `tiamat.lump:3306` and
 overridable with `DB_URL`. There used to be a containerised one, bootstrapped on first start
@@ -399,7 +407,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.14.0**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.15.0**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at
