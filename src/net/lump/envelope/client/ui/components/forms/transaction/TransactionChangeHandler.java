@@ -209,6 +209,19 @@ public class TransactionChangeHandler {
       pristine.setReconciled(reconciled);
       pristine.setStamp(stamp);
     }
+    // the amount locks on a reconciled transaction and unlocks on an
+    // unreconciled one; ticked after the form was filled, it has to follow
+    lockAmountIfReconciled();
+  }
+
+  /**
+   * A reconciled transaction has been agreed with the bank, so its amount is not
+   * edited from the form; an unreconciled one is.  Set when the form is filled
+   * and again whenever the list's checkbox changes the flag under an open form.
+   * Event thread only.
+   */
+  private void lockAmountIfReconciled() {
+    form.getAmount().setEnabled(!Boolean.TRUE.equals(editing.getReconciled()));
   }
 
   public Transaction getTransaction() {
@@ -292,7 +305,7 @@ public class TransactionChangeHandler {
               form.getAllocationsTable().getColumnModel().getColumn(c.ordinal()).setMinWidth(amountWidth);
             }
 
-          form.getAmount().setEnabled(!editing.getReconciled());
+          lockAmountIfReconciled();
           form.getAmount().setText(amount.toString());
           changeableAmount = new ChangeableMoneyTextField(form.getAmount()) {
             { super.setDirtyDelay(5); }

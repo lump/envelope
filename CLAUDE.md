@@ -213,7 +213,10 @@ transaction with the old stamp and old flag, then had its next save refused as s
 the table hands it with the flag to `TransactionForm.noteReconciled`. Clicking the box also
 selects the row, so there are two cases. Open in the form already — the usual one, reconciling
 what you are looking at: the form re-selects without reloading, and `adoptReconciled` puts
-flag and stamp on its copy (and on `pristine`, so it is not mistaken for an edit). Opening as
+flag and stamp on its copy (and on `pristine`, so it is not mistaken for an edit) — and
+re-applies `lockAmountIfReconciled`, since a reconciled transaction's Amount field is locked
+and an unreconciled one's is not. That lock used to be set only when the form was filled, so
+a tick under an open form left the field as it was (0.13.4). Opening as
 you click: the load reads the transaction and makes two more round trips before installing it,
 so the write can land after its read. `noteReconciled` records each write per transaction, and
 the load looks twice — after its read, and again **once installed, on the event thread**, where
@@ -368,7 +371,7 @@ the patch at least when the `Dockerfile` changes. `docker/compose.yml` remains t
 bind-mounted development stack.
 
 **The application version lives in `.Major.version`, `.Minor.version` and
-`.Patch.version`**, one number each, joined with dots — currently **0.13.3**. They are the
+`.Patch.version`**, one number each, joined with dots — currently **0.13.4**. They are the
 single source of truth and are read twice: `build.sh` assembles the image tag from them,
 and `pom.xml` reads them (via `maven-antrun-plugin`, because plain Maven cannot read a file
 into a property) into the filtered `lib/util/revision.properties`, which `Revision` reads at
